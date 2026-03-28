@@ -96,7 +96,7 @@ final class LaunchViewController: UIViewController, UIDocumentPickerDelegate {
             try! FileManager.default.removeItem(at: FileManager.default.documentsDirectory.appendingPathComponent(pairingFileName))
             displayError("minimuxer failed to start, please restart SideStore. \((error as? LocalizedError)?.failureReason ?? "UNKNOWN ERROR")")
         }
-        start_auto_mounter(documentsDirectory)
+        startAutoMounter(documentsDirectory)
     }
 
     func fetchPairingFile() -> String? { PairingFileManager.shared.fetchPairingFile(presentingVC: self) }

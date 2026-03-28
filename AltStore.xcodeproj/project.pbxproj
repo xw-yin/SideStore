@@ -10,7 +10,6 @@
 		A82067C42D03E0DE00645C0D /* SemanticVersion in Frameworks */ = {isa = PBXBuildFile; productRef = A82067C32D03E0DE00645C0D /* SemanticVersion */; };
 		A83FE3672EC90482005ACE9A /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = A83FE3662EC90482005ACE9A /* Starscream */; };
 		A83FE3772EC905E3005ACE9A /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = A83FE3762EC905E3005ACE9A /* KeychainAccess */; };
-		A85AED4C2F4B2D32002E2E11 /* libminimuxer_swift.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 191E5FAB290A5D92001A3B7C /* libminimuxer_swift.a */; };
 		A8635D062F4CF16D00E66784 /* OpenSSL.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A8635D052F4CF16D00E66784 /* OpenSSL.xcframework */; };
 		A8635D072F4CF16D00E66784 /* OpenSSL.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A8635D052F4CF16D00E66784 /* OpenSSL.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A8635D082F4CF17A00E66784 /* OpenSSL.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A8635D052F4CF16D00E66784 /* OpenSSL.xcframework */; };
@@ -19,17 +18,11 @@
 		A8635D0C2F4CF1A100E66784 /* OpenSSL.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A8635D052F4CF16D00E66784 /* OpenSSL.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A8945AA62D059B6100D86CBE /* Roxas.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A8945AA52D059B6100D86CBE /* Roxas.framework */; };
 		A8A5ABEE2F4C2CFC00572B4A /* em_proxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A5A7ED2F4C2CFC00572B4A /* em_proxy.swift */; };
-		A8A5AC192F4C2D1800572B4A /* libminimuxer_static.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A8A5AC032F4C2CFC00572B4A /* libminimuxer_static.a */; };
-		A8A5B0812F4C373200572B4A /* minimuxer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A5AAEE2F4C2CFC00572B4A /* minimuxer.swift */; };
-		A8A5B0822F4C373200572B4A /* minimuxer-helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A5AAF02F4C2CFC00572B4A /* minimuxer-helpers.swift */; };
-		A8A5B0832F4C374400572B4A /* SwiftBridgeCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A5AAF42F4C2CFC00572B4A /* SwiftBridgeCore.swift */; };
 		A8A5B7E82F4C4CDB00572B4A /* libem_proxy_static.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A8A5B7C32F4C4C8600572B4A /* libem_proxy_static.a */; };
-		A8A5C8722F4C68F600572B4A /* libfragmentzip.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A8A5C8712F4C68F600572B4A /* libfragmentzip.a */; };
 		A8B646012D70C23E00125819 /* MarkdownKit in Frameworks */ = {isa = PBXBuildFile; productRef = A8B646002D70C23E00125819 /* MarkdownKit */; };
 		A8C2260E2EC9039A00047C0D /* Nuke in Frameworks */ = {isa = PBXBuildFile; productRef = A8C2260D2EC9039A00047C0D /* Nuke */; };
 		A8C6D50C2D1EE87600DF01F1 /* AltSign-Static in Frameworks */ = {isa = PBXBuildFile; productRef = A8C6D50B2D1EE87600DF01F1 /* AltSign-Static */; };
 		A8C6D5122D1EE8AF00DF01F1 /* AltSign-Static in Frameworks */ = {isa = PBXBuildFile; productRef = A8C6D5112D1EE8AF00DF01F1 /* AltSign-Static */; };
-		A8FAC1CC2F4B51980061A851 /* libimobiledevice.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A8FABA492F4B50D00061A851 /* libimobiledevice.a */; };
 		A8FAC1F72F4B519A0061A851 /* libem_proxy_swift.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A8FABA4A2F4B50D00061A851 /* libem_proxy_swift.a */; };
 		BF1614F1250822F100767AEA /* Roxas.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BFD247862284BB3B00981D42 /* Roxas.framework */; };
 		BF1614F2250822F100767AEA /* Roxas.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BFD247862284BB3B00981D42 /* Roxas.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -47,6 +40,90 @@
 			proxyType = 1;
 			remoteGlobalIDString = BF58047A246A28F7008AE704;
 			remoteInfo = AltBackup;
+		};
+		172EBC4D2F779E85005A6DDE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 172EB82F2F779E03005A6DDE /* libfragmentzip.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 87B8C3401E0E9C37002F817D;
+			remoteInfo = "fragmentzip-cli-macOS";
+		};
+		172EBC4F2F779E85005A6DDE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 172EB82F2F779E03005A6DDE /* libfragmentzip.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = B315FDB02866CCF8002E243C;
+			remoteInfo = "fragmentzip-cli-iOS";
+		};
+		172EBC512F779E85005A6DDE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 172EB82F2F779E03005A6DDE /* libfragmentzip.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = B315FDB52866CD91002E243C;
+			remoteInfo = "fragmentzip-macOS";
+		};
+		172EBC532F779E85005A6DDE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 172EB82F2F779E03005A6DDE /* libfragmentzip.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = B315FDCE2866CDD3002E243C;
+			remoteInfo = "fragmentzip-iOS";
+		};
+		172EBC562F779E85005A6DDE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 172EB80B2F779E03005A6DDE /* libgeneral.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 87977F6F227C4B71004F31DA;
+			remoteInfo = libgeneral;
+		};
+		172EBC5B2F779E85005A6DDE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 172EBBAF2F779E03005A6DDE /* Roxas.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = BFADAFF819AE7BB70050CF31;
+			remoteInfo = Roxas;
+		};
+		172EBC5D2F779E85005A6DDE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 172EBBAF2F779E03005A6DDE /* Roxas.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = BF8624801BB742E700C12EEE;
+			remoteInfo = RoxasTV;
+		};
+		172EBC5F2F779E85005A6DDE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 172EBBAF2F779E03005A6DDE /* Roxas.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = BFADB00319AE7BB80050CF31;
+			remoteInfo = RoxasTests;
+		};
+		172EBC632F779E85005A6DDE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 172EBB0B2F779E03005A6DDE /* SampleApp.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 44B1EE7C23DB90D5004E2E29;
+			remoteInfo = SampleApp;
+		};
+		172EBC652F779E85005A6DDE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 172EBB0B2F779E03005A6DDE /* SampleApp.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 445A906A2400612800B487B4;
+			remoteInfo = "NSAttributedString+MarkdownTests";
+		};
+		172EBC682F779E85005A6DDE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 172EBB242F779E03005A6DDE /* SampleApp.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 44E8FA8923D90632009E1D13;
+			remoteInfo = SampleApp;
+		};
+		172EBC6B2F779E85005A6DDE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 172EBB302F779E03005A6DDE /* SwiftSampleApp.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 44962FDA23E7A54A00E2A598;
+			remoteInfo = SwiftSampleApp;
 		};
 		A802C9F82F525C030049FE2B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -741,13 +818,6 @@
 			remoteGlobalIDString = A85A51412F4B4532002E2E11;
 			remoteInfo = em_proxy;
 		};
-		A85A51F92F4B4E3E002E2E11 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = BFD247622284B9A500981D42 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = BF45872A2298D31600BD7491;
-			remoteInfo = libimobiledevice;
-		};
 		A85AE1582F4B1F96002E2E11 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A85AD8822F4B1E70002E2E11 /* libfragmentzip.xcodeproj */;
@@ -958,13 +1028,6 @@
 			remoteGlobalIDString = 44962FDA23E7A54A00E2A598;
 			remoteInfo = SwiftSampleApp;
 		};
-		A85AED3D2F4B2B42002E2E11 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = BFD247622284B9A500981D42 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 191E5FAA290A5D92001A3B7C;
-			remoteInfo = minimuxer;
-		};
 		A86372AE2F4D1E4400E66784 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A8636E922F4CF74D00E66784 /* libfragmentzip.xcodeproj */;
@@ -1048,20 +1111,6 @@
 			proxyType = 2;
 			remoteGlobalIDString = 44962FDA23E7A54A00E2A598;
 			remoteInfo = SwiftSampleApp;
-		};
-		A8A5AC022F4C2CFC00572B4A /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = A8A5AB6D2F4C2CFC00572B4A /* minimuxer.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = CA609C732349C7AAD9FA67C4;
-			remoteInfo = "minimuxer-staticlib";
-		};
-		A8A5AC1A2F4C2D2600572B4A /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = A8A5AB6D2F4C2CFC00572B4A /* minimuxer.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = CA609C732349A560B9642892;
-			remoteInfo = "minimuxer-staticlib";
 		};
 		A8A5ACEC2F4C339400572B4A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -2438,7 +2487,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		191E5FAB290A5D92001A3B7C /* libminimuxer_swift.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libminimuxer_swift.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		172EB80B2F779E03005A6DDE /* libgeneral.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = libgeneral.xcodeproj; sourceTree = "<group>"; };
+		172EB82F2F779E03005A6DDE /* libfragmentzip.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = libfragmentzip.xcodeproj; sourceTree = "<group>"; };
+		172EBB0B2F779E03005A6DDE /* SampleApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SampleApp.xcodeproj; sourceTree = "<group>"; };
+		172EBB242F779E03005A6DDE /* SampleApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SampleApp.xcodeproj; sourceTree = "<group>"; };
+		172EBB302F779E03005A6DDE /* SwiftSampleApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftSampleApp.xcodeproj; sourceTree = "<group>"; };
+		172EBBAF2F779E03005A6DDE /* Roxas.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Roxas.xcodeproj; sourceTree = "<group>"; };
 		A802C5B62F525B910049FE2B /* libgeneral.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = libgeneral.xcodeproj; sourceTree = "<group>"; };
 		A802C5DA2F525B910049FE2B /* libfragmentzip.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = libfragmentzip.xcodeproj; sourceTree = "<group>"; };
 		A802C8B62F525B910049FE2B /* SampleApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SampleApp.xcodeproj; sourceTree = "<group>"; };
@@ -2529,42 +2583,11 @@
 		A8A5A7F12F4C2CFC00572B4A /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		A8A5A7F22F4C2CFC00572B4A /* module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.modulemap; sourceTree = "<group>"; };
 		A8A5A7F32F4C2CFC00572B4A /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		A8A5AAD32F4C2CFC00572B4A /* build.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = build.yml; sourceTree = "<group>"; };
-		A8A5AAD62F4C2CFC00572B4A /* minimuxer-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "minimuxer-Bridging-Header.h"; sourceTree = "<group>"; };
-		A8A5AAD72F4C2CFC00572B4A /* minimuxer-helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "minimuxer-helpers.swift"; sourceTree = "<group>"; };
-		A8A5AAD92F4C2CFC00572B4A /* afc_file_manager.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = afc_file_manager.rs; sourceTree = "<group>"; };
-		A8A5AADA2F4C2CFC00572B4A /* device.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = device.rs; sourceTree = "<group>"; };
-		A8A5AADB2F4C2CFC00572B4A /* heartbeat.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = heartbeat.rs; sourceTree = "<group>"; };
-		A8A5AADC2F4C2CFC00572B4A /* install.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = install.rs; sourceTree = "<group>"; };
-		A8A5AADD2F4C2CFC00572B4A /* jit.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = jit.rs; sourceTree = "<group>"; };
-		A8A5AADE2F4C2CFC00572B4A /* lib.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = lib.rs; sourceTree = "<group>"; };
-		A8A5AADF2F4C2CFC00572B4A /* mounter.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = mounter.rs; sourceTree = "<group>"; };
-		A8A5AAE02F4C2CFC00572B4A /* muxer.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = muxer.rs; sourceTree = "<group>"; };
-		A8A5AAE12F4C2CFC00572B4A /* provision.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = provision.rs; sourceTree = "<group>"; };
-		A8A5AAE22F4C2CFC00572B4A /* raw_packet.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = raw_packet.rs; sourceTree = "<group>"; };
-		A8A5AAE32F4C2CFC00572B4A /* tests.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = tests.rs; sourceTree = "<group>"; };
-		A8A5AAE52F4C2CFC00572B4A /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
-		A8A5AAE62F4C2CFC00572B4A /* build.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = build.rs; sourceTree = "<group>"; };
-		A8A5AAE72F4C2CFC00572B4A /* Cargo.lock */ = {isa = PBXFileReference; lastKnownFileType = text; path = Cargo.lock; sourceTree = "<group>"; };
-		A8A5AAE82F4C2CFC00572B4A /* Cargo.toml */ = {isa = PBXFileReference; lastKnownFileType = text; path = Cargo.toml; sourceTree = "<group>"; };
-		A8A5AAE92F4C2CFC00572B4A /* libminimuxer-ios.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libminimuxer-ios.a"; sourceTree = "<group>"; };
-		A8A5AAEA2F4C2CFC00572B4A /* libminimuxer-sim.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libminimuxer-sim.a"; sourceTree = "<group>"; };
-		A8A5AAEB2F4C2CFC00572B4A /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
-		A8A5AAEC2F4C2CFC00572B4A /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
-		A8A5AAED2F4C2CFC00572B4A /* minimuxer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = minimuxer.h; sourceTree = "<group>"; };
-		A8A5AAEE2F4C2CFC00572B4A /* minimuxer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = minimuxer.swift; sourceTree = "<group>"; };
-		A8A5AAEF2F4C2CFC00572B4A /* minimuxer-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "minimuxer-Bridging-Header.h"; sourceTree = "<group>"; };
-		A8A5AAF02F4C2CFC00572B4A /* minimuxer-helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "minimuxer-helpers.swift"; sourceTree = "<group>"; };
-		A8A5AAF12F4C2CFC00572B4A /* module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.modulemap; sourceTree = "<group>"; };
-		A8A5AAF22F4C2CFC00572B4A /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		A8A5AAF32F4C2CFC00572B4A /* SwiftBridgeCore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SwiftBridgeCore.h; sourceTree = "<group>"; };
-		A8A5AAF42F4C2CFC00572B4A /* SwiftBridgeCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftBridgeCore.swift; sourceTree = "<group>"; };
 		A8A5AB682F4C2CFC00572B4A /* .last-prebuilt-fetch-em_proxy */ = {isa = PBXFileReference; lastKnownFileType = text; path = ".last-prebuilt-fetch-em_proxy"; sourceTree = "<group>"; };
 		A8A5AB692F4C2CFC00572B4A /* .last-prebuilt-fetch-minimuxer */ = {isa = PBXFileReference; lastKnownFileType = text; path = ".last-prebuilt-fetch-minimuxer"; sourceTree = "<group>"; };
 		A8A5AB6A2F4C2CFC00572B4A /* AltSign */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AltSign; sourceTree = "<group>"; };
 		A8A5AB6B2F4C2CFC00572B4A /* em_proxy.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = em_proxy.xcodeproj; sourceTree = "<group>"; };
 		A8A5AB6C2F4C2CFC00572B4A /* fetch-prebuilt.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "fetch-prebuilt.sh"; sourceTree = "<group>"; };
-		A8A5AB6D2F4C2CFC00572B4A /* minimuxer.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = minimuxer.xcodeproj; sourceTree = "<group>"; };
 		A8A5ACB72F4C339400572B4A /* SampleApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SampleApp.xcodeproj; sourceTree = "<group>"; };
 		A8A5ACD02F4C339400572B4A /* SampleApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SampleApp.xcodeproj; sourceTree = "<group>"; };
 		A8A5ACDC2F4C339400572B4A /* SwiftSampleApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftSampleApp.xcodeproj; sourceTree = "<group>"; };
@@ -2645,7 +2668,6 @@
 		A8F3FAD92F4E96D7006BC252 /* SampleApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SampleApp.xcodeproj; sourceTree = "<group>"; };
 		A8F3FAE52F4E96D7006BC252 /* SwiftSampleApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftSampleApp.xcodeproj; sourceTree = "<group>"; };
 		A8F3FB642F4E96D7006BC252 /* Roxas.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Roxas.xcodeproj; sourceTree = "<group>"; };
-		A8FABA492F4B50D00061A851 /* libimobiledevice.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libimobiledevice.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		A8FABA4A2F4B50D00061A851 /* libem_proxy_swift.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libem_proxy_swift.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		A8FABCC32F4B50D10061A851 /* libgeneral.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = libgeneral.xcodeproj; sourceTree = "<group>"; };
 		A8FABCE72F4B50D10061A851 /* libfragmentzip.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = libfragmentzip.xcodeproj; sourceTree = "<group>"; };
@@ -2683,143 +2705,19 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		172EBC8D2F77A603005A6DDE /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				libcurl.a,
+			);
+			target = BFD247692284B9A500981D42 /* SideStore */;
+		};
 		177EF33D2F4D8B8E008CAAE1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"NSAttributedString+Markdown.m",
 			);
 			target = BFD247692284B9A500981D42 /* SideStore */;
-		};
-		A8A5AFBE2F4C33A300572B4A /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				common/debug.c,
-				common/debug.h,
-				common/userpref.c,
-				common/userpref.h,
-				src/afc.c,
-				src/afc.h,
-				src/bt_packet_logger.c,
-				src/bt_packet_logger.h,
-				src/companion_proxy.c,
-				src/companion_proxy.h,
-				src/debugserver.c,
-				src/debugserver.h,
-				src/device_link_service.c,
-				src/device_link_service.h,
-				src/diagnostics_relay.c,
-				src/diagnostics_relay.h,
-				src/file_relay.c,
-				src/file_relay.h,
-				src/heartbeat.c,
-				src/heartbeat.h,
-				src/house_arrest.c,
-				src/house_arrest.h,
-				src/idevice.c,
-				src/idevice.h,
-				src/installation_proxy.c,
-				src/installation_proxy.h,
-				"src/lockdown-cu.c",
-				src/lockdown.c,
-				src/lockdown.h,
-				src/misagent.c,
-				src/misagent.h,
-				src/mobile_image_mounter.c,
-				src/mobile_image_mounter.h,
-				src/mobileactivation.c,
-				src/mobileactivation.h,
-				src/mobilebackup.c,
-				src/mobilebackup.h,
-				src/mobilebackup2.c,
-				src/mobilebackup2.h,
-				src/mobilesync.c,
-				src/mobilesync.h,
-				src/notification_proxy.c,
-				src/notification_proxy.h,
-				src/preboard.c,
-				src/preboard.h,
-				src/property_list_service.c,
-				src/property_list_service.h,
-				src/restore.c,
-				src/restore.h,
-				src/reverse_proxy.c,
-				src/reverse_proxy.h,
-				src/sbservices.c,
-				src/sbservices.h,
-				src/screenshotr.c,
-				src/screenshotr.h,
-				src/service.c,
-				src/service.h,
-				src/syslog_relay.c,
-				src/syslog_relay.h,
-				src/webinspector.c,
-				src/webinspector.h,
-			);
-			target = BF45872A2298D31600BD7491 /* libimobiledevice */;
-		};
-		A8A5AFBF2F4C33A300572B4A /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				src/cbuf.c,
-				src/collection.c,
-				src/common.h,
-				src/glue.c,
-				src/opack.c,
-				src/socket.c,
-				src/termcolors.c,
-				src/thread.c,
-				src/tlv.c,
-				src/utils.c,
-			);
-			target = BF45872A2298D31600BD7491 /* libimobiledevice */;
-		};
-		A8A5AFC02F4C33A300572B4A /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				src/Array.cpp,
-				src/base64.c,
-				src/base64.h,
-				src/Boolean.cpp,
-				src/bplist.c,
-				src/bytearray.c,
-				src/bytearray.h,
-				src/Data.cpp,
-				src/Date.cpp,
-				src/Dictionary.cpp,
-				src/hashtable.c,
-				src/hashtable.h,
-				src/Integer.cpp,
-				src/jplist.c,
-				src/jsmn.c,
-				src/jsmn.h,
-				src/Key.cpp,
-				src/Node.cpp,
-				src/oplist.c,
-				"src/out-default.c",
-				"src/out-limd.c",
-				"src/out-plutil.c",
-				src/plist.c,
-				src/plist.h,
-				src/ptrarray.c,
-				src/ptrarray.h,
-				src/Real.cpp,
-				src/strbuf.h,
-				src/String.cpp,
-				src/Structure.cpp,
-				src/time64_limits.h,
-				src/time64.c,
-				src/time64.h,
-				src/Uid.cpp,
-				src/xplist.c,
-			);
-			target = BF45872A2298D31600BD7491 /* libimobiledevice */;
-		};
-		A8A5AFC12F4C33A300572B4A /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				src/libusbmuxd.c,
-			);
-			target = BF45872A2298D31600BD7491 /* libimobiledevice */;
 		};
 		A8EEC0BF2F4AF7FB00F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -2883,7 +2781,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
-				"Operations/Patch App/ALTAppPatcher.m",
 				Resources/ReleaseEntitlements.plist,
 			);
 			target = BFD247692284B9A500981D42 /* SideStore */;
@@ -2926,14 +2823,6 @@
 			);
 			target = BF989166250AABF3002ACF50 /* AltWidgetExtension */;
 		};
-		A8FAC1FE2F4B52F40061A851 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"Operations/Patch App/ALTAppPatcher.h",
-				"Operations/Patch App/ALTAppPatcher.m",
-			);
-			target = BF66EE7D2501AE50007EE018 /* AltStoreCore */;
-		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
@@ -2954,13 +2843,12 @@
 /* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		172EBC802F779F8E005A6DDE /* idevice */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = idevice; sourceTree = "<group>"; };
 		A8A5AC9D2F4C338F00572B4A /* Roxas */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Roxas; sourceTree = "<group>"; };
 		A8A5ACE42F4C339400572B4A /* MarkdownAttributedString */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (177EF33D2F4D8B8E008CAAE1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = MarkdownAttributedString; sourceTree = "<group>"; };
-		A8A5AE1B2F4C33A300572B4A /* libplist */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A8A5AFC02F4C33A300572B4A /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = libplist; sourceTree = "<group>"; };
-		A8A5AE662F4C33A300572B4A /* libimobiledevice-glue */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A8A5AFBF2F4C33A300572B4A /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = "libimobiledevice-glue"; sourceTree = "<group>"; };
-		A8A5AF5E2F4C33A300572B4A /* libimobiledevice */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A8A5AFBE2F4C33A300572B4A /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = libimobiledevice; sourceTree = "<group>"; };
-		A8A5AFBC2F4C33A300572B4A /* libusbmuxd */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A8A5AFC12F4C33A300572B4A /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = libusbmuxd; sourceTree = "<group>"; };
-		A8A5AFC32F4C33D800572B4A /* libcurl */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = libcurl; sourceTree = "<group>"; };
+		A8A5AE1B2F4C33A300572B4A /* libplist */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = libplist; sourceTree = "<group>"; };
+		A8A5AFBC2F4C33A300572B4A /* libusbmuxd */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = libusbmuxd; sourceTree = "<group>"; };
+		A8A5AFC32F4C33D800572B4A /* libcurl */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (172EBC8D2F77A603005A6DDE /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = libcurl; sourceTree = "<group>"; };
 		A8A5AFDC2F4C33DC00572B4A /* apps-v2.json */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "apps-v2.json"; sourceTree = "<group>"; };
 		A8A5AFDF2F4C342E00572B4A /* src */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = src; sourceTree = "<group>"; };
 		A8A5AFE32F4C343200572B4A /* .github */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = .github; sourceTree = "<group>"; };
@@ -2971,19 +2859,11 @@
 		A8EEC3B92F4B0EFC00F2436D /* AltWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A8EEC3CA2F4B0EFC00F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = AltWidget; sourceTree = "<group>"; };
 		A8EEC3D92F4B0FC800F2436D /* AltBackup */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A8EEC3E22F4B0FC800F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = AltBackup; sourceTree = "<group>"; };
 		A8EEC71D2F4B10D900F2436D /* xcconfigs */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = xcconfigs; sourceTree = "<group>"; };
-		A8EEC8412F4B146A00F2436D /* AltStore */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A8EEC8CB2F4B146B00F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, A8EEC8CC2F4B146B00F2436D /* PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet */, A8FAC1FE2F4B52F40061A851 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, A8EEC8CD2F4B146B00F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = AltStore; sourceTree = "<group>"; };
+		A8EEC8412F4B146A00F2436D /* AltStore */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A8EEC8CB2F4B146B00F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, A8EEC8CC2F4B146B00F2436D /* PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet */, A8EEC8CD2F4B146B00F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = AltStore; sourceTree = "<group>"; };
 		A8EECF2A2F4B195000F2436D /* SideStore */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A8EECF492F4B195000F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, A8EECF4A2F4B195000F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SideStore; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		191E5FA8290A5D92001A3B7C /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A8A5AC192F4C2D1800572B4A /* libminimuxer_static.a in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		A85A51432F4B4532002E2E11 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -3026,15 +2906,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A8FAC1CC2F4B51980061A851 /* libimobiledevice.a in Frameworks */,
 				A8FAC1F72F4B519A0061A851 /* libem_proxy_swift.a in Frameworks */,
-				A85AED4C2F4B2D32002E2E11 /* libminimuxer_swift.a in Frameworks */,
 				A8B646012D70C23E00125819 /* MarkdownKit in Frameworks */,
 				A8C2260E2EC9039A00047C0D /* Nuke in Frameworks */,
 				A8635D062F4CF16D00E66784 /* OpenSSL.xcframework in Frameworks */,
 				A83FE3672EC90482005ACE9A /* Starscream in Frameworks */,
 				BF1614F1250822F100767AEA /* Roxas.framework in Frameworks */,
-				A8A5C8722F4C68F600572B4A /* libfragmentzip.a in Frameworks */,
 				BF66EE852501AE50007EE018 /* AltStoreCore.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3042,6 +2919,60 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		172EB8362F779E03005A6DDE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				172EBC4E2F779E85005A6DDE /* libfragmentzip */,
+				172EBC502F779E85005A6DDE /* libfragmentzip */,
+				172EBC522F779E85005A6DDE /* libfragmentzip.a */,
+				172EBC542F779E85005A6DDE /* libfragmentzip.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		172EB8382F779E03005A6DDE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				172EBC572F779E85005A6DDE /* libgeneral */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		172EBB382F779E03005A6DDE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				172EBC642F779E85005A6DDE /* SampleApp.app */,
+				172EBC662F779E85005A6DDE /* NSAttributedString+MarkdownTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		172EBB3A2F779E03005A6DDE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				172EBC692F779E85005A6DDE /* SampleApp.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		172EBB3C2F779E03005A6DDE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				172EBC6C2F779E85005A6DDE /* SwiftSampleApp.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		172EBBB02F779E03005A6DDE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				172EBC5C2F779E85005A6DDE /* Roxas.framework */,
+				172EBC5E2F779E85005A6DDE /* Roxas.framework */,
+				172EBC602F779E85005A6DDE /* RoxasTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		A802C5E12F525B910049FE2B /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -3736,75 +3667,6 @@
 			path = em_proxy;
 			sourceTree = "<group>";
 		};
-		A8A5AAD42F4C2CFC00572B4A /* workflows */ = {
-			isa = PBXGroup;
-			children = (
-				A8A5AAD32F4C2CFC00572B4A /* build.yml */,
-			);
-			path = workflows;
-			sourceTree = "<group>";
-		};
-		A8A5AAD52F4C2CFC00572B4A /* .github */ = {
-			isa = PBXGroup;
-			children = (
-				A8A5AAD42F4C2CFC00572B4A /* workflows */,
-			);
-			path = .github;
-			sourceTree = "<group>";
-		};
-		A8A5AAD82F4C2CFC00572B4A /* generated */ = {
-			isa = PBXGroup;
-			children = (
-				A8A5AAD62F4C2CFC00572B4A /* minimuxer-Bridging-Header.h */,
-				A8A5AAD72F4C2CFC00572B4A /* minimuxer-helpers.swift */,
-			);
-			path = generated;
-			sourceTree = "<group>";
-		};
-		A8A5AAE42F4C2CFC00572B4A /* src */ = {
-			isa = PBXGroup;
-			children = (
-				A8A5AAD92F4C2CFC00572B4A /* afc_file_manager.rs */,
-				A8A5AADA2F4C2CFC00572B4A /* device.rs */,
-				A8A5AADB2F4C2CFC00572B4A /* heartbeat.rs */,
-				A8A5AADC2F4C2CFC00572B4A /* install.rs */,
-				A8A5AADD2F4C2CFC00572B4A /* jit.rs */,
-				A8A5AADE2F4C2CFC00572B4A /* lib.rs */,
-				A8A5AADF2F4C2CFC00572B4A /* mounter.rs */,
-				A8A5AAE02F4C2CFC00572B4A /* muxer.rs */,
-				A8A5AAE12F4C2CFC00572B4A /* provision.rs */,
-				A8A5AAE22F4C2CFC00572B4A /* raw_packet.rs */,
-				A8A5AAE32F4C2CFC00572B4A /* tests.rs */,
-			);
-			path = src;
-			sourceTree = "<group>";
-		};
-		A8A5AAF52F4C2CFC00572B4A /* minimuxer */ = {
-			isa = PBXGroup;
-			children = (
-				A8A5AAD52F4C2CFC00572B4A /* .github */,
-				A8A5AAD82F4C2CFC00572B4A /* generated */,
-				A8A5AAE42F4C2CFC00572B4A /* src */,
-				A8A5AAE52F4C2CFC00572B4A /* .gitignore */,
-				A8A5AAE62F4C2CFC00572B4A /* build.rs */,
-				A8A5AAE72F4C2CFC00572B4A /* Cargo.lock */,
-				A8A5AAE82F4C2CFC00572B4A /* Cargo.toml */,
-				A8A5AAE92F4C2CFC00572B4A /* libminimuxer-ios.a */,
-				A8A5AAEA2F4C2CFC00572B4A /* libminimuxer-sim.a */,
-				A8A5AAEB2F4C2CFC00572B4A /* LICENSE */,
-				A8A5AAEC2F4C2CFC00572B4A /* Makefile */,
-				A8A5AAED2F4C2CFC00572B4A /* minimuxer.h */,
-				A8A5AAEE2F4C2CFC00572B4A /* minimuxer.swift */,
-				A8A5AAEF2F4C2CFC00572B4A /* minimuxer-Bridging-Header.h */,
-				A8A5AAF02F4C2CFC00572B4A /* minimuxer-helpers.swift */,
-				A8A5AAF12F4C2CFC00572B4A /* module.modulemap */,
-				A8A5AAF22F4C2CFC00572B4A /* README.md */,
-				A8A5AAF32F4C2CFC00572B4A /* SwiftBridgeCore.h */,
-				A8A5AAF42F4C2CFC00572B4A /* SwiftBridgeCore.swift */,
-			);
-			path = minimuxer;
-			sourceTree = "<group>";
-		};
 		A8A5AB6E2F4C2CFC00572B4A /* Dependencies */ = {
 			isa = PBXGroup;
 			children = (
@@ -3812,29 +3674,17 @@
 				A8A5AFDC2F4C33DC00572B4A /* apps-v2.json */,
 				A8A5AFC32F4C33D800572B4A /* libcurl */,
 				A8A5C85B2F4C68BF00572B4A /* libfragmentzip */,
-				A8A5AF5E2F4C33A300572B4A /* libimobiledevice */,
-				A8A5AE662F4C33A300572B4A /* libimobiledevice-glue */,
 				A8A5AE1B2F4C33A300572B4A /* libplist */,
 				A8A5AFBC2F4C33A300572B4A /* libusbmuxd */,
 				A8A5ACE42F4C339400572B4A /* MarkdownAttributedString */,
 				A8A5AC9D2F4C338F00572B4A /* Roxas */,
 				A8A5AB6B2F4C2CFC00572B4A /* em_proxy.xcodeproj */,
-				A8A5AB6D2F4C2CFC00572B4A /* minimuxer.xcodeproj */,
 				A8A5A7F42F4C2CFC00572B4A /* em_proxy */,
-				A8A5AAF52F4C2CFC00572B4A /* minimuxer */,
 				A8A5AB682F4C2CFC00572B4A /* .last-prebuilt-fetch-em_proxy */,
 				A8A5AB692F4C2CFC00572B4A /* .last-prebuilt-fetch-minimuxer */,
 				A8A5AB6C2F4C2CFC00572B4A /* fetch-prebuilt.sh */,
 			);
 			path = Dependencies;
-			sourceTree = "<group>";
-		};
-		A8A5AB7D2F4C2CFC00572B4A /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				A8A5AC032F4C2CFC00572B4A /* libminimuxer_static.a */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 		A8A5ACE52F4C339400572B4A /* Products */ = {
@@ -4745,6 +4595,7 @@
 				B3C39607284F4C8400DA9E2F /* Build.xcconfig */,
 				B3C39606284F4C8400DA9E2F /* CodeSigning.xcconfig */,
 				B3C39608284F4C8400DA9E2F /* CodeSigning.xcconfig.sample */,
+				172EBC802F779F8E005A6DDE /* idevice */,
 			);
 			sourceTree = "<group>";
 		};
@@ -4755,8 +4606,6 @@
 				BF58047B246A28F7008AE704 /* AltBackup.app */,
 				BF66EE7E2501AE50007EE018 /* AltStoreCore.framework */,
 				BF989167250AABF3002ACF50 /* AltWidgetExtension.appex */,
-				191E5FAB290A5D92001A3B7C /* libminimuxer_swift.a */,
-				A8FABA492F4B50D00061A851 /* libimobiledevice.a */,
 				A8FABA4A2F4B50D00061A851 /* libem_proxy_swift.a */,
 			);
 			name = Products;
@@ -4780,13 +4629,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
-		BF4587272298D31600BD7491 /* Headers */ = {
-			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		BF66EE792501AE50007EE018 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -4797,23 +4639,6 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		191E5FAA290A5D92001A3B7C /* minimuxer-swift */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 191E5FAF290A5D92001A3B7C /* Build configuration list for PBXNativeTarget "minimuxer-swift" */;
-			buildPhases = (
-				191E5FA7290A5D92001A3B7C /* Sources */,
-				191E5FA8290A5D92001A3B7C /* Frameworks */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				A8A5AC1B2F4C2D2600572B4A /* PBXTargetDependency */,
-			);
-			name = "minimuxer-swift";
-			productName = minimuxer;
-			productReference = 191E5FAB290A5D92001A3B7C /* libminimuxer_swift.a */;
-			productType = "com.apple.product-type.library.static";
-		};
 		A85A51412F4B4532002E2E11 /* em_proxy-swift */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A85A51452F4B4532002E2E11 /* Build configuration list for PBXNativeTarget "em_proxy-swift" */;
@@ -4829,22 +4654,6 @@
 			name = "em_proxy-swift";
 			productName = minimuxer;
 			productReference = A8FABA4A2F4B50D00061A851 /* libem_proxy_swift.a */;
-			productType = "com.apple.product-type.library.static";
-		};
-		BF45872A2298D31600BD7491 /* libimobiledevice */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = BF4587332298D31600BD7491 /* Build configuration list for PBXNativeTarget "libimobiledevice" */;
-			buildPhases = (
-				BF4587272298D31600BD7491 /* Headers */,
-				BF4587282298D31600BD7491 /* Sources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = libimobiledevice;
-			productName = libimobiledevice;
-			productReference = A8FABA492F4B50D00061A851 /* libimobiledevice.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 		BF58047A246A28F7008AE704 /* AltBackup */ = {
@@ -4931,14 +4740,13 @@
 			buildRules = (
 			);
 			dependencies = (
-				A85A51FA2F4B4E3E002E2E11 /* PBXTargetDependency */,
-				A85AED3E2F4B2B42002E2E11 /* PBXTargetDependency */,
 				0ED4AEC92E6DDB2A0039E2C0 /* PBXTargetDependency */,
 				BF66EE842501AE50007EE018 /* PBXTargetDependency */,
 				BF989176250AABF4002ACF50 /* PBXTargetDependency */,
 				A85A51592F4B48DE002E2E11 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
+				172EBC802F779F8E005A6DDE /* idevice */,
 				A8A5AFC32F4C33D800572B4A /* libcurl */,
 				A8EEC8412F4B146A00F2436D /* AltStore */,
 			);
@@ -4957,12 +4765,6 @@
 				LastUpgradeCheck = 1020;
 				ORGANIZATIONNAME = SideStore;
 				TargetAttributes = {
-					191E5FAA290A5D92001A3B7C = {
-						CreatedOnToolsVersion = 14.0;
-					};
-					BF45872A2298D31600BD7491 = {
-						CreatedOnToolsVersion = 10.2.1;
-					};
 					BF58047A246A28F7008AE704 = {
 						CreatedOnToolsVersion = 11.4.1;
 					};
@@ -5121,6 +4923,10 @@
 					ProjectRef = A8EED1FB2F4B19B000F2436D /* libfragmentzip.xcodeproj */;
 				},
 				{
+					ProductGroup = 172EB8362F779E03005A6DDE /* Products */;
+					ProjectRef = 172EB82F2F779E03005A6DDE /* libfragmentzip.xcodeproj */;
+				},
+				{
 					ProductGroup = A8CCD2282F4B6B0000B0089A /* Products */;
 					ProjectRef = A8CCCEE32F4B6B0000B0089A /* libfragmentzip.xcodeproj */;
 				},
@@ -5215,6 +5021,10 @@
 				{
 					ProductGroup = A8FAD7302F4B61310061A851 /* Products */;
 					ProjectRef = A8FAD38F2F4B61310061A851 /* libgeneral.xcodeproj */;
+				},
+				{
+					ProductGroup = 172EB8382F779E03005A6DDE /* Products */;
+					ProjectRef = 172EB80B2F779E03005A6DDE /* libgeneral.xcodeproj */;
 				},
 				{
 					ProductGroup = A8F3F7ED2F4E96D7006BC252 /* Products */;
@@ -5337,10 +5147,6 @@
 					ProjectRef = A8EEDA9D2F4B19B000F2436D /* minimuxer.xcodeproj */;
 				},
 				{
-					ProductGroup = A8A5AB7D2F4C2CFC00572B4A /* Products */;
-					ProjectRef = A8A5AB6D2F4C2CFC00572B4A /* minimuxer.xcodeproj */;
-				},
-				{
 					ProductGroup = A8CCD9CF2F4B745B00B0089A /* Products */;
 					ProjectRef = A8CCD9BB2F4B745B00B0089A /* Roxas.xcodeproj */;
 				},
@@ -5359,6 +5165,10 @@
 				{
 					ProductGroup = A85AEC732F4B22F6002E2E11 /* Products */;
 					ProjectRef = A85AEC612F4B22F6002E2E11 /* Roxas.xcodeproj */;
+				},
+				{
+					ProductGroup = 172EBBB02F779E03005A6DDE /* Products */;
+					ProjectRef = 172EBBAF2F779E03005A6DDE /* Roxas.xcodeproj */;
 				},
 				{
 					ProductGroup = A8FAC05F2F4B50D10061A851 /* Products */;
@@ -5521,6 +5331,10 @@
 					ProjectRef = A863716E2F4CF74D00E66784 /* SampleApp.xcodeproj */;
 				},
 				{
+					ProductGroup = 172EBB382F779E03005A6DDE /* Products */;
+					ProjectRef = 172EBB0B2F779E03005A6DDE /* SampleApp.xcodeproj */;
+				},
+				{
 					ProductGroup = A8A5ACE72F4C339400572B4A /* Products */;
 					ProjectRef = A8A5ACB72F4C339400572B4A /* SampleApp.xcodeproj */;
 				},
@@ -5607,6 +5421,10 @@
 				{
 					ProductGroup = A802C8E32F525B910049FE2B /* Products */;
 					ProjectRef = A802C8CF2F525B910049FE2B /* SampleApp.xcodeproj */;
+				},
+				{
+					ProductGroup = 172EBB3A2F779E03005A6DDE /* Products */;
+					ProjectRef = 172EBB242F779E03005A6DDE /* SampleApp.xcodeproj */;
 				},
 				{
 					ProductGroup = A8CCC2502F4B654400B0089A /* Products */;
@@ -5717,6 +5535,10 @@
 					ProjectRef = A8A5ACDC2F4C339400572B4A /* SwiftSampleApp.xcodeproj */;
 				},
 				{
+					ProductGroup = 172EBB3C2F779E03005A6DDE /* Products */;
+					ProjectRef = 172EBB302F779E03005A6DDE /* SwiftSampleApp.xcodeproj */;
+				},
+				{
 					ProductGroup = A8FAD72C2F4B61310061A851 /* Products */;
 					ProjectRef = A8FAD64A2F4B61310061A851 /* SwiftSampleApp.xcodeproj */;
 				},
@@ -5727,14 +5549,96 @@
 				BF66EE7D2501AE50007EE018 /* AltStoreCore */,
 				BF58047A246A28F7008AE704 /* AltBackup */,
 				BF989166250AABF3002ACF50 /* AltWidgetExtension */,
-				BF45872A2298D31600BD7491 /* libimobiledevice */,
-				191E5FAA290A5D92001A3B7C /* minimuxer-swift */,
 				A85A51412F4B4532002E2E11 /* em_proxy-swift */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
+		172EBC4E2F779E85005A6DDE /* libfragmentzip */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.executable";
+			path = libfragmentzip;
+			remoteRef = 172EBC4D2F779E85005A6DDE /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		172EBC502F779E85005A6DDE /* libfragmentzip */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.executable";
+			path = libfragmentzip;
+			remoteRef = 172EBC4F2F779E85005A6DDE /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		172EBC522F779E85005A6DDE /* libfragmentzip.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libfragmentzip.a;
+			remoteRef = 172EBC512F779E85005A6DDE /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		172EBC542F779E85005A6DDE /* libfragmentzip.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libfragmentzip.a;
+			remoteRef = 172EBC532F779E85005A6DDE /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		172EBC572F779E85005A6DDE /* libgeneral */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.executable";
+			path = libgeneral;
+			remoteRef = 172EBC562F779E85005A6DDE /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		172EBC5C2F779E85005A6DDE /* Roxas.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = Roxas.framework;
+			remoteRef = 172EBC5B2F779E85005A6DDE /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		172EBC5E2F779E85005A6DDE /* Roxas.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = Roxas.framework;
+			remoteRef = 172EBC5D2F779E85005A6DDE /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		172EBC602F779E85005A6DDE /* RoxasTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = RoxasTests.xctest;
+			remoteRef = 172EBC5F2F779E85005A6DDE /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		172EBC642F779E85005A6DDE /* SampleApp.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = SampleApp.app;
+			remoteRef = 172EBC632F779E85005A6DDE /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		172EBC662F779E85005A6DDE /* NSAttributedString+MarkdownTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = "NSAttributedString+MarkdownTests.xctest";
+			remoteRef = 172EBC652F779E85005A6DDE /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		172EBC692F779E85005A6DDE /* SampleApp.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = SampleApp.app;
+			remoteRef = 172EBC682F779E85005A6DDE /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		172EBC6C2F779E85005A6DDE /* SwiftSampleApp.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = SwiftSampleApp.app;
+			remoteRef = 172EBC6B2F779E85005A6DDE /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 		A802C9F92F525C030049FE2B /* libfragmentzip */ = {
 			isa = PBXReferenceProxy;
 			fileType = "compiled.mach-o.executable";
@@ -6713,13 +6617,6 @@
 			fileType = wrapper.application;
 			path = SwiftSampleApp.app;
 			remoteRef = A86372CC2F4D1E4400E66784 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		A8A5AC032F4C2CFC00572B4A /* libminimuxer_static.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libminimuxer_static.a;
-			remoteRef = A8A5AC022F4C2CFC00572B4A /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		A8A5ACED2F4C339400572B4A /* SampleApp.app */ = {
@@ -8072,28 +7969,11 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		191E5FA7290A5D92001A3B7C /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A8A5B0832F4C374400572B4A /* SwiftBridgeCore.swift in Sources */,
-				A8A5B0812F4C373200572B4A /* minimuxer.swift in Sources */,
-				A8A5B0822F4C373200572B4A /* minimuxer-helpers.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		A85A51422F4B4532002E2E11 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				A8A5ABEE2F4C2CFC00572B4A /* em_proxy.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		BF4587282298D31600BD7491 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8138,21 +8018,6 @@
 			target = A85A51412F4B4532002E2E11 /* em_proxy-swift */;
 			targetProxy = A85A51582F4B48DE002E2E11 /* PBXContainerItemProxy */;
 		};
-		A85A51FA2F4B4E3E002E2E11 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = BF45872A2298D31600BD7491 /* libimobiledevice */;
-			targetProxy = A85A51F92F4B4E3E002E2E11 /* PBXContainerItemProxy */;
-		};
-		A85AED3E2F4B2B42002E2E11 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 191E5FAA290A5D92001A3B7C /* minimuxer-swift */;
-			targetProxy = A85AED3D2F4B2B42002E2E11 /* PBXContainerItemProxy */;
-		};
-		A8A5AC1B2F4C2D2600572B4A /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = "minimuxer-staticlib";
-			targetProxy = A8A5AC1A2F4C2D2600572B4A /* PBXContainerItemProxy */;
-		};
 		A8A5B7EA2F4C4CE200572B4A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = "em_proxy-staticlib";
@@ -8176,74 +8041,6 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		191E5FB0290A5D92001A3B7C /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = "$(inherited)";
-				CODE_SIGN_STYLE = Automatic;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				LD_WARN_DUPLICATE_LIBRARIES = YES;
-				LD_WARN_UNUSED_DYLIBS = YES;
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Dependencies/minimuxer",
-				);
-				OTHER_LDFLAGS = (
-					"-ObjC",
-					"$(inherited)",
-				);
-				PRODUCT_MODULE_NAME = minimuxer;
-				PRODUCT_NAME = minimuxer_swift;
-				SKIP_INSTALL = NO;
-				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator macosx";
-				SUPPORTS_MACCATALYST = YES;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OBJC_BRIDGING_HEADER = "Dependencies/minimuxer/minimuxer-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,3";
-				TVOS_DEPLOYMENT_TARGET = 11.5;
-			};
-			name = Debug;
-		};
-		191E5FB1290A5D92001A3B7C /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = "$(inherited)";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				LD_WARN_DUPLICATE_LIBRARIES = YES;
-				LD_WARN_UNUSED_DYLIBS = YES;
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Dependencies/minimuxer",
-				);
-				OTHER_LDFLAGS = (
-					"-ObjC",
-					"$(inherited)",
-				);
-				PRODUCT_MODULE_NAME = minimuxer;
-				PRODUCT_NAME = minimuxer_swift;
-				SKIP_INSTALL = NO;
-				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator macosx";
-				SUPPORTS_MACCATALYST = YES;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "Dependencies/minimuxer/minimuxer-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,3";
-				TVOS_DEPLOYMENT_TARGET = 11.5;
-			};
-			name = Release;
-		};
 		A85A51462F4B4532002E2E11 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -8301,89 +8098,6 @@
 				SWIFT_OBJC_BRIDGING_HEADER = Dependencies/em_proxy/em_proxy.h;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		BF4587342298D31600BD7491 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_IDENTITY = "Mac Developer";
-				CODE_SIGN_STYLE = Automatic;
-				DEAD_CODE_STRIPPING = YES;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				EXECUTABLE_PREFIX = lib;
-				GCC_ENABLE_CPP_EXCEPTIONS = YES;
-				GCC_ENABLE_CPP_RTTI = YES;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					HAVE_OPENSSL,
-					HAVE_STPNCPY,
-					HAVE_STPCPY,
-					HAVE_VASPRINTF,
-					HAVE_ASPRINTF,
-					"\"PACKAGE_STRING=\\\"AltServer 1.0\\\"\"",
-					HAVE_GETIFADDRS,
-					HAVE_STRNDUP,
-				);
-				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
-				HEADER_SEARCH_PATHS = (
-					"\"$(SRCROOT)/Dependencies/libplist/include\"",
-					"\"$(SRCROOT)/Dependencies/libimobiledevice\"",
-					"\"$(SRCROOT)/Dependencies/libimobiledevice/include\"",
-					"\"$(SRCROOT)/Dependencies/AltSign/Dependencies/OpenSSL/macosx/include\"",
-					"\"$(SRCROOT)/Dependencies/libusbmuxd/include\"",
-					"\"$(SRCROOT)/Dependencies/AltSign/Dependencies/libzip/lib\"",
-					"\"$(SRCROOT)/Dependencies/libplist/libcnary/include\"",
-					"\"${SDKROOT}/usr/include/libxml2\"",
-					"\"$(SRCROOT)/Dependencies/AltSign/Dependencies/libzip/xcode\"",
-					"\"$(SRCROOT)/Dependencies/libimobiledevice-glue/include\"/**",
-				);
-				LD_WARN_DUPLICATE_LIBRARIES = YES;
-				LD_WARN_UNUSED_DYLIBS = YES;
-				PRODUCT_NAME = imobiledevice;
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
-			};
-			name = Debug;
-		};
-		BF4587352298D31600BD7491 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_IDENTITY = "Mac Developer";
-				CODE_SIGN_STYLE = Automatic;
-				DEAD_CODE_STRIPPING = YES;
-				EXECUTABLE_PREFIX = lib;
-				GCC_ENABLE_CPP_EXCEPTIONS = YES;
-				GCC_ENABLE_CPP_RTTI = YES;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					HAVE_OPENSSL,
-					HAVE_STPNCPY,
-					HAVE_STPCPY,
-					HAVE_VASPRINTF,
-					HAVE_ASPRINTF,
-					"\"PACKAGE_STRING=\\\"AltServer 1.0\\\"\"",
-					HAVE_GETIFADDRS,
-					HAVE_STRNDUP,
-				);
-				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
-				HEADER_SEARCH_PATHS = (
-					"\"$(SRCROOT)/Dependencies/libplist/include\"",
-					"\"$(SRCROOT)/Dependencies/libimobiledevice\"",
-					"\"$(SRCROOT)/Dependencies/libimobiledevice/include\"",
-					"\"$(SRCROOT)/Dependencies/AltSign/Dependencies/OpenSSL/macosx/include\"",
-					"\"$(SRCROOT)/Dependencies/libusbmuxd/include\"",
-					"\"$(SRCROOT)/Dependencies/AltSign/Dependencies/libzip/lib\"",
-					"\"$(SRCROOT)/Dependencies/libplist/libcnary/include\"",
-					"\"${SDKROOT}/usr/include/libxml2\"",
-					"\"$(SRCROOT)/Dependencies/AltSign/Dependencies/libzip/xcode\"",
-					"\"$(SRCROOT)/Dependencies/libimobiledevice-glue/include\"/**",
-				);
-				LD_WARN_DUPLICATE_LIBRARIES = YES;
-				LD_WARN_UNUSED_DYLIBS = YES;
-				PRODUCT_NAME = imobiledevice;
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
 			};
 			name = Release;
 		};
@@ -8762,6 +8476,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Dependencies/libfragmentzip",
 					"$(PROJECT_DIR)/Dependencies/libcurl",
+					"$(PROJECT_DIR)/idevice",
 				);
 				LLVM_LTO = YES_THIN;
 				MARKETING_VERSION = "$(inherited)";
@@ -8810,6 +8525,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Dependencies/libfragmentzip",
 					"$(PROJECT_DIR)/Dependencies/libcurl",
+					"$(PROJECT_DIR)/idevice",
 				);
 				LLVM_LTO = YES_THIN;
 				MARKETING_VERSION = "$(inherited)";
@@ -8831,29 +8547,11 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		191E5FAF290A5D92001A3B7C /* Build configuration list for PBXNativeTarget "minimuxer-swift" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				191E5FB0290A5D92001A3B7C /* Debug */,
-				191E5FB1290A5D92001A3B7C /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		A85A51452F4B4532002E2E11 /* Build configuration list for PBXNativeTarget "em_proxy-swift" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A85A51462F4B4532002E2E11 /* Debug */,
 				A85A51472F4B4532002E2E11 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		BF4587332298D31600BD7491 /* Build configuration list for PBXNativeTarget "libimobiledevice" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				BF4587342298D31600BD7491 /* Debug */,
-				BF4587352298D31600BD7491 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

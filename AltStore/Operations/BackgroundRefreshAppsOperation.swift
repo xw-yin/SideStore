@@ -118,7 +118,7 @@ final class BackgroundRefreshAppsOperation: ResultOperation<[String: Result<Inst
         if #available(iOS 17, *) {
             // TODO: iOS 17 and above have a new JIT implementation that is completely broken in SideStore :(
         } else {
-            start_auto_mounter(documentsDirectory)
+            startAutoMounter(documentsDirectory)
         }
 
         self.managedObjectContext.perform {

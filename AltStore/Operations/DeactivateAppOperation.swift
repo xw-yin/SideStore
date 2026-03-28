@@ -42,7 +42,7 @@ final class DeactivateAppOperation: ResultOperation<InstalledApp>
             
             for profile in allIdentifiers {
                 do {
-                    try remove_provisioning_profile(profile)
+                    try removeProvisioningProfile(profile)
                     self.progress.completedUnitCount += 1
                     installedApp.isActive = false
                     self.finish(.success(installedApp))

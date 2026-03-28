@@ -201,7 +201,7 @@ private extension ResignAppOperation
 
                 if app.isAltStoreApp
                 {
-                    guard let udid = fetch_udid()?.toString() as? String else { throw OperationError.unknownUDID }
+                    guard let udid = fetchUDID() else { throw OperationError.unknownUDID }
                     guard Bundle.main.object(forInfoDictionaryKey: Bundle.Info.devicePairingString) is String else { throw OperationError.unknownUDID }
                     additionalValues[Bundle.Info.devicePairingString] = "<insert pairing file here>"
                     additionalValues[Bundle.Info.deviceID] = udid
