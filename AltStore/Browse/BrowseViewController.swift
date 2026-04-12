@@ -12,6 +12,7 @@ import AltStoreCore
 import Roxas
 
 import Nuke
+import Minimuxer
 
 class BrowseViewController: UICollectionViewController, PeekPopPreviewing
 {

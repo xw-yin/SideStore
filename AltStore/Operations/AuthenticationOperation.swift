@@ -701,7 +701,7 @@ private extension AuthenticationOperation
     
     func registerCurrentDevice(for team: ALTTeam, session: ALTAppleAPISession, completionHandler: @escaping (Result<ALTDevice, Error>) -> Void)
     {
-        guard let udid = fetch_udid()?.toString() else {
+        guard let udid = fetchUDID() else {
             return completionHandler(.failure(OperationError.unknownUDID))
         }
         

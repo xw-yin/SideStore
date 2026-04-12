@@ -8,6 +8,7 @@
 import Foundation
 import Network
 import AltStoreCore
+import Minimuxer
 
 @objc(SendAppOperation)
 final class SendAppOperation: ResultOperation<()>
@@ -50,12 +51,12 @@ final class SendAppOperation: ResultOperation<()>
         } else {
             context.shouldTurnOffData = false
         }
-        
+
         if context.shouldTurnOffData {
             // Wait for Shortcut to Finish Before Proceeding
             UIApplication.shared.open(shortcutURLoff, options: [:]) { _ in
                 print("Shortcut finished execution. Proceeding with file transfer.")
-                
+
                 DispatchQueue.global().async {
                     self.processFile(at: fileURL, for: app.bundleIdentifier)
                 }

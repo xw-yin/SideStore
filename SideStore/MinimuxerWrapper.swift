@@ -6,88 +6,178 @@
 //
 
 import Foundation
-private import minimuxer
+import Minimuxer
 
-var isMinimuxerReady: Bool {
+func bindTunnelConfig() {
+    defer { print("[SideStore] bindTunnelConfig() completed") }
+
     #if targetEnvironment(simulator)
-    print("isMinimuxerReady property is always true on simulator")
-    return true
+    print("[SideStore] bindTunnelConfig() is no-op on simulator")
     #else
-    IfManager.shared.query()
-    if #available(iOS 26.4, *) {
-        print("Running patched check")
-        return minimuxer.ready() && IfManager.shared.sideVPNPatched
-    } else {
-        return minimuxer.ready()
+    print("[SideStore] bindTunnelConfig() invoked")
+
+    Task { @MainActor in
+        let config = TunnelConfig.shared
+        Minimuxer.bindTunnelConfig(
+            TunnelConfigBinding(
+                setDeviceIP: { value in Task { @MainActor in config.deviceIP = value } },
+                setFakeIP: { value in Task { @MainActor in config.fakeIP = value } },
+                setSubnetMask: { value in Task { @MainActor in config.subnetMask = value } },
+                getOverrideFakeIP: { config.overrideFakeIP },
+                setOverrideEffective: { value in Task { @MainActor in config.overrideEffective = value } }
+            )
+        )
     }
     #endif
 }
 
-func minimuxerStartWithLogger(_ pairingFile: String, _ logPath: String, _ loggingEnabled: Bool) throws {
+
+var isMinimuxerReady: Bool {
+    var result = true
     #if targetEnvironment(simulator)
-    print("minimuxerStartWithLogger(\(pairingFile), \(logPath), \(loggingEnabled)) is no-op on simulator")
+    print("[SideStore] isMinimuxerReady = true on simulator")
     #else
-    print("minimuxerStartWithLogger(\(pairingFile), \(logPath), \(loggingEnabled))")
-    try minimuxer.startWithLogger(pairingFile, logPath, loggingEnabled)
+    result = Minimuxer.ready()
+    print("[SideStore] isMinimuxerReady = \(result)")
+    #endif
+    return result
+}
+
+
+func retargetUsbmuxdAddr() {
+    defer { print("[SideStore] retargetUsbmuxdAddr() completed") }
+    #if targetEnvironment(simulator)
+    print("[SideStore] retargetUsbmuxdAddr() is no-op on simulator")
+    #else
+    print("[SideStore] retargetUsbmuxdAddr() invoked")
+    Minimuxer.retargetUsbmuxdAddr()
     #endif
 }
 
-func targetMinimuxerAddress() {
+func minimuxerStartWithLogger(_ pairingFile: String, _ logPath: String, _ loggingEnabled: Bool) throws {
+    defer { print("[SideStore] minimuxerStartWithLogger(pairingFile, logPath, dest, loggingEnabled) completed") }
     #if targetEnvironment(simulator)
-    print("targetMinimuxerAddress() is no-op on simulator")
+    print("[SideStore] minimuxerStartWithLogger(pairingFile, logPath, loggingEnabled) is no-op on simulator")
     #else
-    minimuxer.target_minimuxer_address()
+    // refresh config if any
+    bindTunnelConfig()
+    // observe network route changes (and update device endpoint from vpn(utun))
+    NetworkObserver.shared.start()
+    
+    print("[SideStore] minimuxerStartWithLogger(pairingFile, logPath, dest, loggingEnabled) invoked")
+    try Minimuxer.startWithLogger(pairingFile: pairingFile,
+                                  logPath: logPath,
+                                  isConsoleLoggingEnabled: loggingEnabled)
     #endif
 }
 
 func installProvisioningProfiles(_ profileData: Data) throws {
+    defer { print("[SideStore] installProvisioningProfiles(profileData) completed") }
     #if targetEnvironment(simulator)
-    print("installProvisioningProfiles(\(profileData)) is no-op on simulator")
+    print("[SideStore] installProvisioningProfiles(profileData) is no-op on simulator")
     #else
-    let slice = profileData.toRustByteSlice()
-    try minimuxer.install_provisioning_profile(slice.forRust())
+    print("[SideStore] installProvisioningProfiles(profileData) invoked")
+    try Minimuxer.installProvisioningProfile(profile: profileData)
     #endif
 }
 
+func removeProvisioningProfile(_ id: String) throws {
+    defer { print("[SideStore] removeProvisioningProfile(id) completed") }
+    #if targetEnvironment(simulator)
+    print("[SideStore] removeProvisioningProfile(id) is no-op on simulator")
+    #else
+    print("[SideStore] removeProvisioningProfile(id) invoked")
+    try Minimuxer.removeProvisioningProfile(id: id)
+    #endif
+}
 
 func removeApp(_ bundleId: String) throws {
+    defer { print("[SideStore] removeApp(bundleId) completed") }
     #if targetEnvironment(simulator)
-    print("removeApp(\(bundleId)) is no-op on simulator")
+    print("[SideStore] removeApp(bundleId) is no-op on simulator")
     #else
-    try minimuxer.remove_app(bundleId)
+    print("[SideStore] removeApp(bundleId) invoked")
+    try Minimuxer.removeApp(bundleId: bundleId)
     #endif
 }
-
 
 func yeetAppAFC(_ bundleId: String, _ rawBytes: Data) throws {
+    defer { print("[SideStore] yeetAppAFC(bundleId, rawBytes) completed") }
     #if targetEnvironment(simulator)
-    print("yeetAppAFC(\(bundleId), \(rawBytes)) is no-op on simulator")
+    print("[SideStore] yeetAppAFC(bundleId, rawBytes) is no-op on simulator")
     #else
-    let slice = rawBytes.toRustByteSlice()
-    try minimuxer.yeet_app_afc(bundleId, slice.forRust())
+    print("[SideStore] yeetAppAFC(bundleId, rawBytes) invoked")
+    try Minimuxer.yeetAppAfc(bundleId: bundleId, ipaBytes: rawBytes)
     #endif
 }
-
 
 func installIPA(_ bundleId: String) throws {
+    defer { print("[SideStore] installIPA(bundleId) completed") }
     #if targetEnvironment(simulator)
-    print("installIPA(\(bundleId)) is no-op on simulator")
+    print("[SideStore] installIPA(bundleId) is no-op on simulator")
     #else
-    try minimuxer.install_ipa(bundleId)
+    print("[SideStore] installIPA(bundleId) invoked")
+    try Minimuxer.installIpa(bundleId: bundleId)
     #endif
 }
-
 
 func fetchUDID() -> String? {
+    defer { print("[SideStore] fetchUDID() completed") }
     #if targetEnvironment(simulator)
-    print("fetchUDID() is no-op on simulator")
+    print("[SideStore] fetchUDID() is no-op on simulator")
     return "XXXXX-XXXX-XXXXX-XXXX"
     #else
-    return minimuxer.fetch_udid()?.toString()
+    print("[SideStore] fetchUDID() invoked")
+    return Minimuxer.fetchUDID()
     #endif
 }
 
+func debugApp(_ appId: String) throws {
+    defer { print("[SideStore] debugApp(appId) completed") }
+    #if targetEnvironment(simulator)
+    print("[SideStore] debugApp(appId) is no-op on simulator")
+    #else
+    print("[SideStore] debugApp(appId) invoked")
+    try Minimuxer.debugApp(appId: appId)
+    #endif
+}
 
+func attachDebugger(_ pid: UInt32) throws {
+    defer { print("[SideStore] attachDebugger(pid) completed") }
+    #if targetEnvironment(simulator)
+    print("[SideStore] attachDebugger(pid) is no-op on simulator")
+    #else
+    print("[SideStore] attachDebugger(pid) invoked")
+    try Minimuxer.attachDebugger(pid: pid)
+    #endif
+}
+
+func startAutoMounter(_ docsPath: String) {
+    defer { print("[SideStore] startAutoMounter(docsPath) completed") }
+    #if targetEnvironment(simulator)
+    print("[SideStore] startAutoMounter(docsPath) is no-op on simulator")
+    #else
+    print("[SideStore] startAutoMounter(docsPath) invoked")
+    Minimuxer.startAutoMounter(docsPath: docsPath)
+    #endif
+}
+
+func dumpProfiles(_ docsPath: String) throws -> String {
+    defer { print("[SideStore] dumpProfiles(docsPath) completed") }
+    #if targetEnvironment(simulator)
+    print("[SideStore] dumpProfiles(docsPath) is no-op on simulator")
+    return ""
+    #else
+    print("[SideStore] dumpProfiles(docsPath) invoked")
+    return try Minimuxer.dumpProfiles(docsPath: docsPath)
+    #endif
+}
+
+func setMinimuxerDebug(_ debug: Bool) {
+    defer { print("[SideStore] setMinimuxerDebug(debug) completed") }
+    print("[SideStore] setMinimuxerDebug(debug) invoked")
+    Minimuxer.setDebug(debug)
+}
 
 extension MinimuxerError: @retroactive LocalizedError {
     public var failureReason: String? {
@@ -98,41 +188,38 @@ extension MinimuxerError: @retroactive LocalizedError {
             return NSLocalizedString("Unable to connect to the device, make sure LocalDevVPN is enabled and you're connected to Wi-Fi. This could mean an invalid pairing.", comment: "")
         case .PairingFile:
             return NSLocalizedString("Invalid pairing file. Your pairing file either didn't have a UDID, or it wasn't a valid plist. Please use iloader to replace it.", comment: "")
-            
         case .CreateDebug:
-            return self.createService(name: "debug")
+            return createService(name: "debug")
         case .LookupApps:
-            return self.getFromDevice(name: "installed apps")
+            return getFromDevice(name: "installed apps")
         case .FindApp:
-            return self.getFromDevice(name: "path to the app")
+            return getFromDevice(name: "path to the app")
         case .BundlePath:
-            return self.getFromDevice(name: "bundle path")
+            return getFromDevice(name: "bundle path")
         case .MaxPacket:
-            return self.setArgument(name: "max packet")
+            return setArgument(name: "max packet")
         case .WorkingDirectory:
-            return self.setArgument(name: "working directory")
+            return setArgument(name: "working directory")
         case .Argv:
-            return self.setArgument(name: "argv")
+            return setArgument(name: "argv")
         case .LaunchSuccess:
-            return self.getFromDevice(name: "launch success")
+            return getFromDevice(name: "launch success")
         case .Detach:
             return NSLocalizedString("Unable to detach from the app's process", comment: "")
         case .Attach:
             return NSLocalizedString("Unable to attach to the app's process", comment: "")
-            
         case .CreateInstproxy:
-            return self.createService(name: "instproxy")
+            return createService(name: "instproxy")
         case .CreateAfc:
-            return self.createService(name: "AFC")
+            return createService(name: "AFC")
         case .RwAfc:
-            return NSLocalizedString("AFC was unable to manage files on the device. Ensure Wi-Fi and LocalDevVPN are connected. If they both are, replace your pairing using iloader.", comment: "")
+            return NSLocalizedString("AFC was unable to manage files on the device.", comment: "")
         case .InstallApp(let message):
-            return NSLocalizedString("Unable to install the app: \(message.toString())", comment: "")
+            return NSLocalizedString("Unable to install the app: \(message)", comment: "")
         case .UninstallApp:
             return NSLocalizedString("Unable to uninstall the app", comment: "")
-
         case .CreateMisagent:
-            return self.createService(name: "misagent")
+            return createService(name: "misagent")
         case .ProfileInstall:
             return NSLocalizedString("Unable to manage profiles on the device", comment: "")
         case .ProfileRemove:
@@ -171,16 +258,16 @@ extension MinimuxerError: @retroactive LocalizedError {
             return NSLocalizedString("Mount failed", comment: "")
         }
     }
-    
+
     fileprivate func createService(name: String) -> String {
-        return String(format: NSLocalizedString("Cannot start a %@ server on the device.", comment: ""), name)
+        String(format: NSLocalizedString("Cannot start a %@ server on the device.", comment: ""), name)
     }
-    
+
     fileprivate func getFromDevice(name: String) -> String {
-        return String(format: NSLocalizedString("Cannot fetch %@ from the device.", comment: ""), name)
+        String(format: NSLocalizedString("Cannot fetch %@ from the device.", comment: ""), name)
     }
-    
+
     fileprivate func setArgument(name: String) -> String {
-        return String(format: NSLocalizedString("Cannot set %@ on the device.", comment: ""), name)
+        String(format: NSLocalizedString("Cannot set %@ on the device.", comment: ""), name)
     }
 }

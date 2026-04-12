@@ -54,10 +54,6 @@
 	path = Dependencies/em_proxy
 	url = https://github.com/SideStore/em_proxy
     branch = master
-[submodule "Dependencies/libfragmentzip"]
-    path = Dependencies/libfragmentzip
-    url = https://github.com/SideStore/libfragmentzip
-    branch = master
 [submodule "Dependencies/apps-v2.json"]
     path = Dependencies/apps-v2.json
     url = https://github.com/SideStore/apps-v2.json

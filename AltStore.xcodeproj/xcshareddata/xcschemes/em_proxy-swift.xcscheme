@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "2610"
+   LastUpgradeVersion = "2630"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -15,10 +15,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "CA609C732349A560B9642892"
-               BuildableName = "libminimuxer_static.a"
-               BlueprintName = "minimuxer-staticlib"
-               ReferencedContainer = "container:Dependencies/minimuxer.xcodeproj">
+               BlueprintIdentifier = "A85A51412F4B4532002E2E11"
+               BuildableName = "libem_proxy_swift.a"
+               BlueprintName = "em_proxy-swift"
+               ReferencedContainer = "container:AltStore.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -50,10 +50,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "CA609C732349A560B9642892"
-            BuildableName = "libminimuxer_static.a"
-            BlueprintName = "minimuxer-staticlib"
-            ReferencedContainer = "container:Dependencies/minimuxer.xcodeproj">
+            BlueprintIdentifier = "A85A51412F4B4532002E2E11"
+            BuildableName = "libem_proxy_swift.a"
+            BlueprintName = "em_proxy-swift"
+            ReferencedContainer = "container:AltStore.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </ProfileAction>

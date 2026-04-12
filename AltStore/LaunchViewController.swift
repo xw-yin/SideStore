@@ -87,7 +87,7 @@ final class LaunchViewController: UIViewController, UIDocumentPickerDelegate {
     }
 
     func start_minimuxer_threads(_ pairing_file: String) {
-        targetMinimuxerAddress()
+        retargetUsbmuxdAddr()
         let documentsDirectory = FileManager.default.documentsDirectory.absoluteString
         do {
             let loggingEnabled = UserDefaults.standard.isMinimuxerConsoleLoggingEnabled
@@ -96,7 +96,7 @@ final class LaunchViewController: UIViewController, UIDocumentPickerDelegate {
             try! FileManager.default.removeItem(at: FileManager.default.documentsDirectory.appendingPathComponent(pairingFileName))
             displayError("minimuxer failed to start, please restart SideStore. \((error as? LocalizedError)?.failureReason ?? "UNKNOWN ERROR")")
         }
-        start_auto_mounter(documentsDirectory)
+        startAutoMounter(documentsDirectory)
     }
 
     func fetchPairingFile() -> String? { PairingFileManager.shared.fetchPairingFile(presentingVC: self) }

@@ -77,6 +77,7 @@ extension SettingsViewController
         case refreshSideJITServer
         case resetPairingFile
         case anisetteServers
+        case vpnConfiguration
         case enableEMPForWiregaurd
         case customizeAppId
     }
@@ -1364,9 +1365,19 @@ extension SettingsViewController
                     handleRefreshResult(result)
                 })
                 
-                let anisetteServersController = UIHostingController(rootView: anisetteServersView)
+                let vc = UIHostingController(rootView: anisetteServersView)
+                self.prepare(for: UIStoryboardSegue(identifier: "anisetteServers", source: self, destination: vc), sender: nil)
 
-                self.prepare(for: UIStoryboardSegue(identifier: "anisetteServers", source: self, destination: anisetteServersController), sender: nil)
+            case .vpnConfiguration:
+                let vpnConfigurationView = VPNConfigurationView()
+                let vc = UIHostingController(rootView: vpnConfigurationView)
+
+                let appearance = UINavigationBarAppearance()
+                appearance.configureWithDefaultBackground()   // gives solid background
+                vc.navigationItem.scrollEdgeAppearance = appearance
+                vc.navigationItem.standardAppearance = appearance
+
+                navigationController?.pushViewController(vc, animated: true)
             case .refreshAttempts, .enableEMPForWiregaurd, .customizeAppId: break
             }
         case .signing:

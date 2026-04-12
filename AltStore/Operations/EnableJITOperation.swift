@@ -88,7 +88,7 @@ final class EnableJITOperation<Context: EnableJITContext>: ResultOperation<Void>
                 var retries = 3
                 while (retries > 0){
                     do {
-                        try debug_app(installedApp.resignedBundleIdentifier)
+                        try debugApp(installedApp.resignedBundleIdentifier)
                         self.finish(.success(()))
                         retries = 0
                     } catch {
@@ -105,7 +105,7 @@ final class EnableJITOperation<Context: EnableJITContext>: ResultOperation<Void>
 
 @available(iOS 17, *)
 func enableJITSideJITServer(serverURL: URL, installedApp: InstalledApp, completion: @escaping (Result<Void, SideJITServerErrorType>) -> Void) {
-    guard let udid = fetch_udid()?.toString() else {
+    guard let udid = fetchUDID() else {
         completion(.failure(.other("Unable to get UDID")))
         return
     }
