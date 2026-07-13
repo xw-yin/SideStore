@@ -2,7 +2,7 @@ name: Nightly SideStore Build
 
 on:
   push:
-    branches: [develop]
+    branches: [develop, LiveContainerSupport3]
     paths-ignore:
       - '**.md'
       - 'LICENSE'

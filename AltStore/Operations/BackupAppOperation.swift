@@ -51,9 +51,7 @@ class BackupAppOperation: ResultOperation<Void>, OperationLogging {
                     let appName = installedApp.name
                     self.appName = appName
                     
-                    guard let bundleIdentifier = Bundle.main.bundleIdentifier,
-                          let altstoreOpenURL = URL(string: "sidestore-\(bundleIdentifier)://")
-                    else {
+                    guard let altstoreOpenURL = InstalledApp.fetchAltStore(in: context)?.openAppURL else {
                         throw OperationError.openAppFailed(name: appName)
                     }
 
