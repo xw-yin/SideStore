@@ -294,7 +294,7 @@ private func updateAttributedString(
     spanType: NSAttributedString.MarkdownSpanType,
     styleAttributes: [MarkdownStyleKey: [NSAttributedString.Key: Any]]?
 ) {
-    let scanString = result.string
+    let scanString = String(NSString(string: result.string))
     var mutationOffset = 0
     
     // Find horizontal rules to ignore
