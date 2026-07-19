@@ -200,9 +200,8 @@ public extension DatabaseManager
                 {
                 case .failure(let error): finish(error)
                 case .success:
-                    self.persistentContainer.loadPersistentStores { (description, error) in
-                        guard error == nil else { return finish(error!) }
-                        
+                    func prepareLoadedDatabase()
+                    {
                         self.prepareDatabase() { (result) in
                             switch result
                             {
@@ -210,6 +209,17 @@ public extension DatabaseManager
                             case .success: finish(nil)
                             }
                         }
+                    }
+
+                    // prepareDatabase() can fail after the persistent store has loaded. In that
+                    // case, retry only the preparation step instead of adding the same store again.
+                    guard self.persistentContainer.persistentStoreCoordinator.persistentStores.isEmpty else {
+                        return prepareLoadedDatabase()
+                    }
+
+                    self.persistentContainer.loadPersistentStores { (description, error) in
+                        guard error == nil else { return finish(error!) }
+                        prepareLoadedDatabase()
                     }
                 }
             }
