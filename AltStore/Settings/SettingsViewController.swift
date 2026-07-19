@@ -439,7 +439,7 @@ private extension SettingsViewController
 
         
         var versionLabel: String = ""
-        let installedApp = InstalledApp.fetchAltStore(in: DatabaseManager.shared.viewContext)
+        let installedApp: InstalledApp? = nil
         // first check if there is installed app entity, if so, get version info from that
         if let installedApp
         {

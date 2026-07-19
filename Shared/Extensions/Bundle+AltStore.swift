@@ -19,7 +19,9 @@ public extension Bundle
         public static let altBundleID = "ALTBundleIdentifier"
         public static let storeAppBundleIdentifier =  "com.SideStore.SideStore"
         // public static var appbundleIdentifier = Bundle.main.bundleIdentifier
-        public static let appbundleIdentifier = "com.SideStore.SideStore"   // for now lets use what we had so far 
+        public static var appbundleIdentifier: String {
+            Bundle.isBundledWithLiveContainer ? "com.kdt.livecontainer" : storeAppBundleIdentifier
+        }
 
         public static let devicePairingString = "ALTPairingFile"
         public static let urlTypes = "CFBundleURLTypes"
@@ -58,15 +60,26 @@ public extension Bundle
 
 public extension Bundle
 {
-    static let baseAltStoreAppGroupID = "group." + Bundle.Info.appbundleIdentifier
+    static let baseAltStoreAppGroupID = "group.com.SideStore.SideStore"
+    static let isBundledWithLiveContainer = Bundle.main.bundleURL.lastPathComponent == "SideStoreApp.framework" || Bundle.main.bundleURL.lastPathComponent == "LiveWidgetExtension.appex"
 
     var appGroups: [String] {
         return self.infoDictionary?[Bundle.Info.appGroups] as? [String] ?? []
     }
     
-    var altstoreAppGroup: String? {        
-        let appGroup = self.appGroups.first { $0.contains(Bundle.baseAltStoreAppGroupID) }
-        return appGroup
+    static var lcBundle: Bundle? {
+        Bundle(url: Bundle.main.bundleURL.deletingLastPathComponent().deletingLastPathComponent())
+    }
+
+    static var realMainBundle: Bundle {
+        Bundle.isBundledWithLiveContainer ? Bundle.lcBundle ?? Bundle.main : Bundle.main
+    }
+
+    var altstoreAppGroup: String? {
+        if Bundle.isBundledWithLiveContainer, let lcBundle = Bundle.lcBundle {
+            return lcBundle.appGroups.first { $0.contains(Bundle.baseAltStoreAppGroupID) }
+        }
+        return self.appGroups.first { $0.contains(Bundle.baseAltStoreAppGroupID) }
     }
     
     var completeInfoDictionary: [String : Any]? {
