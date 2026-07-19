@@ -1633,7 +1633,7 @@ private extension AppManager
                     let errMessage = "AppManager.refresh: App Extensions in DB and Disk are matching: \(isMatching)\n"
                                    + "AppManager.refresh: dbAppEx: \(dbAppExNames); diskAppEx: \(String(describing: diskAppExNames))\n"
                     debugLog(errMessage)
-                    context.error = OperationError.refreshAppFailed(message: errMessage)
+//                    context.error = OperationError.refreshAppFailed(message: errMessage)
                 }
             }
         }
