@@ -769,7 +769,7 @@ final class AuthenticationOperation: ResultOperation<(ALTTeam, ALTCertificate?, 
     
     @MainActor
     private func showResignScreenIfNecessary(signer: ALTSigner, session: ALTAppleAPISession) async -> Bool {
-        guard let application = ALTApplication(fileURL: Bundle.main.bundleURL), let provisioningProfile = application.provisioningProfile else { return false }
+        guard let application = ALTApplication(fileURL: Bundle.realMainBundle.bundleURL), let provisioningProfile = application.provisioningProfile else { return false }
         
         let result = SigningCertificateValidator.validate(
             runningProfile: provisioningProfile,

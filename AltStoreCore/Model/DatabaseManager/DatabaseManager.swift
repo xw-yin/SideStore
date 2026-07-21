@@ -200,9 +200,8 @@ public extension DatabaseManager
                 {
                 case .failure(let error): finish(error)
                 case .success:
-                    self.persistentContainer.loadPersistentStores { (description, error) in
-                        guard error == nil else { return finish(error!) }
-                        
+                    func prepareLoadedDatabase()
+                    {
                         self.prepareDatabase() { (result) in
                             switch result
                             {
@@ -210,6 +209,17 @@ public extension DatabaseManager
                             case .success: finish(nil)
                             }
                         }
+                    }
+
+                    // prepareDatabase() can fail after the persistent store has loaded. In that
+                    // case, retry only the preparation step instead of adding the same store again.
+                    guard self.persistentContainer.persistentStoreCoordinator.persistentStores.isEmpty else {
+                        return prepareLoadedDatabase()
+                    }
+
+                    self.persistentContainer.loadPersistentStores { (description, error) in
+                        guard error == nil else { return finish(error!) }
+                        prepareLoadedDatabase()
                     }
                 }
             }
@@ -359,7 +369,7 @@ private extension DatabaseManager
         context.performAndWait {
             do
             {
-                guard let localApp = ALTApplication(fileURL: Bundle.main.bundleURL) else { return }
+                guard let localApp = ALTApplication(fileURL: Bundle.realMainBundle.bundleURL) else { return }
                 
                 #if !targetEnvironment(simulator)
                 guard localApp.provisioningProfile != nil else {
@@ -411,7 +421,7 @@ private extension DatabaseManager
                     // figure out if the current AltStoreApp is signed with "Use Main Profie" option
                     // by checking if the first extension's entitlement's application-identifier matches current one
                     repeat {
-                        guard let pluginURL = Bundle.main.builtInPlugInsURL else {
+                        guard let pluginURL = Bundle.realMainBundle.builtInPlugInsURL else {
                             installedApp.useMainProfile = true
                             break
                         }
@@ -432,7 +442,7 @@ private extension DatabaseManager
                             break
                         }
                         
-                        if appId.hasSuffix(Bundle.main.bundleIdentifier!) {
+                        if appId.hasSuffix(Bundle.realMainBundle.bundleIdentifier!) {
                             installedApp.useMainProfile = true
                         } else {
                             installedApp.useMainProfile = false
@@ -481,7 +491,7 @@ private extension DatabaseManager
                 if replaceCachedApp
                 {
                     let fileURL = installedApp.fileURL
-                    let bundleURL = Bundle.main.bundleURL
+                    let bundleURL = Bundle.realMainBundle.bundleURL
                     let altstoreAppID = StoreApp.altstoreAppID
                     let extensionBundleIDMap = installedExtensions.reduce(into: [String: String]()) { dict, ext in
                         dict[ext.resignedBundleIdentifier] = ext.bundleIdentifier

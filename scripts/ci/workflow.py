@@ -380,11 +380,7 @@ def upload_release(release_name, release_tag, commit_sha, repo, upstream_tag_rec
     built_time = dt.strftime("%a %b %d %H:%M:%S %Y")
     built_date = dt.strftime("%Y-%m-%d")
 
-    release_notes = runAndGet(
-        f"python3 {SCRIPTS}/generate_release_notes.py "
-        f"--retrieve {release_tag} "
-        f"--output-dir {ROOT}"
-    )
+    release_notes = "release_notes"
 
     if is_stable:
         release_notes = re.sub(
