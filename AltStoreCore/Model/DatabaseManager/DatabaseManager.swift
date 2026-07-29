@@ -68,6 +68,9 @@ public extension DatabaseManager
 {
     private class func loadPersistentStoresSync() {
         let container = Self.shared.persistentContainer
+        if !container.persistentStoreCoordinator.persistentStores.isEmpty {
+            return
+        }
         let semaphore = DispatchSemaphore(value: 0)  // Semaphore to wait for async completion
         
         container.loadPersistentStores { description, error in
@@ -200,14 +203,24 @@ public extension DatabaseManager
                 {
                 case .failure(let error): finish(error)
                 case .success:
-                    self.persistentContainer.loadPersistentStores { (description, error) in
-                        guard error == nil else { return finish(error!) }
-                        
+                    if !self.persistentContainer.persistentStoreCoordinator.persistentStores.isEmpty {
                         self.prepareDatabase() { (result) in
                             switch result
                             {
                             case .failure(let error): finish(error)
                             case .success: finish(nil)
+                            }
+                        }
+                    } else {
+                        self.persistentContainer.loadPersistentStores { (description, error) in
+                            guard error == nil else { return finish(error!) }
+                            
+                            self.prepareDatabase() { (result) in
+                                switch result
+                                {
+                                case .failure(let error): finish(error)
+                                case .success: finish(nil)
+                                }
                             }
                         }
                     }
