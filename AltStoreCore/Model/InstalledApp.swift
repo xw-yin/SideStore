@@ -158,13 +158,8 @@ public class InstalledApp: BaseEntity, InstalledAppProtocol
         #if targetEnvironment(simulator)
         self.expirationDate = self.refreshedDate.addingTimeInterval(60 * 60 * 24 * 7)
         #else
-        let expirationDate: Date
-
-        if let date = resignedApp.provisioningProfile?.expirationDate {
-            expirationDate = date
-        } else {
-            expirationDate = self.refreshedDate
-            debugLog("The app is missing a valid provisioning profile.")
+        guard let expirationDate = resignedApp.provisioningProfile?.expirationDate else {
+            throw ALTError.invalidApp(reason: "The app is missing a valid provisioning profile.")
         }
         self.expirationDate = expirationDate
         #endif

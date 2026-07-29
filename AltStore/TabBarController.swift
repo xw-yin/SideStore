@@ -48,21 +48,6 @@ final class TabBarController: UITabBarController
         
         let sourcesNavigationController = self.viewControllers![Tab.sources.rawValue] as! UINavigationController
         self.sourcesViewController = sourcesNavigationController.viewControllers.first as? SourcesViewController
-        
-        if let vcs = self.viewControllers {
-            let tabTitles = [
-                Tab.news.rawValue: NSLocalizedString("News", comment: ""),
-                Tab.sources.rawValue: NSLocalizedString("Sources", comment: ""),
-                Tab.browse.rawValue: NSLocalizedString("Browse", comment: ""),
-                Tab.myApps.rawValue: NSLocalizedString("My Apps", comment: ""),
-                Tab.settings.rawValue: NSLocalizedString("Settings", comment: "")
-            ]
-            for (index, title) in tabTitles {
-                if index < vcs.count {
-                    vcs[index].tabBarItem.title = title
-                }
-            }
-        }
     }
     
     override func viewDidAppear(_ animated: Bool)
@@ -128,5 +113,3 @@ private extension TabBarController
         self.selectedIndex = Tab.settings.rawValue
     }
 }
-
-
