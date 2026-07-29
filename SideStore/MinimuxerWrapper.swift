@@ -66,6 +66,9 @@ enum MinimuxerStatus: Equatable {
 }
 
 func getMinimuxerStatus() async -> MinimuxerStatus {
+    if !UserDefaults.standard.isMinimuxerStatusCheckEnabled {
+        return .ready
+    }
     #if targetEnvironment(simulator)
     debugLog("[SideStore] getMinimuxerStatus() = .ready on simulator")
     return .ready
