@@ -99,9 +99,7 @@ public final class AppBootManager {
                         debugLog("[AppBootManager] Failed to start minimuxer: \(error)")
                     }
                 } else {
-                    await MainActor.run {
-                        self.needsPairingPrompt = true
-                    }
+                    debugLog("[AppBootManager] No pairing file found, proceeding for LiveContainer UI")
                 }
                 #endif
             }()
