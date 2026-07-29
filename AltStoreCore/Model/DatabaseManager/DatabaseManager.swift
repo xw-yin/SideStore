@@ -448,6 +448,11 @@ private extension DatabaseManager
                     storeApp = StoreApp.makeAltStoreApp(version: localApp.version, buildVersion: nil, in: context)
                     storeApp.source = altStoreSource
                 }
+
+                if Bundle.isBundledWithLiveContainer {
+                    storeApp.configureForEmbeddedLiveContainer()
+                    storeApp.source = altStoreSource
+                }
                             
                 let serialNumber = appBundle.object(forInfoDictionaryKey: Bundle.Info.certificateID) as? String
                 let installedApp: InstalledApp
