@@ -364,6 +364,39 @@ public extension DatabaseManager
 
 private extension DatabaseManager
 {
+    func embeddedLiveContainerApplication(from hostBundle: Bundle) -> (application: ALTApplication, temporaryBundleURL: URL)?
+    {
+        guard Bundle.isBundledWithLiveContainer,
+              let executableURL = hostBundle.executableURL,
+              FileManager.default.fileExists(atPath: hostBundle.provisioningProfileURL.path)
+        else { return nil }
+
+        let temporaryBundleURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("app")
+
+        do
+        {
+            try FileManager.default.createDirectory(at: temporaryBundleURL, withIntermediateDirectories: true)
+            try FileManager.default.copyItem(at: hostBundle.infoPlistURL, to: temporaryBundleURL.appendingPathComponent("Info.plist"))
+            try FileManager.default.createSymbolicLink(at: temporaryBundleURL.appendingPathComponent(executableURL.lastPathComponent), withDestinationURL: executableURL)
+            try FileManager.default.copyItem(at: hostBundle.provisioningProfileURL, to: temporaryBundleURL.appendingPathComponent("embedded.mobileprovision"))
+
+            guard let application = ALTApplication(fileURL: temporaryBundleURL), application.provisioningProfile != nil else {
+                try? FileManager.default.removeItem(at: temporaryBundleURL)
+                return nil
+            }
+
+            return (application, temporaryBundleURL)
+        }
+        catch
+        {
+            try? FileManager.default.removeItem(at: temporaryBundleURL)
+            debugLog("Failed to prepare embedded LiveContainer application: \(error)")
+            return nil
+        }
+    }
+
     func prepareDatabase(completionHandler: @escaping (Result<Void, Error>) -> Void)
     {
         guard !Bundle.isAppExtension() else { return completionHandler(.success(())) }
@@ -373,7 +406,15 @@ private extension DatabaseManager
             do
             {
                 let appBundle = Bundle.realMainBundle
-                guard let localApp = ALTApplication(fileURL: appBundle.bundleURL) else { return }
+                let embeddedApplication = self.embeddedLiveContainerApplication(from: appBundle)
+                let localApp = embeddedApplication?.application ?? ALTApplication(fileURL: appBundle.bundleURL)
+                defer {
+                    if let temporaryBundleURL = embeddedApplication?.temporaryBundleURL {
+                        try? FileManager.default.removeItem(at: temporaryBundleURL)
+                    }
+                }
+
+                guard let localApp else { return }
                 
                 #if !targetEnvironment(simulator)
                 guard localApp.provisioningProfile != nil else {
@@ -422,9 +463,13 @@ private extension DatabaseManager
                     // or else the latest update will _always_ be considered new because we don't use buildVersions in our source (yet).
                     installedApp = try InstalledApp(resignedApp: localApp, originalBundleIdentifier: StoreApp.altstoreAppID, certificateSerialNumber: serialNumber, storeBuildVersion: nil, context: context)
                     
-                    // figure out if the current AltStoreApp is signed with "Use Main Profie" option
-                    // by checking if the first extension's entitlement's application-identifier matches current one
-                    repeat {
+                    if Bundle.isBundledWithLiveContainer {
+                        // LiveContainer owns its widget, which is not part of SideStore's self-refresh bundle.
+                        installedApp.useMainProfile = true
+                    } else {
+                        // Figure out if the current AltStoreApp is signed with "Use Main Profile" option
+                        // by checking if the first extension's entitlement's application-identifier matches current one.
+                        repeat {
                         guard let pluginURL = appBundle.builtInPlugInsURL else {
                             installedApp.useMainProfile = true
                             break
@@ -453,7 +498,8 @@ private extension DatabaseManager
                         }
                         
                         
-                    } while(false)
+                        } while(false)
+                    }
                     
                     installedApp.storeApp = storeApp
                 }
@@ -495,7 +541,7 @@ private extension DatabaseManager
                 if replaceCachedApp
                 {
                     let fileURL = installedApp.fileURL
-                    let bundleURL = appBundle.bundleURL
+                    let bundleURL = Bundle.isBundledWithLiveContainer ? Bundle.main.bundleURL : appBundle.bundleURL
                     let altstoreAppID = StoreApp.altstoreAppID
                     let extensionBundleIDMap = installedExtensions.reduce(into: [String: String]()) { dict, ext in
                         dict[ext.resignedBundleIdentifier] = ext.bundleIdentifier
