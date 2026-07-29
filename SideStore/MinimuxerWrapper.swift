@@ -331,10 +331,6 @@ extension MinimuxerError {
             return String(format: NSLocalizedString("Invalid pairing configuration (%@ protocol): %@", comment: ""), proto.description, reason)
         case .muxerNotListening:
             return NSLocalizedString("Usbmuxd server is not listening on the device", comment: "")
-        case .notReachable(let reason):
-            return String(format: NSLocalizedString("Device is not reachable: %@", comment: ""), reason)
-        case .connectionModeNotConfigured(let reason):
-            return String(format: NSLocalizedString("Connection mode is not configured: %@", comment: ""), reason)
         }
     }
 
