@@ -364,44 +364,6 @@ public extension DatabaseManager
 
 private extension DatabaseManager
 {
-    func embeddedSideStoreApplication() -> (application: ALTApplication, temporaryBundleURL: URL)?
-    {
-        let bundleURL = Bundle.main.bundleURL
-
-        guard bundleURL.lastPathComponent == "SideStoreApp.framework",
-              let executableURL = Bundle.main.executableURL
-        else { return nil }
-
-        let hostBundleURL = bundleURL.deletingLastPathComponent().deletingLastPathComponent()
-        let hostProfileURL = hostBundleURL.appendingPathComponent("embedded.mobileprovision")
-        guard FileManager.default.fileExists(atPath: hostProfileURL.path) else { return nil }
-
-        let temporaryBundleURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension("app")
-
-        do
-        {
-            try FileManager.default.createDirectory(at: temporaryBundleURL, withIntermediateDirectories: true)
-            try FileManager.default.copyItem(at: bundleURL.appendingPathComponent("Info.plist"), to: temporaryBundleURL.appendingPathComponent("Info.plist"))
-            try FileManager.default.createSymbolicLink(at: temporaryBundleURL.appendingPathComponent(executableURL.lastPathComponent), withDestinationURL: executableURL)
-            try FileManager.default.copyItem(at: hostProfileURL, to: temporaryBundleURL.appendingPathComponent("embedded.mobileprovision"))
-
-            guard let application = ALTApplication(fileURL: temporaryBundleURL), application.provisioningProfile != nil else {
-                try? FileManager.default.removeItem(at: temporaryBundleURL)
-                return nil
-            }
-
-            return (application, temporaryBundleURL)
-        }
-        catch
-        {
-            try? FileManager.default.removeItem(at: temporaryBundleURL)
-            debugLog("Failed to prepare embedded SideStore application: \(error)")
-            return nil
-        }
-    }
-
     func prepareDatabase(completionHandler: @escaping (Result<Void, Error>) -> Void)
     {
         guard !Bundle.isAppExtension() else { return completionHandler(.success(())) }
@@ -410,17 +372,8 @@ private extension DatabaseManager
         context.performAndWait {
             do
             {
-                let bundleURL = Bundle.main.bundleURL
-                let bundledApplication = ALTApplication(fileURL: bundleURL)
-                let embeddedApplication = bundledApplication?.provisioningProfile == nil ? self.embeddedSideStoreApplication() : nil
-                let localApp = embeddedApplication?.application ?? bundledApplication
-                defer {
-                    if let temporaryBundleURL = embeddedApplication?.temporaryBundleURL {
-                        try? FileManager.default.removeItem(at: temporaryBundleURL)
-                    }
-                }
-
-                guard let localApp else { return }
+                let appBundle = Bundle.realMainBundle
+                guard let localApp = ALTApplication(fileURL: appBundle.bundleURL) else { return }
                 
                 #if !targetEnvironment(simulator)
                 guard localApp.provisioningProfile != nil else {
@@ -455,7 +408,7 @@ private extension DatabaseManager
                     storeApp.source = altStoreSource
                 }
                             
-                let serialNumber = Bundle.main.object(forInfoDictionaryKey: Bundle.Info.certificateID) as? String
+                let serialNumber = appBundle.object(forInfoDictionaryKey: Bundle.Info.certificateID) as? String
                 let installedApp: InstalledApp
                 
                 if let app = storeApp.installedApp
@@ -472,7 +425,7 @@ private extension DatabaseManager
                     // figure out if the current AltStoreApp is signed with "Use Main Profie" option
                     // by checking if the first extension's entitlement's application-identifier matches current one
                     repeat {
-                        guard let pluginURL = Bundle.main.builtInPlugInsURL else {
+                        guard let pluginURL = appBundle.builtInPlugInsURL else {
                             installedApp.useMainProfile = true
                             break
                         }
@@ -493,7 +446,7 @@ private extension DatabaseManager
                             break
                         }
                         
-                        if appId.hasSuffix(Bundle.main.bundleIdentifier!) {
+                        if appId.hasSuffix(appBundle.bundleIdentifier ?? "") {
                             installedApp.useMainProfile = true
                         } else {
                             installedApp.useMainProfile = false
@@ -542,7 +495,7 @@ private extension DatabaseManager
                 if replaceCachedApp
                 {
                     let fileURL = installedApp.fileURL
-                    let bundleURL = Bundle.main.bundleURL
+                    let bundleURL = appBundle.bundleURL
                     let altstoreAppID = StoreApp.altstoreAppID
                     let extensionBundleIDMap = installedExtensions.reduce(into: [String: String]()) { dict, ext in
                         dict[ext.resignedBundleIdentifier] = ext.bundleIdentifier
