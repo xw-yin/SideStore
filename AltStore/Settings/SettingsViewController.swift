@@ -1476,11 +1476,9 @@ extension SettingsViewController
                 }
                 
                 // Instantiate SwiftUI View inside UIHostingController
-                let anisetteServersView = AnisetteServersView(selected: UserDefaults.standard.menuAnisetteURL, errorCallback: {
+                let anisetteServersView = AnisetteServersView(selected: UserDefaults.standard.menuAnisetteURL, onResetAdiPb: {
                     ToastView(text: "Cleared adi.pb!", detailText: "You will need to log back into Apple ID in SideStore.")
                         .show(in: self)
-                }, refreshCallback: {result in
-                    handleRefreshResult(result)
                 })
                 
                 let vc = UIHostingController(rootView: anisetteServersView)
