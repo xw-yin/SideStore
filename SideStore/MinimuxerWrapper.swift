@@ -19,9 +19,7 @@ func bindTunnelConfig() async {
     let configBinding = TunnelConfigBinding(
         setTunnelIfaceIp: { value in Task { @MainActor in config.tunnelIfaceIp = value } },
         setTunnelPeerIp: { value in Task { @MainActor in config.tunnelPeerIp = value } },
-        setSubnetMask: { value in Task { @MainActor in config.subnetMask = value } },
-        getOverridePeerIp: { config.overridePeerIp },
-        setOverrideEffective: { value in Task { @MainActor in config.overrideEffective = value } }
+        setSubnetMask: { value in Task { @MainActor in config.subnetMask = value } }
     )
     await Minimuxer.shared.bindTunnelConfig(configBinding)
     #endif
@@ -65,7 +63,7 @@ var minimuxerStatus: MinimuxerStatus {
         debugLog("[SideStore] minimuxerStatus = true on simulator")
         return .ready
         #else
-        let result = await Minimuxer.shared.isReady
+        let result = await Minimuxer.shared.isReady()
         switch result {
         case .success:
             return .ready
