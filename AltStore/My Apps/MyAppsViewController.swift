@@ -174,6 +174,14 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
     {
     }
 
+    @IBAction func openLC(_ sender: UIBarButtonItem)
+    {
+        guard Bundle.isBundledWithLiveContainer,
+              let url = URL(string: "livecontainer://livecontainer-launch?bundle-name=ui")
+        else { return }
+
+        UIApplication.shared.open(url)
+    }
 
 }
 
@@ -2566,4 +2574,3 @@ private extension MyAppsViewController
         return max(1, collectionView.bounds.width - safeAreaWidth - 32)
     }
 }
-
