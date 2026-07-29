@@ -75,11 +75,6 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
     override func viewDidLoad()
     {
         super.viewDidLoad()
-
-        if let layout = self.collectionView.collectionViewLayout as? UICollectionViewFlowLayout
-        {
-            layout.sectionInsetReference = .fromSafeArea
-        }
         
         // Allows us to intercept delegate callbacks.
         self.updatesDataSource.fetchedResultsController.delegate = self
@@ -104,6 +99,9 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(self, action: #selector(MyAppsViewController.checkForUpdates(_:)), for: .primaryActionTriggered)
         self.collectionView.refreshControl = refreshControl
+        if let layout = self.collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
+            layout.sectionInsetReference = .fromSafeArea
+        }
         
         self.sideloadingProgressView = UIProgressView(progressViewStyle: .bar)
         self.sideloadingProgressView.translatesAutoresizingMaskIntoConstraints = false
@@ -141,16 +139,6 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
         super.viewDidAppear(animated)
         
         _viewDidAppear = true
-    }
-
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)
-    {
-        super.viewWillTransition(to: size, with: coordinator)
-
-        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
-            self?.cachedUpdateSizes.removeAll()
-            self?.collectionView.collectionViewLayout.invalidateLayout()
-        }
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?)
@@ -224,7 +212,8 @@ private extension MyAppsViewController
         dynamicDataSource.cellIdentifierHandler = { _ in "NoUpdatesCell" }
         dynamicDataSource.dynamicCellConfigurationHandler = { (cell, indexPath) in
             let cell = cell as! NoUpdatesCollectionViewCell
-            self.configureCardMargins(for: cell)
+            cell.layoutMargins.left = self.view.layoutMargins.left
+            cell.layoutMargins.right = self.view.layoutMargins.right
             
             cell.blurView.layer.cornerRadius = 20
             cell.blurView.layer.masksToBounds = true
@@ -262,7 +251,8 @@ private extension MyAppsViewController
             guard let app = installedApp.storeApp, let latestSupportedVersion = app.latestSupportedVersion else { return }
             
             let cell = cell as! UpdateCollectionViewCell
-            self.configureCardMargins(for: cell)
+            cell.layoutMargins.left = self.view.layoutMargins.left
+            cell.layoutMargins.right = self.view.layoutMargins.right
             
             cell.tintColor = app.tintColor ?? .altPrimary
             cell.versionDescriptionTextView.maximumNumberOfLines = 3
@@ -365,7 +355,8 @@ private extension MyAppsViewController
             let tintColor = installedApp.storeApp?.tintColor ?? .altPrimary
             
             let cell = cell as! InstalledAppCollectionViewCell
-            self.configureCardMargins(for: cell)
+            cell.layoutMargins.left = self.view.layoutMargins.left
+            cell.layoutMargins.right = self.view.layoutMargins.right
             cell.tintColor = tintColor
             
             cell.deactivateBadge?.isHidden = false
@@ -499,7 +490,8 @@ private extension MyAppsViewController
             let tintColor = installedApp.storeApp?.tintColor ?? .altPrimary
             
             let cell = cell as! InstalledAppCollectionViewCell
-            self.configureCardMargins(for: cell)
+            cell.layoutMargins.left = self.view.layoutMargins.left
+            cell.layoutMargins.right = self.view.layoutMargins.right
             cell.tintColor = UIColor.gray
             
             if cell.bundleIdentifier != installedApp.bundleIdentifier
@@ -1062,11 +1054,6 @@ private extension MyAppsViewController
         self.operationQueue.addOperations(operations, waitUntilFinished: false)
     }
     
-    @IBAction func openLC(_ sender: UIBarButtonItem)
-    {
-        SideStoreClient.shared.relaunchLC()
-    }
-
     @IBAction func activateApp(_ sender: UIButton)
     {
         let point = self.collectionView.convert(sender.center, from: sender.superview)
@@ -1200,7 +1187,7 @@ private extension MyAppsViewController
         }
     }
     
-    func resign(_ installedApp: InstalledApp)
+    func resign(_ installedApp: InstalledApp, alternateIconMode: AlternateIconMode = .preserve)
     {
         Task { @MainActor in
             guard await isMinimuxerReady else { return }
@@ -1211,7 +1198,7 @@ private extension MyAppsViewController
                 return
             }
             
-            AppManager.shared.resign(installedApp, presentingViewController: self) { (result) in
+            AppManager.shared.resign(installedApp, alternateIconMode: alternateIconMode, presentingViewController: self) { (result) in
                 DispatchQueue.main.async {
                     self.collectionView.reloadSections([Section.activeApps.rawValue, Section.inactiveApps.rawValue])
                 }
@@ -1505,46 +1492,28 @@ private extension MyAppsViewController
         self.activeAppsDataSource.prefetchItemCache.removeObject(forKey: installedApp)
         self.inactiveAppsDataSource.prefetchItemCache.removeObject(forKey: installedApp)
         
-        DatabaseManager.shared.persistentContainer.performBackgroundTask { (context) in
+        if let image = image
+        {
+            guard let icon = image.resizing(toFill: CGSize(width: 256, height: 256)),
+                  let iconData = icon.pngData()
+            else { return }
+            
+            let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("Staged_\(installedApp.bundleIdentifier)_Icon.png")
             do
             {
-                let tempApp = context.object(with: installedApp.objectID) as! InstalledApp
-                tempApp.needsResign = true                      // why do we want to resign it during refresh ?!!!!
-                                                                // I see now, so here we just mark that icon needs to be changed but leave it for refresh/install to do it
-                                                                // this is bad, coz now the weight of installing goes to refresh step !!! which is not what we want
-                
-                tempApp.hasAlternateIcon = (image != nil)
-                
-                if let image = image
-                {
-                    guard let icon = image.resizing(toFill: CGSize(width: 256, height: 256)),
-                          let iconData = icon.pngData()
-                    else { return }
-                    
-                    try iconData.write(to: tempApp.alternateIconURL, options: .atomic)
-                }
-                else
-                {
-                    try FileManager.default.removeItem(at: tempApp.alternateIconURL)
-                }
-                
-                try context.save()
-                
-                if tempApp.isActive
-                {
-                    DispatchQueue.main.async {
-                        self.refresh(installedApp)
-                    }
-                }
+                try iconData.write(to: tempURL, options: .atomic)
+                self.resign(installedApp, alternateIconMode: .set(tempURL))
             }
             catch
             {
-                debugLog("Failed to change app icon. \(error)")
-                
-                DispatchQueue.main.async {
-                    ToastView(error: error, opensLog: true).show(in: self)
-                }
+                debugLog("Failed to write temporary icon file: \(error)")
+                ToastView(error: error, opensLog: true).show(in: self)
+                return
             }
+        }
+        else
+        {
+            self.resign(installedApp, alternateIconMode: .remove)
         }
     }
     
@@ -1766,10 +1735,8 @@ extension MyAppsViewController
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "ActiveAppsHeader", for: indexPath) as! InstalledAppsCollectionHeaderView
             
             UIView.performWithoutAnimation {
-                headerView.preservesSuperviewLayoutMargins = false
-                headerView.insetsLayoutMarginsFromSafeArea = true
-                headerView.layoutMargins.left = 16
-                headerView.layoutMargins.right = 16
+                headerView.layoutMargins.left = self.view.layoutMargins.left
+                headerView.layoutMargins.right = self.view.layoutMargins.right
                 
                 if UserDefaults.standard.activeAppsLimit == nil || UserDefaults.standard.isAppLimitDisabled
                 {
@@ -1806,10 +1773,8 @@ extension MyAppsViewController
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "InactiveAppsHeader", for: indexPath) as! InstalledAppsCollectionHeaderView
             
             UIView.performWithoutAnimation {
-                headerView.preservesSuperviewLayoutMargins = false
-                headerView.insetsLayoutMarginsFromSafeArea = true
-                headerView.layoutMargins.left = 16
-                headerView.layoutMargins.right = 16
+                headerView.layoutMargins.left = self.view.layoutMargins.left
+                headerView.layoutMargins.right = self.view.layoutMargins.right
                 
                 headerView.textLabel.text = NSLocalizedString("Inactive", comment: "")
                 headerView.button.setTitle(nil, for: .normal)
@@ -2154,34 +2119,31 @@ extension MyAppsViewController: UICollectionViewDelegateFlowLayout
         switch section
         {
         case .noUpdates:
-            let size = CGSize(width: self.cardContentWidth(in: collectionView), height: 44)
+            let size = CGSize(width: collectionView.bounds.width, height: 44)
             return size
             
         case .updates:
             let item = self.dataSource.item(at: indexPath)
             
-            let contentWidth = self.cardContentWidth(in: collectionView)
-            let cacheKey = "\(item.bundleIdentifier)-\(Int(contentWidth.rounded()))"
-            if let previousHeight = self.cachedUpdateSizes[cacheKey]
+            if let previousHeight = self.cachedUpdateSizes[item.bundleIdentifier]
             {
                 return previousHeight
             }
             
             // Manually change cell's width to prevent conflicting with UIView-Encapsulated-Layout-Width constraints.
-            self.prototypeUpdateCell.frame.size.width = contentWidth
+            self.prototypeUpdateCell.frame.size.width = collectionView.bounds.width
             
             self.dataSource.cellConfigurationHandler(self.prototypeUpdateCell, item, indexPath)
             
-            var size = self.prototypeUpdateCell.systemLayoutSizeFitting(CGSize(width: contentWidth, height: UIView.layoutFittingCompressedSize.height),
+            let size = self.prototypeUpdateCell.systemLayoutSizeFitting(CGSize(width: collectionView.frame.width, height: UIView.layoutFittingCompressedSize.height),
                                                                         withHorizontalFittingPriority: .required, // Width is fixed
                                                                         verticalFittingPriority: .fittingSizeLevel) // Height can be as large as needed
             
-            size.width = contentWidth
-            self.cachedUpdateSizes[cacheKey] = size
+            self.cachedUpdateSizes[item.bundleIdentifier] = size
             return size
             
         case .activeApps, .inactiveApps:
-            return CGSize(width: self.cardContentWidth(in: collectionView), height: 88)
+            return CGSize(width: collectionView.bounds.width, height: 88)
         }
     }
     
@@ -2193,11 +2155,11 @@ extension MyAppsViewController: UICollectionViewDelegateFlowLayout
         case .noUpdates: return .zero
         case .updates:
             let height: CGFloat = (self.updatesDataSource.fetchedResultsController.fetchedObjects?.count ?? 0 > maximumCollapsedUpdatesCount) ? 26 : 0
-            return CGSize(width: self.cardContentWidth(in: collectionView), height: height)
+            return CGSize(width: collectionView.bounds.width, height: height)
             
-        case .activeApps: return CGSize(width: self.cardContentWidth(in: collectionView), height: 29)
+        case .activeApps: return CGSize(width: collectionView.bounds.width, height: 29)
         case .inactiveApps where self.inactiveAppsDataSource.itemCount == 0: return .zero
-        case .inactiveApps: return CGSize(width: self.cardContentWidth(in: collectionView), height: 29)
+        case .inactiveApps: return CGSize(width: collectionView.bounds.width, height: 29)
         }
     }
     
@@ -2219,7 +2181,7 @@ extension MyAppsViewController: UICollectionViewDelegateFlowLayout
 
             // NOTE: double dequeue of cell has been discontinued
             // TODO: Using harcoded value until this is fixed
-            return CGSize(width: self.cardContentWidth(in: collectionView), height: 60.5)
+            return CGSize(width: collectionView.bounds.width, height: 60.5)
         }
         
         switch section
@@ -2242,27 +2204,8 @@ extension MyAppsViewController: UICollectionViewDelegateFlowLayout
         {
         case .noUpdates where self.updatesDataSource.itemCount != 0: return .zero
         case .updates where self.updatesDataSource.itemCount == 0: return .zero
-        default: return UIEdgeInsets(top: 12, left: 16, bottom: 20, right: 16)
+        default: return UIEdgeInsets(top: 12, left: 0, bottom: 20, right: 0)
         }
-    }
-}
-
-private extension MyAppsViewController
-{
-    func cardContentWidth(in collectionView: UICollectionView) -> CGFloat
-    {
-        let safeAreaWidth = collectionView.safeAreaInsets.left + collectionView.safeAreaInsets.right
-        return max(1, collectionView.bounds.width - safeAreaWidth - 32)
-    }
-
-    func configureCardMargins(for cell: UICollectionViewCell)
-    {
-        cell.preservesSuperviewLayoutMargins = false
-        cell.contentView.preservesSuperviewLayoutMargins = false
-        cell.insetsLayoutMarginsFromSafeArea = false
-        cell.contentView.insetsLayoutMarginsFromSafeArea = false
-        cell.layoutMargins = .zero
-        cell.contentView.layoutMargins = .zero
     }
 }
 
@@ -2654,3 +2597,13 @@ extension MyAppsViewController: UIImagePickerControllerDelegate, UINavigationCon
         self._imagePickerInstalledApp = nil
     }
 }
+
+private extension MyAppsViewController
+{
+    func cardContentWidth(in collectionView: UICollectionView) -> CGFloat
+    {
+        let safeAreaWidth = collectionView.safeAreaInsets.left + collectionView.safeAreaInsets.right
+        return max(1, collectionView.bounds.width - safeAreaWidth - 32)
+    }
+}
+

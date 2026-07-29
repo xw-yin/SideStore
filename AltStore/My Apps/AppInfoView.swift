@@ -74,7 +74,6 @@ struct AppInfoView: View {
                     if let serialNumber = installedApp.certificateSerialNumber {
                         InfoRow(label: "Certificate Serial", value: serialNumber)
                     }
-                    InfoRow(label: "Needs Resign", value: installedApp.needsResign ? "Yes" : "No")
                     InfoRow(label: "Uses Main Profile", value: installedApp.useMainProfile ? "Yes" : "No")
                 }
                 
