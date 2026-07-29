@@ -191,7 +191,7 @@ final class LaunchViewController: UIViewController, UIDocumentPickerDelegate {
             let altCert = try ALTCertificate(p12Data: account.cert, password: account.certpass)
             Keychain.shared.signingCertificate = altCert.encryptedP12Data(withPassword: "")!
             Keychain.shared.signingCertificatePassword = account.certpass
-            let toastView = ToastView(text: NSLocalizedString("Successfully imported '\(account.email)'!", comment: ""), detailText: "SideStore should be fully operational!")
+            let toastView = ToastView(text: String(format: NSLocalizedString("Successfully imported '%@'!", comment: ""), account.email), detailText: "SideStore should be fully operational!")
             return toastView.show(in: self)
         } catch {
             let toastView = ToastView(text: NSLocalizedString("Failed to import account certificate!", comment: ""), detailText: "Error: \(error.localizedDescription). Still imported account/adi.pb details!")
@@ -234,23 +234,27 @@ extension LaunchViewController {
         didFinishLaunching = true
         
         AppManager.shared.update()
-        AppManager.shared.updateAllSources { result in
-            guard case .failure(let error) = result else { return }
-            debugLog("Failed to update sources on launch. \(error.localizedDescription)")
-            
-            
-            let errorDesc = ErrorProcessing(.fullError).getDescription(error: error as NSError)
-            debugLog("Failed to update sources on launch. \(errorDesc)")
-            
-            var mode: ToastView.InfoMode = .fullError
-            if String(describing: error).contains("The Internet connection appears to be offline"){
-                mode = .localizedDescription    // dont make noise!
+        ProxyStatusManager.shared.performWhenReady { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                guard let self = self, let destinationVC = self.destinationViewController else { return }
+                AppManager.shared.updateAllSources { result in
+                    guard case .failure(let error) = result else { return }
+                    debugLog("Failed to update sources on launch. \(error.localizedDescription)")
+                    
+                    let errorDesc = ErrorProcessing(.fullError).getDescription(error: error as NSError)
+                    debugLog("Failed to update sources on launch. \(errorDesc)")
+                    
+                    var mode: ToastView.InfoMode = .fullError
+                    if String(describing: error).contains("The Internet connection appears to be offline"){
+                        mode = .localizedDescription    // dont make noise!
+                    }
+                    let toastView = ToastView(error: error, mode: mode)
+                    toastView.addTarget(destinationVC, action: #selector(TabBarController.presentSources), for: .touchUpInside)
+                    toastView.show(in: destinationVC.selectedViewController ?? destinationVC)
+                }
+                self.updateKnownSources()
             }
-            let toastView = ToastView(error: error, mode: mode)
-            toastView.addTarget(self.destinationViewController, action: #selector(TabBarController.presentSources), for: .touchUpInside)
-            toastView.show(in: self.destinationViewController!.selectedViewController ?? self.destinationViewController!)
         }
-        updateKnownSources()
         WidgetCenter.shared.reloadAllTimelines()
         didFinishLaunching = true
         
@@ -325,55 +329,127 @@ extension LaunchViewController {
 final class SplashView: UIView {
     let iconView = UIImageView()
     let titleLabel = UILabel()
+    private var iconContainer: UIView!
 
     init(frame: CGRect, appName: String) {
         super.init(frame: frame)
-        backgroundColor = .systemBackground
         setupIcon()
         setupTitle(appName: appName)
+        setupSleekSpinner()
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        if let sublayers = layer.sublayers, let grad = sublayers.first(where: { $0 is CAGradientLayer }) as? CAGradientLayer {
+            grad.frame = bounds
+        } else {
+            let gradient = CAGradientLayer()
+            gradient.frame = bounds
+            gradient.colors = [
+                UIColor(red: 0.05, green: 0.05, blue: 0.08, alpha: 1.0).cgColor,
+                UIColor(red: 0.01, green: 0.01, blue: 0.02, alpha: 1.0).cgColor
+            ]
+            gradient.locations = [0.0, 1.0]
+            layer.insertSublayer(gradient, at: 0)
+        }
+    }
+
     private func setupIcon() {
         let container = UIView()
         container.translatesAutoresizingMaskIntoConstraints = false
-        container.layer.shadowColor = UIColor.black.cgColor
-        container.layer.shadowOpacity = 0.25
-        container.layer.shadowOffset = CGSize(width: 0, height: 4)
-        container.layer.shadowRadius = 8
         addSubview(container)
-
+        self.iconContainer = container
+        
+        let blurEffect = UIBlurEffect(style: .systemThinMaterialDark)
+        let blurView = UIVisualEffectView(effect: blurEffect)
+        blurView.translatesAutoresizingMaskIntoConstraints = false
+        blurView.layer.cornerRadius = 28
+        blurView.clipsToBounds = true
+        blurView.layer.borderColor = UIColor.white.withAlphaComponent(0.12).cgColor
+        blurView.layer.borderWidth = 1.0
+        container.addSubview(blurView)
+        
         iconView.image = UIImage(named: "AppIcon") ?? UIImage(named: "AppIcon60x60") ?? UIImage(systemName: "app.fill")
         iconView.contentMode = .scaleAspectFit
         iconView.translatesAutoresizingMaskIntoConstraints = false
-        iconView.layer.cornerRadius = 24
+        iconView.layer.cornerRadius = 20
         iconView.clipsToBounds = true
         container.addSubview(iconView)
-
+        
         NSLayoutConstraint.activate([
             container.centerXAnchor.constraint(equalTo: centerXAnchor),
-            container.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -20),
-            container.widthAnchor.constraint(equalToConstant: 120),
-            container.heightAnchor.constraint(equalToConstant: 120),
-            iconView.topAnchor.constraint(equalTo: container.topAnchor),
-            iconView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-            iconView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            iconView.trailingAnchor.constraint(equalTo: container.trailingAnchor)
+            container.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -30),
+            container.widthAnchor.constraint(equalToConstant: 130),
+            container.heightAnchor.constraint(equalToConstant: 130),
+            
+            blurView.topAnchor.constraint(equalTo: container.topAnchor),
+            blurView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            blurView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            blurView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            
+            iconView.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            iconView.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            iconView.widthAnchor.constraint(equalToConstant: 84),
+            iconView.heightAnchor.constraint(equalToConstant: 84)
         ])
     }
 
     private func setupTitle(appName: String) {
         titleLabel.text = appName
         titleLabel.font = .systemFont(ofSize: 24, weight: .bold)
-        titleLabel.textColor = .label
+        titleLabel.textColor = .white
         titleLabel.textAlignment = .center
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         addSubview(titleLabel)
+        
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: iconView.bottomAnchor, constant: 12),
+            titleLabel.topAnchor.constraint(equalTo: iconContainer.bottomAnchor, constant: 24),
             titleLabel.centerXAnchor.constraint(equalTo: centerXAnchor)
         ])
+    }
+
+    private func setupSleekSpinner() {
+        let size: CGFloat = 36
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(container)
+        
+        NSLayoutConstraint.activate([
+            container.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 28),
+            container.centerXAnchor.constraint(equalTo: centerXAnchor),
+            container.widthAnchor.constraint(equalToConstant: size),
+            container.heightAnchor.constraint(equalToConstant: size)
+        ])
+        
+        let circularPath = UIBezierPath(arcCenter: CGPoint(x: size/2, y: size/2), radius: size/2 - 3, startAngle: 0, endAngle: CGFloat.pi * 2, clockwise: true)
+        
+        // Track layer
+        let trackLayer = CAShapeLayer()
+        trackLayer.path = circularPath.cgPath
+        trackLayer.strokeColor = UIColor.white.withAlphaComponent(0.1).cgColor
+        trackLayer.lineWidth = 3
+        trackLayer.fillColor = UIColor.clear.cgColor
+        container.layer.addSublayer(trackLayer)
+        
+        // Loading progress layer
+        let loaderLayer = CAShapeLayer()
+        loaderLayer.path = circularPath.cgPath
+        loaderLayer.strokeColor = UIColor.white.withAlphaComponent(0.85).cgColor
+        loaderLayer.lineWidth = 3
+        loaderLayer.fillColor = UIColor.clear.cgColor
+        loaderLayer.strokeEnd = 0.3
+        loaderLayer.lineCap = .round
+        container.layer.addSublayer(loaderLayer)
+        
+        // Rotation animation
+        let animation = CABasicAnimation(keyPath: "transform.rotation")
+        animation.toValue = CGFloat.pi * 2
+        animation.duration = 1.0
+        animation.repeatCount = .infinity
+        animation.timingFunction = CAMediaTimingFunction(name: .linear)
+        container.layer.add(animation, forKey: "spin")
     }
 }
 

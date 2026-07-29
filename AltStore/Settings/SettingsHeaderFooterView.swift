@@ -21,8 +21,11 @@ final class SettingsHeaderFooterView: UITableViewHeaderFooterView
     {
         super.awakeFromNib()
         
-        self.contentView.layoutMargins = .zero
-        self.contentView.preservesSuperviewLayoutMargins = true
+        self.preservesSuperviewLayoutMargins = false
+        self.contentView.preservesSuperviewLayoutMargins = false
+        self.insetsLayoutMarginsFromSafeArea = false
+        self.contentView.insetsLayoutMarginsFromSafeArea = false
+        self.updateContentMargins()
         
         self.stackView.translatesAutoresizingMaskIntoConstraints = false
         self.contentView.addSubview(self.stackView)
@@ -31,5 +34,21 @@ final class SettingsHeaderFooterView: UITableViewHeaderFooterView
                                      self.stackView.trailingAnchor.constraint(equalTo: self.contentView.layoutMarginsGuide.trailingAnchor),
                                      self.stackView.topAnchor.constraint(equalTo: self.contentView.layoutMarginsGuide.topAnchor),
                                      self.stackView.bottomAnchor.constraint(equalTo: self.contentView.layoutMarginsGuide.bottomAnchor)])
+    }
+
+    override func safeAreaInsetsDidChange()
+    {
+        super.safeAreaInsetsDidChange()
+        self.updateContentMargins()
+    }
+
+    private func updateContentMargins()
+    {
+        self.contentView.layoutMargins = UIEdgeInsets(
+            top: 8,
+            left: self.safeAreaInsets.left + 30,
+            bottom: 8,
+            right: self.safeAreaInsets.right + 30
+        )
     }
 }

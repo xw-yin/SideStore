@@ -137,6 +137,7 @@ private extension AddSourceViewController
                 let layoutSection = NSCollectionLayoutSection(group: group)
                 layoutSection.interGroupSpacing = 10
                 layoutSection.boundarySupplementaryItems = [headerItem]
+                layoutSection.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
                 return layoutSection
                 
             case .preview:
@@ -165,6 +166,7 @@ private extension AddSourceViewController
                 }
                 
                 let layoutSection = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: layoutEnvironment)
+                layoutSection.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
                 return layoutSection
                 
             case .recommended:
@@ -183,6 +185,7 @@ private extension AddSourceViewController
                 }
                 
                 let layoutSection = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: layoutEnvironment)
+                layoutSection.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
                 return layoutSection
             }
         }, configuration: layoutConfig)
@@ -209,8 +212,6 @@ private extension AddSourceViewController
             guard let self else { return }
             
             let cell = cell as! AddSourceTextFieldCell
-            cell.contentView.layoutMargins.left = self.view.layoutMargins.left
-            cell.contentView.layoutMargins.right = self.view.layoutMargins.right
             
             cell.textField.delegate = self
             
@@ -582,8 +583,6 @@ private extension AddSourceViewController
         cell.bannerView.style = .source
         cell.layoutMargins.top = 5
         cell.layoutMargins.bottom = 5
-        cell.layoutMargins.left = self.view.layoutMargins.left
-        cell.layoutMargins.right = self.view.layoutMargins.right
         cell.contentView.backgroundColor = .altBackground
         
         cell.bannerView.configure(for: source)

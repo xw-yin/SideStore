@@ -21,14 +21,15 @@ extension UIColor
     private static let saturationBrightnessThreshold = 0.5
     
     var adjustedForDisplay: UIColor {
-        guard self.isTooBright || self.isTooDark else { return self }
-        
         return UIColor { traits in
             var hue: CGFloat = 0
             var saturation: CGFloat = 0
             var brightness: CGFloat = 0
             guard self.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: nil) else { return self }
             
+            // Cap saturation for a refined, harmonious look (avoids raw red/blue/green)
+            saturation = min(saturation, 0.76)
+
             brightness = min(brightness, UIColor.brightnessMaxThreshold)
             
             if traits.userInterfaceStyle == .dark

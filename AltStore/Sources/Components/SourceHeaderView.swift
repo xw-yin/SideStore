@@ -40,6 +40,8 @@ class SourceHeaderView: RSTNibView
     
     private func initialize()
     {
+        self.titleLabel.adjustsFontSizeToFitWidth = false
+        self.titleLabel.lineBreakMode = .byTruncatingTail
         self.clipsToBounds = true
         self.layer.cornerRadius = 22
         

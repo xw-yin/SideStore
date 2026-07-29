@@ -117,7 +117,7 @@ class HeaderContentViewController<Header: UIView, Content: ScrollableContentView
         self.backgroundImageView.contentMode = .scaleAspectFill
         self.view.addSubview(self.backgroundImageView)
         
-        let blurEffect = UIBlurEffect(style: .regular)
+        let blurEffect = UIBlurEffect(style: .systemThinMaterial)
         self.backgroundBlurView = UIVisualEffectView(effect: blurEffect)
         self.view.addSubview(self.backgroundBlurView, pinningEdgesWith: .zero)
                 
@@ -153,10 +153,9 @@ class HeaderContentViewController<Header: UIView, Content: ScrollableContentView
         self.backButton.addTarget(self.navigationController, action: #selector(UINavigationController.popViewController(animated:)), for: .primaryActionTriggered)
         
         
-        // Content View Controller
         self.contentViewController = self.makeContentViewController()
         self.contentViewController.view.frame = self.view.bounds
-        self.contentViewController.view.layer.cornerRadius = 38
+        self.contentViewController.view.layer.cornerRadius = 28
         self.contentViewController.view.layer.masksToBounds = true
         
         self.addChild(self.contentViewController)
@@ -165,11 +164,11 @@ class HeaderContentViewController<Header: UIView, Content: ScrollableContentView
         
         self.contentViewControllerShadowView = UIView()
         self.contentViewControllerShadowView.backgroundColor = .altBackground
-        self.contentViewControllerShadowView.layer.cornerRadius = 38
+        self.contentViewControllerShadowView.layer.cornerRadius = 28
         self.contentViewControllerShadowView.layer.shadowColor = UIColor.black.cgColor
-        self.contentViewControllerShadowView.layer.shadowOffset = CGSize(width: 0, height: -1)
-        self.contentViewControllerShadowView.layer.shadowRadius = 10
-        self.contentViewControllerShadowView.layer.shadowOpacity = 0.3
+        self.contentViewControllerShadowView.layer.shadowOffset = CGSize(width: 0, height: -4)
+        self.contentViewControllerShadowView.layer.shadowRadius = 24
+        self.contentViewControllerShadowView.layer.shadowOpacity = 0.16
         self.view.insertSubview(self.contentViewControllerShadowView, belowSubview: self.contentViewController.view)
                 
         // Add scrollView to front so the scroll indicators are visible, but disable user interaction.

@@ -82,6 +82,19 @@ class NewsViewController: UICollectionViewController, PeekPopPreviewing
         super.viewDidLoad()
         
         self.collectionView.backgroundColor = .altBackground
+
+        // Ignore the safe area for horizontal layout so cards sit symmetrically
+        // from the physical screen edge; top/bottom insets are managed manually
+        // in viewWillLayoutSubviews().
+        self.collectionView.contentInsetAdjustmentBehavior = .never
+
+        if let layout = self.collectionView.collectionViewLayout as? UICollectionViewFlowLayout
+        {
+            layout.sectionInsetReference = .fromContentInset
+            layout.sectionInset.left = 16
+            layout.sectionInset.right = 16
+            layout.estimatedItemSize = .zero
+        }
         
         self.prototypeCell = NewsCollectionViewCell.instantiate(with: NewsCollectionViewCell.nib)
         self.prototypeCell.contentView.translatesAutoresizingMaskIntoConstraints = false
@@ -134,16 +147,32 @@ class NewsViewController: UICollectionViewController, PeekPopPreviewing
         self.preparePipeline()
         self.update()
     }
-    
+
     override func viewWillLayoutSubviews()
     {
         super.viewWillLayoutSubviews()
-        
-        if self.collectionView.contentInset.bottom != 20
+
+        // contentInsetAdjustmentBehavior is .never, so apply the vertical safe-area
+        // insets manually (keeping the original 20pt bottom padding). Horizontal
+        // insets are intentionally left at zero so content spans the full width.
+        let safeArea = self.collectionView.safeAreaInsets
+        let bottomInset = safeArea.bottom + 20
+        if self.collectionView.contentInset.top != safeArea.top || self.collectionView.contentInset.bottom != bottomInset
         {
             // Triggers collection view update in iOS 13, which crashes if we do it in viewDidLoad()
             // since the database might not be loaded yet.
-            self.collectionView.contentInset.bottom = 20
+            self.collectionView.contentInset.top = safeArea.top
+            self.collectionView.contentInset.bottom = bottomInset
+        }
+    }
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)
+    {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            self?.cachedCellSizes.removeAll()
+            self?.collectionView.collectionViewLayout.invalidateLayout()
         }
     }
 }
@@ -174,8 +203,13 @@ private extension NewsViewController
             guard let self else { return }
             
             let cell = cell as! NewsCollectionViewCell
-            cell.contentView.layoutMargins.left = self.view.layoutMargins.left
-            cell.contentView.layoutMargins.right = self.view.layoutMargins.right
+            
+            cell.preservesSuperviewLayoutMargins = false
+            cell.contentView.preservesSuperviewLayoutMargins = false
+            cell.insetsLayoutMarginsFromSafeArea = false
+            cell.contentView.insetsLayoutMarginsFromSafeArea = false
+            cell.layoutMargins = .zero
+            cell.contentView.layoutMargins = .zero
             
             cell.titleLabel.text = newsItem.title
             cell.captionLabel.text = newsItem.caption
@@ -183,15 +217,21 @@ private extension NewsViewController
             
             cell.imageView.image = nil
             
+            let aspectConstraint = cell.imageView.constraints.first(where: {
+                ($0.firstAttribute == .width && $0.secondAttribute == .height) ||
+                ($0.firstAttribute == .height && $0.secondAttribute == .width)
+            })
             if newsItem.imageURL != nil
             {
                 cell.imageView.isIndicatingActivity = true
                 cell.imageView.isHidden = false
+                aspectConstraint?.priority = UILayoutPriority(999)
             }
             else
             {
                 cell.imageView.isIndicatingActivity = false
                 cell.imageView.isHidden = true
+                aspectConstraint?.priority = UILayoutPriority(250)
             }
             
             cell.isAccessibilityElement = true
@@ -416,8 +456,9 @@ extension NewsViewController
         let footerView = collectionView.dequeueReusableSupplementaryView(ofKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: "AppBanner", for: indexPath) as! AppBannerFooterView
         guard let storeApp = item.storeApp else { return footerView }
         
-        footerView.layoutMargins.left = self.view.layoutMargins.left
-        footerView.layoutMargins.right = self.view.layoutMargins.right
+        footerView.insetsLayoutMarginsFromSafeArea = false
+        footerView.layoutMargins.left = 16
+        footerView.layoutMargins.right = 16
         
         footerView.bannerView.button.isIndicatingActivity = false
         footerView.bannerView.configure(for: storeApp)
@@ -440,20 +481,29 @@ extension NewsViewController: UICollectionViewDelegateFlowLayout
     {        
         let item = self.dataSource.item(at: indexPath)
         let globallyUniqueID = item.globallyUniqueID ?? item.identifier
+        let contentWidth = self.cardContentWidth(in: collectionView)
+        let layoutWidth = Int(contentWidth.rounded())
+        let cacheKey = "\(globallyUniqueID)-\(layoutWidth)"
         
-        if let previousSize = self.cachedCellSizes[globallyUniqueID]
+        if let previousSize = self.cachedCellSizes[cacheKey]
         {
             return previousSize
         }
         
-        let widthConstraint = self.prototypeCell.contentView.widthAnchor.constraint(equalToConstant: collectionView.bounds.width)
-        NSLayoutConstraint.activate([widthConstraint])
-        defer { NSLayoutConstraint.deactivate([widthConstraint]) }
+        self.prototypeCell.frame.size.width = contentWidth
+        self.prototypeCell.layoutMargins = .zero
+        self.prototypeCell.contentView.layoutMargins = .zero
+        self.prototypeCell.layoutIfNeeded()
+        
+        let widthConstraint = self.prototypeCell.contentView.widthAnchor.constraint(equalToConstant: contentWidth)
+        widthConstraint.isActive = true
+        defer { widthConstraint.isActive = false }
         
         self.dataSource.cellConfigurationHandler(self.prototypeCell, item, indexPath)
         
-        let size = self.prototypeCell.contentView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
-        self.cachedCellSizes[globallyUniqueID] = size
+        var size = self.prototypeCell.contentView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+        size.width = contentWidth
+        self.cachedCellSizes[cacheKey] = size
         return size
     }
     
@@ -467,7 +517,7 @@ extension NewsViewController: UICollectionViewDelegateFlowLayout
         
         if item.storeApp != nil
         {
-            return CGSize(width: 88, height: 88)
+            return CGSize(width: self.cardContentWidth(in: collectionView), height: 88)
         }
         else
         {
@@ -477,7 +527,7 @@ extension NewsViewController: UICollectionViewDelegateFlowLayout
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets
     {
-        var insets = UIEdgeInsets(top: 30, left: 0, bottom: 13, right: 0)
+        var insets = UIEdgeInsets(top: 30, left: 16, bottom: 13, right: 16)
         
         if section == 0
         {
@@ -485,6 +535,11 @@ extension NewsViewController: UICollectionViewDelegateFlowLayout
         }
         
         return insets
+    }
+
+    private func cardContentWidth(in collectionView: UICollectionView) -> CGFloat
+    {
+        return max(1, collectionView.bounds.width - 32)
     }
 }
 
