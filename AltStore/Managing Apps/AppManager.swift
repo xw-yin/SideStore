@@ -48,7 +48,7 @@ class AppManager: ObservableObject
     private(set) var updatePatronsResult: Result<Void, Error>?
     
     @Published
-    private(set) var updateSourcesResult: Result<Void, Error>? // nil == loading
+    private(set) var updateSourcesResult: Result<Void, Error>? = .success(()) // nil == loading
     
     private let operationQueue = OperationQueue()
     private let serialOperationQueue = OperationQueue()
@@ -602,7 +602,11 @@ extension AppManager
     
     func updateAllSources(completion: @escaping (Result<Void, Error>) -> Void)
     {
-        self.updateSourcesResult = nil
+        let context = DatabaseManager.shared.persistentContainer.viewContext
+        let hasApps = (try? context.count(for: StoreApp.fetchRequest())) ?? 0 > 0
+        if !hasApps {
+            self.updateSourcesResult = nil
+        }
         
         self.fetchSources() { (result) in
             do

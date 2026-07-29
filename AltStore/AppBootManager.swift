@@ -67,50 +67,49 @@ public final class AppBootManager {
     }
     
     public nonisolated func performBootSequence() async {
-        // 1. Structured concurrent child task A
-        async let jitCheck: Void = {
-            if #available(iOS 17, *), !UserDefaults.standard.sidejitenable {
-                do {
-                    try await self.isSideJITServerDetected()
-                    await MainActor.run {
-                        self.needsSideJITPrompt = true
+        Task.detached {
+            async let jitCheck: Void = {
+                if #available(iOS 17, *), !UserDefaults.standard.sidejitenable {
+                    do {
+                        try await self.isSideJITServerDetected()
+                        await MainActor.run {
+                            self.needsSideJITPrompt = true
+                        }
+                    } catch {
+                        debugLog("Cannot find sideJITServer")
                     }
-                } catch {
-                    debugLog("Cannot find sideJITServer")
                 }
-            }
+                
+                if #available(iOS 17, *), UserDefaults.standard.sidejitenable {
+                    await self.askForNetwork()
+                    debugLog("SideJITServer Enabled")
+                }
+            }()
             
-            if #available(iOS 17, *), UserDefaults.standard.sidejitenable {
-                await self.askForNetwork()
-                debugLog("SideJITServer Enabled")
-            }
-        }()
-        
-        // 2. Structured concurrent child task B
-        async let minimuxerCheck: Void = {
-            #if targetEnvironment(simulator)
-            do {
-                try await self.startMinimuxer(pairingFile: "ignored-for-sim")
-            } catch {
-                debugLog("[AppBootManager] Failed to start minimuxer: \(error)")
-            }
-            #else
-            if let pf = self.getSavedPairingFile() {
+            async let minimuxerCheck: Void = {
+                #if targetEnvironment(simulator)
                 do {
-                    try await self.startMinimuxer(pairingFile: pf)
+                    try await self.startMinimuxer(pairingFile: "ignored-for-sim")
                 } catch {
                     debugLog("[AppBootManager] Failed to start minimuxer: \(error)")
                 }
-            } else {
-                await MainActor.run {
-                    self.needsPairingPrompt = true
+                #else
+                if let pf = self.getSavedPairingFile() {
+                    do {
+                        try await self.startMinimuxer(pairingFile: pf)
+                    } catch {
+                        debugLog("[AppBootManager] Failed to start minimuxer: \(error)")
+                    }
+                } else {
+                    await MainActor.run {
+                        self.needsPairingPrompt = true
+                    }
                 }
-            }
-            #endif
-        }()
-        
-        // Await both concurrently (Structured Concurrency awaits them in parallel)
-        _ = await (jitCheck, minimuxerCheck)
+                #endif
+            }()
+            
+            _ = await (jitCheck, minimuxerCheck)
+        }
     }
     
     private nonisolated func askForNetwork() async {
