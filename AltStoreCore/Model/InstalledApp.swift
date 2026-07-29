@@ -206,6 +206,15 @@ public extension InstalledApp
     
     func loadIcon(completion: @escaping (Result<UIImage?, Error>) -> Void)
     {
+        if Bundle.isBundledWithLiveContainer,
+           self.bundleIdentifier == StoreApp.altstoreAppID,
+           let hostApplication = ALTApplication(fileURL: Bundle.realMainBundle.bundleURL),
+           let hostIcon = hostApplication.icon
+        {
+            completion(.success(hostIcon))
+            return
+        }
+
         if self.bundleIdentifier == StoreApp.altstoreAppID,
            let iconName = UIApplication.alt_shared?.value(forKey: "alternateIconName") as? String
         {
