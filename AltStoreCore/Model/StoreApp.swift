@@ -706,6 +706,17 @@ public extension StoreApp
         
         return URL(string: "https://sidestore.io/apps-v2.json/apps/sidestore/icon.png")!
     }
+
+    func configureForEmbeddedLiveContainer()
+    {
+        guard Bundle.isBundledWithLiveContainer else { return }
+
+        self.name = "LiveContainer"
+        self.developerName = "LiveContainer Team"
+        self.localizedDescription = "Run iOS apps without actually installing them!"
+        self.iconURL = URL(string: "https://raw.githubusercontent.com/LiveContainer/LiveContainer/main/screenshots/AppIcon1024.png")!
+        self.sourceIdentifier = Source.altStoreIdentifier
+    }
     
     class func makeAltStoreApp(version: String, buildVersion: String?, in context: NSManagedObjectContext) -> StoreApp
     {
@@ -728,6 +739,7 @@ public extension StoreApp
         app.iconURL = sideStoreAppIconURL        
         app.screenshotURLs = []
         app.sourceIdentifier = placeholderSourceID
+        app.configureForEmbeddedLiveContainer()
         
         let appVersion = AppVersion.makeAppVersion(version: placeholderVersion,
                                                    buildVersion: buildVersion,

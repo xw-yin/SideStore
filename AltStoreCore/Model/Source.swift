@@ -11,29 +11,25 @@ import UIKit
 
 public extension Source
 {
+    private static let liveContainerSourceURL = URL(string: "https://github.com/LiveContainer/LiveContainer/releases/download/1.0/apps_ss_lc.json")!
+
     #if ALPHA
     static let altStoreGroupIdentifier = Bundle.Info.appbundleIdentifier
     #else
     static let altStoreGroupIdentifier = Bundle.Info.appbundleIdentifier
     #endif
     
+    static var altStoreSourceURL: URL {
+        if Bundle.isBundledWithLiveContainer {
+            return liveContainerSourceURL
+        }
+
     #if STAGING
-    
-    #if ALPHA
-    static let altStoreSourceURL = URL(string: "https://apps.sidestore.io/")!
+        return URL(string: "https://apps.sidestore.io/")!
     #else
-    static let altStoreSourceURL = URL(string: "https://apps.sidestore.io/")!
+        return URL(string: "https://sidestore.io/apps-v2.json/")!
     #endif
-    
-    #else
-    
-    #if ALPHA
-    static let altStoreSourceURL = URL(string: "https://sidestore.io/apps-v2.json/")!
-    #else
-    static let altStoreSourceURL = URL(string: "https://sidestore.io/apps-v2.json/")!
-    #endif
-    
-    #endif
+    }
     
     // normalized url is the source identifier (or) p-key!
     static let altStoreIdentifier = try! Source.sourceID(from: altStoreSourceURL)
