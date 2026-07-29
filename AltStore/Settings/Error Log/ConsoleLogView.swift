@@ -16,7 +16,7 @@ class ConsoleLogViewModel: ObservableObject {
     @Published var searchResults: [Int] = []  // Stores indices of matching lines
     
     private var fileWatcher: DispatchSourceFileSystemObject?
-    private var logURL: URL
+    let logURL: URL
     private var lastReadOffset: UInt64 = 0
     
     init(logURL: URL) {
@@ -121,6 +121,7 @@ public struct ConsoleLogView: View {
     @State private var searchText: String = ""
     @State private var scrollToIndex: Int?
     @State private var showTimestamp: Bool = false
+    @State private var showShareSheet: Bool = false
     @State private var fontSize: CGFloat = 12
     
     private let resultHighlightColor = Color.orange
@@ -172,6 +173,14 @@ public struct ConsoleLogView: View {
                     showTimestamp.toggle()
                 }) {
                     Image(systemName: showTimestamp ? "clock.fill" : "clock")
+                        .foregroundColor(.white)
+                        .font(.system(size: 19))
+                }
+                
+                SwiftUI.Button(action: {
+                    showShareSheet = true
+                }) {
+                    Image(systemName: "square.and.arrow.up")
                         .foregroundColor(.white)
                         .font(.system(size: 19))
                 }
@@ -283,6 +292,9 @@ public struct ConsoleLogView: View {
         }
         .background(Color.black)  // Set background color to mimic QL's dark theme
         .edgesIgnoringSafeArea(.all)
+        .sheet(isPresented: $showShareSheet) {
+            ActivityViewController(activityItems: [viewModel.logURL])
+        }
     }
 
     private static let timestampRegex = try? NSRegularExpression(
