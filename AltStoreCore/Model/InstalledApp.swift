@@ -35,6 +35,7 @@ public protocol InstalledAppProtocol: Fetchable
     var name: String { get }
     var bundleIdentifier: String { get }
     var resignedBundleIdentifier: String { get }
+    var customBundleIdentifier: String? { get }
     var version: String { get }
     
     var refreshedDate: Date { get }
@@ -49,6 +50,7 @@ public class InstalledApp: BaseEntity, InstalledAppProtocol
     @NSManaged public var name: String
     @NSManaged public var bundleIdentifier: String
     @NSManaged public var resignedBundleIdentifier: String
+    @NSManaged public var customBundleIdentifier: String?
     @NSManaged public var version: String
     @NSManaged public var buildVersion: String
     
@@ -57,7 +59,6 @@ public class InstalledApp: BaseEntity, InstalledAppProtocol
     @NSManaged public var installedDate: Date
     
     @NSManaged public var isActive: Bool
-    @NSManaged public var needsResign: Bool
     @NSManaged public var hasAlternateIcon: Bool
     
     @NSManaged public var useMainProfile: Bool
@@ -157,13 +158,8 @@ public class InstalledApp: BaseEntity, InstalledAppProtocol
         #if targetEnvironment(simulator)
         self.expirationDate = self.refreshedDate.addingTimeInterval(60 * 60 * 24 * 7)
         #else
-        let expirationDate: Date
-
-        if let date = resignedApp.provisioningProfile?.expirationDate {
-            expirationDate = date
-        } else {
-            expirationDate = self.refreshedDate
-            debugLog("The app is missing a valid provisioning profile.")
+        guard let expirationDate = resignedApp.provisioningProfile?.expirationDate else {
+            throw ALTError.invalidApp(reason: "The app is missing a valid provisioning profile.")
         }
         self.expirationDate = expirationDate
         #endif
@@ -210,17 +206,16 @@ public extension InstalledApp
     
     func loadIcon(completion: @escaping (Result<UIImage?, Error>) -> Void)
     {
-        // TODO: @mahee96: Fix this later (reason: alternateIcon is not available for appEx)
-//        if self.bundleIdentifier == StoreApp.altstoreAppID,
-//           let iconName = UIApplication.alt_shared?.alternateIconName
-//        {
-//            // Use alternate app icon for AltStore, if one is chosen.
-//            
-//            let image = UIImage(named: iconName)
-//            completion(.success(image))
-//            
-//            return
-//        }
+        if self.bundleIdentifier == StoreApp.altstoreAppID,
+           let iconName = UIApplication.alt_shared?.value(forKey: "alternateIconName") as? String
+        {
+            // Use alternate app icon for AltStore, if one was chosen.
+            let imageName = iconName.replacingOccurrences(of: "Icon", with: "")
+            let image = UIImage(named: imageName) ?? UIImage(named: iconName)
+            
+            completion(.success(image))
+            return
+        }
         
         let hasAlternateIcon = self.hasAlternateIcon
         let alternateIconURL = self.alternateIconURL
@@ -436,10 +431,17 @@ public extension InstalledApp
         return installedBackupAppUTI
     }
     
-    class func alternateIconURL(for app: AppProtocol) -> URL
+    public class func alternateIconURL(forBundleIdentifier bundleIdentifier: String) -> URL
     {
-        let installedBackupAppUTI = self.directoryURL(for: app).appendingPathComponent("AltIcon.png")
-        return installedBackupAppUTI
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let iconsDirectory = appSupport.appendingPathComponent("AppIcons", isDirectory: true)
+        try? FileManager.default.createDirectory(at: iconsDirectory, withIntermediateDirectories: true, attributes: nil)
+        return iconsDirectory.appendingPathComponent("\(bundleIdentifier).png")
+    }
+    
+    public class func alternateIconURL(for app: AppProtocol) -> URL
+    {
+        return self.alternateIconURL(forBundleIdentifier: app.bundleIdentifier)
     }
     
     var directoryURL: URL {
@@ -462,7 +464,7 @@ public extension InstalledApp
         return InstalledApp.installedBackupAppUTI(forBundleIdentifier: self.resignedBundleIdentifier)
     }
     
-    var alternateIconURL: URL {
+    public var alternateIconURL: URL {
         return InstalledApp.alternateIconURL(for: self)
     }
 }

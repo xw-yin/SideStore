@@ -66,7 +66,8 @@ final class InstallAppOperation: ResultOperation<InstalledApp>, OperationLogging
         
         // Only remove refreshed IPA when finished.
         if let app = self.context.app {
-            let fileURL = InstalledApp.refreshedIPAURL(for: app)
+            let updatedApp = AnyApp(from: app, bundleId: self.context.targetBundleIdentifier)
+            let fileURL = InstalledApp.refreshedIPAURL(for: updatedApp)
             
             do {
                 if(FileManager.default.fileExists(atPath: fileURL.path)){
@@ -101,7 +102,7 @@ final class InstallAppOperation: ResultOperation<InstalledApp>, OperationLogging
             self.updateActiveAppsStatus(for: installedApp, provisioningProfiles: provisioningProfiles, in: backgroundContext)
             
             var installing = true
-            if installedApp.bundleIdentifier.range(of: Bundle.Info.appbundleIdentifier) != nil {
+            if installedApp.storeApp?.bundleIdentifier.range(of: Bundle.Info.appbundleIdentifier) != nil {
                 do {
                     // we need to flush changes to the disk now in case the changes are lost when iOS kills current process
                     try installedApp.managedObjectContext?.save()
@@ -146,9 +147,27 @@ final class InstallAppOperation: ResultOperation<InstalledApp>, OperationLogging
         }
         
         installedApp.update(resignedApp: resignedApp, certificateSerialNumber: certificate.serialNumber, storeBuildVersion: storeBuildVersion)
+        installedApp.customBundleIdentifier = self.context.customBundleIdentifier
         installedApp.useMainProfile = self.context.useMainProfile
-
-        installedApp.needsResign = false
+        
+        switch self.context.alternateIconMode {
+        case .set(let alternateIconURL):
+            if FileManager.default.fileExists(atPath: alternateIconURL.path) {
+                if alternateIconURL != installedApp.alternateIconURL {
+                    do {
+                        try FileManager.default.copyItem(at: alternateIconURL, to: installedApp.alternateIconURL, shouldReplace: true)
+                    } catch {
+                        self.debugLog("Failed to copy alternate icon: \(error)")
+                    }
+                }
+                installedApp.hasAlternateIcon = true
+            }
+        case .remove:
+            try? FileManager.default.removeItem(at: installedApp.alternateIconURL)
+            installedApp.hasAlternateIcon = false
+        case .preserve:
+            break
+        }
         
         if let team = DatabaseManager.shared.activeTeam(in: backgroundContext) {
             installedApp.team = team

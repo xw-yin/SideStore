@@ -228,6 +228,16 @@ public extension UserDefaults
         }
     }
     
+    @objc var isCellularRefreshEnabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+
+    @objc var useLocalVPN: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    
     @objc(activeAppsLimit) private var _activeAppsLimit: NSNumber? {
         get { self.object(forKey: "activeAppsLimit") as? NSNumber }
         set { self.set(newValue, forKey: "activeAppsLimit") }
@@ -258,6 +268,8 @@ public extension UserDefaults
         let preferredAppSorting: AppSorting = if #available(iOS 15, *) { .default } else { .name }
         
         let defaults = [
+            #keyPath(UserDefaults.useLocalVPN): true,
+            #keyPath(UserDefaults.isCellularRefreshEnabled): false,
             #keyPath(UserDefaults.isAppLimitDisabled): false,
             #keyPath(UserDefaults.isBetaUpdatesEnabled): false,
             #keyPath(UserDefaults.customizeAppId): false,

@@ -42,7 +42,6 @@ public final class AppBootManager {
         try await minimuxerStart(pairingFile, mountPath: FileManager.default.documentsDirectory.absoluteString)
         await MainActor.run {
             self.isMinimuxerStarted = true
-            ProxyStatusManager.shared.signalReady()
         }
         
         // Validate the pairing by trying to fetch the UDID
@@ -112,7 +111,6 @@ public final class AppBootManager {
         
         // Await both concurrently (Structured Concurrency awaits them in parallel)
         _ = await (jitCheck, minimuxerCheck)
-        ProxyStatusManager.shared.signalReady()
     }
     
     private nonisolated func askForNetwork() async {
@@ -157,31 +155,6 @@ public final class AppBootManager {
             }
             try await group.next()
             group.cancelAll()
-        }
-    }
-}
-
-public class ProxyStatusManager {
-    public static let shared = ProxyStatusManager()
-    private var isReady = false
-    private var completionHandlers: [() -> Void] = []
-    
-    public func signalReady() {
-        DispatchQueue.main.async {
-            guard !self.isReady else { return }
-            self.isReady = true
-            self.completionHandlers.forEach { $0() }
-            self.completionHandlers.removeAll()
-        }
-    }
-    
-    public func performWhenReady(_ block: @escaping () -> Void) {
-        DispatchQueue.main.async {
-            if self.isReady {
-                block()
-            } else {
-                self.completionHandlers.append(block)
-            }
         }
     }
 }

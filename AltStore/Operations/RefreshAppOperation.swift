@@ -69,7 +69,7 @@ final class RefreshAppOperation: ResultOperation<InstalledApp>, OperationLogging
     private func updateInstalledApp(for app: ALTApplication, profiles: [String: ALTProvisioningProfile]) throws -> InstalledApp {
         self.progress.completedUnitCount += 1
         
-        let predicate = NSPredicate(format: "%K == %@", #keyPath(InstalledApp.bundleIdentifier), app.bundleIdentifier)
+        let predicate = NSPredicate(format: "%K == %@", #keyPath(InstalledApp.bundleIdentifier), self.context.bundleIdentifier)
         guard let installedApp = InstalledApp.first(satisfying: predicate, in: self.managedObjectContext) else {
             throw OperationError(.appNotFound(name: app.name))
         }

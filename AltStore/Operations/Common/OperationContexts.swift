@@ -58,11 +58,22 @@ final class AuthenticatedOperationContext: OperationContext
     }
 }
 
+enum AlternateIconMode {
+    case preserve
+    case set(URL)
+    case remove
+}
+
 @dynamicMemberLookup
 class AppOperationContext
 {
     let bundleIdentifier: String
+    var customBundleIdentifier: String?
     let authenticatedContext: AuthenticatedOperationContext
+    
+    var targetBundleIdentifier: String {
+        return self.customBundleIdentifier ?? self.bundleIdentifier
+    }
     
     var app: ALTApplication?
     var provisioningProfiles: [String: ALTProvisioningProfile]?
@@ -119,10 +130,23 @@ class InstallAppOperationContext: AppOperationContext
         }
     }
     private var installedAppContext: NSManagedObjectContext?
-    
     var beginInstallationHandler: ((InstalledApp) -> Void)?
     
-    var alternateIconURL: URL?
+    var alternateIconMode: AlternateIconMode = .preserve
+    
+    var alternateIconURL: URL? {
+        switch self.alternateIconMode {
+        case .set(let url):
+            return url
+        case .preserve:
+            if let installedApp = self.installedApp, installedApp.hasAlternateIcon {
+                return installedApp.alternateIconURL
+            }
+            return nil
+        case .remove:
+            return nil
+        }
+    }
     
     var shouldTurnOffData: Bool = false
     

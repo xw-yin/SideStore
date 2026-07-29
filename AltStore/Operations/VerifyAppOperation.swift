@@ -34,12 +34,9 @@ final class VerifyAppOperation: ResultOperation<Void>, OperationLogging {
 
     let permissionsMode: PermissionReviewMode
     let context: InstallAppOperationContext
-    var customBundleId: String?
-    
-    init(permissionsMode: PermissionReviewMode, context: InstallAppOperationContext, customBundleId: String? = nil) {
+    init(permissionsMode: PermissionReviewMode, context: InstallAppOperationContext) {
         self.permissionsMode = permissionsMode
         self.context = context
-        self.customBundleId = customBundleId
         
         super.init()
     }
@@ -59,8 +56,7 @@ final class VerifyAppOperation: ResultOperation<Void>, OperationLogging {
             }
             
             if !["ny.litritt.ignited", "com.litritt.ignited"].contains(where: { $0 == app.bundleIdentifier }) {
-                let bundleId = customBundleId ?? app.bundleIdentifier
-                guard bundleId == self.context.bundleIdentifier else {
+                guard app.bundleIdentifier == self.context.bundleIdentifier else {
                     throw VerificationError.mismatchedBundleIdentifiers(sourceBundleID: self.context.bundleIdentifier, app: app)
                 }
             }

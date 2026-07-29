@@ -77,16 +77,16 @@ final class AppViewController: UIViewController
         
         self.contentViewControllerShadowView = UIView()
         self.contentViewControllerShadowView.backgroundColor = .altBackground
-        self.contentViewControllerShadowView.layer.cornerRadius = 28
+        self.contentViewControllerShadowView.layer.cornerRadius = 38
         self.contentViewControllerShadowView.layer.shadowColor = UIColor.black.cgColor
-        self.contentViewControllerShadowView.layer.shadowOffset = CGSize(width: 0, height: -4)
-        self.contentViewControllerShadowView.layer.shadowRadius = 24
-        self.contentViewControllerShadowView.layer.shadowOpacity = 0.16
+        self.contentViewControllerShadowView.layer.shadowOffset = CGSize(width: 0, height: -1)
+        self.contentViewControllerShadowView.layer.shadowRadius = 10
+        self.contentViewControllerShadowView.layer.shadowOpacity = 0.3
         self.contentViewController.view.superview?.insertSubview(self.contentViewControllerShadowView, at: 0)
         
         self.contentView.addGestureRecognizer(self.scrollView.panGestureRecognizer)
         
-        self.contentViewController.view.layer.cornerRadius = 28
+        self.contentViewController.view.layer.cornerRadius = 38
         self.contentViewController.view.layer.masksToBounds = true
         
         self.contentViewController.tableView.panGestureRecognizer.require(toFail: self.scrollView.panGestureRecognizer)

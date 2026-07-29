@@ -60,7 +60,7 @@ final class ResignAppOperation: ResultOperation<ALTApplication>, OperationLoggin
         let prepareAppProgress = Progress.discreteProgress(totalUnitCount: 2)
         self.progress.addChild(prepareAppProgress, withPendingUnitCount: 3)
         
-        let effectiveBundleId = self.context.bundleIdentifier
+        let effectiveBundleId = self.context.targetBundleIdentifier
         
         let appBundleURL = try await self.prepareAppBundle(for: app, profiles: profiles, appexBundleIds: context.appexBundleIds ?? [:], parentProgress: prepareAppProgress)
         
@@ -107,7 +107,7 @@ final class ResignAppOperation: ResultOperation<ALTApplication>, OperationLoggin
             progress.completedUnitCount = 1
         }
 
-        let bundleIdentifier = context.bundleIdentifier
+        let bundleIdentifier = context.targetBundleIdentifier
         let finalBundleIdentifier: String
         if let profile = context.useMainProfile ? profiles.values.first : profiles[bundleIdentifier] {
             finalBundleIdentifier = profile.bundleIdentifier
@@ -164,21 +164,6 @@ final class ResignAppOperation: ResultOperation<ALTApplication>, OperationLoggin
             // There is an ALTDeviceID entry, so assume the app is using AltKit and replace it with the device's UDID.
             additionalValues[Bundle.Info.deviceID] = udid
             additionalValues[Bundle.Info.serverID] = UserDefaults.standard.preferredServerID
-        }
-        
-        let iconScale = Int(await UIScreen.main.scale)
-        
-        if let alternateIconURL = self.context.alternateIconURL,
-           case let data = try Data(contentsOf: alternateIconURL),
-           let image = UIImage(data: data),
-           let icon = image.resizing(toFill: CGSize(width: 60 * iconScale, height: 60 * iconScale)),
-           let iconData = icon.pngData() {
-            let iconName = "AltIcon"
-            let iconURL = appBundleURL.appendingPathComponent(iconName + "@\(iconScale)x.png")
-            try iconData.write(to: iconURL, options: .atomic)
-            
-            let iconDictionary = ["CFBundlePrimaryIcon": ["CFBundleIconFiles": [iconName]]]
-            additionalValues["CFBundleIcons"] = iconDictionary
         }
         
         // Prepare app

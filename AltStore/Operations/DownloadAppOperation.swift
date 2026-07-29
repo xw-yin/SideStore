@@ -247,10 +247,12 @@ final class DownloadAppOperation: ResultOperation<ALTApplication>, OperationLogg
         do {
             let (fileURL, response) = try await self.session.download(from: downloadURL)
             let resp = response as? HTTPURLResponse
-            debugLog("downloadFile: completed with response: \(String(describing: resp)) at \(fileURL.path)")
             if let resp {
+                debugLog("downloadFile: completed with status \(resp.statusCode) at \(fileURL.path)")
                 guard resp.statusCode != 403 else { throw URLError(.noPermissionsToReadFile) }
                 guard resp.statusCode != 404 else { throw CocoaError(.fileNoSuchFile, userInfo: [NSURLErrorKey: downloadURL]) }
+            } else {
+                debugLog("downloadFile: completed at \(fileURL.path)")
             }
             self.progress.completedUnitCount += 3
             return fileURL

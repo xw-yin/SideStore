@@ -58,6 +58,8 @@ extension OperationError
         case cacheClearError//(errors: [String])
         case noConnection
         case noVPN
+        case noDevice
+        case notReachable
         case invalidPairingFile
 
         case invalidOperationContext
@@ -78,6 +80,10 @@ extension OperationError
     
     static let noConnection: OperationError = .init(code: .noConnection)
     static let noVPN: OperationError = .init(code: .noVPN)
+    static let noDevice: OperationError = .init(code: .noDevice)
+    static func notReachable(reason: String) -> OperationError {
+        OperationError(code: .notReachable, failureReason: reason)
+    }
     static let invalidPairingFile: OperationError = .init(code: .invalidPairingFile)
     static let tooNewError: OperationError = .init(code: .tooNewError)
     static let provisioningError: OperationError = .init(code: .provisioningError)
@@ -223,8 +229,11 @@ struct OperationError: ALTLocalizedError {
         case .openAppFailed:
             let appName = self.appName ?? NSLocalizedString("The app", comment: "")
             return String(format: NSLocalizedString("SideStore was denied permission to launch %@.", comment: ""), appName)
-        case .noConnection: return NSLocalizedString("You do not appear to be connected to Wi-Fi, Bridge or a Wired network connection!\n\nPlease connect to a Wi-Fi, Bridge or Wired connection before attempting futher operations", comment: "")
+        // case .noConnection: return NSLocalizedString("You do not appear to be connected to Wi-Fi, Bridge or a Wired network connection!\n\nPlease connect to a Wi-Fi, Bridge or Wired connection before attempting futher operations", comment: "")
+        case .noConnection: return NSLocalizedString("You do not appear to be connected to Wi-Fi!\n\nPlease connect to a Wi-Fi before attempting futher operations", comment: "")
         case .noVPN: return NSLocalizedString("You do not appear to be connected to VPN.\n\nPlease make sure LocalDevVPN is connected and running! If the issue persists, replace your pairing with iloader or try restarting the device.", comment: "")
+        case .noDevice: return NSLocalizedString("SideStore is unable to reach the device endpoint.\n\nPlease check your Connection Configuration in Settings to ensure the IP and endpoint are correct.", comment: "")
+        case .notReachable: return self._failureReason ?? NSLocalizedString("Device is not locatable at the specified IP/Endpoint.", comment: "")
         case .invalidPairingFile: return NSLocalizedString("The current pairing file is invalid or missing.\n\nPlease make sure to input a valid pairing file! If the issue persists, replace your pairing with iloader.", comment: "")
         case .tooNewError: return NSLocalizedString("iOS 17.0-17.3.1 changed how JIT is enabled so SideStore cannot enable JIT without SideJITServer on these versions, sorry for any inconvenience.", comment: "")
         case .unableToConnectSideJIT: return NSLocalizedString("Unable to connect to SideJITServer. Please check that you are on the same Wi-Fi of and your Firewall has been set correctly on your server.", comment: "")

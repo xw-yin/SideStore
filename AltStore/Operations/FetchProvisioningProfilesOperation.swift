@@ -53,10 +53,10 @@ class FetchProvisioningProfilesOperation: ResultOperation<[String: ALTProvisioni
         
         guard let app = self.context.app else { throw OperationError.appNotFound(name: nil) }
         
-        self.debugLog("Fetching provisioning profiles for app \(self.context.bundleIdentifier)...")
+        self.debugLog("Fetching provisioning profiles for app \(self.context.targetBundleIdentifier)...")
         
         self.progress.totalUnitCount = Int64(1 + app.appExtensions.count)
-        let effectiveBundleId = self.context.bundleIdentifier
+        let effectiveBundleId = self.context.targetBundleIdentifier
 
         let profile = try await self.prepareProvisioningProfile(for: app, parentApp: nil, team: team, session: session)
         self.progress.completedUnitCount += 1
@@ -182,7 +182,7 @@ class FetchProvisioningProfilesOperation: ResultOperation<[String: ALTProvisioni
             // Or, if the app _is_ installed but with a different team, we need to create a new
             // bundle identifier anyway to prevent collisions with the previous team.
             let parentBundleID = parentApp?.bundleIdentifier ?? app.bundleIdentifier
-            let effectiveParentBundleID = self.context.bundleIdentifier
+            let effectiveParentBundleID = self.context.targetBundleIdentifier
 
             let updatedParentBundleID: String
 

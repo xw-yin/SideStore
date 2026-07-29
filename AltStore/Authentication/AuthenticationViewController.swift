@@ -31,14 +31,14 @@ final class AuthenticationViewController: UIViewController
     {
         super.viewDidLoad()
         
-        // fetch anisette servers asap when loading Auth Screen (if list is empty
-        if(UserDefaults.standard.menuAnisetteServersList.isEmpty){
-            Task{
+        // fetch anisette servers asap when loading Auth Screen (if list is empty)
+        Task {
+            if await AnisetteServersManager.shared.getActiveServerURLs().isEmpty {
                 let sourceURL = UserDefaults.standard.menuAnisetteList
-                do{
-                    _ = try await AnisetteViewModel.getListOfServers(serverSource: sourceURL)
+                do {
+                    _ = try await AnisetteServersManager.shared.syncWithRemote(sourceURLString: sourceURL, forceRemote: true)
                     debugLog("AuthenticationViewController: Server list refresh request completed for sourceURL: \(sourceURL)")
-                }catch{
+                } catch {
                     debugLog("AuthenticationViewController: Server list refresh request Failed for sourceURL: \(sourceURL) Error: \(error)")
                 }
             }
