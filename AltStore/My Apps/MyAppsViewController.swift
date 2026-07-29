@@ -189,7 +189,7 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
         get async {
             // added isMinimuxerStatusCheckEnabled to forcefully ignore minimuxer status if status check is disabled in settings
             if UserDefaults.standard.isMinimuxerStatusCheckEnabled {
-                if let error = await minimuxerStatus.operationError {
+                if let error = await getMinimuxerStatus().operationError {
                     ToastView(error: error).show(in: self)
                     return false
                 }

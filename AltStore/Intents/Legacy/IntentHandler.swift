@@ -41,7 +41,7 @@ final class IntentHandler: NSObject, RefreshAllIntentHandling
         // 10 seconds or longer results in timeout regardless.
         self.queue.asyncAfter(deadline: .now() + 8.0) {
             Task {
-                if await minimuxerStatus == .ready {
+                if await getMinimuxerStatus() == .ready {
                     self.finish(intent, response: RefreshAllIntentResponse(code: .success, userActivity: nil))
                 } else {
                     self.finish(intent, response: RefreshAllIntentResponse(code: .failure, userActivity: nil))
@@ -92,7 +92,7 @@ final class IntentHandler: NSObject, RefreshAllIntentHandling
                     // so we'll now present a normal notification when finished.
                     operation.presentsFinishedNotification = true
                     Task {
-                        if await minimuxerStatus == .ready {
+                        if await getMinimuxerStatus() == .ready {
                             self.finish(intent, response: RefreshAllIntentResponse(code: .success, userActivity: nil))
                         } else {
                             self.finish(intent, response: RefreshAllIntentResponse(code: .failure, userActivity: nil))

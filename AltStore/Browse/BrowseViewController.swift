@@ -559,7 +559,7 @@ private extension BrowseViewController
         }
         
         Task(priority: .userInitiated) { @MainActor in
-            if let error = await minimuxerStatus.operationError {
+            if let error = await getMinimuxerStatus().operationError {
                 let toastView = ToastView(error: error)
                 toastView.show(in: self)
                 return

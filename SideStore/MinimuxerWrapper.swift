@@ -8,27 +8,33 @@
 import Foundation
 import Minimuxer
 
-func bindTunnelConfig() async {
+func bindConnectionConfig() async {
     defer { debugLog("[SideStore] bindTunnelConfig() completed") }
 
-    #if targetEnvironment(simulator)
-    debugLog("[SideStore] bindTunnelConfig() is no-op on simulator")
-    #else
     debugLog("[SideStore] bindTunnelConfig() invoked")
-    let config = TunnelConfig.shared
-    let configBinding = TunnelConfigBinding(
+    let config = ConnectionConfig.shared
+    let configBinding = ConnectionConfigBinding(
         setTunnelIfaceIp: { value in Task { @MainActor in config.tunnelIfaceIp = value } },
         setTunnelPeerIp: { value in Task { @MainActor in config.tunnelPeerIp = value } },
-        setSubnetMask: { value in Task { @MainActor in config.subnetMask = value } }
+        setTunnelIfaceSubnetMask: { value in Task { @MainActor in config.tunnelIfaceSubnetMask = value } },
+        getRemoteServerIp: { config.remoteServerIp },
+        setRemoteReachable: { value in Task { @MainActor in config.remoteReachable = value } },
+        getOverrideTunnelPeerIp: { config.overrideTunnelPeerIp },
+        setOverrideTunnelPeerReachable: { value in Task { @MainActor in config.overrideTunnelPeerReachable = value } },
+        getConnectionMode: { config.useLocalVPN ? .localVPN : .remoteServer }
     )
-    await Minimuxer.shared.bindTunnelConfig(configBinding)
-    #endif
+    await Minimuxer.shared.bindConnectionConfig(configBinding)
 }
 
-enum MinimuxerStatus {
+func getDeviceConnectionMode() async -> DeviceConnectionMode {
+    return await Minimuxer.shared.getConnectionMode()
+}
+
+enum MinimuxerStatus: Equatable {
     case ready
     case noDevice
     case noConnection
+    case notReachable(String)
     case noVPN
     case invalidVPN
     case pairingFile
@@ -42,9 +48,11 @@ enum MinimuxerStatus {
         case .ready:
             return nil
         case .noDevice:
-            return .noConnection
+            return .noDevice
         case .noConnection:
             return .noConnection
+        case .notReachable(let reason):
+            return .notReachable(reason: reason)
         case .noVPN:
             return .noVPN
         case .invalidVPN:
@@ -57,36 +65,36 @@ enum MinimuxerStatus {
     }
 }
 
-var minimuxerStatus: MinimuxerStatus {
-    get async {
-        #if targetEnvironment(simulator)
-        debugLog("[SideStore] minimuxerStatus = true on simulator")
-        return .ready
-        #else
-        let result = await Minimuxer.shared.isReady()
-        switch result {
+func getMinimuxerStatus() async -> MinimuxerStatus {
+    #if targetEnvironment(simulator)
+    debugLog("[SideStore] getMinimuxerStatus() = .ready on simulator")
+    return .ready
+    #else
+    let result = await Minimuxer.shared.isReady()
+    switch result {
         case .success:
             return .ready
         case .failure(let error):
             switch error {
-            case .noVPN:
-                return .noVPN
-            case .invalidVPN:
-                return .invalidVPN
-            case .pairingFile:
-                return .pairingFile
-            case .invalidPairing:
-                return .invalidPairing
-            case .noDevice:
-                return .noDevice
-            case .noConnection:
-                return .noConnection
-            default:
-                return .unknown
+                case .noVPN:
+                    return .noVPN
+                case .invalidVPN:
+                    return .invalidVPN
+                case .pairingFile:
+                    return .pairingFile
+                case .invalidPairing:
+                    return .invalidPairing
+                case .noDevice:
+                    return .noDevice
+                case .noConnection:
+                    return .noConnection
+                case .notReachable(let reason):
+                    return .notReachable(reason)
+                default:
+                    return .unknown
             }
-        }
-        #endif
     }
+    #endif
 }
 
 func reinitializePairingData(_ pairingFile: String) async throws {
@@ -103,10 +111,10 @@ func minimuxerStart(_ pairingFile: String, mountPath: String) async throws {
     defer { debugLog("[SideStore] minimuxerStart(pairingFile) completed") }
     #if targetEnvironment(simulator)
     debugLog("[SideStore] minimuxerStart(pairingFile) is no-op on simulator")
-    await bindTunnelConfig()
+    await bindConnectionConfig()
     await Minimuxer.network.start()
     #else
-    await bindTunnelConfig()
+    await bindConnectionConfig()
     debugLog("[SideStore] minimuxerStart(pairingFile) invoked")
     try await Minimuxer.shared.start(pairingFile: pairingFile, mountPath: mountPath)
     #endif
@@ -239,6 +247,10 @@ extension MinimuxerError {
             return NSLocalizedString("Cannot fetch the device from the muxer", comment: "")
         case .noConnection:
             return NSLocalizedString("You do not appear to be connected to Wi-Fi or a wired network connection! Please connect to a Wi-Fi or wired connection.", comment: "")
+        case .notReachable(let reason):
+            return NSLocalizedString(reason, comment: "")
+        case .connectionModeNotConfigured(let reason):
+            return NSLocalizedString(reason, comment: "")
         case .noVPN(let reason):
             return String(format: NSLocalizedString("Unable to connect to the device via %@ VPN. Please make sure LocalDevVPN is enabled and running! Reason: %@", comment: ""), "LocalDev", reason)
         case .pairingFile(let proto, let reason):
@@ -319,10 +331,6 @@ extension MinimuxerError {
             return String(format: NSLocalizedString("Invalid pairing configuration (%@ protocol): %@", comment: ""), proto.description, reason)
         case .muxerNotListening:
             return NSLocalizedString("Usbmuxd server is not listening on the device", comment: "")
-        case .notReachable(let reason):
-            return String(format: NSLocalizedString("Device is not reachable: %@", comment: ""), reason)
-        case .connectionModeNotConfigured(let reason):
-            return String(format: NSLocalizedString("Connection mode is not configured: %@", comment: ""), reason)
         }
     }
 
@@ -364,6 +372,11 @@ extension Error {
     public var isMinimuxerNoConnection: Bool {
         if let minimuxerErr = self as? MinimuxerError,
            case .noConnection = minimuxerErr { return true }
+        return false
+    }
+    public var isMinimuxerNotReachable: Bool {
+        if let minimuxerErr = self as? MinimuxerError,
+           case .notReachable = minimuxerErr { return true }
         return false
     }
     public var isMinimuxerNoVPN: Bool {

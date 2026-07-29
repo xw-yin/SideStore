@@ -1,5 +1,5 @@
 //
-//  VPNConfiguration.swift
+//  ConnectionConfigView.swift
 //  AltStore
 //
 //  Created by Magesh K on 02/03/26.
@@ -52,44 +52,69 @@ struct AnimatedCheckmarkView: View {
     }
 }
 
-struct VPNConfigurationView: View {
+struct ConnectionConfigView: View {
     @Environment(\.presentationMode) var presentationMode
-    @ObservedObject private var config = TunnelConfig.shared
+    @ObservedObject private var config = ConnectionConfig.shared
+    @State private var draftUseLocalVPN: Bool = ConnectionConfig.shared.useLocalVPN
+    @State private var draftOverrideTunnelPeerIp: String = ConnectionConfig.shared.overrideTunnelPeerIp
+    @State private var draftRemoteServerIp: String = ConnectionConfig.shared.remoteServerIp
     @State private var showConfirmDialog = false
 
     var body: some View {
         ZStack {
             List {
-                Section(header: Text("Discovered from network")) {
-                    Group {
-                        networkConfigRow(label: "Tunnel IP", text: $config.tunnelIfaceIp, editable: false)
-                        networkConfigRow(label: "Device IP", text: $config.tunnelPeerIp, editable: false)
-                        networkConfigRow(label: "Subnet Mask", text: $config.subnetMask, editable: false)
-                    }
-                }
-                
                 Section {
-                    networkConfigRow(
-                        label: "Device IP",
-                        text: Binding<String?>(get: { config.overridePeerIp }, set: { config.overridePeerIp = $0 ?? "" }),
-                        editable: true
-                    )
-                    networkConfigRow(
-                        label: "Active",
-                        text: Binding<String?>(get: { config.overrideActive.rawValue }, set: { _ in }),
-                        editable: false,
-                        textColor: config.overrideActive == .yes ? .green : .red
-                    )
-                } header: {
-                    Text("User Configuration")
-                } footer: {
-                    HStack(alignment: .top, spacing: 0) {
-                        Text("Note: ")
-                        Text("'Device IP' is mandatory and should match exactly as in the target VPN's config")
+                    Toggle("Use Local VPN", isOn: $draftUseLocalVPN)
+                }
+
+                if draftUseLocalVPN {
+                    Section(header: Text("Auto Discovered from network")) {
+                        Group {
+                            networkConfigRow(label: "Tunnel IP", text: $config.tunnelIfaceIp, editable: false)
+                            networkConfigRow(label: "Tunnel Mask", text: $config.tunnelIfaceSubnetMask, editable: false)
+                            networkConfigRow(label: "Device IP", text: $config.tunnelPeerIp, editable: false)
+                        }
+                    }
+                    
+                    Section {
+                        networkConfigRow(
+                            label: "Device IP",
+                            text: Binding<String?>(get: { draftOverrideTunnelPeerIp }, set: { draftOverrideTunnelPeerIp = $0 ?? "" }),
+                            editable: true
+                        )
+                        networkConfigRow(
+                            label: "Active",
+                            text: Binding<String?>(get: { config.overrideTunnelPeerActive.rawValue }, set: { _ in }),
+                            editable: false,
+                            textColor: config.overrideTunnelPeerActive == .yes ? .green : .red
+                        )
+                    } header: {
+                        Text("User Configuration")
+                    } footer: {
+                        HStack(alignment: .top, spacing: 0) {
+                            Text("Note: ")
+                            Text("'Device IP' is mandatory and should match exactly as in the target VPN's config")
+                        }
+                    }
+                } else {
+                    Section {
+                        networkConfigRow(
+                            label: "Device IP / Endpoint",
+                            text: Binding<String?>(get: { draftRemoteServerIp }, set: { draftRemoteServerIp = $0 ?? "" }),
+                            editable: true
+                        )
+                        networkConfigRow(
+                            label: "Reachable",
+                            text: Binding<String?>(get: { config.remoteActive.rawValue }, set: { _ in }),
+                            editable: false,
+                            textColor: config.remoteActive == .yes ? .green : .red
+                        )
+                    } header: {
+                        Text("Remote Endpoint")
                     }
                 }
             }
-            .navigationTitle("VPN Configuration")
+            .navigationTitle("Connection Config")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     SButton("Confirm") {
@@ -98,6 +123,11 @@ struct VPNConfigurationView: View {
                 }
             }
             .disabled(showConfirmDialog)
+            .onAppear {
+                draftUseLocalVPN = config.useLocalVPN
+                draftOverrideTunnelPeerIp = config.overrideTunnelPeerIp
+                draftRemoteServerIp = config.remoteServerIp
+            }
             
             if showConfirmDialog {
                 Color.black.opacity(0.3)
@@ -140,7 +170,10 @@ struct VPNConfigurationView: View {
     }
 
     private func commitChanges() async {
-        await bindTunnelConfig()
+        config.useLocalVPN = draftUseLocalVPN
+        config.overrideTunnelPeerIp = draftOverrideTunnelPeerIp
+        config.remoteServerIp = draftRemoteServerIp
+        await bindConnectionConfig()
         showConfirmDialog = true
     }
     

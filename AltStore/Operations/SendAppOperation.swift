@@ -47,17 +47,15 @@ final class SendAppOperation: ResultOperation<()>, OperationLogging
             throw OperationError.invalidParameters("SendAppOperation.main: self.resignedApp is nil")
         }
 
-        let app = AnyApp(name: resignedApp.name, bundleIdentifier: self.context.bundleIdentifier, url: resignedApp.fileURL, storeApp: nil)
+        let app = AnyApp(name: resignedApp.name, bundleIdentifier: self.context.targetBundleIdentifier, url: resignedApp.fileURL, storeApp: nil)
         let fileURL = InstalledApp.refreshedIPAURL(for: app)
         verboseLog("AFC App `fileURL`: \(fileURL.absoluteString)")
 
-        // only when minimuxer is not ready and below 26.4 should we turn off data
+        // Cellular shortcut should only be executed below iOS 26.4 AND when explicitly enabled in settings
         if #available(iOS 26.4, *) {
             context.shouldTurnOffData = false
-        } else if await minimuxerStatus != .ready {
-            context.shouldTurnOffData = true
         } else {
-            context.shouldTurnOffData = false
+            context.shouldTurnOffData = UserDefaults.standard.isCellularRefreshEnabled
         }
         
         if self.context.shouldTurnOffData {
