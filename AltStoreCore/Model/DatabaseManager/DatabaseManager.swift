@@ -364,6 +364,44 @@ public extension DatabaseManager
 
 private extension DatabaseManager
 {
+    func embeddedSideStoreApplication() -> (application: ALTApplication, temporaryBundleURL: URL)?
+    {
+        let bundleURL = Bundle.main.bundleURL
+
+        guard bundleURL.lastPathComponent == "SideStoreApp.framework",
+              let executableURL = Bundle.main.executableURL
+        else { return nil }
+
+        let hostBundleURL = bundleURL.deletingLastPathComponent().deletingLastPathComponent()
+        let hostProfileURL = hostBundleURL.appendingPathComponent("embedded.mobileprovision")
+        guard FileManager.default.fileExists(atPath: hostProfileURL.path) else { return nil }
+
+        let temporaryBundleURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("app")
+
+        do
+        {
+            try FileManager.default.createDirectory(at: temporaryBundleURL, withIntermediateDirectories: true)
+            try FileManager.default.copyItem(at: bundleURL.appendingPathComponent("Info.plist"), to: temporaryBundleURL.appendingPathComponent("Info.plist"))
+            try FileManager.default.createSymbolicLink(at: temporaryBundleURL.appendingPathComponent(executableURL.lastPathComponent), withDestinationURL: executableURL)
+            try FileManager.default.copyItem(at: hostProfileURL, to: temporaryBundleURL.appendingPathComponent("embedded.mobileprovision"))
+
+            guard let application = ALTApplication(fileURL: temporaryBundleURL), application.provisioningProfile != nil else {
+                try? FileManager.default.removeItem(at: temporaryBundleURL)
+                return nil
+            }
+
+            return (application, temporaryBundleURL)
+        }
+        catch
+        {
+            try? FileManager.default.removeItem(at: temporaryBundleURL)
+            debugLog("Failed to prepare embedded SideStore application: \(error)")
+            return nil
+        }
+    }
+
     func prepareDatabase(completionHandler: @escaping (Result<Void, Error>) -> Void)
     {
         guard !Bundle.isAppExtension() else { return completionHandler(.success(())) }
@@ -372,7 +410,17 @@ private extension DatabaseManager
         context.performAndWait {
             do
             {
-                guard let localApp = ALTApplication(fileURL: Bundle.main.bundleURL) else { return }
+                let bundleURL = Bundle.main.bundleURL
+                let bundledApplication = ALTApplication(fileURL: bundleURL)
+                let embeddedApplication = bundledApplication?.provisioningProfile == nil ? self.embeddedSideStoreApplication() : nil
+                let localApp = embeddedApplication?.application ?? bundledApplication
+                defer {
+                    if let temporaryBundleURL = embeddedApplication?.temporaryBundleURL {
+                        try? FileManager.default.removeItem(at: temporaryBundleURL)
+                    }
+                }
+
+                guard let localApp else { return }
                 
                 #if !targetEnvironment(simulator)
                 guard localApp.provisioningProfile != nil else {
