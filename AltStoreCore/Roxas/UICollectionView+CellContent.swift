@@ -42,6 +42,83 @@ extension UICollectionView: RSTCellContentUpdateableView, RSTCellContentTransact
         guard let operations = rst_operations else { return }
         rst_operations = nil
         
+        // Check for conflicts to prevent UIKit crashes
+        var hasConflict = false
+        
+        var deletedSections = Set<Int>()
+        var insertedSections = Set<Int>()
+        var hasSectionChanges = false
+        var hasItemChanges = false
+        
+        var deletedItems = Set<IndexPath>()
+        var insertedItems = Set<IndexPath>()
+        var updatedItems = Set<IndexPath>()
+        var movedItems = Set<IndexPath>()
+        
+        for change in operations {
+            if change.sectionIndex != RSTUnknownSectionIndex {
+                hasSectionChanges = true
+                if change.type == .delete {
+                    deletedSections.insert(change.sectionIndex)
+                } else if change.type == .insert {
+                    insertedSections.insert(change.sectionIndex)
+                }
+            } else {
+                hasItemChanges = true
+                
+                if change.type == .delete, let ip = change.currentIndexPath {
+                    if deletedItems.contains(ip) || movedItems.contains(ip) || updatedItems.contains(ip) {
+                        hasConflict = true
+                        break
+                    }
+                    deletedItems.insert(ip)
+                } else if change.type == .insert, let ip = change.destinationIndexPath {
+                    if insertedItems.contains(ip) || movedItems.contains(ip) {
+                        hasConflict = true
+                        break
+                    }
+                    insertedItems.insert(ip)
+                } else if change.type == .update, let ip = change.currentIndexPath {
+                    if updatedItems.contains(ip) || deletedItems.contains(ip) || movedItems.contains(ip) {
+                        hasConflict = true
+                        break
+                    }
+                    updatedItems.insert(ip)
+                } else if change.type == .move, let src = change.currentIndexPath, let dest = change.destinationIndexPath {
+                    if movedItems.contains(src) || deletedItems.contains(src) || updatedItems.contains(src) {
+                        hasConflict = true
+                        break
+                    }
+                    if movedItems.contains(dest) || insertedItems.contains(dest) {
+                        hasConflict = true
+                        break
+                    }
+                    movedItems.insert(src)
+                    movedItems.insert(dest)
+                }
+            }
+        }
+        
+        // Conflict if we have both section changes and item changes in the same batch
+        if hasSectionChanges && hasItemChanges {
+            hasConflict = true
+        }
+        
+        // Conflict if an item change falls inside a deleted or inserted section
+        if !hasConflict {
+            for ip in deletedItems.union(insertedItems).union(updatedItems).union(movedItems) {
+                if deletedSections.contains(ip.section) || insertedSections.contains(ip.section) {
+                    hasConflict = true
+                    break
+                }
+            }
+        }
+        
+        if hasConflict {
+            self.reloadData()
+            return
+        }
+        
         var postMoveUpdateChanges = [RSTCellContentChange]()
         for change in operations {
             if change.type == .move, let destinationIndexPath = change.destinationIndexPath {

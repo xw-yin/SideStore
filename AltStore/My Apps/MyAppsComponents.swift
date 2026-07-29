@@ -50,6 +50,14 @@ final class InstalledAppCollectionViewCell: UICollectionViewCell
         
         self.deactivateBadge = deactivateBadge
     }
+    
+    override var isHighlighted: Bool {
+        didSet {
+            UIView.animate(withDuration: 0.2, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction], animations: {
+                self.transform = self.isHighlighted ? CGAffineTransform(scaleX: 0.96, y: 0.96) : .identity
+            }, completion: nil)
+        }
+    }
 }
 
 final class InstalledAppsCollectionFooterView: UICollectionReusableView
@@ -76,6 +84,14 @@ final class NoUpdatesCollectionViewCell: UICollectionViewCell
         
         self.button.setTitle("", for: .normal)
         self.button.setImage(image, for: .normal)
+    }
+    
+    override var isHighlighted: Bool {
+        didSet {
+            UIView.animate(withDuration: 0.2, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction], animations: {
+                self.transform = self.isHighlighted ? CGAffineTransform(scaleX: 0.96, y: 0.96) : .identity
+            }, completion: nil)
+        }
     }
 }
 

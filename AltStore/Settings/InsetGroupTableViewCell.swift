@@ -41,27 +41,45 @@ final class InsetGroupTableViewCell: UITableViewCell
         super.awakeFromNib()
         
         self.selectionStyle = .none
+        self.preservesSuperviewLayoutMargins = false
+        self.contentView.preservesSuperviewLayoutMargins = false
+        self.insetsLayoutMarginsFromSafeArea = false
+        self.contentView.insetsLayoutMarginsFromSafeArea = false
+        self.updateContentMargins()
         
         self.separatorView.translatesAutoresizingMaskIntoConstraints = false
         self.separatorView.backgroundColor = UIColor.white.withAlphaComponent(0.25)
         self.addSubview(self.separatorView)
         
         self.insetView.layer.masksToBounds = true
-        self.insetView.layer.cornerRadius = 16
+        self.insetView.layer.cornerRadius = 20
+        self.insetView.layer.borderWidth = 1.0
+        self.insetView.layer.borderColor = UIColor.white.withAlphaComponent(0.10).cgColor
         
         // Get the preferred background color from Interface Builder.
         self.insetView.backgroundColor = self.backgroundColor
         self.backgroundColor = nil
         
-        self.addSubview(self.insetView, pinningEdgesWith: UIEdgeInsets(top: 0, left: 15, bottom: 0, right: 15))
+        self.insetView.translatesAutoresizingMaskIntoConstraints = false
+        self.addSubview(self.insetView)
         self.sendSubviewToBack(self.insetView)
         
-        NSLayoutConstraint.activate([self.separatorView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 30),
-                                     self.separatorView.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -30),
+        NSLayoutConstraint.activate([self.insetView.leadingAnchor.constraint(equalTo: self.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+                                     self.insetView.trailingAnchor.constraint(equalTo: self.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+                                     self.insetView.topAnchor.constraint(equalTo: self.topAnchor),
+                                     self.insetView.bottomAnchor.constraint(equalTo: self.bottomAnchor),
+                                     self.separatorView.leadingAnchor.constraint(equalTo: self.safeAreaLayoutGuide.leadingAnchor, constant: 30),
+                                     self.separatorView.trailingAnchor.constraint(equalTo: self.safeAreaLayoutGuide.trailingAnchor, constant: -30),
                                      self.separatorView.bottomAnchor.constraint(equalTo: self.bottomAnchor),
                                      self.separatorView.heightAnchor.constraint(equalToConstant: 1)])
         
         self.update()
+    }
+
+    override func safeAreaInsetsDidChange()
+    {
+        super.safeAreaInsetsDidChange()
+        self.updateContentMargins()
     }
     
     override func setSelected(_ selected: Bool, animated: Bool)
@@ -84,14 +102,9 @@ final class InsetGroupTableViewCell: UITableViewCell
     {
         super.setHighlighted(highlighted, animated: animated)
         
-        if animated
-        {
-            UIView.animate(withDuration: 0.4) {
-                self.update()
-            }
-        }
-        else
-        {
+        let scale: CGFloat = highlighted ? 0.97 : 1.0
+        UIView.animate(withDuration: 0.18, delay: 0, usingSpringWithDamping: 0.7, initialSpringVelocity: 0.5, options: [.allowUserInteraction]) {
+            self.insetView.transform = CGAffineTransform(scaleX: scale, y: scale)
             self.update()
         }
     }
@@ -99,6 +112,16 @@ final class InsetGroupTableViewCell: UITableViewCell
 
 private extension InsetGroupTableViewCell
 {
+    func updateContentMargins()
+    {
+        self.contentView.layoutMargins = UIEdgeInsets(
+            top: self.layoutMargins.top,
+            left: self.safeAreaInsets.left + 30,
+            bottom: self.layoutMargins.bottom,
+            right: self.safeAreaInsets.right + 30
+        )
+    }
+
     func update()
     {
         switch self.style
@@ -109,11 +132,11 @@ private extension InsetGroupTableViewCell
             
         case .top:
             self.insetView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-            self.separatorView.isHidden = false
+            self.separatorView.isHidden = true
             
         case .middle:
             self.insetView.layer.maskedCorners = []
-            self.separatorView.isHidden = false
+            self.separatorView.isHidden = true
             
         case .bottom:
             self.insetView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]

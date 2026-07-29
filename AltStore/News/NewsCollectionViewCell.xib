@@ -19,7 +19,7 @@
                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="azr-Ea-luN">
                         <rect key="frame" x="16" y="0.0" width="303" height="299"/>
                     </view>
-                    <view contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Xba-Qs-SQo">
+                    <view contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Xba-Qs-SQo">
                         <rect key="frame" x="16" y="0.0" width="303" height="299"/>
                         <subviews>
                             <stackView opaque="NO" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" axis="vertical" distribution="equalSpacing" translatesAutoresizingMaskIntoConstraints="NO" id="tNk-9u-1tk">
@@ -63,13 +63,13 @@
             </view>
             <constraints>
                 <constraint firstItem="Xba-Qs-SQo" firstAttribute="top" secondItem="wRF-2R-NUG" secondAttribute="top" id="0xe-Rt-MhF"/>
-                <constraint firstItem="Xba-Qs-SQo" firstAttribute="leading" secondItem="wRF-2R-NUG" secondAttribute="leadingMargin" id="5MO-c0-5rG"/>
-                <constraint firstItem="azr-Ea-luN" firstAttribute="leading" secondItem="wRF-2R-NUG" secondAttribute="leadingMargin" id="8Ck-dI-nJy"/>
-                <constraint firstAttribute="trailingMargin" secondItem="Xba-Qs-SQo" secondAttribute="trailing" id="DNL-Jj-3By"/>
+                <constraint firstItem="Xba-Qs-SQo" firstAttribute="leading" secondItem="wRF-2R-NUG" secondAttribute="leading" id="5MO-c0-5rG"/>
+                <constraint firstItem="azr-Ea-luN" firstAttribute="leading" secondItem="wRF-2R-NUG" secondAttribute="leading" id="8Ck-dI-nJy"/>
+                <constraint firstAttribute="trailing" secondItem="Xba-Qs-SQo" secondAttribute="trailing" id="DNL-Jj-3By"/>
                 <constraint firstAttribute="bottom" secondItem="Xba-Qs-SQo" secondAttribute="bottom" id="Ecj-fN-hZv"/>
                 <constraint firstAttribute="bottom" secondItem="azr-Ea-luN" secondAttribute="bottom" priority="999" id="e56-UD-DRT"/>
                 <constraint firstItem="azr-Ea-luN" firstAttribute="top" secondItem="wRF-2R-NUG" secondAttribute="top" id="h2k-WE-Esg"/>
-                <constraint firstAttribute="trailingMargin" secondItem="azr-Ea-luN" secondAttribute="trailing" priority="999" id="hsS-zC-A58"/>
+                <constraint firstAttribute="trailing" secondItem="azr-Ea-luN" secondAttribute="trailing" priority="999" id="hsS-zC-A58"/>
             </constraints>
             <connections>
                 <outlet property="captionLabel" destination="SHB-kk-YhL" id="zY3-qQ-9oY"/>

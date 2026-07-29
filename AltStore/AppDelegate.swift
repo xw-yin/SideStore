@@ -13,9 +13,89 @@ import Intents
 import AltStoreCore
 import AltSign
 import CoreData
+import ObjectiveC
 
 
 import Nuke
+
+private var sideStoreLanguageBundleKey: UInt8 = 0
+
+extension Bundle {
+    private static let swizzleLocalizedString: Void = {
+        let originalSelector = #selector(Bundle.localizedString(forKey:value:table:))
+        let swizzledSelector = #selector(Bundle.custom_localizedString(forKey:value:table:))
+        
+        guard let originalMethod = class_getInstanceMethod(Bundle.self, originalSelector),
+              let swizzledMethod = class_getInstanceMethod(Bundle.self, swizzledSelector) else { return }
+        
+        method_exchangeImplementations(originalMethod, swizzledMethod)
+    }()
+    
+    @objc private func custom_localizedString(forKey key: String, value: String?, table tableName: String?) -> String {
+        let isSideStoreBundle = self == Bundle.main || self.bundlePath.lowercased().contains("sidestore")
+        if isSideStoreBundle,
+           let bundle = objc_getAssociatedObject(Bundle.main, &sideStoreLanguageBundleKey) as? Bundle {
+            return bundle.custom_localizedString(forKey: key, value: value, table: tableName)
+        }
+        return self.custom_localizedString(forKey: key, value: value, table: tableName)
+    }
+
+    static func setSideStoreLanguage(_ languageCode: String?) {
+        _ = Bundle.swizzleLocalizedString
+
+        var resolvedCode = languageCode
+        if resolvedCode == nil {
+            for preferred in Locale.preferredLanguages {
+                let lower = preferred.lowercased()
+                if lower.hasPrefix("zh") {
+                    resolvedCode = "zh-Hans"
+                    break
+                } else if lower.hasPrefix("en") {
+                    resolvedCode = "en"
+                    break
+                }
+            }
+        }
+        if resolvedCode == nil {
+            resolvedCode = "en"
+        }
+
+        let resourceName = resolvedCode == "en" ? "Base" : resolvedCode
+        var candidateBundles = [Bundle.main, Bundle(for: AppDelegate.self)]
+        let embeddedSideStoreURL = Bundle.main.bundleURL
+            .appendingPathComponent("Frameworks", isDirectory: true)
+            .appendingPathComponent("SideStoreApp.framework", isDirectory: true)
+        if let embeddedSideStoreBundle = Bundle(url: embeddedSideStoreURL) {
+            candidateBundles.append(embeddedSideStoreBundle)
+        }
+        candidateBundles.append(contentsOf: Bundle.allBundles)
+        candidateBundles.append(contentsOf: Bundle.allFrameworks)
+
+        let sideStoreBundle = resourceName.flatMap { name in
+            candidateBundles.first { bundle in
+                bundle.path(forResource: name, ofType: "lproj") != nil &&
+                (bundle.bundlePath.lowercased().contains("sidestore") || bundle == Bundle.main)
+            }
+        }
+        let localizedBundle = resourceName
+            .flatMap { sideStoreBundle?.path(forResource: $0, ofType: "lproj") }
+            .flatMap { Bundle(path: $0) }
+        objc_setAssociatedObject(
+            Bundle.main,
+            &sideStoreLanguageBundleKey,
+            localizedBundle,
+            .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+        )
+        if let sideStoreBundle {
+            objc_setAssociatedObject(
+                sideStoreBundle,
+                &sideStoreLanguageBundleKey,
+                localizedBundle,
+                .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+            )
+        }
+    }
+}
 
 extension UIApplication: LegacyBackgroundFetching {}
 
@@ -60,8 +140,14 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     // so the import notification can be posted once the app becomes active.
     private var pendingImportIPAURL: URL?
 
+    override init() {
+        super.init()
+        Bundle.setSideStoreLanguage(UserDefaults.standard.string(forKey: "ALTSelectedLanguage"))
+    }
+
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool
     {
+
         // navigation bar buttons spacing is too much (so hack it to use minimal spacing)
         // this is swift-5 specific behavior and might change
         // https://stackoverflow.com/a/64988363/11971304
@@ -127,7 +213,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
         // TODO: @mahee96: find if we need to start em_proxy as in altstore?
         if UserDefaults.standard.enableEMPforWireguard {
-            startEMProxy(bind_addr: AppConstants.Proxy.serverURL)
+            DispatchQueue.global().async {
+                startEMProxy(bind_addr: AppConstants.Proxy.serverURL)
+            }
         }
 
         SecureValueTransformer.register()        
@@ -175,7 +263,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     {
         AppManager.shared.update()
         if UserDefaults.standard.enableEMPforWireguard {
-            startEMProxy(bind_addr: AppConstants.Proxy.serverURL)
+            DispatchQueue.global().async {
+                startEMProxy(bind_addr: AppConstants.Proxy.serverURL)
+            }
         }
     }
 

@@ -49,7 +49,8 @@ final class SourcesViewController: UICollectionViewController
         navigationItem.largeTitleDisplayMode = .automatic
 
         // Set title
-        navigationItem.title = "Sources"
+        navigationItem.title = NSLocalizedString("Sources", comment: "")
+        self.tabBarItem.title = NSLocalizedString("Sources", comment: "")
         navigationController?.navigationBar.layoutMargins.left = 20
         
         let layout = self.makeLayout()
@@ -118,7 +119,7 @@ final class SourcesViewController: UICollectionViewController
     override func viewDidLayoutSubviews() 
     {
         super.viewDidLayoutSubviews()
-        
+
         // Vertically center placeholder view in gap below first item.
         
         let indexPath = IndexPath(item: 0, section: 0)
@@ -130,6 +131,16 @@ final class SourcesViewController: UICollectionViewController
         if self.placeholderViewCenterYConstraint.constant != constant
         {
             self.placeholderViewCenterYConstraint.constant = constant
+        }
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)
+    {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            guard let self else { return }
+            self.collectionView.setCollectionViewLayout(self.makeLayout(), animated: false)
         }
     }
 }
@@ -180,7 +191,14 @@ private extension SourcesViewController
             return config
         }
         
-        let layout = UICollectionViewCompositionalLayout.list(using: configuration)
+        let layoutConfiguration = UICollectionViewCompositionalLayoutConfiguration()
+        layoutConfiguration.contentInsetsReference = .safeArea
+
+        let layout = UICollectionViewCompositionalLayout(sectionProvider: { _, layoutEnvironment in
+            let section = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: layoutEnvironment)
+            section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+            return section
+        }, configuration: layoutConfiguration)
         return layout
     }
     
@@ -205,10 +223,12 @@ private extension SourcesViewController
             guard let self else { return }
                         
             let cell = cell as! AppBannerCollectionViewCell
-            cell.layoutMargins.top = 5
-            cell.layoutMargins.bottom = 5
-            cell.layoutMargins.left = self.view.layoutMargins.left
-            cell.layoutMargins.right = self.view.layoutMargins.right
+            cell.preservesSuperviewLayoutMargins = false
+            cell.contentView.preservesSuperviewLayoutMargins = false
+            cell.insetsLayoutMarginsFromSafeArea = false
+            cell.contentView.insetsLayoutMarginsFromSafeArea = false
+            cell.layoutMargins = UIEdgeInsets(top: 5, left: 0, bottom: 5, right: 0)
+            cell.contentView.layoutMargins = UIEdgeInsets(top: 5, left: 0, bottom: 5, right: 0)
             
             cell.bannerView.configure(for: source)
             

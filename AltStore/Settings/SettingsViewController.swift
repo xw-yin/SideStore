@@ -298,7 +298,7 @@ final class SettingsViewController: UITableViewController
             let altCert = try ALTCertificate(p12Data: account.cert, password: account.certpass)
             Keychain.shared.signingCertificate = altCert.encryptedP12Data(withPassword: "")!
             Keychain.shared.signingCertificatePassword = account.certpass
-            let toastView = ToastView(text: NSLocalizedString("Successfully imported '\(account.email)'!", comment: ""), detailText: "SideStore should be fully operational!")
+            let toastView = ToastView(text: String(format: NSLocalizedString("Successfully imported '%@'!", comment: ""), account.email), detailText: "SideStore should be fully operational!")
             return toastView.show(in: self)
         } catch {
             let toastView = ToastView(text: NSLocalizedString("Failed to import account certificate!", comment: ""), detailText: "Error: \(error.localizedDescription). Still imported account/adi.pb details!")
@@ -389,12 +389,15 @@ final class SettingsViewController: UITableViewController
     {
         super.viewWillAppear(animated)
         
+        self.navigationItem.title = NSLocalizedString("Settings", comment: "")
+        self.tabBarItem.title = NSLocalizedString("Settings", comment: "")
+        self.localizeSettingsControls(in: self.view)
         // show nav bar if not shown already
         self.navigationController?.setNavigationBarHidden(false, animated: animated)
         
         self.update()
     }
-    
+
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "anisetteServers" || segue.identifier == "certificateManagement" || segue.identifier == "wirelessPairing" || segue.identifier == "networkDiscovery" {
             let controller = segue.destination
@@ -422,7 +425,6 @@ final class SettingsViewController: UITableViewController
 
 private extension SettingsViewController
 {
-    
     private func getVersionLabel() -> String {
         let buildInfo = BuildInfo()
         
@@ -1090,6 +1092,20 @@ extension SettingsViewController
         let section = Section.allCases[indexPath.section]
         let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
+        if section == .display && indexPath.row == 1 {
+            let currentLanguage = UserDefaults.standard.string(forKey: "ALTSelectedLanguage")
+            cell.textLabel?.text = NSLocalizedString("Language", comment: "")
+            switch currentLanguage {
+            case "zh-Hans": cell.detailTextLabel?.text = "中文（简体）"
+            case "en": cell.detailTextLabel?.text = "English"
+            default: cell.detailTextLabel?.text = NSLocalizedString("System Default", comment: "")
+            }
+            cell.accessoryType = .none
+            let chevron = UIImageView(image: UIImage(systemName: "chevron.right", withConfiguration: UIImage.SymbolConfiguration(scale: .large)))
+            chevron.tintColor = .white
+            cell.accessoryView = chevron
+        }
+        
         if section == .advancedSettings {
             let row = AdvancedSettingsRow.allCases[indexPath.row]
             if row == .wirelessPair {
@@ -1128,7 +1144,13 @@ extension SettingsViewController
         }
         
         
+        self.localizeSettingsControls(in: cell)
         return cell
+    }
+
+    override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath)
+    {
+        self.localizeSettingsControls(in: cell)
     }
     
     override func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView?
@@ -1462,6 +1484,13 @@ extension SettingsViewController
                 })
                 
                 let vc = UIHostingController(rootView: anisetteServersView)
+                let appearance = UINavigationBarAppearance()
+                appearance.configureWithDefaultBackground()
+                appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
+                appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
+                vc.navigationItem.standardAppearance = appearance
+                vc.navigationItem.scrollEdgeAppearance = appearance
+                vc.navigationItem.compactAppearance = appearance
                 self.prepare(for: UIStoryboardSegue(identifier: "anisetteServers", source: self, destination: vc), sender: nil)
 
             case .vpnConfiguration:
@@ -1744,12 +1773,91 @@ extension SettingsViewController
             
             
         // case .account, .patreon, .display, .instructions, .macDirtyCow: break
-        case .account, .patreon, .display, .instructions, .betaTesting: break
+        case .display:
+            if indexPath.row == 1 {
+                self.showLanguageSelection(from: tableView.cellForRow(at: indexPath))
+            }
+        case .account, .patreon, .instructions, .betaTesting: break
         }
         
         
         // deselect the row before returning (so that it doesn't look like stuck selected)
         tableView.deselectRow(at: indexPath, animated: true)
+    }
+}
+
+private extension SettingsViewController
+{
+    func localizeSettingsControls(in view: UIView)
+    {
+        if let label = view as? UILabel, let text = label.text, !text.isEmpty {
+            label.text = NSLocalizedString(text, comment: "")
+        } else if let button = view as? UIButton,
+                  let title = button.title(for: .normal),
+                  !title.isEmpty {
+            button.setTitle(NSLocalizedString(title, comment: ""), for: .normal)
+        }
+
+        view.subviews.forEach { self.localizeSettingsControls(in: $0) }
+    }
+
+    func showLanguageSelection(from sourceView: UIView?)
+    {
+        let currentLanguage = UserDefaults.standard.string(forKey: "ALTSelectedLanguage")
+        let alert = UIAlertController(
+            title: NSLocalizedString("Language", comment: ""),
+            message: NSLocalizedString("Choose your preferred language:", comment: ""),
+            preferredStyle: .actionSheet
+        )
+
+        let languages: [(title: String, code: String?)] = [
+            (NSLocalizedString("System Default", comment: ""), nil),
+            ("English", "en"),
+            ("中文（简体）", "zh-Hans")
+        ]
+
+        for language in languages {
+            let isSelected = language.code == currentLanguage || (language.code == nil && currentLanguage == nil)
+            let title = isSelected ? "\(language.title) ✓" : language.title
+            alert.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
+                self?.changeLanguage(to: language.code)
+            })
+        }
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
+
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = sourceView ?? self.view
+            popover.sourceRect = sourceView?.bounds ?? CGRect(
+                x: self.view.bounds.midX,
+                y: self.view.bounds.midY,
+                width: 1,
+                height: 1
+            )
+        }
+        self.present(alert, animated: true)
+    }
+
+    func changeLanguage(to languageCode: String?)
+    {
+        if let languageCode {
+            UserDefaults.standard.set(languageCode, forKey: "ALTSelectedLanguage")
+            UserDefaults.standard.set([languageCode], forKey: "AppleLanguages")
+        } else {
+            UserDefaults.standard.removeObject(forKey: "ALTSelectedLanguage")
+            UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+        }
+        UserDefaults.standard.synchronize()
+
+        Bundle.setSideStoreLanguage(languageCode)
+
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first(where: \.isKeyWindow) ?? windowScene.windows.first,
+              let rootViewController = UIStoryboard(name: "Main", bundle: nil).instantiateInitialViewController()
+        else { return }
+
+        UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve) {
+            window.rootViewController = rootViewController
+        }
     }
 }
 

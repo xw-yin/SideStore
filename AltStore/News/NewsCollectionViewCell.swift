@@ -22,12 +22,36 @@ final class NewsCollectionViewCell: UICollectionViewCell
         let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .title2).bolded()
         self.titleLabel.font = UIFont(descriptor: descriptor, size: 0.0)
         
-        self.contentView.preservesSuperviewLayoutMargins = true
+        self.preservesSuperviewLayoutMargins = false
+        self.contentView.preservesSuperviewLayoutMargins = false
+        self.insetsLayoutMarginsFromSafeArea = false
+        self.contentView.insetsLayoutMarginsFromSafeArea = false
+        self.layoutMargins = .zero
+        self.contentView.layoutMargins = .zero
+        self.contentBackgroundView.preservesSuperviewLayoutMargins = false
+        self.contentBackgroundView.insetsLayoutMarginsFromSafeArea = false
         
         self.contentBackgroundView.layer.cornerRadius = 30
         self.contentBackgroundView.clipsToBounds = true
         
         self.imageView.layer.cornerRadius = 30
         self.imageView.clipsToBounds = true
+    }
+    
+    override func prepareForReuse()
+    {
+        super.prepareForReuse()
+        
+        // UIKit may reset safe-area–derived margins during reuse; re-assert our layout.
+        self.insetsLayoutMarginsFromSafeArea = false
+        self.contentView.insetsLayoutMarginsFromSafeArea = false
+        self.layoutMargins = .zero
+        self.contentView.layoutMargins = .zero
+    }
+    
+    override func layoutSubviews()
+    {
+        super.layoutSubviews()
+        self.contentView.frame = self.bounds
     }
 }
