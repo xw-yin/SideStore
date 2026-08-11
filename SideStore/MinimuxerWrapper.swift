@@ -73,12 +73,7 @@ func getMinimuxerStatus() async -> MinimuxerStatus {
     debugLog("[SideStore] getMinimuxerStatus() = .ready on simulator")
     return .ready
     #else
-    var result = await Minimuxer.shared.isReady()
-    if case .failure = result, let pf = AppBootManager.shared.getSavedPairingFile() {
-        try? await AppBootManager.shared.startMinimuxer(pairingFile: pf)
-        result = await Minimuxer.shared.isReady()
-    }
-    
+    let result = await Minimuxer.shared.isReady()
     switch result {
         case .success:
             return .ready
