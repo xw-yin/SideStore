@@ -26,6 +26,13 @@ public final class AppBootManager {
            let contents = try? String(contentsOf: documentsPath), !contents.isEmpty {
             return contents
         }
+        if let groupURL = fm.containerURL(forSecurityApplicationGroupIdentifier: "group.com.rileytestut.AltStore") {
+            let groupPath = groupURL.appendingPathComponent(pairingFileName)
+            if fm.fileExists(atPath: groupPath.path),
+               let contents = try? String(contentsOf: groupPath), !contents.isEmpty {
+                return contents
+            }
+        }
         if let url = Bundle.main.url(forResource: "ALTPairingFile", withExtension: "mobiledevicepairing"),
            fm.fileExists(atPath: url.path),
            let data = fm.contents(atPath: url.path),
