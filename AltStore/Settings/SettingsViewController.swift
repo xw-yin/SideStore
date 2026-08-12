@@ -246,7 +246,8 @@ final class SettingsViewController: UITableViewController
                 button.setImage(image, for: .normal)
                 button.imageView?.contentMode = .scaleAspectFit
             }
-        configureReleaseChannelButton()
+            configureReleaseChannelButton()
+        }
     }
     
     override func viewWillAppear(_ animated: Bool)

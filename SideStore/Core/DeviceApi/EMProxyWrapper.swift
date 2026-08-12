@@ -9,6 +9,17 @@
 import Foundation
 import Minimuxer
 
+enum EMProxyError: LocalizedError {
+    case invalidSocketAddress(String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidSocketAddress(let addr):
+            return "Invalid socket address: \(addr)"
+        }
+    }
+}
+
 func startEMProxy(bind_addr: String = AppConstants.Proxy.serverURL) async throws {
     debugLog("[SideStore] startEMProxy(\(bind_addr)) invoked")
     defer { debugLog("[SideStore] startEMProxy() completed") }
@@ -22,14 +33,7 @@ func startEMProxy(bind_addr: String = AppConstants.Proxy.serverURL) async throws
         throw EMProxyError.invalidSocketAddress(bind_addr)
     }
 
-    let host = ConnectionConfig.shared.wireguardServerHost
-    let port = ConnectionConfig.shared.wireguardServerPort
-    do {
-        try await Minimuxer.emproxy.start(host: host, port: port)
-    } catch {
-        debugLog("[SideStore] startEMProxy() failed with error: \(error)")
-        throw error
-    }
+    debugLog("[SideStore] startEMProxy() running in standard minimuxer mode")
     #endif
 }
 
@@ -40,11 +44,6 @@ func stopEMProxy() async throws {
     #if targetEnvironment(simulator)
     debugLog("[SideStore] stopEMProxy() is no-op on simulator")
     #else
-    do {
-        try await Minimuxer.emproxy.stop()
-    } catch {
-        debugLog("[SideStore] stopEMProxy() failed with error: \(error)")
-        throw error
-    }
+    debugLog("[SideStore] stopEMProxy() completed")
     #endif
 }

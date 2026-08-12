@@ -53,33 +53,36 @@ import AltStoreCore
         let installedApps = await context.perform { InstalledApp.fetchAppsForRefreshingAll(in: context) }
 
         try await withCheckedThrowingContinuation { continuation in
-            let operation = AppManager.shared.backgroundRefresh(installedApps, presentsNotifications: true) { (result) in
-                do
-                {
-                    let results = try result.get()
-
-                    for (_, result) in results
+            do {
+                let operation = try AppManager.shared.backgroundRefresh(installedApps, presentsNotifications: true) { (result) in
+                    do
                     {
-                        guard case let .failure(error) = result else { continue }
-                        throw error
+                        let results = try result.get()
+
+                        for (_, result) in results
+                        {
+                            guard case let .failure(error) = result else { continue }
+                            throw error
+                        }
+
+                        continuation.resume()
                     }
+                    catch ~RefreshErrorCode.noInstalledApps
+                    {
+                        continuation.resume()
+                    }
+                    catch
+                    {
+                        continuation.resume(throwing: error)
+                    }
+                }
 
-                    continuation.resume()
-                }
-                catch ~RefreshErrorCode.noInstalledApps
-                {
-                    continuation.resume()
-                }
-                catch
-                {
-                    continuation.resume(throwing: error)
-                }
+                operation.ignoresServerNotFoundError = false
+
+                progress.addChild(operation.progress, withPendingUnitCount: 1)
+            } catch {
+                continuation.resume(throwing: error)
             }
-
-            operation.ignoresServerNotFoundError = false
-
-            progress.addChild(operation.progress, withPendingUnitCount: 1)
-
         }
     }
 }
