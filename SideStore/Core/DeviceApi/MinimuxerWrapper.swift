@@ -40,40 +40,41 @@ func getDeviceConnectionMode() async -> DeviceConnectionMode {
 
 enum MinimuxerStatus: Equatable {
     case ready
-    case noDevice
-    case noConnection
+    case noDevice(String?)
+    case noConnection(String?)
     case notReachable(String)
-    case noVPN
-    case invalidVPN
-    case invalidPairing
-    case notStarted
-    case pairingNotLoaded
+    case noVPN(String?)
+    case invalidVPN(String?)
+    case invalidPairing(String?)
+    case notStarted(String?)
+    case pairingNotLoaded(String?)
     case unknown
     
     init(from error: MinimuxerError) {
         switch error {
-        case .noVPN:                    self = .noVPN
-        case .invalidVPN:               self = .invalidVPN
-        case .invalidPairing:           self = .invalidPairing
-        case .noDevice:                 self = .noDevice
-        case .noConnection:             self = .noConnection
-        case .notReachable(let reason): self = .notReachable(reason)
-        case .notStarted:               self = .notStarted
-        case .pairingNotLoaded:         self = .pairingNotLoaded
-        default:                        self = .unknown
+        case .noVPN(let reason):                    self = .noVPN(reason)
+        case .invalidVPN(let reason):               self = .invalidVPN(reason)
+        case .invalidPairing(_, let reason):        self = .invalidPairing(reason)
+        case .noDevice(let reason):                 self = .noDevice(reason)
+        case .noConnection(let reason):             self = .noConnection(reason)
+        case .notReachable(let reason):             self = .notReachable(reason)
+        case .notStarted(let reason):               self = .notStarted(reason)
+        case .pairingNotLoaded(let reason):         self = .pairingNotLoaded(reason)
+        default:                                    self = .unknown
         }
     }
     
     var operationError: OperationError? {
         switch self {
-        case .unknown, .ready:          return nil
-        case .noDevice:                 return .noDevice
-        case .noConnection:             return .noConnection
-        case .notReachable(let reason): return .notReachable(reason: reason)
-        case .noVPN, .invalidVPN:       return .noVPN
-        case .invalidPairing:           return .invalidPairingFile
-        case .notStarted:               return .minimuxerNotStarted
-        case .pairingNotLoaded:         return .pairingNotComplete
+        case .unknown, .ready:                  return nil
+        case .noDevice(let reason):             return .noDevice(reason: reason)
+        case .noConnection(let reason):         return .noConnection(reason: reason)
+        case .notReachable(let reason):         return .notReachable(reason: reason)
+        case .noVPN(let reason):                return .noVPN(reason: reason)
+        case .invalidVPN(let reason):           return .invalidVPN(reason: reason)
+        case .invalidPairing(let reason):       return .invalidPairingFile(reason: reason)
+        case .notStarted(let reason):           return .minimuxerNotStarted(reason: reason)
+        case .pairingNotLoaded(let reason):     return .pairingNotComplete(reason: reason)
         }
     }
 

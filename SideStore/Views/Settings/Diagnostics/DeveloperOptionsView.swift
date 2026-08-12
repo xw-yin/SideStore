@@ -246,7 +246,7 @@ struct DeveloperOptionsView: View {
                     VStack(spacing: 0) {
                         SwiftUI.Button(action: { exportWireGuardConfig() }) {
                             HStack(spacing: 12) {
-                                Image(systemName: "shield.text.mini")
+                                Image(systemName: "square.and.arrow.up")
                                     .font(.system(size: 18, weight: .semibold))
                                     .foregroundColor(.white)
                                 Text("Export WireGuard Config")
@@ -264,10 +264,10 @@ struct DeveloperOptionsView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "play.circle")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.green)
+                                    .foregroundColor(.white)
                                 Text("Start EMProxy")
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.green)
+                                    .foregroundColor(.white)
                                 Spacer()
                             }
                             .padding(.horizontal, 16)
@@ -280,10 +280,10 @@ struct DeveloperOptionsView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "stop.circle")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(Color(red: 1.0, green: 0.27, blue: 0.27))
+                                    .foregroundColor(.white)
                                 Text("Stop EMProxy")
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(Color(red: 1.0, green: 0.27, blue: 0.27))
+                                    .foregroundColor(.white)
                                 Spacer()
                             }
                             .padding(.horizontal, 16)
@@ -292,7 +292,7 @@ struct DeveloperOptionsView: View {
                         
                         divider
                         
-                        toggleRow(title: "Always Show WireGuard Settings", isOn: Binding(
+                        toggleRow(title: "Show WireGuard Settings", isOn: Binding(
                             get: { alwaysShowWireGuardConfig },
                             set: { newValue in
                                 alwaysShowWireGuardConfig = newValue
