@@ -150,6 +150,14 @@ public extension UserDefaults
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
+    @objc var isMinimuxerConsoleLoggingEnabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var isMinimuxerStatusCheckEnabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
     @objc var keepSigningCertsAfterLogout: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
@@ -307,7 +315,7 @@ public extension UserDefaults
         let preferredAppSorting: AppSorting = if #available(iOS 15, *) { .default } else { .name }
         
         let defaults = [
-            #keyPath(UserDefaults.preferredAppSorting): preferredAppSorting.rawValue,
+            #keyPath(UserDefaults._preferredAppSorting): preferredAppSorting.rawValue,
             #keyPath(UserDefaults.useLocalVPN): true,
             #keyPath(UserDefaults.isCellularRefreshEnabled): false,
             #keyPath(UserDefaults.isAppLimitDisabled): false,
