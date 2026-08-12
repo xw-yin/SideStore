@@ -15,7 +15,8 @@ struct WirelessPairView: View {
     private let pulse = Animation.interactiveSpring(response: 1.5, dampingFraction: 0.55)
     
     var body: some View {
-        VStack(spacing: 24) {
+        ScrollView(.vertical) {
+            VStack(spacing: 24) {
             // Pulsing Status Orb
             ZStack {
                 // Outer breathing glow
@@ -161,6 +162,7 @@ struct WirelessPairView: View {
             .animation(.spring(response: 0.28, dampingFraction: 0.65), value: manager.isAdvertising)
             .padding(.horizontal, 32)
             .padding(.bottom, 32)
+        }
         }
         .navigationTitle("Wireless Pairing")
         .navigationBarTitleDisplayMode(.inline)

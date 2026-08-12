@@ -464,6 +464,9 @@
 
 "News" = "新闻";
 
-"My Apps" = "我的 App";
+"My Apps" = "我的应用";
+"SIGN OUT" = "注销";
+"Connection Config" = "连接配置";
 
 "Opt in for beta testing to receive regular updates and early previews of upcoming releases.\n\nPlease note that these builds are experimental and may be unstable or break unexpectedly." = "选择加入测试版测试，以获取定期更新 and 早期预览。\n\n请注意，这些版本是实验性的，可能会不稳定或意外崩溃。";
+

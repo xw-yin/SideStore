@@ -33,6 +33,9 @@ final class RefreshAttemptsViewController: UITableViewController
     {
         super.viewDidLoad()
         
+        self.title = NSLocalizedString("Refresh Attempts", comment: "")
+        self.navigationItem.largeTitleDisplayMode = .always
+        
         self.tableView.dataSource = self.dataSource
         self.dataSource.contentView = self.tableView
     }

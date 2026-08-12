@@ -41,4 +41,11 @@ final class InstalledAppsCollectionHeaderView: UICollectionReusableView
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    
+    override func safeAreaInsetsDidChange()
+    {
+        super.safeAreaInsetsDidChange()
+        let horizontalInset = max(self.safeAreaInsets.left, self.safeAreaInsets.right) + 16
+        self.layoutMargins = UIEdgeInsets(top: 0, left: horizontalInset, bottom: 0, right: horizontalInset)
+    }
 }

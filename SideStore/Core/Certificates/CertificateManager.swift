@@ -378,11 +378,15 @@ public final class CertificateManager: @unchecked Sendable {
 
         // STEP 1: Mach-O Binary Check (Only for SideStore itself)
         if isSelf {
-            let bundleURL = Bundle.Info.activeBundleURL
+            let bundleURL = Bundle.isBundledWithLiveContainer ? Bundle.realMainBundle.bundleURL : Bundle.Info.activeBundleURL
             verboseLog("[CertificateManager] Step 1 (Mach-O): Checking \(bundleURL.path)...")
             if let binaryX509 = readBinaryCertificate(at: bundleURL) {
                 debugLog("[CertificateManager] getSigningCertificate: Loaded signing certificate from main bundle Mach-O (serial: \(binaryX509.serialNumber)).")
                 return binaryX509
+            } else if withPlistFallback,
+                      let profile = try? ALTProvisioningProfile(url: bundleURL.appendingPathComponent("embedded.mobileprovision")),
+                      let cert = profile.certificates.first {
+                return cert
             } else {
                 verboseLog("[CertificateManager] Step 1 (Mach-O): No valid leaf certificate extracted from Mach-O.")
             }
@@ -399,6 +403,9 @@ public final class CertificateManager: @unchecked Sendable {
                 } else {
                     verboseLog("[CertificateManager] Step 2 (App Group Cached Cert): File exists at \(certURL.path) but failed to parse.")
                 }
+            }
+            if withPlistFallback, let cert = appBundle.provisioningProfile?.certificates.first {
+                return cert
             }
             verboseLog("[CertificateManager] Step 2 (App Group Cached Cert): No cached certificate found in App Group at \(appDirectory.path).")
         }

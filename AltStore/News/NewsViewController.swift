@@ -526,7 +526,10 @@ extension NewsViewController: UICollectionViewDelegateFlowLayout
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets
     {
-        var insets = UIEdgeInsets(top: 30, left: 16, bottom: 13, right: 16)
+        let safeArea = self.view.safeAreaInsets
+        let maxHorizontalSafeArea = max(safeArea.left, safeArea.right)
+        let horizontalInset = maxHorizontalSafeArea + 16
+        var insets = UIEdgeInsets(top: 30, left: horizontalInset, bottom: 13, right: horizontalInset)
         
         if section == 0
         {
@@ -538,7 +541,9 @@ extension NewsViewController: UICollectionViewDelegateFlowLayout
 
     private func cardContentWidth(in collectionView: UICollectionView) -> CGFloat
     {
-        return max(1, collectionView.bounds.width - 32)
+        let safeArea = self.view.safeAreaInsets
+        let maxHorizontalSafeArea = max(safeArea.left, safeArea.right)
+        return max(1, collectionView.bounds.width - (maxHorizontalSafeArea * 2) - 32)
     }
 }
 

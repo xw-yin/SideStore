@@ -42,6 +42,11 @@ final class InstructionsViewController: UIViewController
         {
             self.dismissButton.isHidden = true
         }
+        
+        if let scrollView = self.view.subviews.first(where: { $0 is UIScrollView }) as? UIScrollView,
+           let containerView = scrollView.subviews.first {
+            containerView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor).isActive = true
+        }
     }
 }
 

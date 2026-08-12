@@ -110,7 +110,7 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
         refreshControl.addTarget(self, action: #selector(MyAppsViewController.checkForUpdates(_:)), for: .primaryActionTriggered)
         self.collectionView.refreshControl = refreshControl
         if let layout = self.collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
-            layout.sectionInsetReference = .fromSafeArea
+            layout.sectionInsetReference = .fromContentInset
         }
         
         self.sideloadingProgressView = UIProgressView(progressViewStyle: .bar)
@@ -158,6 +158,20 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
     override func viewDidLayoutSubviews()
     {
         super.viewDidLayoutSubviews()
+    }
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)
+    {
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate(alongsideTransition: { _ in
+            self.collectionView.collectionViewLayout.invalidateLayout()
+        })
+    }
+    
+    override func viewSafeAreaInsetsDidChange()
+    {
+        super.viewSafeAreaInsetsDidChange()
+        self.collectionView.collectionViewLayout.invalidateLayout()
     }
 
     override func viewDidAppear(_ animated: Bool)
@@ -2740,8 +2754,22 @@ private extension MyAppsViewController
 {
     func cardContentWidth(in collectionView: UICollectionView) -> CGFloat
     {
-        let safeAreaWidth = collectionView.safeAreaInsets.left + collectionView.safeAreaInsets.right
-        return max(1, collectionView.bounds.width - safeAreaWidth - 32)
+        let safeArea = self.view.safeAreaInsets
+        let maxHorizontalSafeArea = max(safeArea.left, safeArea.right)
+        return max(1, collectionView.bounds.width - (maxHorizontalSafeArea * 2) - 32)
+    }
+
+    func symmetricHorizontalInset(in collectionView: UICollectionView) -> CGFloat
+    {
+        let safeArea = self.view.safeAreaInsets
+        let maxHorizontalSafeArea = max(safeArea.left, safeArea.right)
+        return maxHorizontalSafeArea + 16
+    }
+
+    func configureCardMargins(for cell: UICollectionViewCell)
+    {
+        cell.contentView.preservesSuperviewLayoutMargins = false
+        cell.contentView.layoutMargins = .zero
     }
 }
 

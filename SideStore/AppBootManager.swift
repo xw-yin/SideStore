@@ -81,6 +81,50 @@ public final class AppBootManager {
         }
     }
     
+    private struct MinimuxerStartup {
+        let task: Task<Void, Error>
+    }
+    private static var currentStartup: MinimuxerStartup?
+    private static let startupLock = NSLock()
+
+    public nonisolated func ensureMinimuxerStarted() async throws {
+        if !UserDefaults.standard.isMinimuxerStatusCheckEnabled {
+            return
+        }
+        #if targetEnvironment(simulator)
+        return
+        #else
+        let status = await getMinimuxerStatus()
+        if status == .ready {
+            return
+        }
+        
+        let startup: MinimuxerStartup = Self.startupLock.withLock {
+            if let existing = Self.currentStartup {
+                return existing
+            }
+            let task = Task {
+                guard let pf = self.getSavedPairingFile() else {
+                    self.needsPairingPrompt = true
+                    throw OperationError.invalidPairingFile
+                }
+                try await self.startMinimuxer(pairingFile: pf)
+            }
+            let newStartup = MinimuxerStartup(task: task)
+            Self.currentStartup = newStartup
+            return newStartup
+        }
+        
+        do {
+            try await startup.task.value
+            Self.startupLock.withLock { Self.currentStartup = nil }
+        } catch {
+            Self.startupLock.withLock { Self.currentStartup = nil }
+            throw error
+        }
+        #endif
+    }
+    
     public nonisolated func performBootSequence() async {
         Task.detached {
             debugLog("[AppBootManager] performBootSequence() entered")
