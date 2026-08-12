@@ -46,7 +46,6 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
     
     private var prototypeUpdateCell: UpdateCollectionViewCell!
     private var sideloadingProgressView: UIProgressView!
-    private weak var embeddedSideloadButton: UIButton?
     
     // State
     private var isUpdateSectionCollapsed = true
@@ -259,46 +258,22 @@ private extension MyAppsViewController
 {
     func configureEmbeddedLiveContainerButton()
     {
-        guard Bundle.isBundledWithLiveContainer else { return }
-
-        let sideloadButton = UIButton(type: .system)
-        sideloadButton.setImage(UIImage(systemName: "plus"), for: .normal)
-        sideloadButton.addTarget(self, action: #selector(sideloadApp(_:)), for: .touchUpInside)
-        sideloadButton.accessibilityLabel = NSLocalizedString("Add App", comment: "")
+        guard Bundle.isBundledWithLiveContainer,
+              let items = self.navigationItem.leftBarButtonItems,
+              items.count == 2
+        else { return }
 
         let liveContainerButton = UIButton(type: .system)
+        liveContainerButton.translatesAutoresizingMaskIntoConstraints = false
         liveContainerButton.setImage(UIImage(systemName: "escape"), for: .normal)
         liveContainerButton.addTarget(self, action: #selector(openLC(_:)), for: .touchUpInside)
         liveContainerButton.accessibilityLabel = "LiveContainer"
         liveContainerButton.transform = CGAffineTransform(rotationAngle: .pi)
-
-        for button in [sideloadButton, liveContainerButton] {
-            button.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([
-                button.widthAnchor.constraint(equalToConstant: 30),
-                button.heightAnchor.constraint(equalToConstant: 30)
-            ])
-        }
-
-        let buttonStack = UIStackView(arrangedSubviews: [sideloadButton, liveContainerButton])
-        buttonStack.axis = .horizontal
-        buttonStack.alignment = .center
-        buttonStack.spacing = 8
-
-        self.navigationItem.leftBarButtonItems = [UIBarButtonItem(customView: buttonStack)]
-        self.embeddedSideloadButton = sideloadButton
-    }
-}
-
-private extension MyAppsViewController
-{
-    func setSideloadButtonIndicatingActivity(_ isIndicating: Bool)
-    {
-        if let button = self.embeddedSideloadButton {
-            button.isIndicatingActivity = isIndicating
-        } else {
-            self.navigationItem.leftBarButtonItem?.isIndicatingActivity = isIndicating
-        }
+        NSLayoutConstraint.activate([
+            liveContainerButton.widthAnchor.constraint(equalToConstant: 30),
+            liveContainerButton.heightAnchor.constraint(equalToConstant: 30)
+        ])
+        items[1].customView = liveContainerButton
     }
 
     func makeDataSource() -> RSTCompositeCollectionViewPrefetchingDataSource<InstalledApp, UIImage>
@@ -974,7 +949,7 @@ private extension MyAppsViewController
     {
         let progress = Progress.discreteProgress(totalUnitCount: 100)
         
-        self.setSideloadButtonIndicatingActivity(true)
+        self.navigationItem.leftBarButtonItem?.isIndicatingActivity = true
         
         let temporaryDirectory = FileManager.default.uniqueTemporaryURL()
         let unzippedAppDirectory = temporaryDirectory.appendingPathComponent("App")
@@ -1060,7 +1035,7 @@ private extension MyAppsViewController
                 try? FileManager.default.removeItem(at: temporaryDirectory)
                 
                 await MainActor.run {
-                    self.setSideloadButtonIndicatingActivity(false)
+                    self.navigationItem.leftBarButtonItem?.isIndicatingActivity = false
                     self.sideloadingProgressView.observedProgress = nil
                     self.sideloadingProgressView.setHidden(true, animated: true)
                     
@@ -1076,7 +1051,7 @@ private extension MyAppsViewController
                 try? FileManager.default.removeItem(at: temporaryDirectory)
                 
                 await MainActor.run {
-                    self.setSideloadButtonIndicatingActivity(false)
+                    self.navigationItem.leftBarButtonItem?.isIndicatingActivity = false
                     self.sideloadingProgressView.observedProgress = nil
                     self.sideloadingProgressView.setHidden(true, animated: true)
                     
