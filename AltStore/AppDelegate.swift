@@ -83,14 +83,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool
     {
 
-        // navigation bar buttons spacing is too much (so hack it to use minimal spacing)
-        // this is swift-5 specific behavior and might change
-        // https://stackoverflow.com/a/64988363/11971304
-        //
-        // Warning: this affects all screens through out the app, and basically overrides storyboard
-        let stackViewAppearance = UIStackView.appearance(whenContainedInInstancesOf: [UINavigationBar.self])
-        stackViewAppearance.spacing = -8        // adjust as needed
-        
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .medium
         dateFormatter.timeStyle = .medium
