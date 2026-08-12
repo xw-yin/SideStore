@@ -2044,11 +2044,10 @@ extension AppManager
             context?.operations.add(operation)
         }
     }
-    
-=======
+}
+
 // MARK: - PipelineRunner Protocol Conformances
 extension AppManager: PipelineProgress, PipelineExecutionContext, PipelineErrorLogger {
->>>>>>> upstream/develop
     func progress(for operation: AppOperation) -> Progress?
     {
         // Access outside critical section to avoid deadlock due to `bundleIdentifier` potentially calling performAndWait() on main thread.

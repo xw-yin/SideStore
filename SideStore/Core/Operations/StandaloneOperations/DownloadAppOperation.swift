@@ -214,6 +214,7 @@ final class DownloadAppOperation: BasePipelineOperation<InstallAppOperationConte
         do {
             let (fileURL, response) = try await self.session.download(from: downloadURL, delegate: delegate)
             let resp = response as? HTTPURLResponse
+            if let resp {
                 debugLog("[DownloadAppOperation] downloadFile: completed with status \(resp.statusCode) at \(fileURL.path)")
                 guard resp.statusCode != 403 else { throw URLError(.noPermissionsToReadFile) }
                 guard resp.statusCode != 404 else { throw CocoaError(.fileNoSuchFile, userInfo: [NSURLErrorKey: downloadURL]) }

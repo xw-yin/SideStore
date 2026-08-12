@@ -348,7 +348,6 @@ public struct ConsoleLogView: View {
                 showCopiedBanner = false
             }
         }
->>>>>>> upstream/develop:SideStore/Views/Settings/TechyThings/ErrorLog/ConsoleLogView.swift
     }
 
     private static let timestampRegex = try? NSRegularExpression(
