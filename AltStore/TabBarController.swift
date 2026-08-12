@@ -133,7 +133,7 @@ private extension TabBarController
 
 private extension TabBarController
 {
-    func selectTab(_ tab: Tab)
+    private func selectTab(_ tab: Tab)
     {
         guard let viewControllers, viewControllers.indices.contains(tab.rawValue) else {
             debugLog("[TabBarController] Cannot select missing tab at index \(tab.rawValue)")
