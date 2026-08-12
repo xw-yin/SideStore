@@ -16,6 +16,8 @@ import CoreData
 
 import Nuke
 
+// When embedded inside LiveContainer, SideStore is loaded as Frameworks/SideStoreApp.framework.
+// The boot sequence is managed by LCBootstrap + AppBootManager.
 
 extension UIApplication: LegacyBackgroundFetching {}
 
