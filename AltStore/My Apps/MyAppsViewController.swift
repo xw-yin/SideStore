@@ -46,6 +46,7 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
     
     private var prototypeUpdateCell: UpdateCollectionViewCell!
     private var sideloadingProgressView: UIProgressView!
+    private weak var embeddedSideloadButton: UIButton?
     
     // State
     private var isUpdateSectionCollapsed = true
@@ -258,26 +259,48 @@ private extension MyAppsViewController
 {
     func configureEmbeddedLiveContainerButton()
     {
-        guard Bundle.isBundledWithLiveContainer,
-              let item = self.navigationItem.leftBarButtonItems?.first(where: { $0.action == #selector(openLC(_:)) })
-        else { return }
+        guard Bundle.isBundledWithLiveContainer else { return }
 
-        let button = UIButton(type: .system)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.setImage(UIImage(systemName: "escape"), for: .normal)
-        button.addTarget(self, action: #selector(openLC(_:)), for: .touchUpInside)
-        button.accessibilityLabel = "LiveContainer"
-        button.transform = CGAffineTransform(rotationAngle: .pi)
-        NSLayoutConstraint.activate([
-            button.widthAnchor.constraint(equalToConstant: 30),
-            button.heightAnchor.constraint(equalToConstant: 30)
-        ])
-        item.customView = button
+        let sideloadButton = UIButton(type: .system)
+        sideloadButton.setImage(UIImage(systemName: "plus"), for: .normal)
+        sideloadButton.addTarget(self, action: #selector(sideloadApp(_:)), for: .touchUpInside)
+        sideloadButton.accessibilityLabel = NSLocalizedString("Add App", comment: "")
+
+        let liveContainerButton = UIButton(type: .system)
+        liveContainerButton.setImage(UIImage(systemName: "escape"), for: .normal)
+        liveContainerButton.addTarget(self, action: #selector(openLC(_:)), for: .touchUpInside)
+        liveContainerButton.accessibilityLabel = "LiveContainer"
+        liveContainerButton.transform = CGAffineTransform(rotationAngle: .pi)
+
+        for button in [sideloadButton, liveContainerButton] {
+            button.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                button.widthAnchor.constraint(equalToConstant: 30),
+                button.heightAnchor.constraint(equalToConstant: 30)
+            ])
+        }
+
+        let buttonStack = UIStackView(arrangedSubviews: [sideloadButton, liveContainerButton])
+        buttonStack.axis = .horizontal
+        buttonStack.alignment = .center
+        buttonStack.spacing = 8
+
+        self.navigationItem.leftBarButtonItems = [UIBarButtonItem(customView: buttonStack)]
+        self.embeddedSideloadButton = sideloadButton
     }
 }
 
 private extension MyAppsViewController
 {
+    func setSideloadButtonIndicatingActivity(_ isIndicating: Bool)
+    {
+        if let button = self.embeddedSideloadButton {
+            button.isIndicatingActivity = isIndicating
+        } else {
+            self.navigationItem.leftBarButtonItem?.isIndicatingActivity = isIndicating
+        }
+    }
+
     func makeDataSource() -> RSTCompositeCollectionViewPrefetchingDataSource<InstalledApp, UIImage>
     {
         let dataSource = RSTCompositeCollectionViewPrefetchingDataSource<InstalledApp, UIImage>(dataSources: [self.noUpdatesDataSource, self.updatesDataSource, self.activeAppsDataSource, self.inactiveAppsDataSource])
@@ -936,7 +959,7 @@ private extension MyAppsViewController
         }
     }
     
-    @IBAction func sideloadApp(_ sender: UIBarButtonItem)
+    @IBAction func sideloadApp(_ sender: Any)
     {
         Task { @MainActor in
             let supportedTypes = UTType.types(tag: "ipa", tagClass: .filenameExtension, conformingTo: nil)
@@ -951,7 +974,7 @@ private extension MyAppsViewController
     {
         let progress = Progress.discreteProgress(totalUnitCount: 100)
         
-        self.navigationItem.leftBarButtonItem?.isIndicatingActivity = true
+        self.setSideloadButtonIndicatingActivity(true)
         
         let temporaryDirectory = FileManager.default.uniqueTemporaryURL()
         let unzippedAppDirectory = temporaryDirectory.appendingPathComponent("App")
@@ -1037,7 +1060,7 @@ private extension MyAppsViewController
                 try? FileManager.default.removeItem(at: temporaryDirectory)
                 
                 await MainActor.run {
-                    self.navigationItem.leftBarButtonItem?.isIndicatingActivity = false
+                    self.setSideloadButtonIndicatingActivity(false)
                     self.sideloadingProgressView.observedProgress = nil
                     self.sideloadingProgressView.setHidden(true, animated: true)
                     
@@ -1053,7 +1076,7 @@ private extension MyAppsViewController
                 try? FileManager.default.removeItem(at: temporaryDirectory)
                 
                 await MainActor.run {
-                    self.navigationItem.leftBarButtonItem?.isIndicatingActivity = false
+                    self.setSideloadButtonIndicatingActivity(false)
                     self.sideloadingProgressView.observedProgress = nil
                     self.sideloadingProgressView.setHidden(true, animated: true)
                     
