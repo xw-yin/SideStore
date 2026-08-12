@@ -448,38 +448,36 @@ private extension DatabaseManager
                         // LiveContainer owns its widget, which is not part of SideStore's self-refresh bundle.
                         installedApp.useMainProfile = true
                     } else {
-                        // Figure out if the current AltStoreApp is signed with "Use Main Profile" option
-                        // by checking if the first extension's entitlement's application-identifier matches current one.
+                        // figure out if the current AltStoreApp is signed with "Use Main Profie" option
+                        // by checking if the first extension's entitlement's application-identifier matches current one
                         repeat {
-                        guard let pluginURL = appBundle.builtInPlugInsURL else {
-                            installedApp.useMainProfile = true
-                            break
-                        }
-                        guard let pluginFolders = try? FileManager.default.contentsOfDirectory(at: pluginURL, includingPropertiesForKeys: nil) else {
-                            installedApp.useMainProfile = true
-                            break
-                        }
-                        
-                    if let provisioningProfile = localAppBundle.provisioningProfile {
-                        do {
-                        let entitlements = try PropertyListSerialization.propertyList(from: provisioningProfile.entitlementsData, options: [], format: nil) as! [String: Any]
-                        guard let appId = entitlements[ALTEntitlement.applicationIdentifier] as? String else {
-                            installedApp.useMainProfile = false
-                            debugLog("no ALTEntitlementApplicationIdentifier???")
-                            break
-                        }
-                        
-                        if appId.hasSuffix(appBundle.bundleIdentifier ?? "") || appId.hasSuffix(Bundle.Info.activeBundleIdentifier) {
-                            installedApp.useMainProfile = true
-                        } else {
-                            installedApp.useMainProfile = false
-                        }
-                        
-                        } catch {
-                            installedApp.useMainProfile = true
-                        }
-                    } else {
-                        installedApp.useMainProfile = true
+                            guard let pluginURL = Bundle.main.builtInPlugInsURL else {
+                                installedApp.useMainProfile = true
+                                break
+                            }
+                            guard let pluginFolders = try? FileManager.default.contentsOfDirectory(at: pluginURL, includingPropertiesForKeys: nil) else {
+                                installedApp.useMainProfile = true
+                                break
+                            }
+                            
+                            guard let pluginFolder = pluginFolders.first, let altPluginAppBundle = ALTApplication(fileURL: pluginFolder) else {
+                                installedApp.useMainProfile = true
+                                break
+                            }
+                            
+                            let entitlements = altPluginAppBundle.entitlements
+                            guard let appId = entitlements[ALTEntitlement.applicationIdentifier] as? String else {
+                                installedApp.useMainProfile = false
+                                debugLog("no ALTEntitlementApplicationIdentifier???")
+                                break
+                            }
+                            
+                            if appId.hasSuffix(Bundle.Info.activeBundleIdentifier) {
+                                installedApp.useMainProfile = true
+                            } else {
+                                installedApp.useMainProfile = false
+                            }
+                        } while(false)
                     }
                     
                     installedApp.storeApp = storeApp
