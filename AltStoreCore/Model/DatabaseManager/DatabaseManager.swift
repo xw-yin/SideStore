@@ -375,6 +375,8 @@ private extension DatabaseManager
         
         let context = self.persistentContainer.newBackgroundContext()
         context.performAndWait {
+            do
+            {
                 let appBundle = Bundle.realMainBundle
                 let embeddedApplication = self.embeddedLiveContainerApplication(from: appBundle)
                 let localApp = embeddedApplication?.application ?? ALTApplication(fileURL: Bundle.Info.activeBundleURL)

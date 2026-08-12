@@ -21,9 +21,17 @@ public extension Bundle
             return NSLocalizedString(String(format: "Version %@%@", version, build), comment: "SideStore Version")
         }()
         public static let activeBundleIdentifier: String = activeBundle.bundleIdentifier!
+        public static let storeAppBundleIdentifier = "com.SideStore.SideStore"
         public static var appbundleIdentifier: String {
             Bundle.isBundledWithLiveContainer ? "com.kdt.livecontainer" : storeAppBundleIdentifier
         }
+ 
+        public static let deviceID = "ALTDeviceID"
+        public static let serverID = "ALTServerID"
+        public static let certificateID = "ALTCertificateID"
+        public static let appGroups = "ALTAppGroups"
+        public static let altBundleID = "ALTBundleIdentifier"
+     
         public static let devicePairingString = "ALTPairingFile"
         public static let urlTypes = "CFBundleURLTypes"
         public static let exportedUTIs = "UTExportedTypeDeclarations"
