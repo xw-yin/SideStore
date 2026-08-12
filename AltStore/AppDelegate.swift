@@ -32,11 +32,27 @@ extension Bundle {
     }()
     
     @objc private func custom_localizedString(forKey key: String, value: String?, table tableName: String?) -> String {
+        // After method_exchangeImplementations:
+        //   - NSBundle's real localizedString(forKey:value:table:) is now named custom_localizedString
+        //   - Our logic below is now what gets called when anyone calls localizedString(forKey:value:table:)
+        //
+        // To avoid infinite recursion we use a reentrance guard on the current thread.
+        let guardKey = "LCSideStoreSwizzleGuard"
+        let threadDict = Thread.current.threadDictionary
+        guard (threadDict[guardKey] as? Bool) != true else {
+            // Already inside – call the real original implementation directly.
+            return self.custom_localizedString(forKey: key, value: value, table: tableName)
+        }
+
         let isSideStoreBundle = self == Bundle.main || self.bundlePath.lowercased().contains("sidestore")
         if isSideStoreBundle,
-           let bundle = objc_getAssociatedObject(Bundle.main, &sideStoreLanguageBundleKey) as? Bundle {
-            return bundle.custom_localizedString(forKey: key, value: value, table: tableName)
+           let langBundle = objc_getAssociatedObject(Bundle.main, &sideStoreLanguageBundleKey) as? Bundle,
+           langBundle !== self {
+            threadDict[guardKey] = true
+            defer { threadDict.removeObject(forKey: guardKey) }
+            return langBundle.custom_localizedString(forKey: key, value: value, table: tableName)
         }
+        // Call the original (real) implementation – safe because we're not in a guard block.
         return self.custom_localizedString(forKey: key, value: value, table: tableName)
     }
 
