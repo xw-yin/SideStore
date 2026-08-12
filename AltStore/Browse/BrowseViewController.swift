@@ -6,10 +6,10 @@
 //  Copyright © 2019 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 import Combine
 import CoreData
-import AltStoreCore
+@preconcurrency import AltStoreCore
 
 import Nuke
 
@@ -263,13 +263,10 @@ private extension BrowseViewController
             let tintColor = app.tintColor ?? .altPrimary
             cell.tintColor = tintColor
         }
-        dataSource.prefetchHandler = { (storeApp, indexPath, completionHandler) -> Foundation.Operation? in
+        dataSource.prefetchHandler = { (storeApp, indexPath, completionHandler) in
             let iconURL = storeApp.iconURL
-            
-            return RSTAsyncBlockOperation() { (operation) in
+            return Task.detached(priority: .background) {
                 ImagePipeline.shared.loadImage(with: iconURL, progress: nil) { result in
-                    guard !operation.isCancelled else { return operation.finish() }
-                    
                     switch result
                     {
                     case .success(let response): completionHandler(response.image, nil)
@@ -564,7 +561,6 @@ private extension BrowseViewController
                 toastView.show(in: self)
                 return
             }
-            
             // if let installedApp = app.installedApp, installedApp.isUpdateAvailable
             if let installedApp = app.installedApp, installedApp.hasUpdate
             {
@@ -581,10 +577,11 @@ private extension BrowseViewController
         @MainActor
         func finish(_ result: Result<InstalledApp, Error>)
         {
+            debugLog("BrowseViewController.finish invoked with result: \(result) for \(app.bundleIdentifier)")
             DispatchQueue.main.async {
                 switch result
                 {
-                case .failure(OperationError.cancelled): break // Ignore
+                case .failure(let error) where error is CancellationError: break // Ignore
                 case .failure(let error):
                     let toastView = ToastView(error: error, opensLog: true)
                     toastView.show(in: self)
@@ -595,10 +592,12 @@ private extension BrowseViewController
                 UIView.performWithoutAnimation {
                     if let indexPath = self.dataSource.fetchedResultsController.indexPath(forObject: app)
                     {
+                        debugLog("BrowseViewController.finish: reloading item at \(indexPath)")
                         self.collectionView.reloadItems(at: [indexPath])
                     }
                     else
                     {
+                        debugLog("BrowseViewController.finish: reloading section")
                         self.collectionView.reloadSections(IndexSet(integer: indexPath.section))
                     }
                 }

@@ -12,17 +12,18 @@ public extension Bundle
 {
     struct Info
     {
-        public static let deviceID = "ALTDeviceID"
-        public static let serverID = "ALTServerID"
-        public static let certificateID = "ALTCertificateID"
-        public static let appGroups = "ALTAppGroups"
-        public static let altBundleID = "ALTBundleIdentifier"
-        public static let storeAppBundleIdentifier =  "com.SideStore.SideStore"
-        // public static var appbundleIdentifier = Bundle.main.bundleIdentifier
+        public static let activeBundle: Bundle = Bundle.main
+        public static let activeBundleURL: URL = activeBundle.bundleURL
+        public static let activeBundleVersion: String = {
+            let info = activeBundle.infoDictionary
+            let version = (info?["CFBundleShortVersionString"] as? String) ?? "?.?.?"
+            let build = (info?["CFBundleVersion"] as? String).map { " (\($0))" } ?? "(????)"
+            return NSLocalizedString(String(format: "Version %@%@", version, build), comment: "SideStore Version")
+        }()
+        public static let activeBundleIdentifier: String = activeBundle.bundleIdentifier!
         public static var appbundleIdentifier: String {
             Bundle.isBundledWithLiveContainer ? "com.kdt.livecontainer" : storeAppBundleIdentifier
         }
-
         public static let devicePairingString = "ALTPairingFile"
         public static let urlTypes = "CFBundleURLTypes"
         public static let exportedUTIs = "UTExportedTypeDeclarations"
@@ -85,5 +86,17 @@ public extension Bundle
     var completeInfoDictionary: [String : Any]? {
         let infoPlistURL = self.infoPlistURL
         return NSDictionary(contentsOf: infoPlistURL) as? [String : Any]
+    }
+}
+
+public extension String {
+    var isAltStoreAppID: Bool {
+        let activeID   = Bundle.Info.activeBundleIdentifier
+        let altstoreID = Bundle.Info.appbundleIdentifier
+        
+        let matchesActiveBundle   = !activeID.isEmpty && self.contains(activeID)
+        let matchesAltStoreBundle = !altstoreID.isEmpty && self.contains(altstoreID)
+        
+        return matchesActiveBundle || matchesAltStoreBundle
     }
 }

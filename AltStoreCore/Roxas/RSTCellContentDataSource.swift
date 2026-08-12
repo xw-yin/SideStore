@@ -6,7 +6,7 @@
 //  Copyright © 2026 SideStore. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 import CoreData
 
 public let RSTCellContentGenericCellIdentifier = "Cell"
@@ -167,7 +167,7 @@ open class RSTCellContentDataSource<ContentType, CellType: UIView & RSTCellConte
             default:
                 break
             }
-            if let cachePath = indexPathForRemovingFromCache {
+            if let cachePath = indexPathForRemovingFromCache, isValidIndexPath(cachePath) {
                 let item = self.item(at: cachePath)
                 if let prefetchSelf = self as? any RSTCellContentPrefetchingDataSource {
                     prefetchSelf.prefetchItemCache.removeObject(forKey: item as AnyObject)

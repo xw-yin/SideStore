@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import UIKit
+@preconcurrency import UIKit
 
 public enum StoreCategory: String, CaseIterable
 {

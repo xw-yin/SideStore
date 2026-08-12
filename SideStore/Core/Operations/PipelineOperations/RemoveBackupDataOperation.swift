@@ -1,0 +1,59 @@
+//
+//  RemoveBackupDataOperation.swift
+//  AltStore
+//
+//  Created by Riley Testut on 5/13/20.
+//  Copyright © 2020 Riley Testut. All rights reserved.
+//
+
+import Foundation
+@preconcurrency import AltStoreCore
+
+final class RemoveBackupDataOperation: BasePipelineOperation<InstallAppOperationContext, Bool>
+{
+    private let coordinator = NSFileCoordinator()
+    private let coordinatorQueue = OperationQueue()
+    
+    override func execute(parentProgress: Progress?) async throws -> Bool {
+        debugLog("[RemoveBackupDataOperation] execute() started")
+        defer { debugLog("[RemoveBackupDataOperation] execute() completed") }
+        try await super.executePreconditionCheck(parentProgress: parentProgress)
+        self.setProgress(10)
+        
+        guard let installedApp = self.context.installedApp else {
+            throw OperationError.invalidParameters("RemoveBackupDataOperation.main: self.context.installedApp is nil")
+        }
+        
+        self.setProgress(30)
+        let backupDirectoryURL: URL? = await installedApp.managedObjectContext?.perform {
+            self.backupDirectoryURL(for: installedApp)
+        }
+        guard let backupDirectoryURL else {
+            throw OperationError.missingAppGroup
+        }
+        
+        self.setProgress(60)
+        let intent = NSFileAccessIntent.writingIntent(with: backupDirectoryURL, options: [.forDeleting])
+        try await self.coordinator.coordinate(with: [intent], queue: self.coordinatorQueue)
+        
+        self.setProgress(80)
+        try self.removeBackupItem(at: intent.url, backupDirectoryURL: backupDirectoryURL, coordinatorError: nil)
+        
+        self.setProgress(100)
+        return true
+    }
+    
+    private func backupDirectoryURL(for installedApp: InstalledApp) -> URL? {
+        FileManager.default.backupDirectoryURL(for: installedApp)
+    }
+    
+    private func removeBackupItem(at url: URL, backupDirectoryURL: URL, coordinatorError: Error?) throws {
+        if let coordinatorError { throw coordinatorError }
+        do {
+            try FileManager.default.removeItem(at: url)
+        } catch {
+            debugLog("[RemoveBackupDataOperation] Failed to remove app backup directory \(backupDirectoryURL.lastPathComponent). \(error.localizedDescription)")
+            throw error
+        }
+    }
+}

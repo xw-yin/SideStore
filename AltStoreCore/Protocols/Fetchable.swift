@@ -46,34 +46,39 @@ public extension Fetchable
     
     private static func all(satisfying predicate: NSPredicate? = nil, sortedBy sortDescriptors: [NSSortDescriptor]? = nil, in context: NSManagedObjectContext, requestProperties: [PartialKeyPath<FetchRequest>: Any?], returnFirstResult: Bool) -> [Self]
     {
-        let registeredObjects = context.registeredObjects.lazy.compactMap({ $0 as? Self }).filter({ predicate?.evaluate(with: $0) != false })
-        
-        if let managedObject = registeredObjects.first, returnFirstResult
-        {
-            return [managedObject]
+        var result: [Self] = []
+        context.performAndWait {
+            let registeredObjects = context.registeredObjects.lazy.compactMap({ $0 as? Self }).filter({ predicate?.evaluate(with: $0) != false })
+            
+            if let managedObject = registeredObjects.first, returnFirstResult
+            {
+                result = [managedObject]
+                return
+            }
+            
+            let fetchRequest = self.fetchRequest() as! NSFetchRequest<Self>
+            fetchRequest.predicate = predicate
+            fetchRequest.sortDescriptors = sortDescriptors
+            fetchRequest.returnsObjectsAsFaults = false
+            
+            for (keyPath, value) in requestProperties
+            {
+                // Still no easy way to cast PartialKeyPath back to usable WritableKeyPath :(
+                guard let objcKeyString = keyPath._kvcKeyPathString else { continue }
+                fetchRequest.setValue(value, forKey: objcKeyString)
+            }
+            
+            let fetchedObjects = self.fetch(fetchRequest, in: context)
+            
+            if let fetchedObject = fetchedObjects.first, returnFirstResult
+            {
+                result = [fetchedObject]
+            }
+            else
+            {
+                result = fetchedObjects
+            }
         }
-        
-        let fetchRequest = self.fetchRequest() as! NSFetchRequest<Self>
-        fetchRequest.predicate = predicate
-        fetchRequest.sortDescriptors = sortDescriptors
-        fetchRequest.returnsObjectsAsFaults = false
-        
-        for (keyPath, value) in requestProperties
-        {
-            // Still no easy way to cast PartialKeyPath back to usable WritableKeyPath :(
-            guard let objcKeyString = keyPath._kvcKeyPathString else { continue }
-            fetchRequest.setValue(value, forKey: objcKeyString)
-        }
-        
-        let fetchedObjects = self.fetch(fetchRequest, in: context)
-        
-        if let fetchedObject = fetchedObjects.first, returnFirstResult
-        {
-            return [fetchedObject]
-        }
-        else
-        {
-            return fetchedObjects
-        }
+        return result
     }
 }

@@ -6,9 +6,9 @@
 //  Copyright © 2020 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 import CoreData
-import AltStoreCore
+@preconcurrency import AltStoreCore
 import Nuke
 
 @objc(SourcesFooterView)
@@ -310,10 +310,8 @@ private extension SourcesViewController
         }
         dataSource.prefetchHandler = { (source, indexPath, completionHandler) in
             guard let imageURL = source.effectiveIconURL else { return nil }
-            return RSTAsyncBlockOperation() { (operation) in
+            Task.detached(priority: .background) {
                 ImagePipeline.shared.loadImage(with: imageURL, progress: nil) { result in
-                    guard !operation.isCancelled else { return operation.finish() }
-                    
                     switch result
                     {
                     case .success(let response): completionHandler(response.image, nil)
@@ -321,6 +319,7 @@ private extension SourcesViewController
                     }
                 }
             }
+            return nil
         }
         dataSource.prefetchCompletionHandler = { (cell, image, indexPath, error) in
             let cell = cell as! AppBannerCollectionViewCell
@@ -355,53 +354,45 @@ private extension SourcesViewController
 {
     func handleAddSourceDeepLink()
     {
-        guard let url = self.deepLinkSourceURL, self.view.window != nil else { return }
-        
-        // Only handle deep link once.
-        self.deepLinkSourceURL = nil
-        
-        self.navigationItem.leftBarButtonItem?.isIndicatingActivity = true
-        
-        func finish(_ result: Result<Void, Error>)
-        {
-            DispatchQueue.main.async {
-                switch result
-                {
-                case .success: break
-                case .failure(OperationError.cancelled): break
+        Task {
+            guard let url = self.deepLinkSourceURL, self.view.window != nil else { return }
+            
+            // Only handle deep link once.
+            self.deepLinkSourceURL = nil
+            
+            self.navigationItem.leftBarButtonItem?.isIndicatingActivity = true
+            
+            func finish(_ result: Result<Void, Error>)
+            {
+                DispatchQueue.main.async {
+                    switch result
+                    {
+                    case .success: break
+                    case .failure(let error) where error is CancellationError: break
+                        
+                    case .failure(var error as SourceError):
+                        let title = String(format: NSLocalizedString("“%@” could not be added to SideStore.", comment: ""), error.$source.name)
+                        error.errorTitle = title
+                        self.present(error)
+                        
+                    case .failure(let error as NSError):
+                        self.present(error.withLocalizedTitle(NSLocalizedString("Unable to Add Source", comment: "")))
+                    }
                     
-                case .failure(var error as SourceError):
-                    let title = String(format: NSLocalizedString("“%@” could not be added to SideStore.", comment: ""), error.$source.name)
-                    error.errorTitle = title
-                    self.present(error)
-                    
-                case .failure(let error as NSError):
-                    self.present(error.withLocalizedTitle(NSLocalizedString("Unable to Add Source", comment: "")))
+                    self.navigationItem.leftBarButtonItem?.isIndicatingActivity = false
                 }
-                
-                self.navigationItem.leftBarButtonItem?.isIndicatingActivity = false
             }
-        }
-        
-        AppManager.shared.fetchSource(sourceURL: url) { (result) in
+            
+            let backgroundContext = DatabaseManager.shared.persistentContainer.newBackgroundContext()
+            let source = try await AppManager.shared.fetchSource(sourceURL: url, managedObjectContext: backgroundContext)
             do
             {
-                // Use @Managed before calling perform() to keep
-                // strong reference to source.managedObjectContext.
-                @Managed var source = try result.get()
-                                
-                #if !BETA
-                guard let trustedSourceIDs = UserDefaults.shared.trustedSourceIDs, trustedSourceIDs.contains(source.identifier) else { throw SourceError(code: .unsupported, source: source) }
-                #endif
-                
-                DispatchQueue.main.async {
-                    self.showSourceDetails(for: source)
+                await MainActor.run {
+                    showSourceDetails(for: source)
                 }
                 
                 finish(.success(()))
-            }
-            catch
-            {
+            } catch {
                 finish(.failure(error))
             }
         }

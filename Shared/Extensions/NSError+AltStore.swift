@@ -9,14 +9,14 @@
 import Foundation
 
 #if canImport(UIKit)
-import UIKit
+@preconcurrency import UIKit
 public typealias ALTFont = UIFont
 #elseif canImport(AppKit)
 import AppKit
 public typealias ALTFont = NSFont
 #endif
 
-import AltSign
+@preconcurrency import AltSign
 
 public extension NSError
 {
@@ -121,11 +121,12 @@ public extension NSError
     func formattedDetailedDescription(with font: ALTFont) -> NSAttributedString
     {
         #if canImport(UIKit)
-        let boldFontDescriptor = font.fontDescriptor.withSymbolicTraits(.traitBold) ?? font.fontDescriptor
-        let boldFont = ALTFont(descriptor: boldFontDescriptor, size: font.pointSize)
+        let headerFont = UIFont.preferredFont(forTextStyle: .headline)
+        let valueFont = UIFont.preferredFont(forTextStyle: .subheadline)
         #else
         let boldFontDescriptor = font.fontDescriptor.withSymbolicTraits(.bold)
-        let boldFont = ALTFont(descriptor: boldFontDescriptor, size: font.pointSize) ?? font
+        let headerFont = ALTFont(descriptor: boldFontDescriptor, size: font.pointSize + 2.0) ?? font
+        let valueFont = font.withSize(max(font.pointSize - 2.0, 11.0))
         #endif
 
         var preferredKeyOrder: [String] = [
@@ -192,8 +193,8 @@ public extension NSError
                 }
             }
 
-            let attributedKey = NSAttributedString(string: keyName, attributes: [.font: boldFont])
-            let attributedValue = NSAttributedString(string: String(describing: value), attributes: [.font: font])
+            let attributedKey = NSAttributedString(string: keyName, attributes: [.font: headerFont])
+            let attributedValue = NSAttributedString(string: String(describing: value), attributes: [.font: valueFont])
 
             let attributedString = NSMutableAttributedString(attributedString: attributedKey)
             attributedString.mutableString.append("\n")

@@ -5,7 +5,7 @@
 //  Created by Magesh K on 6/17/26.
 //
 
-import UIKit
+@preconcurrency import UIKit
 
 @IBDesignable
 @objc(RSTPlaceholderView)

@@ -9,7 +9,7 @@
 
 import AppIntents
 import WidgetKit
-import AltStoreCore
+@preconcurrency import AltStoreCore
 
 // Represents one installed app in the picker list.
 @available(iOSApplicationExtension 17, *)
@@ -32,43 +32,18 @@ struct InstalledAppQuery: EntityQuery
 {
     func entities(for identifiers: [String]) async throws -> [InstalledAppEntity]
     {
-        try await DatabaseManager.shared.start()
-        let context = DatabaseManager.shared.persistentContainer.newBackgroundContext()
-        return try await context.performAsync {
-            let fetchRequest = InstalledApp.fetchRequest()
-            fetchRequest.predicate = NSPredicate(
-                format: "%K IN %@",
-                #keyPath(InstalledApp.bundleIdentifier),
-                identifiers
-            )
-            fetchRequest.returnsObjectsAsFaults = false
-            let apps = try context.fetch(fetchRequest)
-            return apps.map { InstalledAppEntity(id: $0.bundleIdentifier, name: $0.name) }
-        }
+        let snapshot = WidgetDataManager.shared.fetchSnapshot()
+        let matching = snapshot.allApps.filter { identifiers.contains($0.bundleIdentifier) }
+        return matching.map { InstalledAppEntity(id: $0.bundleIdentifier, name: $0.name) }
     }
 
     func suggestedEntities() async throws -> [InstalledAppEntity]
     {
-        try await DatabaseManager.shared.start()
-        let context = DatabaseManager.shared.persistentContainer.newBackgroundContext()
-        return await context.performAsync {
-            // First try active apps only (isActive == YES), mirroring the widget
-            // provider's fetchActiveAppBundleIDs() logic. On iOS 27 the widget
-            // extension process may see isActive == NO for all apps due to timing,
-            // so fall back to every installed app rather than returning an empty list.
-            let active = InstalledApp.all(satisfying: NSPredicate(format: "%K == YES", #keyPath(InstalledApp.isActive)), in: context)
-
-            let apps: [InstalledApp]
-            if !active.isEmpty {
-                apps = active
-            } else {
-                apps = InstalledApp.all(in: context)
-            }
-
-            return apps
-                .map { InstalledAppEntity(id: $0.bundleIdentifier, name: $0.name) }
-                .sorted { $0.name < $1.name }
-        }
+        let snapshot = WidgetDataManager.shared.fetchSnapshot()
+        let items = snapshot.activeApps.isEmpty ? snapshot.allApps : snapshot.activeApps
+        return items
+            .map { InstalledAppEntity(id: $0.bundleIdentifier, name: $0.name) }
+            .sorted { $0.name < $1.name }
     }
 }
 

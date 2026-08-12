@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import UIKit
+@preconcurrency import UIKit
 
 @objc(ALTSecureValueTransformer)
 public final class SecureValueTransformer: NSSecureUnarchiveFromDataTransformer

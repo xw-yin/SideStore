@@ -6,7 +6,7 @@
 //  Copyright © 2019 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 
 final class InstalledAppCollectionViewCell: UICollectionViewCell
 {
@@ -57,6 +57,11 @@ final class InstalledAppCollectionViewCell: UICollectionViewCell
                 self.transform = self.isHighlighted ? CGAffineTransform(scaleX: 0.96, y: 0.96) : .identity
             }, completion: nil)
         }
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        self.bannerView?.button?.resetDisplayState()
     }
 }
 

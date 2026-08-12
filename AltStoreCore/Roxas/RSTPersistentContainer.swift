@@ -145,7 +145,9 @@ public class RSTPersistentContainer: NSPersistentContainer {
         }
         
         if isAsynchronous {
-            DispatchQueue.global(qos: .userInitiated).async(execute: migrate)
+            Task.detached(priority: .userInitiated) {
+                migrate()
+            }
         } else {
             migrate()
         }

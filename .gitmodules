@@ -3,11 +3,6 @@
     path = Dependencies/minimuxer
     url = https://github.com/SideStore/minimuxer
     branch = develop
-[submodule "Dependencies/em_proxy"]
-	path = Dependencies/em_proxy
-	url = https://github.com/SideStore/em_proxy
-    branch = develop
-
 [submodule "Dependencies/AltSign"]
     path = Dependencies/AltSign
     url = https://github.com/SideStore/AltSign

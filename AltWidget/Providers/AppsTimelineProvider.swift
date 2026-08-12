@@ -7,8 +7,7 @@
 //
 
 import WidgetKit
-import CoreData
-import AltStoreCore
+@preconcurrency import AltStoreCore
 
 struct AppsEntry<T>: TimelineEntry
 {
@@ -19,16 +18,15 @@ struct AppsEntry<T>: TimelineEntry
     var isPlaceholder: Bool = false
     
     var context: T?
-    
 }
 
 class AppsTimelineProviderBase<T>
 {
-    typealias Entry = AppsEntry
+    typealias Entry = AppsEntry<T>
     
     func placeholder(in context: TimelineProviderContext) -> AppsEntry<T>
     {
-        return AppsEntry(date: Date(), apps: [], isPlaceholder: true)
+        return Entry(date: Date(), apps: [], isPlaceholder: true)
     }
     
     func snapshot(for appBundleIDs: [String], in context: T? = nil) async -> AppsEntry<T>
@@ -41,14 +39,14 @@ class AppsTimelineProviderBase<T>
             
             apps = getUpdatedData(apps, context)
             
-            let entry = AppsEntry(date: Date(), apps: apps, context: context)
+            let entry = Entry(date: Date(), apps: apps, context: context)
             return entry
         }
         catch
         {
             debugLog("Failed to prepare widget snapshot: \(error)")
             
-            let entry = AppsEntry(date: Date(), apps: [], context: context)
+            let entry = Entry(date: Date(), apps: [], context: context)
             return entry
         }
     }
@@ -78,7 +76,7 @@ class AppsTimelineProviderBase<T>
         {
             debugLog("Failed to prepare widget timeline: \(error)")
             
-            let entry = AppsEntry(date: Date(), apps: [], context: context)
+            let entry = Entry(date: Date(), apps: [], context: context)
             let timeline = Timeline(entries: [entry], policy: .atEnd)
             return timeline
         }
@@ -92,30 +90,18 @@ class AppsTimelineProviderBase<T>
 
 extension AppsTimelineProviderBase
 {
-    
     private func prepare() async throws
     {
-        try await DatabaseManager.shared.start()
+        // No-op in push-pull architecture: widget snapshot JSON is read directly from App Group container.
     }
     
     private func fetchApps(withBundleIDs bundleIDs: [String]) async throws -> [AppSnapshot]
     {
-        let context = DatabaseManager.shared.persistentContainer.newBackgroundContext()
-        let apps = try await context.performAsync {
-            let fetchRequest = InstalledApp.fetchRequest()
-            fetchRequest.predicate = NSPredicate(format: "%K IN %@", #keyPath(InstalledApp.bundleIdentifier), bundleIDs)
-            fetchRequest.returnsObjectsAsFaults = false
-            
-            let installedApps = try context.fetch(fetchRequest)
-            
-            let apps = installedApps.map { AppSnapshot(installedApp: $0) }
-            
-            // Always list apps in alphabetical order.
-            let sortedApps = apps.sorted { $0.name < $1.name }
-            return sortedApps
-        }
-        
-        return apps
+        let snapshot = WidgetDataManager.shared.fetchSnapshot()
+        let matchingItems = snapshot.allApps.filter { bundleIDs.contains($0.bundleIdentifier) }
+        let apps = matchingItems.map { AppSnapshot(item: $0) }
+        let sortedApps = apps.sorted { $0.name < $1.name }
+        return sortedApps
     }
     
     func makeEntries(for snapshots: [AppSnapshot], in context: T? = nil) -> [AppsEntry<T>]
@@ -132,11 +118,11 @@ extension AppsTimelineProviderBase
         switch numberOfDays
         {
         case ..<0:
-            let entry = AppsEntry(date: currentDate, relevance: TimelineEntryRelevance(score: 0.0), apps: snapshots, context: context)
+            let entry = Entry(date: currentDate, relevance: TimelineEntryRelevance(score: 0.0), apps: snapshots, context: context)
             entries.append(entry)
             
         case 0:
-            let entry = AppsEntry(date: currentDate, relevance: TimelineEntryRelevance(score: 1.0), apps: snapshots, context: context)
+            let entry = Entry(date: currentDate, relevance: TimelineEntryRelevance(score: 1.0), apps: snapshots, context: context)
             entries.append(entry)
             
         default:
@@ -147,7 +133,7 @@ extension AppsTimelineProviderBase
             
             let numberOfEntries = min(numberOfDays, 7) + 2
             
-            let appEntries = (0 ..< numberOfEntries).map { (dayOffset) -> AppsEntry in
+            let appEntries = (0 ..< numberOfEntries).map { (dayOffset) -> Entry in
                 let entryDate = Calendar.current.date(byAdding: .day, value: dayOffset, to: currentDate) ?? currentDate.addingTimeInterval(Double(dayOffset) * 60 * 60 * 24)
                                 
                 let daysSinceRefresh = entryDate.numberOfCalendarDays(since: firstExpiringApp.refreshedDate)
@@ -160,7 +146,7 @@ extension AppsTimelineProviderBase
                     score = 0
                 }
                 
-                let entry = AppsEntry(date: entryDate, relevance: TimelineEntryRelevance(score: score), apps: snapshots, context: context)
+                let entry = Entry(date: entryDate, relevance: TimelineEntryRelevance(score: score), apps: snapshots, context: context)
                 return entry
             }
             
@@ -172,28 +158,9 @@ extension AppsTimelineProviderBase
     
     func fetchActiveAppBundleIDs() async -> [String]
     {
-        do
-        {
-            try await self.prepare()
-            
-            let context = DatabaseManager.shared.persistentContainer.newBackgroundContext()
-            let bundleIDs = try await context.performAsync {
-                let fetchRequest = InstalledApp.activeAppsFetchRequest() as! NSFetchRequest<NSDictionary>
-                fetchRequest.resultType = .dictionaryResultType
-                fetchRequest.propertiesToFetch = [#keyPath(InstalledApp.bundleIdentifier)]
-                
-                let bundleIDs = try context.fetch(fetchRequest).compactMap { $0[#keyPath(InstalledApp.bundleIdentifier)] as? String }
-                return bundleIDs
-            }
-            
-            return bundleIDs
-        }
-        catch
-        {
-            debugLog("Failed to fetch active bundle IDs, falling back to AltStore bundle ID. \(error)")
-            
-            return [StoreApp.altstoreAppID]
-        }
+        let snapshot = WidgetDataManager.shared.fetchSnapshot()
+        let bundleIDs = snapshot.activeApps.map { $0.bundleIdentifier }
+        return bundleIDs.isEmpty ? [StoreApp.altstoreAppID] : bundleIDs
     }
 }
 

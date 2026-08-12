@@ -7,9 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A8037A0E2F54664300097AF1 /* libem_proxy_swift.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A8037A0D2F54664300097AF1 /* libem_proxy_swift.a */; };
-		A8038ABC2F54684D00097AF1 /* libem_proxy_swift.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A8037A0D2F54664300097AF1 /* libem_proxy_swift.a */; };
-		A8038AC82F54687A00097AF1 /* libem_proxy_static.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A8EB8CBC2F5453CD0094BC01 /* libem_proxy_static.a */; };
 		A803924B2F552F4C00097AF1 /* Minimuxer in Frameworks */ = {isa = PBXBuildFile; productRef = A803924A2F552F4C00097AF1 /* Minimuxer */; };
 		A82067C42D03E0DE00645C0D /* SemanticVersion in Frameworks */ = {isa = PBXBuildFile; productRef = A82067C32D03E0DE00645C0D /* SemanticVersion */; };
 		A823609F2FF0B46900AD4DAF /* AltSign-Static in Frameworks */ = {isa = PBXBuildFile; productRef = A823609E2FF0B46900AD4DAF /* AltSign-Static */; };
@@ -21,7 +18,6 @@
 		A844287D2FE791EA003CC103 /* Minimuxer in Frameworks */ = {isa = PBXBuildFile; productRef = A844287C2FE791EA003CC103 /* Minimuxer */; };
 		A8B646012D70C23E00125819 /* MarkdownKit in Frameworks */ = {isa = PBXBuildFile; productRef = A8B646002D70C23E00125819 /* MarkdownKit */; };
 		A8C2260E2EC9039A00047C0D /* Nuke in Frameworks */ = {isa = PBXBuildFile; productRef = A8C2260D2EC9039A00047C0D /* Nuke */; };
-		A8EB89C22F5448B20094BC01 /* em_proxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8BD2F652F543FD40045335F /* em_proxy.swift */; };
 		A8EB89CE2F5451B50094BC01 /* SemanticVersion in Frameworks */ = {isa = PBXBuildFile; productRef = A8EB89CD2F5451B50094BC01 /* SemanticVersion */; };
 		A8EB89D02F5451C20094BC01 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = A8EB89CF2F5451C20094BC01 /* KeychainAccess */; };
 		BF580498246A3D19008AE704 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF580497246A3D19008AE704 /* UIKit.framework */; };
@@ -29,6 +25,7 @@
 		BF66EE862501AE50007EE018 /* AltStoreCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BF66EE7E2501AE50007EE018 /* AltStoreCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		BF989177250AABF4002ACF50 /* AltWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BF989167250AABF3002ACF50 /* AltWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BFF615A82510042B00484D3B /* AltStoreCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF66EE7E2501AE50007EE018 /* AltStoreCore.framework */; };
+		A84596F62F7DC4C90000B8CD /* SideStore.conf in Resources */ = {isa = PBXBuildFile; fileRef = A84596F52F7DC4C90000B8CD /* SideStore.conf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -38,13 +35,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = BF58047A246A28F7008AE704;
 			remoteInfo = SideBackup;
-		};
-		A8038AC92F54689900097AF1 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = A8BD2FBD2F5440300045335F /* em_proxy.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = CA60C44C93D7A30E3695DD59;
-			remoteInfo = "em_proxy-staticlib";
 		};
 		A8EB8CBB2F5453CD0094BC01 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -103,11 +93,11 @@
 
 /* Begin PBXFileReference section */
 		A8036EA72F54642D00097AF1 /* libimobiledevice.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libimobiledevice.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		A8037A0D2F54664300097AF1 /* libem_proxy_swift.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libem_proxy_swift.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		A84596F12F7DC4C90000B8CD /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		A84596F22F7DC4C90000B8CD /* .gitmodules */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitmodules; sourceTree = "<group>"; };
 		A84596F32F7DC4C90000B8CD /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		A84596F42F7DC4C90000B8CD /* trustedapps.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = trustedapps.json; sourceTree = "<group>"; };
+		A84596F52F7DC4C90000B8CD /* SideStore.conf */ = {isa = PBXFileReference; lastKnownFileType = text; path = SideStore.conf; sourceTree = "<group>"; };
 		A8BD20292F543FD40045335F /* client_privatekey */ = {isa = PBXFileReference; lastKnownFileType = text; path = client_privatekey; sourceTree = "<group>"; };
 		A8BD202A2F543FD40045335F /* client_publickey */ = {isa = PBXFileReference; lastKnownFileType = text; path = client_publickey; sourceTree = "<group>"; };
 		A8BD202B2F543FD40045335F /* emp.conf */ = {isa = PBXFileReference; lastKnownFileType = text; path = emp.conf; sourceTree = "<group>"; };
@@ -139,6 +129,16 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A8000551301F0E1B007E29D5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Core/Certificates/CertificateASN1Parser.swift,
+				Core/Certificates/CertificateManager.swift,
+				Core/Logging/SideStoreLogging.swift,
+				Core/Theme/ThemeManager.swift,
+			);
+			target = BF66EE7D2501AE50007EE018 /* AltStoreCore */;
+		};
 		A8EEC0BF2F4AF7FB00F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -200,24 +200,139 @@
 		A8EECF492F4B195000F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				EMProxyWrapper.swift,
-				MinimuxerWrapper.swift,
-				OperationLogging.swift,
-				SideStoreLogging.swift,
-				URLHandler.swift,
+				AppBootManager.swift,
+				AppConstants.swift,
+				Core/Anisette/AnisetteConfigManager.swift,
+				Core/Anisette/AnisetteDataManager.swift,
+				Core/Anisette/AnisetteServersManager.swift,
+				Core/Auth/AuthManager.swift,
+				Core/Auth/DeveloperPortalService.swift,
+				Core/Certificates/CodeSignValidator.swift,
+				Core/Certificates/OCSPValidator.swift,
+				Core/DeviceApi/EMProxyWrapper.swift,
+				Core/DeviceApi/MinimuxerWrapper.swift,
+				Core/Logging/OperationLogging.swift,
+				Core/Logging/SideStoreLogging.swift,
+				Core/Operations/AppOperation.swift,
+				Core/Operations/AsyncOperation.swift,
+				Core/Operations/Errors/OperationError.swift,
+				Core/Operations/Errors/SourceError.swift,
+				Core/Operations/Errors/VerificationError.swift,
+				Core/Operations/OperationContexts.swift,
+				Core/Operations/OperationEntitlements.swift,
+				Core/Operations/OperationStep.swift,
+				Core/Operations/OperationStepDefinition.swift,
+				Core/Operations/PipelineExecutionHandler.swift,
+				Core/Operations/PipelineExecutor.swift,
+				Core/Operations/PipelineOperations/CacheAppOperation.swift,
+				Core/Operations/PipelineOperations/CacheSigningCertOperation.swift,
+				Core/Operations/PipelineOperations/ChangeAppIconOperation.swift,
+				Core/Operations/PipelineOperations/CleanStagedAppOperation.swift,
+				Core/Operations/PipelineOperations/EmbedSigningCertOperation.swift,
+				Core/Operations/PipelineOperations/EnableJITOperation.swift,
+				Core/Operations/PipelineOperations/ExportResignedAppOperation.swift,
+				Core/Operations/PipelineOperations/FetchAnisetteDataOperation.swift,
+				Core/Operations/PipelineOperations/FetchProvisioningProfilesOperation.swift,
+				Core/Operations/PipelineOperations/InstallAppOperation.swift,
+				Core/Operations/PipelineOperations/MarkAppInactiveOperation.swift,
+				Core/Operations/PipelineOperations/PerformBackupRestoreOperation.swift,
+				Core/Operations/PipelineOperations/PreflightChecksOperation.swift,
+				Core/Operations/PipelineOperations/PrepareAppExtensionBundleIDsOperation.swift,
+				Core/Operations/PipelineOperations/RefreshAppOperation.swift,
+				Core/Operations/PipelineOperations/RemoveAppExtensionsOperation.swift,
+				Core/Operations/PipelineOperations/RemoveAppOperation.swift,
+				Core/Operations/PipelineOperations/RemoveBackupDataOperation.swift,
+				Core/Operations/PipelineOperations/ResignAppOperation.swift,
+				Core/Operations/PipelineOperations/SendAppOperation.swift,
+				Core/Operations/PipelineOperations/StageAppOperation.swift,
+				Core/Operations/PipelineOperations/StageBackupAppOperation.swift,
+				Core/Operations/PipelineOperations/UninstallAppOperation.swift,
+				Core/Operations/PipelineOperations/UpdateAppCertificateOperation.swift,
+				Core/Operations/PipelineOperations/UserCustomizationOperation.swift,
+				Core/Operations/PipelineOperations/VerifyAppOperation.swift,
+				Core/Operations/PipelineOperations/VerifyCertificateOperation.swift,
+				Core/Operations/PipelineRunner.swift,
+				Core/Operations/RefreshGroup.swift,
+				Core/Operations/StandaloneExecutionHandler.swift,
+				Core/Operations/StandaloneOperations/AuthenticationOperation.swift,
+				Core/Operations/StandaloneOperations/BackgroundRefreshAppsOperation.swift,
+				Core/Operations/StandaloneOperations/ClearAppCacheOperation.swift,
+				Core/Operations/StandaloneOperations/DeactivateAppOperation.swift,
+				Core/Operations/StandaloneOperations/DownloadAppOperation.swift,
+				Core/Operations/StandaloneOperations/FetchSourceOperation.swift,
+				Core/Operations/StandaloneOperations/ScheduleExpirationWarningNotificationOperation.swift,
+				Core/Operations/StandaloneOperations/SyncAppIDsOperation.swift,
+				Core/Operations/StandaloneOperations/UpdateKnownSourcesOperation.swift,
+				Core/Pairing/PairingFileManager.swift,
+				Core/Storage/CacheManager.swift,
+				DeepLinks/ExportCertificateDialog.swift,
+				DeepLinks/InstallAppDialog.swift,
+				DeepLinks/URLHandler.swift,
+				"Extensions/NSAttributedString+Markdown.swift",
+				Handlers/AuthFlowHandler.swift,
+				Handlers/PipelineHandler.swift,
 				Utils/common/BuildInfo.swift,
 				Utils/common/DateTimeUtil.swift,
 				Utils/common/FileOutputStream.swift,
 				Utils/common/OutputStream.swift,
+				Utils/concurrency/TaskChainCoalescer.swift,
+				Utils/concurrency/TaskChainSerializer.swift,
+				Utils/concurrency/TaskMutexSerializer.swift,
 				Utils/datastructures/LinkedHashMap.swift,
 				Utils/datastructures/TreeMap.swift,
 				Utils/dignostics/database/CoreDataHelper.swift,
 				Utils/dignostics/errors/ErrorProcessing.swift,
 				Utils/dignostics/operations/OperationsLoggingControl.swift,
 				Utils/importexport/ImportExport.swift,
+				Utils/iostreams/AbstractClassError.swift,
 				Utils/iostreams/ConsoleLog.swift,
 				Utils/iostreams/ConsoleLogger.swift,
-				Views/UIKit/CollapsingMarkdownView.swift,
+				Views/Components/AppInfoView.swift,
+				Views/Components/BundleResourceBrowserView.swift,
+				Views/Components/InfoPlistContainerView.swift,
+				Views/Components/UIKit/CollapsingMarkdownView.swift,
+				Views/Settings/Advanced/Anisette/AnisetteDataView.swift,
+				Views/Settings/Advanced/BackupRestore/BackupAndRestoreView.swift,
+				Views/Settings/Advanced/CacheMgmt/CacheManagementView.swift,
+				Views/Settings/Advanced/CacheMgmt/CacheViewModel.swift,
+				Views/Settings/Advanced/Certificates/ActiveCertSectionView.swift,
+				Views/Settings/Advanced/Certificates/CertificateDetailView.swift,
+				Views/Settings/Advanced/Certificates/CertificateExporter.swift,
+				Views/Settings/Advanced/Certificates/CertificateRowView.swift,
+				Views/Settings/Advanced/Certificates/CertificatesListView.swift,
+				Views/Settings/Advanced/Certificates/CertificatesView.swift,
+				Views/Settings/Advanced/Certificates/CertificatesViewModel.swift,
+				Views/Settings/Advanced/Certificates/CertificateTypes.swift,
+				Views/Settings/Advanced/Certificates/PrivateKeyTextEditor.swift,
+				Views/Settings/Advanced/Certificates/PrivateKeyTextInputView.swift,
+				Views/Settings/Advanced/Certificates/RevokeAlertViewController.swift,
+				Views/Settings/Advanced/Certificates/SetCertificateAlertViewController.swift,
+				Views/Settings/Advanced/Certificates/SignableCertificatesListViewController.swift,
+				Views/Settings/Advanced/Connection/ConnectionConfig.swift,
+				Views/Settings/Advanced/Connection/ConnectionConfigView.swift,
+				Views/Settings/Advanced/NetworkDiscovery/BonjourDiscoveryManager.swift,
+				Views/Settings/Advanced/NetworkDiscovery/BonjourDiscoveryManagerV2.swift,
+				Views/Settings/Advanced/NetworkDiscovery/BonjourDiscoveryTypes.swift,
+				Views/Settings/Advanced/NetworkDiscovery/BonjourDiscoveryView.swift,
+				Views/Settings/Advanced/NetworkDiscovery/BonjourDiscoveryViewV2.swift,
+				Views/Settings/Advanced/NetworkDiscovery/LocalNetworkPermissionChecker.swift,
+				Views/Settings/Advanced/UserCustomizations/ThemePickerView.swift,
+				Views/Settings/Advanced/UserCustomizations/UserCustomizationsView.swift,
+				Views/Settings/Advanced/WirelessPair/WirelessPairManager.swift,
+				Views/Settings/Advanced/WirelessPair/WirelessPairView.swift,
+				Views/Settings/Auth/ExportAccountAlertViewController.swift,
+				Views/Settings/Auth/ImportAccountAlertController.swift,
+				Views/Settings/Auth/RevokeCertificatesAlertViewController.swift,
+				Views/Settings/Auth/SignOutAlertViewController.swift,
+				Views/Settings/Diagnostics/DeveloperOptionsView.swift,
+				Views/Settings/Diagnostics/ExperimentalFeaturesView.swift,
+				Views/Settings/Diagnostics/OperationsLoggingControlView.swift,
+				Views/Settings/TechyThings/ErrorLog/ConsoleLogView.swift,
+				Views/Settings/TechyThings/HealthCheck/HealthCheckView.swift,
+				Views/Settings/TechyThings/HealthCheck/HealthCheckViewModel.swift,
+				Views/Settings/TechyThings/StorageExplorer/DirectoryExplorerView.swift,
+				Views/Settings/TechyThings/StorageExplorer/StorageExplorerView.swift,
+				Views/Settings/TechyThings/StorageExplorer/StorageExplorerViewModel.swift,
 			);
 			target = BFD247692284B9A500981D42 /* SideStore */;
 		};
@@ -256,18 +371,10 @@
 		A8EEC3D92F4B0FC800F2436D /* SideBackup */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A8EEC3E22F4B0FC800F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SideBackup; sourceTree = "<group>"; };
 		A8EEC71D2F4B10D900F2436D /* xcconfigs */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = xcconfigs; sourceTree = "<group>"; };
 		A8EEC8412F4B146A00F2436D /* AltStore */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A8EEC8CB2F4B146B00F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, A8EEC8CC2F4B146B00F2436D /* PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet */, A8EEC8CD2F4B146B00F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = AltStore; sourceTree = "<group>"; };
-		A8EECF2A2F4B195000F2436D /* SideStore */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A8EECF492F4B195000F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, A8EECF4A2F4B195000F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SideStore; sourceTree = "<group>"; };
+		A8EECF2A2F4B195000F2436D /* SideStore */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A8EECF492F4B195000F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, A8000551301F0E1B007E29D5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, A8EECF4A2F4B195000F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SideStore; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		A85A51432F4B4532002E2E11 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A8038AC82F54687A00097AF1 /* libem_proxy_static.a in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		BF580478246A28F7008AE704 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -301,8 +408,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A8B646012D70C23E00125819 /* MarkdownKit in Frameworks */,
-				A8037A0E2F54664300097AF1 /* libem_proxy_swift.a in Frameworks */,
-				A8038ABC2F54684D00097AF1 /* libem_proxy_swift.a in Frameworks */,
 				A8EB89D02F5451C20094BC01 /* KeychainAccess in Frameworks */,
 				A844287D2FE791EA003CC103 /* Minimuxer in Frameworks */,
 				A8C2260E2EC9039A00047C0D /* Nuke in Frameworks */,
@@ -317,6 +422,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A8818E85302B23C700273665 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				A8EB8CBC2F5453CD0094BC01 /* libem_proxy_static.a */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		A8BD1FD62F543F390045335F /* Dependencies */ = {
 			isa = PBXGroup;
 			children = (
@@ -368,14 +481,6 @@
 			path = em_proxy;
 			sourceTree = "<group>";
 		};
-		A8EB8CB82F5453CD0094BC01 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				A8EB8CBC2F5453CD0094BC01 /* libem_proxy_static.a */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		BFD247612284B9A500981D42 = {
 			isa = PBXGroup;
 			children = (
@@ -397,13 +502,14 @@
 				A84596F22F7DC4C90000B8CD /* .gitmodules */,
 				A84596F32F7DC4C90000B8CD /* README.md */,
 				A84596F42F7DC4C90000B8CD /* trustedapps.json */,
+				A84596F52F7DC4C90000B8CD /* SideStore.conf */,
+				A8818E85302B23C700273665 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
 		BFD2476B2284B9A500981D42 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A8037A0D2F54664300097AF1 /* libem_proxy_swift.a */,
 				A8036EA72F54642D00097AF1 /* libimobiledevice.a */,
 				BFD2476A2284B9A500981D42 /* SideStore.app */,
 				BF58047B246A28F7008AE704 /* SideBackup.app */,
@@ -434,23 +540,6 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		A85A51412F4B4532002E2E11 /* em_proxy-swift */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = A85A51452F4B4532002E2E11 /* Build configuration list for PBXNativeTarget "em_proxy-swift" */;
-			buildPhases = (
-				A85A51422F4B4532002E2E11 /* Sources */,
-				A85A51432F4B4532002E2E11 /* Frameworks */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				A8038ACA2F54689900097AF1 /* PBXTargetDependency */,
-			);
-			name = "em_proxy-swift";
-			productName = minimuxer;
-			productReference = A8037A0D2F54664300097AF1 /* libem_proxy_swift.a */;
-			productType = "com.apple.product-type.library.static";
-		};
 		BF58047A246A28F7008AE704 /* SideBackup */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = BF58048E246A28F9008AE704 /* Build configuration list for PBXNativeTarget "SideBackup" */;
@@ -604,19 +693,12 @@
 			preferredProjectObjectVersion = 50;
 			productRefGroup = BFD2476B2284B9A500981D42 /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = A8EB8CB82F5453CD0094BC01 /* Products */;
-					ProjectRef = A8BD2FBD2F5440300045335F /* em_proxy.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				BFD247692284B9A500981D42 /* SideStore */,
 				BF66EE7D2501AE50007EE018 /* AltStoreCore */,
 				BF58047A246A28F7008AE704 /* SideBackup */,
 				BF989166250AABF3002ACF50 /* AltWidgetExtension */,
-				A85A51412F4B4532002E2E11 /* em_proxy-swift */,
 			);
 		};
 /* End PBXProject section */
@@ -657,6 +739,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A84596F62F7DC4C90000B8CD /* SideStore.conf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -702,14 +785,6 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		A85A51422F4B4532002E2E11 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A8EB89C22F5448B20094BC01 /* em_proxy.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		BF580477246A28F7008AE704 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -746,11 +821,6 @@
 			target = BF58047A246A28F7008AE704 /* SideBackup */;
 			targetProxy = 0ED4AEC82E6DDB2A0039E2C0 /* PBXContainerItemProxy */;
 		};
-		A8038ACA2F54689900097AF1 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = "em_proxy-staticlib";
-			targetProxy = A8038AC92F54689900097AF1 /* PBXContainerItemProxy */;
-		};
 		BF66EE842501AE50007EE018 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = BF66EE7D2501AE50007EE018 /* AltStoreCore */;
@@ -769,66 +839,6 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		A85A51462F4B4532002E2E11 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = "$(inherited)";
-				CODE_SIGN_STYLE = Automatic;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				LD_WARN_DUPLICATE_LIBRARIES = YES;
-				LD_WARN_UNUSED_DYLIBS = YES;
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Dependencies/em_proxy",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 11.5;
-				OTHER_LDFLAGS = (
-					"-ObjC",
-					"$(inherited)",
-				);
-				PRODUCT_MODULE_NAME = em_proxy;
-				PRODUCT_NAME = em_proxy_swift;
-				SKIP_INSTALL = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OBJC_BRIDGING_HEADER = Dependencies/em_proxy/em_proxy.h;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		A85A51472F4B4532002E2E11 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = "$(inherited)";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				LD_WARN_DUPLICATE_LIBRARIES = YES;
-				LD_WARN_UNUSED_DYLIBS = YES;
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Dependencies/em_proxy",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 11.5;
-				OTHER_LDFLAGS = (
-					"-ObjC",
-					"$(inherited)",
-				);
-				PRODUCT_MODULE_NAME = em_proxy;
-				PRODUCT_NAME = em_proxy_swift;
-				SKIP_INSTALL = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = Dependencies/em_proxy/em_proxy.h;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
 		BF58048C246A28F9008AE704 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = A8EEC71D2F4B10D900F2436D /* xcconfigs */;
@@ -852,6 +862,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PRODUCT_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "SideBackup/SideBackup-Bridging-Header.h";
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -880,6 +891,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PRODUCT_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "SideBackup/SideBackup-Bridging-Header.h";
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1170,7 +1182,7 @@
 				);
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos macosx";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG BETA";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = BETA;
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "debug-only";
 				SWIFT_OPTIMIZATION_LEVEL = "-Osize";
@@ -1277,15 +1289,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A85A51452F4B4532002E2E11 /* Build configuration list for PBXNativeTarget "em_proxy-swift" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A85A51462F4B4532002E2E11 /* Debug */,
-				A85A51472F4B4532002E2E11 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		BF58048E246A28F9008AE704 /* Build configuration list for PBXNativeTarget "SideBackup" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

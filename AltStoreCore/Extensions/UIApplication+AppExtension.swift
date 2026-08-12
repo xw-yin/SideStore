@@ -6,7 +6,7 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 
 public extension UIApplication
 {

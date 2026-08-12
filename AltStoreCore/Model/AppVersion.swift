@@ -58,8 +58,10 @@ public class AppVersion: BaseEntity, Decodable
         return releaseTrack?.storeApp ?? _app
     }
 
-    public var channel: ReleaseTracks {
-        ReleaseTracks(stringValue: releaseTrack?.track ?? _channel ?? "") ?? .unknown
+
+    // v1 compat
+    public var channel: ReleaseTrackType {
+        releaseTrack?.type ?? ReleaseTrackType(rawValue: _channel ?? "") ?? .unknown
     }
     
     private override init(entity: NSEntityDescription, insertInto context: NSManagedObjectContext?)

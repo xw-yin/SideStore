@@ -6,8 +6,8 @@
 //  Copyright © 2019 Riley Testut. All rights reserved.
 //
 
-import UIKit
-import AltStoreCore
+@preconcurrency import UIKit
+@preconcurrency import AltStoreCore
 
 import Nuke
 
@@ -142,8 +142,22 @@ extension AppBannerView
                 guard let storeApp = (app as? StoreApp) ?? (app as? InstalledApp)?.storeApp else { return }
                 self.developerName = storeApp.developerName
 
-                if let track = storeApp.latestSupportedVersion?.channel,
-                   ReleaseTracks.betaTracks.contains(track)
+                // Determine the beta badge using a fallback chain:
+                // 1. For installed apps: use the persisted releaseTrack (the track it was installed from)
+                // 2. For store apps / update banners: use latestSupportedVersion.channel
+                // 3. If neither is available, assume stable (no badge)
+                let track: ReleaseTrackType?
+                if let installedApp = app as? InstalledApp {
+                    if let persistedTrack = installedApp.releaseTrack?.type {
+                        track = persistedTrack
+                    } else {
+                        track = ReleaseTrackType.from(version: installedApp.version)
+                    }
+                } else {
+                    track = storeApp.latestSupportedVersion?.channel
+                }
+
+                if let track, ReleaseTrackType.betaTracks.contains(track)
                 {
                     self.name = String(format: NSLocalizedString("%@ beta", comment: ""), app.name)
                     self.isBeta = true
@@ -235,6 +249,10 @@ extension AppBannerView
         }
         
         UIView.performWithoutAnimation {
+            if case .custom = buttonAction {} else {
+                self.button.resetDisplayState()
+            }
+            
             switch buttonAction
             {
             case .open:

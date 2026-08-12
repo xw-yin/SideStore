@@ -7,7 +7,7 @@
 //
 
 import CoreData
-import AltSign
+@preconcurrency import AltSign
 
 @objc(InstalledAppToInstalledAppMigrationPolicy)
 class InstalledAppToInstalledAppMigrationPolicy: NSEntityMigrationPolicy

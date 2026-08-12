@@ -9,7 +9,7 @@
 import Foundation
 import CoreData
 
-import AltSign
+@preconcurrency import AltSign
 
 @objc(InstalledExtension)
 public class InstalledExtension: BaseEntity, InstalledAppProtocol
@@ -33,7 +33,7 @@ public class InstalledExtension: BaseEntity, InstalledAppProtocol
         super.init(entity: entity, insertInto: context)
     }
     
-    public init(resignedAppExtension: ALTApplication, originalBundleIdentifier: String, context: NSManagedObjectContext) throws
+    public init(resignedAppExtensionBundle: ALTApplication, originalBundleIdentifier: String, context: NSManagedObjectContext) throws
     {
         super.init(entity: InstalledExtension.entity(), insertInto: context)
         
@@ -45,23 +45,23 @@ public class InstalledExtension: BaseEntity, InstalledAppProtocol
         #if targetEnvironment(simulator)
         self.expirationDate = self.refreshedDate.addingTimeInterval(60 * 60 * 24 * 7)
         #else
-        guard let expirationDate = resignedAppExtension.provisioningProfile?.expirationDate else {
+        guard let expirationDate = resignedAppExtensionBundle.provisioningProfile?.expirationDate else {
             throw ALTError.invalidApp(reason: "The app extension is missing a valid provisioning profile.")
         }
         self.expirationDate = expirationDate
         #endif
         
-        self.update(resignedAppExtension: resignedAppExtension)
+        self.update(resignedAppExtensionBundle: resignedAppExtensionBundle)
     }
     
-    public func update(resignedAppExtension: ALTApplication)
+    public func update(resignedAppExtensionBundle: ALTApplication)
     {
-        self.name = resignedAppExtension.name
+        self.name = resignedAppExtensionBundle.name
         
-        self.resignedBundleIdentifier = resignedAppExtension.bundleIdentifier
-        self.version = resignedAppExtension.version
+        self.resignedBundleIdentifier = resignedAppExtensionBundle.bundleIdentifier
+        self.version = resignedAppExtensionBundle.version
 
-        if let provisioningProfile = resignedAppExtension.provisioningProfile
+        if let provisioningProfile = resignedAppExtensionBundle.provisioningProfile
         {
             self.update(provisioningProfile: provisioningProfile)
         }

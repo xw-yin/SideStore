@@ -6,13 +6,13 @@
 //  Copyright © 2021 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 import SafariServices
 import MessageUI
 import Intents
 import IntentsUI
 
-import AltSign
+@preconcurrency import AltSign
 
 final class SelectTeamViewController: UITableViewController
 {

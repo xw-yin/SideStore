@@ -6,10 +6,10 @@
 //  Copyright © 2023 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 import SafariServices
 import Combine
-import AltStoreCore
+@preconcurrency import AltStoreCore
 
 import Nuke
 

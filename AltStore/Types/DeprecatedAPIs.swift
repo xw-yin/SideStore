@@ -6,7 +6,7 @@
 //  Copyright © 2023 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 
 // Conform types to these protocols to call deprecated APIs without warnings.
 

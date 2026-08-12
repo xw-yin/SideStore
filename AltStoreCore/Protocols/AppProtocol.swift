@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import AltSign
+@preconcurrency import AltSign
 
 public protocol AppProtocol
 {

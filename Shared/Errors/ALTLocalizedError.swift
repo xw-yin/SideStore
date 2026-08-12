@@ -9,7 +9,7 @@
 import Foundation
 
 #if !ALTJIT
-import AltSign
+@preconcurrency import AltSign
 #endif
 
 public let ALTLocalizedTitleErrorKey = "ALTLocalizedTitle"

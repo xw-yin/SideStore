@@ -6,7 +6,7 @@
 //  Copyright © 2026 SideStore. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 
 public extension UIView {
     func setHidden(_ hidden: Bool, animated: Bool) {

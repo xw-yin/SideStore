@@ -5,7 +5,7 @@
 //  Created by Magesh K on 6/17/26.
 //
 
-import UIKit
+@preconcurrency import UIKit
 import ObjectiveC
 
 @objc(RSTActivityIndicating)
@@ -22,7 +22,7 @@ private var activityIndicatingHelperKey: UInt8 = 0
 internal final class ActivityIndicatingHelper: NSObject, RSTActivityIndicating {
     weak var indicatingObject: AnyObject?
     
-    private let queue = DispatchQueue(label: "com.rileytestut.Roxas.activityCountQueue")
+    private let lock = NSLock()
     private var _activityCount: Int = 0
     private var _isIndicatingActivity = false
     
@@ -45,55 +45,72 @@ internal final class ActivityIndicatingHelper: NSObject, RSTActivityIndicating {
     }
     
     var activityCount: Int {
-        return queue.sync { _activityCount }
+        lock.lock()
+        defer { lock.unlock() }
+        return _activityCount
     }
     
     var isIndicatingActivity: Bool {
-        get { return queue.sync { _isIndicatingActivity } }
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _isIndicatingActivity
+        }
         set {
-            if newValue {
-                activityIndicatorView.startAnimating()
-            } else {
-                activityIndicatorView.stopAnimating()
-            }
-            
-            var didChange = false
-            queue.sync {
-                if _isIndicatingActivity != newValue {
-                    _isIndicatingActivity = newValue
-                    didChange = true
+            DispatchQueue.main.async {
+                if newValue {
+                    self.activityIndicatorView.startAnimating()
+                } else {
+                    self._activityIndicatorView?.stopAnimating()
                 }
             }
             
+            var didChange = false
+            lock.lock()
+            if _isIndicatingActivity != newValue {
+                _isIndicatingActivity = newValue
+                didChange = true
+            }
+            lock.unlock()
+            
             guard didChange else { return }
             
-            if newValue {
-                (self.indicatingObject as? _ActivityIndicating)?.startIndicatingActivity()
-            } else {
-                (self.indicatingObject as? _ActivityIndicating)?.stopIndicatingActivity()
+            DispatchQueue.main.async {
+                if newValue {
+                    (self.indicatingObject as? _ActivityIndicating)?.startIndicatingActivity()
+                } else {
+                    (self.indicatingObject as? _ActivityIndicating)?.stopIndicatingActivity()
+                }
             }
         }
     }
     
     func incrementActivityCount() {
-        queue.sync {
-            _activityCount += 1
-            if _activityCount == 1 {
-                DispatchQueue.main.async {
-                    self.isIndicatingActivity = true
-                }
+        lock.lock()
+        _activityCount += 1
+        let shouldStart = (_activityCount == 1)
+        lock.unlock()
+        
+        if shouldStart {
+            DispatchQueue.main.async {
+                self.isIndicatingActivity = true
             }
         }
     }
     
     func decrementActivityCount() {
-        queue.sync {
-            guard _activityCount > 0 else { return }
-            _activityCount -= 1
-            if _activityCount == 0 {
-                DispatchQueue.main.async {
-                    self.isIndicatingActivity = false
-                }
+        lock.lock()
+        guard _activityCount > 0 else {
+            lock.unlock()
+            return
+        }
+        _activityCount -= 1
+        let shouldStop = (_activityCount == 0)
+        lock.unlock()
+        
+        if shouldStop {
+            DispatchQueue.main.async {
+                self.isIndicatingActivity = false
             }
         }
     }
@@ -174,11 +191,13 @@ extension UIButton: _ActivityIndicating, RSTActivityIndicating {
     func stopIndicatingActivity() {
         activityIndicatingHelper.activityIndicatorView.removeFromSuperview()
         
-        let title = activityIndicatingHelper.userInfo["title"] as? String
-        self.setTitle(title, for: .normal)
+        if self.title(for: .normal) == nil, let title = activityIndicatingHelper.userInfo["title"] as? String {
+            self.setTitle(title, for: .normal)
+        }
         
-        let image = activityIndicatingHelper.userInfo["image"] as? UIImage
-        self.setImage(image, for: .normal)
+        if self.image(for: .normal) == nil, let image = activityIndicatingHelper.userInfo["image"] as? UIImage {
+            self.setImage(image, for: .normal)
+        }
         
         let enabled = activityIndicatingHelper.userInfo["enabled"] as? Bool ?? true
         self.isUserInteractionEnabled = enabled

@@ -9,7 +9,7 @@
 import Foundation
 import CoreData
 
-import AltSign
+@preconcurrency import AltSign
 
 @objc(Account)
 public class Account: BaseEntity

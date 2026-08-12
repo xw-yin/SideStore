@@ -6,9 +6,9 @@
 //  Copyright © 2019 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 
-import AltSign
+@preconcurrency import AltSign
 
 final class AuthenticationViewController: UIViewController
 {
@@ -134,6 +134,16 @@ private extension AuthenticationViewController
                 }
                 
             case .success((let account, let session)):
+                DispatchQueue.main.async {
+                    UIView.performWithoutAnimation {
+                        let title = NSLocalizedString("Authenticated", comment: "")
+                        let image = UIImage(systemName: "checkmark.circle.fill")
+                        self.signInButton.setTitle(title, for: .normal)
+                        self.signInButton.setImage(image, for: .normal)
+                        self.signInButton.isIndicatingActivity = false
+                        self.signInButton.layoutIfNeeded()
+                    }
+                }
                 self.completionHandler?((account, session, password))
             }
             
@@ -145,7 +155,9 @@ private extension AuthenticationViewController
     
     @IBAction func cancel(_ sender: UIBarButtonItem)
     {
-        self.completionHandler?(nil)
+        self.dismiss(animated: true) { [weak self] in
+            self?.completionHandler?(nil)
+        }
     }
 }
 

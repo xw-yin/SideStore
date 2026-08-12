@@ -8,7 +8,7 @@
 
 import CoreData
 
-import AltSign
+@preconcurrency import AltSign
 
 extension MergeError
 {
@@ -133,6 +133,8 @@ private extension Error
 
 open class MergePolicy: RSTRelationshipPreservingMergePolicy
 {
+    private let mergeLock = NSLock()
+
     var permissionsByGlobalAppID = [String: Set<AnyHashable>]()
     var sortedVersionIDsByGlobalAppID = [String: NSOrderedSet]()
     var sortedScreenshotIDsByGlobalAppID = [String: NSOrderedSet]()
@@ -142,6 +144,8 @@ open class MergePolicy: RSTRelationshipPreservingMergePolicy
     // MARK: - Actual Constraint conflict resolution takes place here!
     open override func resolve(constraintConflicts conflicts: [NSConstraintConflict]) throws
     {
+        mergeLock.lock()
+        defer { mergeLock.unlock() }
 
          // When conflict.databaseObject is unavailable, it means this is the first time insertion
         guard conflicts.allSatisfy({ $0.databaseObject != nil }) else {
@@ -212,10 +216,9 @@ extension MergePolicy{
                 }
                 
             default:
-//                break
                 // Unknown context-level conflict.
-//                assertionFailure("MergePolicy is only intended to work with database-level conflicts.")
-                assertionFailure("Context Conflict Detected: is there ambigious data in your incoming sources?\nConflict:\(conflict)")
+                let entityName = conflict.conflictingObjects.first?.entity.name ?? "Unknown"
+                assertionFailure("Context Conflict Detected for table '\(entityName)': is there ambiguous data?\nConflict:\(conflict)")
             }
         }
     }

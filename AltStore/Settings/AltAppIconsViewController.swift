@@ -6,11 +6,11 @@
 //  Copyright © 2024 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 import SwiftUI
 
-import AltSign
-import AltStoreCore
+@preconcurrency import AltSign
+@preconcurrency import AltStoreCore
 
 extension UIApplication
 {
@@ -69,6 +69,8 @@ class AltAppIconsViewController: UICollectionViewController
     private var iconsBySection = [Section: [AltIcon]]()
     
     private var headerRegistration: UICollectionView.SupplementaryRegistration<UICollectionViewListCell>!
+    
+    private var currentAlternateIconName: String? = UIApplication.shared.alternateIconName
         
     override func viewDidLoad()
     {
@@ -138,7 +140,7 @@ private extension AltAppIconsViewController
         }
         
         let dataSource = RSTCompositeCollectionViewDataSource<AltIcon>(dataSources: dataSources)
-        dataSource.cellConfigurationHandler = { cell, icon, indexPath in
+        dataSource.cellConfigurationHandler = { [weak self] cell, icon, indexPath in
             let cell = cell as! UICollectionViewListCell
             
             let imageWidth = 44.0
@@ -156,7 +158,10 @@ private extension AltAppIconsViewController
             
             cell.contentConfiguration = config
 
-            if UIApplication.shared.alternateIconName == icon.iconName || (UIApplication.shared.alternateIconName == nil && icon.name == AltIcon.defaultName)
+            let activeIconName = self?.currentAlternateIconName
+            let isSelected = (activeIconName == icon.iconName) || (activeIconName == nil && icon.name == AltIcon.defaultName)
+
+            if isSelected
             {
                 cell.accessories = [.checkmark(options: .init(tintColor: .white))]
             }
@@ -196,27 +201,35 @@ extension AltAppIconsViewController
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
     {
         let icon = self.dataSource.item(at: indexPath)
-        guard UIApplication.shared.alternateIconName != icon.iconName else { return }
+        let iconName = (icon.name == AltIcon.defaultName) ? nil : icon.iconName
         
-        // Deselect previous icon + select new icon
+        guard self.currentAlternateIconName != iconName else { return }
+        
+        // Optimistically update selected icon name and reload UI so checkmark moves INSTANTLY
+        self.currentAlternateIconName = iconName
         collectionView.reloadData()
         
         // If assigning primary icon, pass "nil" as alternate icon name.
-        let iconName = (icon.name == AltIcon.defaultName) ? nil : icon.iconName
-        UIApplication.shared.setAlternateIconName(iconName) { error in
-            if let error
-            {
-                let alertController = UIAlertController(title: NSLocalizedString("Unable to Change App Icon", comment: ""),
-                                                        message: error.localizedDescription,
-                                                        preferredStyle: .alert)
-                alertController.addAction(.ok)
-                self.present(alertController, animated: true)
+        UIApplication.shared.setAlternateIconName(iconName) { [weak self] error in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
                 
-                collectionView.reloadData()
-            }
-            else
-            {
-                NotificationCenter.default.post(name: UIApplication.didChangeAppIconNotification, object: icon)
+                if let error
+                {
+                    // Revert checkmark if icon change failed
+                    self.currentAlternateIconName = UIApplication.shared.alternateIconName
+                    self.collectionView.reloadData()
+                    
+                    let alertController = UIAlertController(title: NSLocalizedString("Unable to Change App Icon", comment: ""),
+                                                            message: error.localizedDescription,
+                                                            preferredStyle: .alert)
+                    alertController.addAction(.ok)
+                    self.present(alertController, animated: true)
+                }
+                else
+                {
+                    NotificationCenter.default.post(name: UIApplication.didChangeAppIconNotification, object: icon)
+                }
             }
         }
     }

@@ -9,9 +9,15 @@
 import Foundation
 import CoreData
 
-import AltSign
-import UIKit
+@preconcurrency import AltSign
+@preconcurrency import UIKit
 import SemanticVersion
+
+public enum CertificateStatus: Equatable, Sendable {
+    case valid(isCrossSigned: Bool)
+    case revoked
+    case expired
+}
 
 extension InstalledApp
 {
@@ -65,6 +71,36 @@ public class InstalledApp: BaseEntity, InstalledAppProtocol
     
     @NSManaged public var certificateSerialNumber: String?
     @NSManaged public var storeBuildVersion: String?
+    @NSManaged public var certificateStatusRaw: String?
+    
+    public var certificateStatus: CertificateStatus {
+        get {
+            guard let raw = self.certificateStatusRaw else { return .valid(isCrossSigned: false) }
+            switch raw {
+            case "valid":
+                return .valid(isCrossSigned: false)
+            case "validCrossSigned":
+                return .valid(isCrossSigned: true)
+            case "revoked":
+                return .revoked
+            case "expired":
+                return .expired
+            default:
+                return .valid(isCrossSigned: false)
+            }
+        }
+        set {
+            switch newValue {
+            case .valid(let isCrossSigned):
+                self.certificateStatusRaw = isCrossSigned ? "validCrossSigned" : "valid"
+            case .revoked:
+                self.certificateStatusRaw = "revoked"
+            case .expired:
+                self.certificateStatusRaw = "expired"
+            }
+        }
+    }
+
     
     /* Transient */
     @NSManaged public var isRefreshing: Bool
@@ -72,6 +108,7 @@ public class InstalledApp: BaseEntity, InstalledAppProtocol
     /* Relationships */
     @NSManaged public var storeApp: StoreApp?
     @NSManaged public var team: Team?
+    @NSManaged public var releaseTrack: ReleaseTrack?
     @NSManaged public var appExtensions: Set<InstalledExtension>
     
     @NSManaged public private(set) var loggedErrors: NSSet /* Set<LoggedError> */ // Use NSSet to avoid eagerly fetching values.
@@ -113,7 +150,7 @@ public class InstalledApp: BaseEntity, InstalledAppProtocol
         
         // Check beta updates if enabled
         if UserDefaults.standard.isBetaUpdatesEnabled,
-           ReleaseTracks.betaTracks.contains(latestVersion.channel),
+           ReleaseTrackType.betaTracks.contains(latestVersion.channel),
            latestVer == currentVer,         // major.minor.patch are matching
            // now compare by preRelease and build to break the tie
            // TODO: since multiple tracks can be independent, when a different version is available on selected track than installed
@@ -144,7 +181,7 @@ public class InstalledApp: BaseEntity, InstalledAppProtocol
         super.init(entity: entity, insertInto: context)
     }
     
-    public init(resignedApp: ALTApplication, originalBundleIdentifier: String, certificateSerialNumber: String?, storeBuildVersion: String?, context: NSManagedObjectContext) throws
+    public init(resignedAppBundle: ALTApplication, originalBundleIdentifier: String, certificateSerialNumber: String?, storeBuildVersion: String?, context: NSManagedObjectContext) throws
     {
         super.init(entity: InstalledApp.entity(), insertInto: context)
         
@@ -158,7 +195,7 @@ public class InstalledApp: BaseEntity, InstalledAppProtocol
         #if targetEnvironment(simulator)
         self.expirationDate = self.refreshedDate.addingTimeInterval(60 * 60 * 24 * 7)
         #else
-        guard let expirationDate = resignedApp.provisioningProfile?.expirationDate else {
+        guard let expirationDate = resignedAppBundle.provisioningProfile?.expirationDate else {
             throw ALTError.invalidApp(reason: "The app is missing a valid provisioning profile.")
         }
         self.expirationDate = expirationDate
@@ -167,7 +204,7 @@ public class InstalledApp: BaseEntity, InstalledAppProtocol
         // In practice this update() is redundant because we always call update() again after init from callers,
         // but better to have an init that is guaranteed to successfully initialize an object
         // than one that has a hidden assumption a second method will be called.
-        self.update(resignedApp: resignedApp, certificateSerialNumber: certificateSerialNumber, storeBuildVersion: storeBuildVersion)
+        self.update(resignedAppBundle: resignedAppBundle, certificateSerialNumber: certificateSerialNumber, storeBuildVersion: storeBuildVersion)
     }
 }
 
@@ -180,19 +217,19 @@ public extension InstalledApp
         return localizedVersion
     }
     
-    func update(resignedApp: ALTApplication, certificateSerialNumber: String?, storeBuildVersion: String?)
+    func update(resignedAppBundle: ALTApplication, certificateSerialNumber: String?, storeBuildVersion: String?)
     {
-        self.name = resignedApp.name
+        self.name = resignedAppBundle.name
         
-        self.resignedBundleIdentifier = resignedApp.bundleIdentifier
-        self.version = resignedApp.version
+        self.resignedBundleIdentifier = resignedAppBundle.bundleIdentifier
+        self.version = resignedAppBundle.version
         
-        self.buildVersion = resignedApp.buildVersion
+        self.buildVersion = resignedAppBundle.buildVersion
         self.storeBuildVersion = storeBuildVersion
         
         self.certificateSerialNumber = certificateSerialNumber
         
-        if let provisioningProfile = resignedApp.provisioningProfile
+        if let provisioningProfile = resignedAppBundle.provisioningProfile
         {
             self.update(provisioningProfile: provisioningProfile)
         }
@@ -214,7 +251,6 @@ public extension InstalledApp
             completion(.success(hostIcon))
             return
         }
-
         if self.bundleIdentifier == StoreApp.altstoreAppID,
            let iconName = UIApplication.alt_shared?.value(forKey: "alternateIconName") as? String
         {
@@ -240,8 +276,8 @@ public extension InstalledApp
                     return completion(.success(icon))
                 }
                 
-                let application = ALTApplication(fileURL: fileURL)
-                completion(.success(application?.icon))
+                let appBundle = ALTApplication(fileURL: fileURL)
+                completion(.success(appBundle?.icon))
             }
             catch
             {

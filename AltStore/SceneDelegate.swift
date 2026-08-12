@@ -6,8 +6,8 @@
 //  Copyright © 2020 Riley Testut. All rights reserved.
 //
 
-import UIKit
-import AltStoreCore
+@preconcurrency import UIKit
+@preconcurrency import AltStoreCore
 
 
 @available(iOS 13, *)
@@ -21,7 +21,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions)
     {
-        debugLog("SceneDelegate.scene(willConnectTo:) invoked")
+        debugLog("[SceneDelegate] scene(willConnectTo:) invoked")
         // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
         // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
@@ -35,7 +35,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate
 
     func sceneWillEnterForeground(_ scene: UIScene)
     {
-        // Called as the scene transitions from the background to the foreground.
+        // Called as the scene transitions from the foreground to the background.
         // Use this method to undo the changes made on entering the background.
         
         // applicationWillEnterForeground is _not_ called when launching app,
@@ -44,20 +44,17 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate
         // (since all these methods are called separately during app startup).
         guard DatabaseManager.shared.isStarted else { return }
         
-        AppManager.shared.update()
-        if UserDefaults.standard.enableEMPforWireguard {
-            DispatchQueue.global().async {
-                startEMProxy(bind_addr: AppConstants.Proxy.serverURL)
-            }
+        Task {
+            await AppManager.shared.reconcileInstalledApps()
         }
     }
 
     func sceneDidBecomeActive(_ scene: UIScene)
     {
-        debugLog("SceneDelegate.sceneDidBecomeActive() invoked")
+        debugLog("[SceneDelegate] sceneDidBecomeActive() invoked")
         defer {
             // dump sidebackup logs if any
-            AppDelegate.dumpSideBackupLogsIfNeeded()
+            Task.detached { await AppDelegate.dumpSideBackupLogsIfNeeded() }
         }
         // Flush any .ipa import that arrived before the scene was active (cold launch).
         guard let url = self.pendingImportIPAURL else { return }
@@ -75,11 +72,6 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate
         
         // Make sure to update AppDelegate.applicationDidEnterBackground() as well.
 
-        // TODO: @mahee96: find if we need to stop em_proxy as in altstore?
-        if UserDefaults.standard.enableEMPforWireguard {
-            stopEMProxy()
-        }
-
         guard let oneMonthAgo = Calendar.current.date(byAdding: .month, value: -1, to: Date()) else { return }
         
         let midnightOneMonthAgo = Calendar.current.startOfDay(for: oneMonthAgo)
@@ -96,6 +88,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>)
     {
         guard let context = URLContexts.first else { return }
+        debugLog("[SceneDelegate] scene(_:openURLContexts:) called with URL: \(context.url)")
         self.open(context)
     }
 }
@@ -104,6 +97,7 @@ private extension SceneDelegate
 {
     func open(_ context: UIOpenURLContext)
     {
+        debugLog("[SceneDelegate] open(_:) called with URL: \(context.url)")
         if context.url.isFileURL
         {
             guard context.url.pathExtension.lowercased() == "ipa" else { return }

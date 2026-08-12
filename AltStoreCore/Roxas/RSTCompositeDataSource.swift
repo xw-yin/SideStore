@@ -6,7 +6,7 @@
 //  Copyright © 2026 SideStore. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 import CoreData
 
 protocol RSTAnyCompositeDataSource: AnyObject {
@@ -228,11 +228,10 @@ open class RSTCompositeCollectionViewDataSource<ContentType>: RSTCompositeDataSo
 open class RSTCompositeTableViewDataSource<ContentType>: RSTCompositeDataSource<ContentType, UITableViewCell, UITableView, UITableViewDataSource> {}
 open class RSTCompositeCollectionViewPrefetchingDataSource<ContentType, PrefetchContentType>: RSTCompositeCollectionViewDataSource<ContentType>, RSTCellContentPrefetchingDataSource, UICollectionViewDataSourcePrefetching {
     public var prefetchItemCache = NSCache<AnyObject, AnyObject>()
-    public var prefetchHandler: ((ContentType, IndexPath, @escaping (PrefetchContentType?, Error?) -> Void) -> Operation?)?
+    public var prefetchHandler: ((ContentType, IndexPath, @escaping (PrefetchContentType?, Error?) -> Void) -> Task<Void, Never>?)?
     public var prefetchCompletionHandler: ((UICollectionViewCell, PrefetchContentType?, IndexPath, Error?) -> Void)?
     
-    private var prefetchOperations: [IndexPath: Operation] = [:]
-    private var prefetchOperationQueue = OperationQueue()
+    private var prefetchTasks: [IndexPath: Task<Void, Never>] = [:]
 
     public override func configureCell(_ cell: UICollectionViewCell, at indexPath: IndexPath) {
         super.configureCell(cell, at: indexPath)
@@ -245,7 +244,7 @@ open class RSTCompositeCollectionViewPrefetchingDataSource<ContentType, Prefetch
             return
         }
         
-        prefetchOperations[indexPath]?.cancel()
+        prefetchTasks[indexPath]?.cancel()
         
         let item = self.item(at: indexPath)
         if let cached = prefetchItemCache.object(forKey: item as AnyObject) as? PrefetchContentType {
@@ -253,7 +252,7 @@ open class RSTCompositeCollectionViewPrefetchingDataSource<ContentType, Prefetch
             return
         }
         
-        if let operation = prefetchHandler?(item, indexPath, { [weak self, weak cell] (content, error) in
+        if let task = prefetchHandler?(item, indexPath, { [weak self, weak cell] (content, error) in
             guard let self, let cell else { return }
             if let content {
                 self.prefetchItemCache.setObject(content as AnyObject, forKey: item as AnyObject)
@@ -273,8 +272,7 @@ open class RSTCompositeCollectionViewPrefetchingDataSource<ContentType, Prefetch
                 }
             }
         }) {
-            prefetchOperations[indexPath] = operation
-            prefetchOperationQueue.addOperation(operation)
+            prefetchTasks[indexPath] = task
         }
     }
 
@@ -293,14 +291,13 @@ open class RSTCompositeCollectionViewPrefetchingDataSource<ContentType, Prefetch
             if prefetchItemCache.object(forKey: item as AnyObject) != nil {
                 continue
             }
-            if let operation = prefetchHandler?(item, indexPath, { [weak self] (content, error) in
+            if let task = prefetchHandler?(item, indexPath, { [weak self] (content, error) in
                 guard let self else { return }
                 if let content {
                     self.prefetchItemCache.setObject(content as AnyObject, forKey: item as AnyObject)
                 }
             }) {
-                prefetchOperations[indexPath] = operation
-                prefetchOperationQueue.addOperation(operation)
+                prefetchTasks[indexPath] = task
             }
         }
     }
@@ -313,18 +310,17 @@ open class RSTCompositeCollectionViewPrefetchingDataSource<ContentType, Prefetch
                 }
                 continue
             }
-            prefetchOperations[indexPath]?.cancel()
-            prefetchOperations.removeValue(forKey: indexPath)
+            prefetchTasks[indexPath]?.cancel()
+            prefetchTasks.removeValue(forKey: indexPath)
         }
     }
 }
 open class RSTCompositeTableViewPrefetchingDataSource<ContentType, PrefetchContentType>: RSTCompositeTableViewDataSource<ContentType>, RSTCellContentPrefetchingDataSource, UITableViewDataSourcePrefetching {
     public var prefetchItemCache = NSCache<AnyObject, AnyObject>()
-    public var prefetchHandler: ((ContentType, IndexPath, @escaping (PrefetchContentType?, Error?) -> Void) -> Operation?)?
+    public var prefetchHandler: ((ContentType, IndexPath, @escaping (PrefetchContentType?, Error?) -> Void) -> Task<Void, Never>?)?
     public var prefetchCompletionHandler: ((UITableViewCell, PrefetchContentType?, IndexPath, Error?) -> Void)?
     
-    private var prefetchOperations: [IndexPath: Operation] = [:]
-    private var prefetchOperationQueue = OperationQueue()
+    private var prefetchTasks: [IndexPath: Task<Void, Never>] = [:]
 
     public override func configureCell(_ cell: UITableViewCell, at indexPath: IndexPath) {
         super.configureCell(cell, at: indexPath)
@@ -337,7 +333,7 @@ open class RSTCompositeTableViewPrefetchingDataSource<ContentType, PrefetchConte
             return
         }
         
-        prefetchOperations[indexPath]?.cancel()
+        prefetchTasks[indexPath]?.cancel()
         
         let item = self.item(at: indexPath)
         if let cached = prefetchItemCache.object(forKey: item as AnyObject) as? PrefetchContentType {
@@ -345,7 +341,7 @@ open class RSTCompositeTableViewPrefetchingDataSource<ContentType, PrefetchConte
             return
         }
         
-        if let operation = prefetchHandler?(item, indexPath, { [weak self, weak cell] (content, error) in
+        if let task = prefetchHandler?(item, indexPath, { [weak self, weak cell] (content, error) in
             guard let self, let cell else { return }
             if let content {
                 self.prefetchItemCache.setObject(content as AnyObject, forKey: item as AnyObject)
@@ -365,8 +361,7 @@ open class RSTCompositeTableViewPrefetchingDataSource<ContentType, PrefetchConte
                 }
             }
         }) {
-            prefetchOperations[indexPath] = operation
-            prefetchOperationQueue.addOperation(operation)
+            prefetchTasks[indexPath] = task
         }
     }
 
@@ -385,14 +380,13 @@ open class RSTCompositeTableViewPrefetchingDataSource<ContentType, PrefetchConte
             if prefetchItemCache.object(forKey: item as AnyObject) != nil {
                 continue
             }
-            if let operation = prefetchHandler?(item, indexPath, { [weak self] (content, error) in
+            if let task = prefetchHandler?(item, indexPath, { [weak self] (content, error) in
                 guard let self else { return }
                 if let content {
                     self.prefetchItemCache.setObject(content as AnyObject, forKey: item as AnyObject)
                 }
             }) {
-                prefetchOperations[indexPath] = operation
-                prefetchOperationQueue.addOperation(operation)
+                prefetchTasks[indexPath] = task
             }
         }
     }
@@ -405,8 +399,8 @@ open class RSTCompositeTableViewPrefetchingDataSource<ContentType, PrefetchConte
                 }
                 continue
             }
-            prefetchOperations[indexPath]?.cancel()
-            prefetchOperations.removeValue(forKey: indexPath)
+            prefetchTasks[indexPath]?.cancel()
+            prefetchTasks.removeValue(forKey: indexPath)
         }
     }
 }

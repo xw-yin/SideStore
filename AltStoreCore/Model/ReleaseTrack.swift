@@ -8,6 +8,53 @@
 
 import CoreData
 
+
+public enum ReleaseTrackType: String, CaseIterable, CustomStringConvertible
+{
+    case unknown
+    case local          
+    
+    case alpha
+    case nightly = "nightly"
+    case stable
+    
+    public static var betaTracks: [ReleaseTrackType] {
+        ReleaseTrackType.allCases.filter(isBetaTrack)
+    }
+
+    public static var nonBetaTracks: [ReleaseTrackType] {
+        ReleaseTrackType.allCases.filter { !isBetaTrack($0) }
+    }
+
+    private static func isBetaTrack(_ key: ReleaseTrackType) -> Bool {
+        key == .alpha || key == .nightly
+    }
+
+    public var description: String {
+        return self.rawValue
+    }
+
+    // Static Version Parser
+    public static func from(version: String) -> ReleaseTrackType {
+        let lowercased = version.lowercased()
+        if lowercased.contains("alpha") {
+            return .alpha
+        } else if lowercased.contains("nightly") || lowercased.contains("beta") {
+            return .nightly
+        } else if lowercased.contains("local") || lowercased.contains("xcode") {
+            #if DEBUG
+            return .nightly // Return nightly/beta to show the BETA badge on local developer builds
+            #else
+            return .stable  // Treat as stable in production/release builds
+            #endif
+        } else {
+            return .stable
+        }
+    }
+}
+
+
+
 // created for 0.6.0
 @objc(ReleaseTrack)
 public class ReleaseTrack: BaseEntity, Decodable
@@ -20,14 +67,15 @@ public class ReleaseTrack: BaseEntity, Decodable
     // RelationShips
     @NSManaged @objc(releases) public private(set) var _releases: NSOrderedSet?
     @NSManaged public private(set) var storeApp: StoreApp?
+    @NSManaged public private(set) var installedApp: InstalledApp?
     
     private enum CodingKeys: String, CodingKey, CaseIterable {
         case track
         case releases
     }
     
-    public var track: String? {
-        return _track?.isEmpty == false ? _track : nil
+    public var type: ReleaseTrackType {
+        return ReleaseTrackType(rawValue: _track ?? "") ?? .unknown
     }
     
     public var releases:[AppVersion]? {
@@ -91,7 +139,7 @@ public extension ReleaseTrack{
                 }
                 
                 // update it into the appVersion
-                _ = version.mutateForData(channel: track, appBundleID: storeApp.bundleIdentifier, sourceID: storeApp.sourceIdentifier)
+                _ = version.mutateForData(channel: type.rawValue, appBundleID: storeApp.bundleIdentifier, sourceID: storeApp.sourceIdentifier)
             }
     }
     

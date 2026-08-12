@@ -6,11 +6,22 @@
 //  Copyright © 2023 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 
 extension UIColor
 {
     static let altBackground = UIColor(named: "Background")!
+    
+    static var settingsBackground: UIColor {
+        return UIColor(named: "SettingsBackground")!
+    }
+    
+    static var settingsHighlighted: UIColor {
+        return UIColor(named: "SettingsHighlighted")!
+    }
+    
+    static let altInvertedPrimary = UIColor(named: "SettingsHighlighted")!
+
 }
 
 extension UIColor

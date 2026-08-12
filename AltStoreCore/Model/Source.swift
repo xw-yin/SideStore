@@ -7,7 +7,7 @@
 //
 
 import CoreData
-import UIKit
+@preconcurrency import UIKit
 
 public extension Source
 {

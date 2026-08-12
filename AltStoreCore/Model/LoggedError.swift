@@ -13,12 +13,14 @@ extension LoggedError
     public enum Operation: String
     {
         case install
+        case resign
         case update
         case refresh
         case activate
         case deactivate
         case backup
         case restore
+        case remove
         case enableJIT
     }
 }
@@ -127,12 +129,14 @@ public extension LoggedError
         switch operation
         {
         case .install: return String(format: NSLocalizedString("Install %@ Failed", comment: ""), self.appName)
+        case .resign: return String(format: NSLocalizedString("Resign %@ Failed", comment: ""), self.appName)
         case .update: return String(format: NSLocalizedString("Update %@ Failed", comment: ""), self.appName)
         case .refresh: return String(format: NSLocalizedString("Refresh %@ Failed", comment: ""), self.appName)
         case .activate: return String(format: NSLocalizedString("Activate %@ Failed", comment: ""), self.appName)
         case .deactivate: return String(format: NSLocalizedString("Deactivate %@ Failed", comment: ""), self.appName)
         case .backup: return String(format: NSLocalizedString("Backup %@ Failed", comment: ""), self.appName)
         case .restore: return String(format: NSLocalizedString("Restore %@ Failed", comment: ""), self.appName)
+        case .remove: return String(format: NSLocalizedString("Remove %@ Failed", comment: ""), self.appName)
         case .enableJIT: return String(format: NSLocalizedString("Enable JIT for %@ Failed", comment: ""), self.appName)
         }
     }

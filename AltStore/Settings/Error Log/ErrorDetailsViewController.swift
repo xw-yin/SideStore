@@ -6,8 +6,8 @@
 //  Copyright © 2022 Riley Testut. All rights reserved.
 //
 
-import UIKit
-import AltStoreCore
+@preconcurrency import UIKit
+@preconcurrency import AltStoreCore
 
 class ErrorDetailsViewController: UIViewController
 {
@@ -33,6 +33,10 @@ class ErrorDetailsViewController: UIViewController
         }
 
         self.navigationController?.navigationBar.tintColor = .altPrimary
+
+        self.textView.isScrollEnabled = true
+        self.textView.alwaysBounceVertical = true
+        self.textView.showsVerticalScrollIndicator = true
 
         if #available(iOS 15, *), let sheetController = self.navigationController?.sheetPresentationController
         {

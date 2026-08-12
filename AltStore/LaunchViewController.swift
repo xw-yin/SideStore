@@ -6,13 +6,14 @@
 //  Copyright © 2019 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 
 import WidgetKit
 
-import AltSign
-import AltStoreCore
+@preconcurrency import AltSign
+@preconcurrency import AltStoreCore
 import UniformTypeIdentifiers
+import CryptoKit
 
 let pairingFileName = "ALTPairingFile.mobiledevicepairing"
 
@@ -141,7 +142,7 @@ final class LaunchViewController: UIViewController, UIDocumentPickerDelegate {
             debugLog("[LaunchViewController] Successfully copied and saved pairing file to: \(documentsPath.path)")
             UserDefaults.standard.isPairingReset = false
             
-            Task {
+            Task.detached {
                 do {
                     try await AppBootManager.shared.startMinimuxer(pairingFile: pairingString)
                 } catch {
@@ -169,42 +170,19 @@ final class LaunchViewController: UIViewController, UIDocumentPickerDelegate {
         self.present(alert, animated: true)
     }
     
-    func importAccountAtFile(_ file: URL, remove: Bool = false) {
-        _ = file.startAccessingSecurityScopedResource()
-        defer { file.stopAccessingSecurityScopedResource() }
-        guard let accountD = try? Data(contentsOf: file) else {
-            return debugLog("Could not parse data from file \(file)")
-        }
-        guard let account = try? Foundation.JSONDecoder().decode(ImportedAccount.self, from: accountD) else {
-            return debugLog("Could not parse data from file \(file)")
-        }
-        debugLog("We want to import this account probably: \(account)")
-        if remove {
-            try? FileManager.default.removeItem(at: file)
-        }
-        Keychain.shared.appleIDEmailAddress = account.email
-        Keychain.shared.appleIDPassword = account.password
-        Keychain.shared.adiPb = account.adiPB
-        Keychain.shared.identifier = account.local_user
-        do {
-            let altCert = try ALTCertificate(p12Data: account.cert, password: account.certpass)
-            Keychain.shared.signingCertificate = altCert.encryptedP12Data(withPassword: "")!
-            Keychain.shared.signingCertificatePassword = account.certpass
-            let toastView = ToastView(text: NSLocalizedString("Successfully imported '\(account.email)'!", comment: ""), detailText: "SideStore should be fully operational!")
-            return toastView.show(in: self)
-        } catch {
-            let toastView = ToastView(text: NSLocalizedString("Failed to import account certificate!", comment: ""), detailText: "Error: \(error.localizedDescription). Still imported account/adi.pb details!")
-            return toastView.show(in: self)
-        }
-    }
-    
     func detectAndImportAccountFile() {
-        let accountFileURL = FileManager.default.documentsDirectory.appendingPathComponent("Account.sideconf")
-        #if !DEBUG
-        importAccountAtFile(accountFileURL, remove: true)
-        #else
-        importAccountAtFile(accountFileURL)
-        #endif
+        let accountFileURL = FileManager.default.documentsDirectory.appendingPathComponent(AppConstants.accountConfigurationFileName)
+        guard FileManager.default.fileExists(atPath: accountFileURL.path) else { return }
+        guard let data = try? Data(contentsOf: accountFileURL) else { return }
+        
+        let checksum = SHA256.hash(data: data).compactMap { String(format: "%02x", $0) }.joined()
+        guard checksum != UserDefaults.shared.acctFileChecksum else {
+            debugLog("[LaunchViewController] Skipping import for \(accountFileURL.lastPathComponent): checksum unchanged.")
+            return
+        }
+
+        let alert = ImportAccountAlertController.make(data: data, checksum: checksum, presentingViewController: self)
+        self.present(alert, animated: true)
     }
 }
 
@@ -232,7 +210,7 @@ extension LaunchViewController {
         guard !didFinishLaunching else { return }
         didFinishLaunching = true
         
-        AppManager.shared.update()
+        await AppManager.shared.reconcileInstalledApps()
         AppManager.shared.updateAllSources { result in
             guard case .failure(let error) = result else { return }
             debugLog("Failed to update sources on launch. \(error.localizedDescription)")
@@ -250,14 +228,14 @@ extension LaunchViewController {
             toastView.show(in: self.destinationViewController!.selectedViewController ?? self.destinationViewController!)
         }
         updateKnownSources()
-        WidgetCenter.shared.reloadAllTimelines()
+        await WidgetDataManager.publishCurrentInstalledApps(in: DatabaseManager.shared.viewContext)
         didFinishLaunching = true
         
         let destinationVC = destinationViewController!
         
         let elapsed = abs(startTime.timeIntervalSinceNow)
         let remaining = elapsed >= 1 ? 0 : 1 - elapsed
-        try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
+        try? await Task.sleep(nanoseconds: UInt64(remaining * 500_000_000))
         
         destinationVC.loadViewIfNeeded()
         addChild(destinationVC)

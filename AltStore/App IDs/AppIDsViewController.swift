@@ -6,11 +6,15 @@
 //  Copyright © 2020 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 import CoreData
 @preconcurrency import AltStoreCore
 import SwiftUI
-import AltSign
+@preconcurrency import AltSign
+
+extension AppIDsViewController {
+    static let didDismissNotification = Notification.Name("AppIDsViewControllerDidDismissNotification")
+}
 
 final class AppIDsViewController: UICollectionViewController
 {
@@ -28,6 +32,12 @@ final class AppIDsViewController: UICollectionViewController
     private weak var footerView: TextCollectionReusableView?
     
     @IBOutlet var activityIndicatorBarButtonItem: UIBarButtonItem!
+
+    override func viewWillDisappear(_ animated: Bool)
+    {
+        super.viewWillDisappear(animated)
+        NotificationCenter.default.post(name: AppIDsViewController.didDismissNotification, object: self)
+    }
     
     override func viewDidLoad()
     {
@@ -173,14 +183,7 @@ private extension AppIDsViewController
     
     @objc func fetchAppIDs()
     {
-        Task { @MainActor in
-            guard await isMinimuxerReady else
-            {
-                self.collectionView.refreshControl?.endRefreshing()
-                return
-            }
-            self.fetchAppIDsFromServer(completion: nil)
-        }
+        self.fetchAppIDsFromServer(completion: nil)
     }
     
     func fetchAppIDsFromServer(completion: (() -> Void)?)
@@ -188,12 +191,11 @@ private extension AppIDsViewController
         guard !self.isLoading else { return }
         self.isLoading = true
         
-        AppManager.shared.fetchAppIDs { [weak self] (result) in
+        AppManager.shared.syncAppIDs(presentingViewController: self) { [weak self] (result) in
             guard let self = self else { return }
             do
             {
-                let (_, context) = try result.get()
-                try context.save()
+                try result.get()
             }
             catch
             {
@@ -220,7 +222,11 @@ private extension AppIDsViewController
             self.collectionView.refreshControl?.endRefreshing()
             self.activityIndicatorBarButtonItem.isIndicatingActivity = false
             
-            if let activeTeam = DatabaseManager.shared.activeTeam(), activeTeam.type != .free
+            let activeTeamType = DatabaseManager.shared.activeTeam()?.type
+            let allowsEditMode = (activeTeamType == .individual || activeTeamType == .organization) &&
+                                 (activeTeamType != .free || UserDefaults.standard.freeAcctAppIdDeletion)
+            
+            if allowsEditMode
             {
                 if self.isEditingMode
                 {
@@ -302,7 +308,14 @@ extension AppIDsViewController: UICollectionViewDelegateFlowLayout
         
         // NOTE: double dequeue of cell has been discontinued
         // TODO: Using harcoded value until this is fixed
-        return CGSize(width: collectionView.bounds.width, height: 200)
+        if let activeTeam = DatabaseManager.shared.activeTeam(), activeTeam.type == .free
+        {
+            return CGSize(width: collectionView.bounds.width, height: 220)
+        }
+        else
+        {
+            return CGSize(width: collectionView.bounds.width, height: 160)
+        }
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForFooterInSection section: Int) -> CGSize
@@ -416,8 +429,6 @@ private extension AppIDsViewController
                 let selectedCount = self.collectionView.indexPathsForSelectedItems?.count ?? 0
                 if selectedCount > 0
                 {
-                    guard await isMinimuxerReady else { return }
-                    
                     let alert = UIAlertController(
                         title: NSLocalizedString("Delete App IDs", comment: ""),
                         message: String(format: NSLocalizedString("Are you sure you want to proceed to delete %d appIds?", comment: ""), selectedCount),
@@ -436,7 +447,6 @@ private extension AppIDsViewController
             }
             else
             {
-                guard await isMinimuxerReady else { return }
                 self.enterEditMode()
             }
         }

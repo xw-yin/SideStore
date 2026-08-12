@@ -7,7 +7,7 @@
 //
 
 import SwiftUI
-import AltStoreCore
+@preconcurrency import AltStoreCore
 
 @available(iOS 16, *)
 extension AppPermissionsCard

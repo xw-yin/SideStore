@@ -6,8 +6,8 @@
 //  Copyright © 2019 Riley Testut. All rights reserved.
 //
 
-import UIKit
-import AltStoreCore
+@preconcurrency import UIKit
+@preconcurrency import AltStoreCore
 
 extension TimeInterval
 {
@@ -43,6 +43,10 @@ class ToastView: RSTToastView
         }
         
         super.init(text: text, detailText: detailedText)
+        
+        self.backgroundColor = .altPrimary
+        self.textLabel.textColor = .white
+        self.detailTextLabel.textColor = .white
         
         self.isAccessibilityElement = true
         

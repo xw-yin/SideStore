@@ -6,7 +6,7 @@
 //  Copyright © 2026 SideStore. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 
 public protocol RSTCellContentPrefetchingDataSource: AnyObject {
     associatedtype ContentType
@@ -14,6 +14,6 @@ public protocol RSTCellContentPrefetchingDataSource: AnyObject {
     associatedtype PrefetchContentType
     
     var prefetchItemCache: NSCache<AnyObject, AnyObject> { get }
-    var prefetchHandler: ((ContentType, IndexPath, @escaping (PrefetchContentType?, Error?) -> Void) -> Operation?)? { get set }
+    var prefetchHandler: ((ContentType, IndexPath, @escaping (PrefetchContentType?, Error?) -> Void) -> Task<Void, Never>?)? { get set }
     var prefetchCompletionHandler: ((CellType, PrefetchContentType?, IndexPath, Error?) -> Void)? { get set }
 }

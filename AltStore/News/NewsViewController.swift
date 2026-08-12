@@ -6,11 +6,11 @@
 //  Copyright © 2019 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 import SafariServices
 import Combine
 import CoreData
-import AltStoreCore
+@preconcurrency import AltStoreCore
 
 import Nuke
 
@@ -249,10 +249,8 @@ private extension NewsViewController
         dataSource.prefetchHandler = { (newsItem, indexPath, completionHandler) in
             guard let imageURL = newsItem.imageURL else { return nil }
             
-            return RSTAsyncBlockOperation() { (operation) in
+            Task.detached(priority: .background) {
                 ImagePipeline.shared.loadImage(with: imageURL, progress: nil) { result in
-                    guard !operation.isCancelled else { return operation.finish() }
-                    
                     switch result
                     {
                     case .success(let response): completionHandler(response.image, nil)
@@ -260,6 +258,7 @@ private extension NewsViewController
                     }
                 }
             }
+            return nil
         }
         dataSource.prefetchCompletionHandler = { (cell, image, indexPath, error) in
             let cell = cell as! NewsCollectionViewCell
@@ -400,7 +399,7 @@ private extension NewsViewController
             DispatchQueue.main.async {
                 switch result
                 {
-                case .failure(OperationError.cancelled): break // Ignore
+                case .failure(let error) where error is CancellationError: break // Ignore
                 case .failure(let error):
                     let toastView = ToastView(error: error)
                     toastView.opensErrorLog = true

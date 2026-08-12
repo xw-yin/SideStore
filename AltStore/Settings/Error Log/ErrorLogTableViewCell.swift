@@ -6,7 +6,7 @@
 //  Copyright © 2022 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 
 @objc(ErrorLogMenuButton)
 private final class ErrorLogMenuButton: UIButton {

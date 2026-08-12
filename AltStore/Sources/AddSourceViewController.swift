@@ -6,10 +6,10 @@
 //  Copyright © 2023 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 import CoreData
 import Combine
-import AltStoreCore
+@preconcurrency import AltStoreCore
 
 import Nuke
 
@@ -242,10 +242,8 @@ private extension AddSourceViewController
         dataSource.prefetchHandler = { (source, indexPath, completionHandler) in
             guard let imageURL = source.effectiveIconURL else { return nil }
             
-            return RSTAsyncBlockOperation() { (operation) in
+            Task.detached(priority: .background) {
                 ImagePipeline.shared.loadImage(with: imageURL, progress: nil) { result in
-                    guard !operation.isCancelled else { return operation.finish() }
-                    
                     switch result
                     {
                     case .success(let response): completionHandler(response.image, nil)
@@ -253,6 +251,7 @@ private extension AddSourceViewController
                     }
                 }
             }
+            return nil
         }
         dataSource.prefetchCompletionHandler = { (cell, image, indexPath, error) in
             let cell = cell as! AppBannerCollectionViewCell
@@ -280,10 +279,8 @@ private extension AddSourceViewController
         dataSource.prefetchHandler = { (source, indexPath, completionHandler) in
             guard let imageURL = source.effectiveIconURL else { return nil }
             
-            return RSTAsyncBlockOperation() { (operation) in
+            Task.detached(priority: .background) {
                 ImagePipeline.shared.loadImage(with: imageURL, progress: nil) { result in
-                    guard !operation.isCancelled else { return operation.finish() }
-                    
                     switch result
                     {
                     case .success(let response): completionHandler(response.image, nil)
@@ -291,6 +288,7 @@ private extension AddSourceViewController
                     }
                 }
             }
+            return nil
         }
         dataSource.prefetchCompletionHandler = { (cell, image, indexPath, error) in
             let cell = cell as! AppBannerCollectionViewCell
@@ -509,7 +507,7 @@ private extension AddSourceViewController
         
         var fetchOperation: FetchSourceOperation?
         return Future<Source, Error> { promise in
-            fetchOperation = AppManager.shared.fetchSource(sourceURL: sourceURL, managedObjectContext: context) { result in
+            fetchOperation = try? AppManager.shared.fetchSource(sourceURL: sourceURL, managedObjectContext: context) { result in
                 promise(result)
             }
         }
@@ -723,10 +721,10 @@ private extension AddSourceViewController
             switch result
             {
             case .failure(let error): finish(.failure(error))
-            case .success((let trustedSources, _)):
+            case .success((let defaultSources, _)):
                 
                 // Don't show sources without a sourceURL.
-                let featuredSourceURLs = trustedSources.compactMap { $0.sourceURL }
+                let featuredSourceURLs = defaultSources.compactMap { $0.sourceURL }
                 
                 // This context is never saved, but keeps the managed sources alive.
                 let context = DatabaseManager.shared.persistentContainer.newBackgroundSavingViewContext()
@@ -741,7 +739,7 @@ private extension AddSourceViewController
                 {
                     dispatchGroup.enter()
                     
-                    AppManager.shared.fetchSource(sourceURL: sourceURL, managedObjectContext: context) { result in
+                    _ = try? AppManager.shared.fetchSource(sourceURL: sourceURL, managedObjectContext: context) { result in
                         // Serialize access to sourcesByURL.
                         context.performAndWait {
                             switch result

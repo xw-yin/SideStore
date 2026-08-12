@@ -6,7 +6,7 @@
 //  Copyright © 2019 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 import SafariServices
 
 final class PatreonViewController: UICollectionViewController, UICollectionViewDelegateFlowLayout

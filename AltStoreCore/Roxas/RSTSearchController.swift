@@ -5,7 +5,7 @@
 //  Created by Magesh K on 6/17/26.
 //
 
-import UIKit
+@preconcurrency import UIKit
 
 @objc(RSTSearchValue)
 public final class RSTSearchValue: NSObject, NSCopying {
@@ -37,13 +37,9 @@ public final class RSTSearchValue: NSObject, NSCopying {
 open class RSTSearchController: UISearchController, UISearchResultsUpdating {
     @objc open var searchableKeyPaths: Set<String> = ["self"]
     
-    @objc open var searchHandler: ((RSTSearchValue, RSTSearchValue?) -> Operation?)?
+    open var searchHandler: ((RSTSearchValue, RSTSearchValue?) -> Task<Void, Never>?)?
     
-    private let searchOperationQueue: RSTOperationQueue = {
-        let queue = RSTOperationQueue()
-        queue.qualityOfService = .userInitiated
-        return queue
-    }()
+    private var searchTasks = [RSTSearchValue: Task<Void, Never>]()
     
     private var previousSearchValue: RSTSearchValue?
     
@@ -66,13 +62,14 @@ open class RSTSearchController: UISearchController, UISearchResultsUpdating {
         
         let searchValue = RSTSearchValue(text: searchText, predicate: searchPredicate)
         
-        if let previous = previousSearchValue, let previousOperation = self.searchOperationQueue.operation(forKey: previous) {
-            previousOperation.cancel()
+        if let previous = previousSearchValue, let previousTask = self.searchTasks[previous] {
+            previousTask.cancel()
+            self.searchTasks.removeValue(forKey: previous)
         }
         
         if let handler = self.searchHandler {
-            if let searchOperation = handler(searchValue, previousSearchValue) {
-                self.searchOperationQueue.addOperation(searchOperation, forKey: searchValue)
+            if let searchTask = handler(searchValue, previousSearchValue) {
+                self.searchTasks[searchValue] = searchTask
             }
         }
         

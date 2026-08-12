@@ -6,7 +6,7 @@
 //  Copyright © 2026 SideStore. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 
 public protocol RSTCellContentUpdateableView: AnyObject {
     func addChange(_ change: RSTCellContentChange)

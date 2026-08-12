@@ -6,7 +6,7 @@
 //  Copyright © 2026 SideStore. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 import CoreData
 
 open class RSTDynamicDataSource<ContentType, CellType: UIView & RSTCellContentCell, ViewType: UIScrollView, DataSourceType>: RSTCellContentDataSource<ContentType, CellType, ViewType, DataSourceType> {
@@ -33,7 +33,7 @@ open class RSTDynamicTableViewDataSource<ContentType>: RSTDynamicDataSource<Cont
 
 open class RSTDynamicCollectionViewPrefetchingDataSource<ContentType, PrefetchContentType>: RSTDynamicCollectionViewDataSource<ContentType>, RSTCellContentPrefetchingDataSource, UICollectionViewDataSourcePrefetching {
     public var prefetchItemCache = NSCache<AnyObject, AnyObject>()
-    public var prefetchHandler: ((ContentType, IndexPath, @escaping (PrefetchContentType?, Error?) -> Void) -> Operation?)?
+    public var prefetchHandler: ((ContentType, IndexPath, @escaping (PrefetchContentType?, Error?) -> Void) -> Task<Void, Never>?)?
     public var prefetchCompletionHandler: ((UICollectionViewCell, PrefetchContentType?, IndexPath, Error?) -> Void)?
 
     public override func configureCell(_ cell: UICollectionViewCell, at indexPath: IndexPath) {
@@ -46,7 +46,7 @@ open class RSTDynamicCollectionViewPrefetchingDataSource<ContentType, PrefetchCo
 
 open class RSTDynamicTableViewPrefetchingDataSource<ContentType, PrefetchContentType>: RSTDynamicTableViewDataSource<ContentType>, RSTCellContentPrefetchingDataSource, UITableViewDataSourcePrefetching {
     public var prefetchItemCache = NSCache<AnyObject, AnyObject>()
-    public var prefetchHandler: ((ContentType, IndexPath, @escaping (PrefetchContentType?, Error?) -> Void) -> Operation?)?
+    public var prefetchHandler: ((ContentType, IndexPath, @escaping (PrefetchContentType?, Error?) -> Void) -> Task<Void, Never>?)?
     public var prefetchCompletionHandler: ((UITableViewCell, PrefetchContentType?, IndexPath, Error?) -> Void)?
 
     public override func configureCell(_ cell: UITableViewCell, at indexPath: IndexPath) {

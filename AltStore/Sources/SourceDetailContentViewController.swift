@@ -6,7 +6,7 @@
 //  Copyright © 2023 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 import CoreData
 import SafariServices
 import AltStoreCore
@@ -233,17 +233,14 @@ private extension SourceDetailContentViewController
             cell.bannerView.iconImageView.image = nil
             cell.bannerView.iconImageView.isIndicatingActivity = true
         }
-        dataSource.prefetchHandler = { (storeApp, indexPath, completion) -> Foundation.Operation? in
-            return RSTAsyncBlockOperation { (operation) in
-                storeApp.managedObjectContext?.perform {
-                    ImagePipeline.shared.loadImage(with: storeApp.iconURL, progress: nil) { result in
-                        guard !operation.isCancelled else { return operation.finish() }
-                        
-                        switch result
-                        {
-                        case .success(let response): completion(response.image, nil)
-                        case .failure(let error): completion(nil, error)
-                        }
+        dataSource.prefetchHandler = { (storeApp, indexPath, completion) in
+            let iconURL = storeApp.iconURL
+            return Task.detached(priority: .background) {
+                ImagePipeline.shared.loadImage(with: iconURL, progress: nil) { result in
+                    switch result
+                    {
+                    case .success(let response): completion(response.image, nil)
+                    case .failure(let error): completion(nil, error)
                     }
                 }
             }
@@ -435,6 +432,12 @@ private extension SourceDetailContentViewController
         }
         
         sender.progress = nil
+        if let index = self.appsDataSource.items.firstIndex(of: storeApp) {
+            let indexPath = IndexPath(item: index, section: Section.featuredApps.rawValue)
+            UIView.performWithoutAnimation {
+                self.collectionView.reloadItems(at: [indexPath])
+            }
+        }
     }
     
     func open(_ installedApp: InstalledApp)

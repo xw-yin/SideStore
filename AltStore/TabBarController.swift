@@ -6,8 +6,8 @@
 //  Copyright © 2019 Riley Testut. All rights reserved.
 //
 
-import UIKit
-import AltStoreCore
+@preconcurrency import UIKit
+@preconcurrency import AltStoreCore
 
 extension TabBarController
 {
@@ -35,7 +35,6 @@ final class TabBarController: UITabBarController
         
         NotificationCenter.default.addObserver(self, selector: #selector(TabBarController.importApp(_:)), name: AppDelegate.importAppDeepLinkNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(TabBarController.presentSources(_:)), name: AppDelegate.addSourceDeepLinkNotification, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(TabBarController.exportFiles(_:)), name: AppDelegate.exportCertificateNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(TabBarController.openErrorLog(_:)), name: ToastView.openErrorLogNotification, object: nil)
     }
     
@@ -104,11 +103,6 @@ private extension TabBarController
     }
 
     @objc func openErrorLog(_ notification: Notification)
-    {
-        self.selectedIndex = Tab.settings.rawValue
-    }
-    
-    @objc func exportFiles(_ notification: Notification)
     {
         self.selectedIndex = Tab.settings.rawValue
     }

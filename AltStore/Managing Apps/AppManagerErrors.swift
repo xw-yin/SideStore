@@ -8,7 +8,7 @@
 
 import Foundation
 import CoreData
-import AltStoreCore
+@preconcurrency import AltStoreCore
 
 extension AppManager
 {

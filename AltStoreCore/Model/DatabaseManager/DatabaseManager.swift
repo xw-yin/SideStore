@@ -8,7 +8,7 @@
 
 import CoreData
 
-import AltSign
+@preconcurrency import AltSign
 
 extension CFNotificationName
 {
@@ -228,35 +228,7 @@ public extension DatabaseManager
             }
         }
     }
-    
-    func signOut(keepCertificate: Bool = false, completionHandler: @escaping (Error?) -> Void)
-    {
-        self.persistentContainer.performBackgroundTask { (context) in
-            if let account = self.activeAccount(in: context)
-            {
-                account.isActiveAccount = false
-            }
-            
-            if let team = self.activeTeam(in: context)
-            {
-                team.isActiveTeam = false
-            }
-            
-            do
-            {
-                try context.save()
-                
-                Keychain.shared.reset(keepCertificate: keepCertificate)
-                
-                completionHandler(nil)
-            }
-            catch
-            {
-                debugLog("Failed to save when signing out. \(error)")
-                completionHandler(error)
-            }
-        }
-    }
+
     
     func purgeLoggedErrors(before date: Date? = nil, completion: @escaping (Result<Void, Error>) -> Void)
     {
@@ -403,21 +375,19 @@ private extension DatabaseManager
         
         let context = self.persistentContainer.newBackgroundContext()
         context.performAndWait {
-            do
-            {
                 let appBundle = Bundle.realMainBundle
                 let embeddedApplication = self.embeddedLiveContainerApplication(from: appBundle)
-                let localApp = embeddedApplication?.application ?? ALTApplication(fileURL: appBundle.bundleURL)
+                let localApp = embeddedApplication?.application ?? ALTApplication(fileURL: Bundle.Info.activeBundleURL)
                 defer {
                     if let temporaryBundleURL = embeddedApplication?.temporaryBundleURL {
                         try? FileManager.default.removeItem(at: temporaryBundleURL)
                     }
                 }
 
-                guard let localApp else { return }
+                guard let localAppBundle = localApp else { return }
                 
                 #if !targetEnvironment(simulator)
-                guard localApp.provisioningProfile != nil else {
+                guard localAppBundle.provisioningProfile != nil else {
                     completionHandler(.failure(ALTError(.invalidApp)))
                     return
                 }
@@ -445,7 +415,7 @@ private extension DatabaseManager
                 }
                 else
                 {
-                    storeApp = StoreApp.makeAltStoreApp(version: localApp.version, buildVersion: nil, in: context)
+                    storeApp = StoreApp.makeAltStoreApp(version: localAppBundle.version, buildVersion: nil, in: context)
                     storeApp.source = altStoreSource
                 }
 
@@ -454,7 +424,7 @@ private extension DatabaseManager
                     storeApp.source = altStoreSource
                 }
                             
-                let serialNumber = appBundle.object(forInfoDictionaryKey: Bundle.Info.certificateID) as? String
+                let serialNumber = (appBundle.object(forInfoDictionaryKey: Bundle.Info.certificateID) as? String) ?? CertificateManager.shared.getSigningCertificate(at: Bundle.Info.activeBundleURL)?.serialNumber
                 let installedApp: InstalledApp
                 
                 if let app = storeApp.installedApp
@@ -466,7 +436,13 @@ private extension DatabaseManager
                     //TODO: Support build versions.
                     // For backwards compatibility reasons, we cannot use localApp's buildVersion as storeBuildVersion,
                     // or else the latest update will _always_ be considered new because we don't use buildVersions in our source (yet).
-                    installedApp = try InstalledApp(resignedApp: localApp, originalBundleIdentifier: StoreApp.altstoreAppID, certificateSerialNumber: serialNumber, storeBuildVersion: nil, context: context)
+                    installedApp = try InstalledApp(
+                        resignedAppBundle: localAppBundle,
+                        originalBundleIdentifier: StoreApp.altstoreAppID,
+                        certificateSerialNumber: serialNumber,
+                        storeBuildVersion: nil,
+                        context: context
+                    )
                     
                     if Bundle.isBundledWithLiveContainer {
                         // LiveContainer owns its widget, which is not part of SideStore's self-refresh bundle.
@@ -484,38 +460,43 @@ private extension DatabaseManager
                             break
                         }
                         
-                        guard let pluginFolder = pluginFolders.first, let altPluginApp = ALTApplication(fileURL: pluginFolder) else {
-                            installedApp.useMainProfile = true
-                            break
-                        }
-                        
-                        let entitlements = altPluginApp.entitlements
+                    if let provisioningProfile = localAppBundle.provisioningProfile {
+                        do {
+                        let entitlements = try PropertyListSerialization.propertyList(from: provisioningProfile.entitlementsData, options: [], format: nil) as! [String: Any]
                         guard let appId = entitlements[ALTEntitlement.applicationIdentifier] as? String else {
                             installedApp.useMainProfile = false
                             debugLog("no ALTEntitlementApplicationIdentifier???")
                             break
                         }
                         
-                        if appId.hasSuffix(appBundle.bundleIdentifier ?? "") {
+                        if appId.hasSuffix(appBundle.bundleIdentifier ?? "") || appId.hasSuffix(Bundle.Info.activeBundleIdentifier) {
                             installedApp.useMainProfile = true
                         } else {
                             installedApp.useMainProfile = false
                         }
                         
-                        
-                        } while(false)
+                        } catch {
+                            installedApp.useMainProfile = true
+                        }
+                    } else {
+                        installedApp.useMainProfile = true
                     }
                     
                     installedApp.storeApp = storeApp
+                    // Persist the release track for newly created self-app entries
+                    if installedApp.releaseTrack == nil,
+                       let trackEntity = storeApp.latestSupportedVersion?.releaseTrack {
+                        installedApp.releaseTrack = trackEntity
+                    }
                 }
                 
                 /* App Extensions */
                 var installedExtensions = Set<InstalledExtension>()
                 
-                for appExtension in localApp.appExtensions
+                for appExtension in localAppBundle.appExtensions
                 {
                     let resignedBundleID = appExtension.bundleIdentifier
-                    let originalBundleID = resignedBundleID.replacingOccurrences(of: localApp.bundleIdentifier, with: StoreApp.altstoreAppID)
+                    let originalBundleID = resignedBundleID.replacingOccurrences(of: localAppBundle.bundleIdentifier, with: StoreApp.altstoreAppID)
                     
                     let installedExtension: InstalledExtension
                     
@@ -525,10 +506,10 @@ private extension DatabaseManager
                     }
                     else
                     {
-                        installedExtension = try InstalledExtension(resignedAppExtension: appExtension, originalBundleIdentifier: originalBundleID, context: context)
+                        installedExtension = try InstalledExtension(resignedAppExtensionBundle: appExtension, originalBundleIdentifier: originalBundleID, context: context)
                     }
                     
-                    installedExtension.update(resignedAppExtension: appExtension)
+                    installedExtension.update(resignedAppExtensionBundle: appExtension)
                     
                     installedExtensions.insert(installedExtension)
                 }
@@ -540,13 +521,13 @@ private extension DatabaseManager
                 #if DEBUG
                 let replaceCachedApp = true
                 #else
-                let replaceCachedApp = !FileManager.default.fileExists(atPath: fileURL.path) || installedApp.version != localApp.version || installedApp.buildVersion != localApp.buildVersion
+                let replaceCachedApp = !FileManager.default.fileExists(atPath: fileURL.path) || installedApp.version != localAppBundle.version || installedApp.buildVersion != localAppBundle.buildVersion
                 #endif
                 
                 if replaceCachedApp
                 {
                     let fileURL = installedApp.fileURL
-                    let bundleURL = Bundle.isBundledWithLiveContainer ? Bundle.main.bundleURL : appBundle.bundleURL
+                    let bundleURL = Bundle.isBundledWithLiveContainer ? Bundle.main.bundleURL : Bundle.Info.activeBundleURL
                     let altstoreAppID = StoreApp.altstoreAppID
                     let extensionBundleIDMap = installedExtensions.reduce(into: [String: String]()) { dict, ext in
                         dict[ext.resignedBundleIdentifier] = ext.bundleIdentifier
@@ -570,9 +551,9 @@ private extension DatabaseManager
                                 guard let appBundle = Bundle(url: temporaryFileURL) else { throw ALTError(.invalidApp) }
                                 try update(appBundle, bundleID: altstoreAppID)
                                 
-                                if let tempApp = ALTApplication(fileURL: temporaryFileURL)
+                                if let tempAppBundle = ALTApplication(fileURL: temporaryFileURL)
                                 {
-                                    for appExtension in tempApp.appExtensions
+                                    for appExtension in tempAppBundle.appExtensions
                                     {
                                         guard let extensionBundle = Bundle(url: appExtension.fileURL) else { throw ALTError(.invalidApp) }
                                         guard let originalBundleID = extensionBundleIDMap[appExtension.bundleIdentifier] else { throw ALTError(.invalidApp) }
@@ -594,7 +575,7 @@ private extension DatabaseManager
                 let cachedExpirationDate = installedApp.expirationDate
                             
                 // Must go after comparing versions to see if we need to update our cached AltStore app bundle.
-                installedApp.update(resignedApp: localApp, certificateSerialNumber: serialNumber, storeBuildVersion: nil)
+                self.reconcileSelfFromSelfBinary(installedApp: installedApp, localAppBundle: localAppBundle, serialNumber: serialNumber)
                 
                 if installedApp.refreshedDate < cachedRefreshedDate
                 {
@@ -617,6 +598,55 @@ private extension DatabaseManager
             {
                 completionHandler(.failure(error))
             }
+        }
+    }
+    
+    private func reconcileSelfFromSelfBinary(installedApp: InstalledApp, localAppBundle: ALTApplication, serialNumber: String?) {
+        debugLog("[DatabaseManager] reconcileSelfFromSelfBinary: Started for '\(localAppBundle.name)' (\(localAppBundle.bundleIdentifier)).")
+        var binaryCertSerial: String? = nil
+        defer {
+            debugLog("""
+            [DatabaseManager] reconcileSelfFromSelfBinary: Completed
+              • name: '\(installedApp.name)'
+              • bundleID: '\(installedApp.bundleIdentifier)'
+              • version: '\(installedApp.version)'
+              • buildVersion: '\(installedApp.buildVersion)'
+              • refreshedDate: \(installedApp.refreshedDate)
+              • expirationDate: \(installedApp.expirationDate)
+              • installCertSerial: '\(installedApp.certificateSerialNumber ?? "nil")'
+              • binaryCertSerial: '\(binaryCertSerial ?? "nil")'
+              • binaryCertStatus: \(installedApp.certificateStatus)
+            
+            """)
+        }
+        
+        installedApp.name = localAppBundle.name
+        installedApp.resignedBundleIdentifier = localAppBundle.bundleIdentifier
+        installedApp.version = localAppBundle.version
+        installedApp.buildVersion = localAppBundle.buildVersion
+        
+        var status: CertificateStatus = .valid(isCrossSigned: false)
+        if let binaryCert = CertificateManager.shared.getSigningCertificate(at: localAppBundle.fileURL) {
+            binaryCertSerial = binaryCert.serialNumber
+            CertificateManager.shared.saveX509Certificate(binaryCert)
+            if binaryCert.expiryDate <= Date() {
+                status = .expired
+            }
+        }
+        
+        let effectiveSerial = binaryCertSerial ?? serialNumber
+        installedApp.certificateSerialNumber = effectiveSerial
+        
+        let activeKeychainSerial = CertificateManager.shared.activeCertificate?.serialNumber
+        let isCross = (activeKeychainSerial != nil && !activeKeychainSerial!.isEmpty && effectiveSerial != nil && effectiveSerial != activeKeychainSerial)
+        if case .valid = status {
+            status = .valid(isCrossSigned: isCross)
+        }
+        installedApp.certificateStatus = status
+        
+        if let provisioningProfile = localAppBundle.provisioningProfile {
+            installedApp.refreshedDate = provisioningProfile.creationDate
+            installedApp.expirationDate = provisioningProfile.expirationDate
         }
     }
     

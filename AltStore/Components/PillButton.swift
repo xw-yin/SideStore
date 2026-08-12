@@ -6,7 +6,8 @@
 //  Copyright © 2019 Riley Testut. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
+@preconcurrency import AltStoreCore
 
 extension PillButton
 {
@@ -20,6 +21,14 @@ extension PillButton
     {
         case pill
         case custom
+    }
+
+    enum DisplayState
+    {
+        case active(title: String, daysRemaining: Int)
+        case crossSigned(title: String, daysRemaining: Int)
+        case expired
+        case revoked
     }
 }
 
@@ -50,6 +59,18 @@ class PillButton: UIButton
     }
     
     var progressTintColor: UIColor? {
+        didSet {
+            self.update()
+        }
+    }
+    
+    var borderColor: UIColor? {
+        didSet {
+            self.update()
+        }
+    }
+    
+    var borderWidth: CGFloat = 0 {
         didSet {
             self.update()
         }
@@ -216,6 +237,89 @@ class PillButton: UIButton
     }
 }
 
+extension PillButton {
+    func configure(for installedApp: InstalledApp) {
+        let currentDate = Date()
+        let expirationDate = installedApp.expirationDate
+        let isExpired = currentDate > expirationDate
+        
+        // verboseLog("[PillButton] configure for app '\(installedApp.name)': status=\(installedApp.certificateStatus), certSerial=\(installedApp.certificateSerialNumber ?? "nil"), isExpired=\(isExpired)")
+        
+        if installedApp.certificateStatus == .revoked {
+            self.setDisplayState(.revoked)
+        } else if isExpired || installedApp.certificateStatus == .expired {
+            self.setDisplayState(.expired)
+        } else {
+            let formatter = DateComponentsFormatter()
+            formatter.unitsStyle = .full
+            formatter.allowedUnits = [.day, .hour, .minute]
+            formatter.maximumUnitCount = 1
+            let title = formatter.string(from: currentDate, to: expirationDate) ?? ""
+            let days = Calendar.current.dateComponents([.day], from: currentDate, to: expirationDate).day ?? 0
+            
+            if case .valid(let isCrossSigned) = installedApp.certificateStatus, isCrossSigned {
+                self.setDisplayState(.crossSigned(title: title, daysRemaining: days))
+            } else {
+                self.setDisplayState(.active(title: title, daysRemaining: days))
+            }
+        }
+    }
+
+    func resetDisplayState() {
+        // verboseLog("[PillButton] resetDisplayState called")
+        self.countdownDate = nil
+        self.borderColor = nil
+        self.borderWidth = 0
+        self.progress = nil
+        self.setTitle(nil, for: .normal)
+        self.update()
+    }
+
+    func setDisplayState(_ state: DisplayState) {
+        // verboseLog("[PillButton] setDisplayState called: \(state)")
+        switch state {
+        case .revoked:
+            self.countdownDate = nil
+            self.tintColor = .refreshRed
+            self.borderColor = nil
+            self.borderWidth = 0
+            self.setTitle(NSLocalizedString("REVOKED", comment: ""), for: .normal)
+            
+        case .expired:
+            self.countdownDate = nil
+            self.tintColor = .refreshRed
+            self.borderColor = nil
+            self.borderWidth = 0
+            self.setTitle(NSLocalizedString("EXPIRED", comment: ""), for: .normal)
+            
+        case .active(let title, let daysRemaining):
+            self.setTitle(title.uppercased(), for: .normal)
+            self.borderColor = nil
+            self.borderWidth = 0
+            
+            switch daysRemaining {
+            case 2...3: self.tintColor = .refreshOrange
+            case 4...5: self.tintColor = .refreshYellow
+            case 6...: self.tintColor = .refreshGreen
+            default: self.tintColor = .refreshRed
+            }
+            
+        case .crossSigned(let title, let daysRemaining):
+            self.setTitle(title.uppercased(), for: .normal)
+            self.borderColor = .systemBlue
+            self.borderWidth = 2.0
+            
+            switch daysRemaining {
+            case 2...3: self.tintColor = .refreshOrange
+            case 4...5: self.tintColor = .refreshYellow
+            case 6...: self.tintColor = .refreshGreen
+            default: self.tintColor = .refreshRed
+            }
+        }
+        self.update()
+    }
+}
+
 private extension PillButton
 {
     func update()
@@ -224,14 +328,20 @@ private extension PillButton
         {
             self.setTitleColor(.white, for: .normal)
             self.backgroundColor = self.tintColor
+            self.progressView.progressTintColor = self.progressTintColor ?? self.tintColor
+            self.layer.borderColor = self.borderColor?.cgColor
+            self.layer.borderWidth = self.borderWidth
         }
         else
         {
             self.setTitleColor(self.tintColor, for: .normal)
             self.backgroundColor = self.tintColor.withAlphaComponent(0.15)
+            self.progressView.progressTintColor = self.progressTintColor ?? self.tintColor
+            self.layer.borderColor = nil
+            self.layer.borderWidth = 0
         }
         
-        self.progressView.progressTintColor = self.progressTintColor ?? self.tintColor
+//        verboseLog("[PillButton] update() applied: title='\(self.title(for: .normal) ?? "")', borderWidth=\(self.layer.borderWidth), hasBorderColor=\(self.layer.borderColor != nil), progressNil=\(self.progress == nil)")
         
         // Update font after init because the original titleLabel is replaced.
         let size = self.fontSize ?? self.storyboardFontSize ?? 14
@@ -242,10 +352,17 @@ private extension PillButton
         {
         case .custom: break // Don't update insets in case client has updated them.
         case .pill:
-            self.contentEdgeInsets = UIEdgeInsets(top: Self.contentInsets.top, left: Self.contentInsets.leading, bottom: Self.contentInsets.bottom, right: Self.contentInsets.trailing)
+            self.contentEdgeInsets = UIEdgeInsets(
+                top: Self.contentInsets.top,
+                left: Self.contentInsets.leading,
+                bottom: Self.contentInsets.bottom,
+                right: Self.contentInsets.trailing
+            )
+            self.layer.cornerRadius = self.bounds.height / 2
         }
     }
     
+
     @objc func updateCountdown()
     {
         guard let endDate = self.countdownDate else { return }

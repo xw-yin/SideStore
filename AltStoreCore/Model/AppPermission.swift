@@ -7,9 +7,9 @@
 //
 
 import CoreData
-import UIKit
+@preconcurrency import UIKit
 
-import AltSign
+@preconcurrency import AltSign
 
 @objc(AppPermission) @dynamicMemberLookup
 public class AppPermission: BaseEntity

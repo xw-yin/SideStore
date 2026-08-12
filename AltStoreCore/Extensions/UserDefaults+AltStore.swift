@@ -18,11 +18,15 @@ public extension UserDefaults
     }()
     
     // Default track for beta updates when beta-updates are enabled
-    static let defaultBetaUpdatesTrack: String = ReleaseTracks.nightly.rawValue
+    static let defaultBetaUpdatesTrack: String = ReleaseTrackType.nightly.description
 
 
     @objc var firstLaunch: Date? {
         get { self.object(forKey: #function) as? Date }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var acctFileChecksum: String? {
+        get { self.string(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
     @objc var requiresAppGroupMigration: Bool {
@@ -74,11 +78,31 @@ public extension UserDefaults
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
+    @objc var skipNonCopyableBackupFiles: Bool {
+        get {
+            guard self.object(forKey: #function) != nil else { return true }
+            return self.bool(forKey: #function)
+        }
+        set { self.set(newValue, forKey: #function) }
+    }
     @objc var isIdleTimeoutDisableEnabled: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
     @objc var isAppLimitDisabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var isRotateLogsOnStartupEnabled: Bool {
+        get {
+            if self.object(forKey: #function) == nil {
+                return true
+            }
+            return self.bool(forKey: #function)
+        }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var freeAcctAppIdDeletion: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
@@ -114,15 +138,32 @@ public extension UserDefaults
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
-    @objc var isMinimuxerConsoleLoggingEnabled: Bool {
+    @objc var isAltSignVerboseLoggingEnabled: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
-    @objc var isMinimuxerStatusCheckEnabled: Bool {
+    @objc var isSideStoreVerboseLoggingEnabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var isMinimuxerVerboseLoggingEnabled: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
     @objc var keepSigningCertsAfterLogout: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var keepAnisetteDataAfterLogout: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+
+    @objc var isAnisetteOfflineMode: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var disableAnisetteRotation: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
@@ -158,23 +199,18 @@ public extension UserDefaults
         set { self.set(newValue, forKey: #function) }
     }
     
-    @objc var localServerSupportsRefreshing: Bool {
-        get { self.bool(forKey: #function) }
-        set { self.set(newValue, forKey: #function) }
-    }
-    
     @objc var patchedApps: [String]? {
         get { self.stringArray(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
     
-    @objc var trustedSourceIDs: [String]? {
-        get { self.stringArray(forKey: #function) }
-        set { self.set(newValue, forKey: #function) }
+    @objc var defaultSourceIDs: [String]? {
+        get { self.stringArray(forKey: "defaultSourceIDs") }
+        set { self.set(newValue, forKey: "defaultSourceIDs") }
     }
-    @objc var trustedServerURL: String? {
-        get { self.string(forKey: #function) }
-        set { self.set(newValue, forKey: #function) }
+    @objc var defaultServerURL: String? {
+        get { self.string(forKey: "defaultServerURL") }
+        set { self.set(newValue, forKey: "defaultServerURL") }
     }
     
     @objc var betaUdpatesTrack: String? {
@@ -192,7 +228,15 @@ public extension UserDefaults
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
+    @objc var appVerificationDisabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
     @objc var responseCachingDisabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var alwaysShowWireGuardConfig: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
@@ -250,7 +294,6 @@ public extension UserDefaults
         let activeAppLimitIncludesExtensions = !ProcessInfo.processInfo.isOperatingSystemAtLeast(ios13_5)
         
         let ios14 = OperatingSystemVersion(majorVersion: 14, minorVersion: 0, patchVersion: 0)
-        let localServerSupportsRefreshing = !ProcessInfo.processInfo.isOperatingSystemAtLeast(ios14)
         
         let ios16 = OperatingSystemVersion(majorVersion: 16, minorVersion: 0, patchVersion: 0)
         let ios16_2 = OperatingSystemVersion(majorVersion: 16, minorVersion: 2, patchVersion: 0)
@@ -261,13 +304,10 @@ public extension UserDefaults
         (ProcessInfo.processInfo.isOperatingSystemAtLeast(ios14) && !ProcessInfo.processInfo.isOperatingSystemAtLeast(ios15_7_2)) ||
         (ProcessInfo.processInfo.isOperatingSystemAtLeast(ios16) && !ProcessInfo.processInfo.isOperatingSystemAtLeast(ios16_2))
         
-        let permissionCheckingDisabled = false
-        
-        // Pre-iOS 15 doesn't support custom sorting, so default to sorting by name.
-        // Otherwise, default to `default` sorting (a.k.a. "source order").
         let preferredAppSorting: AppSorting = if #available(iOS 15, *) { .default } else { .name }
         
         let defaults = [
+            #keyPath(UserDefaults.preferredAppSorting): preferredAppSorting.rawValue,
             #keyPath(UserDefaults.useLocalVPN): true,
             #keyPath(UserDefaults.isCellularRefreshEnabled): false,
             #keyPath(UserDefaults.isAppLimitDisabled): false,
@@ -283,17 +323,46 @@ public extension UserDefaults
             #keyPath(UserDefaults.enableEMPforWireguard): false,
             #keyPath(UserDefaults.isIdleTimeoutDisableEnabled): true,
             #keyPath(UserDefaults.isPairingReset): true,
+            // TODO: @mahee96: need to retire since irrelevant in ios 15+
             #keyPath(UserDefaults.isLegacyDeactivationSupported): isLegacyDeactivationSupported,
             #keyPath(UserDefaults.activeAppLimitIncludesExtensions): activeAppLimitIncludesExtensions,
-            #keyPath(UserDefaults.localServerSupportsRefreshing): localServerSupportsRefreshing,
+            
+            // still used on ios 15+
             #keyPath(UserDefaults.requiresAppGroupMigration): true,
+            #keyPath(UserDefaults.isAppLimitDisabled): false,
+            #keyPath(UserDefaults.isCowExploitSupported): isMacDirtyCowSupported,
+            #keyPath(UserDefaults._preferredAppSorting): preferredAppSorting.rawValue,
+
+            // sidestore actively used
+            #keyPath(UserDefaults.keepSigningCertsAfterLogout): true,
+            #keyPath(UserDefaults.keepAnisetteDataAfterLogout): true,
+            #keyPath(UserDefaults.isBackgroundRefreshEnabled): true,
+            #keyPath(UserDefaults.isBetaUpdatesEnabled): false,
+            #keyPath(UserDefaults.permissionCheckingDisabled): true,
+            #keyPath(UserDefaults.appVerificationDisabled): false,
+            #keyPath(UserDefaults.isIdleTimeoutDisableEnabled): true,
+            #keyPath(UserDefaults.betaUdpatesTrack): defaultBetaUpdatesTrack,
             #keyPath(UserDefaults.menuAnisetteList): "https://servers.sidestore.io/servers.json",
             #keyPath(UserDefaults.menuAnisetteURL): "https://ani.sidestore.io",
-            #keyPath(UserDefaults.isCowExploitSupported): isMacDirtyCowSupported,
-            #keyPath(UserDefaults.permissionCheckingDisabled): permissionCheckingDisabled,
-            #keyPath(UserDefaults._preferredAppSorting): preferredAppSorting.rawValue,
-            #keyPath(UserDefaults.betaUdpatesTrack): defaultBetaUpdatesTrack,
-            #keyPath(UserDefaults.keepSigningCertsAfterLogout): true,
+            #keyPath(UserDefaults.isAnisetteOfflineMode): false,
+            #keyPath(UserDefaults.disableAnisetteRotation): false,
+            #keyPath(UserDefaults.useLocalVPN): true,
+            #keyPath(UserDefaults.enableEMPforWireguard): false,
+            #keyPath(UserDefaults.skipNonCopyableBackupFiles): true,
+            
+            #keyPath(UserDefaults.responseCachingDisabled): false,
+            #keyPath(UserDefaults.customizeAppId): false,
+            #keyPath(UserDefaults.isExportResignedAppEnabled): false,
+            #keyPath(UserDefaults.isVerboseOperationsLoggingEnabled): false,
+            #keyPath(UserDefaults.isSideStoreVerboseLoggingEnabled): false,
+            #keyPath(UserDefaults.isAltSignVerboseLoggingEnabled): false,
+            #keyPath(UserDefaults.isMinimuxerVerboseLoggingEnabled): false,
+            #keyPath(UserDefaults.isRotateLogsOnStartupEnabled): true,
+            #keyPath(UserDefaults.recreateDatabaseOnNextStart): false,
+            #keyPath(UserDefaults.isCellularRefreshEnabled): false,
+            #keyPath(UserDefaults.isPairingReset): true,
+            #keyPath(UserDefaults.isDebugModeEnabled): false,
+
         ] as [String: Any]
         
         UserDefaults.standard.register(defaults: defaults)
@@ -305,9 +374,85 @@ public extension UserDefaults
             // Disable isAppLimitDisabled if running iOS version that doesn't support MacDirtyCow.
             UserDefaults.standard.isAppLimitDisabled = false
         }
+    }
+    
+    static func enableGlobalLogging() {
+        let setAnySelector = #selector(UserDefaults.set(_:forKey:) as (UserDefaults) -> (Any?, String) -> Void)
+        let setBoolSelector = #selector(UserDefaults.set(_:forKey:) as (UserDefaults) -> (Bool, String) -> Void)
+        let setIntSelector = #selector(UserDefaults.set(_:forKey:) as (UserDefaults) -> (Int, String) -> Void)
+        let removeSelector = #selector(UserDefaults.removeObject(forKey:))
         
-        #if !BETA
-        UserDefaults.standard.responseCachingDisabled = false
-        #endif
+        let swizzlePairs: [(Selector, Selector)] = [
+            (setAnySelector, #selector(swizzled_setObject(_:forKey:))),
+            (setBoolSelector, #selector(swizzled_setBool(_:forKey:))),
+            (setIntSelector, #selector(swizzled_setInteger(_:forKey:))),
+            (removeSelector, #selector(swizzled_removeObject(forKey:)))
+        ]
+        for (orig, swiz) in swizzlePairs {
+            if let m1 = class_getInstanceMethod(UserDefaults.self, orig),
+               let m2 = class_getInstanceMethod(UserDefaults.self, swiz) {
+                method_exchangeImplementations(m1, m2)
+            }
+        }
+    }
+    
+    static func dumpAllSettingsOnBoot() {
+        debugLog("=== [UserDefaults] Standard Suite Dump ===")
+        dumpDictionary(UserDefaults.standard.dictionaryRepresentation())
+        
+        if let appGroup = Bundle.main.altstoreAppGroup,
+           let sharedDefaults = UserDefaults(suiteName: appGroup),
+           sharedDefaults != UserDefaults.standard {
+            debugLog("=== [UserDefaults] Shared AppGroup Suite Dump (\(appGroup)) ===")
+            dumpDictionary(sharedDefaults.dictionaryRepresentation())
+        }
+    }
+    
+    private static func dumpDictionary(_ dict: [String: Any]) {
+        let filtered = dict.filter { key, _ in
+            !key.hasPrefix("Apple") && !key.hasPrefix("NS") && !key.hasPrefix("PK")
+        }
+        
+        if JSONSerialization.isValidJSONObject(filtered),
+           let data = try? JSONSerialization.data(withJSONObject: filtered, options: [.prettyPrinted, .sortedKeys]),
+           let jsonString = String(data: data, encoding: .utf8) {
+            debugLog(jsonString)
+        } else {
+            debugLog("\(filtered)")
+        }
+    }
+}
+
+// diag logging hooks without changes to original source 
+// this is to catch any and all userdefault writes
+private extension UserDefaults {
+    private func formatValueForLog(_ value: Any?) -> String {
+        guard let value = value else { return "nil" }
+        if JSONSerialization.isValidJSONObject(value),
+           let data = try? JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted, .sortedKeys]),
+           let jsonString = String(data: data, encoding: .utf8) {
+            return jsonString
+        }
+        return "\(value)"
+    }
+
+    @objc private func swizzled_setObject(_ value: Any?, forKey key: String) {
+        debugLog("[UserDefaults] Key '\(key)' -> \(formatValueForLog(value))")
+        self.swizzled_setObject(value, forKey: key)
+    }
+
+    @objc private func swizzled_setBool(_ value: Bool, forKey key: String) {
+        debugLog("[UserDefaults] Key '\(key)' -> \(value)")
+        self.swizzled_setBool(value, forKey: key)
+    }
+
+    @objc private func swizzled_setInteger(_ value: Int, forKey key: String) {
+        debugLog("[UserDefaults] Key '\(key)' -> \(value)")
+        self.swizzled_setInteger(value, forKey: key)
+    }
+
+    @objc private func swizzled_removeObject(forKey key: String) {
+        debugLog("[UserDefaults] Removed Key '\(key)'")
+        self.swizzled_removeObject(forKey: key)
     }
 }

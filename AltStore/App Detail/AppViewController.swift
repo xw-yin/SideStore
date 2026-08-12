@@ -6,8 +6,8 @@
 //  Copyright © 2019 Riley Testut. All rights reserved.
 //
 
-import UIKit
-import AltStoreCore
+@preconcurrency import UIKit
+@preconcurrency import AltStoreCore
 
 import Nuke
 
@@ -606,11 +606,12 @@ extension AppViewController
         
         Task(priority: .userInitiated) {
             let group = await AppManager.shared.installAsync(self.app, presentingViewController: self) { (result) in
+                debugLog("AppViewController: installAsync completion handler invoked with result: \(result)")
                 do
                 {
                     _ = try result.get()
                 }
-                catch OperationError.cancelled
+                catch is CancellationError
                 {
                     // Ignore
                 }
@@ -624,6 +625,7 @@ extension AppViewController
                 }
                 
                 DispatchQueue.main.async {
+                    debugLog("AppViewController: clearing progress and updating UI...")
                     self.bannerView.button.progress = nil
                     self.navigationBarDownloadButton.progress = nil
                     self.update()
@@ -657,7 +659,7 @@ extension AppViewController
                 switch result
                 {
                 case .success: debugLog("Updated app from AppViewController: \(installedApp.bundleIdentifier)")
-                case .failure(OperationError.cancelled): break
+                case .failure(let error) where error is CancellationError: break
                 case .failure(let error):
                     let toastView = ToastView(error: error)
                     toastView.opensErrorLog = true

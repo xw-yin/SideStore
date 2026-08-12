@@ -29,4 +29,23 @@ public extension FileManager
         let backupDirectoryURL = self.appBackupsDirectory?.appendingPathComponent(app.bundleIdentifier, isDirectory: true)
         return backupDirectoryURL
     }
+    
+    func deleteBackup(for app: InstalledApp) throws
+    {
+        debugLog("[FileManager] deleteBackup() started for \(app.bundleIdentifier)")
+        defer { debugLog("[FileManager] deleteBackup() completed for \(app.bundleIdentifier)") }
+        
+        guard let backupDirectoryURL = self.backupDirectoryURL(for: app) else {
+            debugLog("[FileManager] deleteBackup: Failed to construct backup directory URL for \(app.bundleIdentifier)")
+            return
+        }
+        
+        guard self.fileExists(atPath: backupDirectoryURL.path) else {
+            debugLog("[FileManager] deleteBackup: No backup directory exists at \(backupDirectoryURL.path)")
+            return
+        }
+        
+        try self.removeItem(at: backupDirectoryURL)
+        debugLog("[FileManager] Successfully deleted backup directory for \(app.bundleIdentifier) at \(backupDirectoryURL.path)")
+    }
 }

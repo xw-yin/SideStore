@@ -6,9 +6,9 @@
 //  Copyright © 2024 SideStore. All rights reserved.
 //
 
-import UIKit
+@preconcurrency import UIKit
 import SwiftUI
-import AltStoreCore
+@preconcurrency import AltStoreCore
 
 typealias SUIButton = SwiftUI.Button
 
@@ -519,6 +519,23 @@ struct AnisetteServersView: View {
                         }
                     }
 
+                    // Section: Customization
+                    Section {
+                        NavigationLink(destination: AnisetteDataView()) {
+                            Label("Anisette Client Configuration", systemImage: "macbook.and.iphone")
+                        }
+                        Toggle(isOn: Binding(
+                            get: { !UserDefaults.standard.disableAnisetteRotation },
+                            set: { UserDefaults.standard.disableAnisetteRotation = !$0 }
+                        )) {
+                            Label("Enable Auto Rotation", systemImage: "arrow.triangle.2.circlepath")
+                        }
+                    } header: {
+                        Text("Customization")
+                    } footer: {
+                        Text("View, edit, or offline the header properties sent to Apple during provisioning, and control if SideStore automatically rotates/retries servers upon failure.")
+                    }
+
                     // Section 3: Troubleshooting
                     Section {
                         SwiftUI.Button(role: .destructive) {
@@ -537,8 +554,8 @@ struct AnisetteServersView: View {
                                 message: Text("Are you sure you want to clear adi.pb from the Keychain? You will need to log back in to Apple ID in SideStore."),
                                 primaryButton: .destructive(Text("Reset")) {
                                     #if !DEBUG
-                                    if Keychain.shared.adiPb != nil {
-                                        Keychain.shared.adiPb = nil
+                                    if AnisetteDataManager.shared.anisetteAdiBlob != nil {
+                                        AnisetteDataManager.shared.anisetteAdiBlob = nil
                                     }
                                     #endif
                                     debugLog("Cleared adi.pb from keychain")

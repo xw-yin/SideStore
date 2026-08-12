@@ -8,7 +8,7 @@
 
 import SwiftUI
 import WidgetKit
-import AltStoreCore
+@preconcurrency import AltStoreCore
 
 struct TextLockScreenWidget: Widget
 {
@@ -28,7 +28,12 @@ struct TextLockScreenWidget: Widget
         }
         else
         {
-            return EmptyWidgetConfiguration()
+            return StaticConfiguration(kind: kind, provider: UnsupportedTimelineProvider()) { _ in
+                UnsupportedWidgetView(requiredVersion: "iOS 16")
+            }
+            .supportedFamilies([.systemSmall])
+            .configurationDisplayName("AltWidget (Text)")
+            .description("Requires iOS 16 or later.")
         }
     }
 }
@@ -51,7 +56,12 @@ struct IconLockScreenWidget: Widget
         }
         else
         {
-            return EmptyWidgetConfiguration()
+            return StaticConfiguration(kind: kind, provider: UnsupportedTimelineProvider()) { _ in
+                UnsupportedWidgetView(requiredVersion: "iOS 16")
+            }
+            .supportedFamilies([.systemSmall])
+            .configurationDisplayName("AltWidget (Icon)")
+            .description("Requires iOS 16 or later.")
         }
     }
 }
@@ -143,10 +153,10 @@ private let widgetFamily = if #available(iOS 16, *) { WidgetFamily.accessoryCirc
     let expiredDate = Date().addingTimeInterval(1 * 60 * 60 * 24 * 7)
     let (altstore, _, _, longAltStore, _, _) = AppSnapshot.makePreviewSnapshots()
     
-    AppsEntry<Any>(date: Date(), apps: [altstore])
-    AppsEntry<Any>(date: Date(), apps: [longAltStore])
+    AppsEntry<Void>(date: Date(), apps: [altstore])
+    AppsEntry<Void>(date: Date(), apps: [longAltStore])
     
-    AppsEntry<Any>(date: expiredDate, apps: [altstore])
+    AppsEntry<Void>(date: expiredDate, apps: [altstore])
 }
 
 @available(iOS 17, *)
@@ -156,8 +166,8 @@ private let widgetFamily = if #available(iOS 16, *) { WidgetFamily.accessoryCirc
     let expiredDate = Date().addingTimeInterval(1 * 60 * 60 * 24 * 7)
     let (altstore, _, _, longAltStore, _, _) = AppSnapshot.makePreviewSnapshots()
     
-    AppsEntry<Any>(date: Date(), apps: [altstore])
-    AppsEntry<Any>(date: Date(), apps: [longAltStore])
+    AppsEntry<Void>(date: Date(), apps: [altstore])
+    AppsEntry<Void>(date: Date(), apps: [longAltStore])
     
-    AppsEntry<Any>(date: expiredDate, apps: [altstore])
+    AppsEntry<Void>(date: expiredDate, apps: [altstore])
 }
