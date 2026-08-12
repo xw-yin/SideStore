@@ -1390,8 +1390,6 @@ private extension SettingsViewController
         }
         UserDefaults.standard.synchronize()
 
-        Bundle.setSideStoreLanguage(languageCode)
-
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
               let window = windowScene.windows.first(where: \.isKeyWindow) ?? windowScene.windows.first,
               let rootViewController = UIStoryboard(name: "Main", bundle: nil).instantiateInitialViewController()

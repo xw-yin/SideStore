@@ -13,105 +13,9 @@ import Intents
 @preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 import CoreData
-import ObjectiveC
-
 
 import Nuke
 
-private var sideStoreLanguageBundleKey: UInt8 = 0
-
-extension Bundle {
-    private static let swizzleLocalizedString: Void = {
-        let originalSelector = #selector(Bundle.localizedString(forKey:value:table:))
-        let swizzledSelector = #selector(Bundle.custom_localizedString(forKey:value:table:))
-        
-        guard let originalMethod = class_getInstanceMethod(Bundle.self, originalSelector),
-              let swizzledMethod = class_getInstanceMethod(Bundle.self, swizzledSelector) else { return }
-        
-        method_exchangeImplementations(originalMethod, swizzledMethod)
-    }()
-    
-    @objc private func custom_localizedString(forKey key: String, value: String?, table tableName: String?) -> String {
-        // After method_exchangeImplementations:
-        //   - NSBundle's real localizedString(forKey:value:table:) is now named custom_localizedString
-        //   - Our logic below is now what gets called when anyone calls localizedString(forKey:value:table:)
-        //
-        // To avoid infinite recursion we use a reentrance guard on the current thread.
-        let guardKey = "LCSideStoreSwizzleGuard"
-        let threadDict = Thread.current.threadDictionary
-        guard (threadDict[guardKey] as? Bool) != true else {
-            // Already inside – call the real original implementation directly.
-            return self.custom_localizedString(forKey: key, value: value, table: tableName)
-        }
-
-        let isSideStoreBundle = self == Bundle.main || self.bundlePath.lowercased().contains("sidestore")
-        if isSideStoreBundle,
-           let langBundle = objc_getAssociatedObject(Bundle.main, &sideStoreLanguageBundleKey) as? Bundle,
-           langBundle !== self {
-            threadDict[guardKey] = true
-            defer { threadDict.removeObject(forKey: guardKey) }
-            return langBundle.custom_localizedString(forKey: key, value: value, table: tableName)
-        }
-        // Call the original (real) implementation – safe because we're not in a guard block.
-        return self.custom_localizedString(forKey: key, value: value, table: tableName)
-    }
-
-    static func setSideStoreLanguage(_ languageCode: String?) {
-        _ = Bundle.swizzleLocalizedString
-
-        var resolvedCode = languageCode
-        if resolvedCode == nil {
-            for preferred in Locale.preferredLanguages {
-                let lower = preferred.lowercased()
-                if lower.hasPrefix("zh") {
-                    resolvedCode = "zh-Hans"
-                    break
-                } else if lower.hasPrefix("en") {
-                    resolvedCode = "en"
-                    break
-                }
-            }
-        }
-        if resolvedCode == nil {
-            resolvedCode = "en"
-        }
-
-        let resourceName = resolvedCode == "en" ? "Base" : resolvedCode
-        var candidateBundles = [Bundle.main, Bundle(for: AppDelegate.self)]
-        let embeddedSideStoreURL = Bundle.main.bundleURL
-            .appendingPathComponent("Frameworks", isDirectory: true)
-            .appendingPathComponent("SideStoreApp.framework", isDirectory: true)
-        if let embeddedSideStoreBundle = Bundle(url: embeddedSideStoreURL) {
-            candidateBundles.append(embeddedSideStoreBundle)
-        }
-        candidateBundles.append(contentsOf: Bundle.allBundles)
-        candidateBundles.append(contentsOf: Bundle.allFrameworks)
-
-        let sideStoreBundle = resourceName.flatMap { name in
-            candidateBundles.first { bundle in
-                bundle.path(forResource: name, ofType: "lproj") != nil &&
-                (bundle.bundlePath.lowercased().contains("sidestore") || bundle == Bundle.main)
-            }
-        }
-        let localizedBundle = resourceName
-            .flatMap { sideStoreBundle?.path(forResource: $0, ofType: "lproj") }
-            .flatMap { Bundle(path: $0) }
-        objc_setAssociatedObject(
-            Bundle.main,
-            &sideStoreLanguageBundleKey,
-            localizedBundle,
-            .OBJC_ASSOCIATION_RETAIN_NONATOMIC
-        )
-        if let sideStoreBundle {
-            objc_setAssociatedObject(
-                sideStoreBundle,
-                &sideStoreLanguageBundleKey,
-                localizedBundle,
-                .OBJC_ASSOCIATION_RETAIN_NONATOMIC
-            )
-        }
-    }
-}
 
 extension UIApplication: LegacyBackgroundFetching {}
 
@@ -173,10 +77,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     // so the import notification can be posted once the app becomes active.
     private var pendingImportIPAURL: URL?
 
-    override init() {
-        super.init()
-        Bundle.setSideStoreLanguage(UserDefaults.standard.string(forKey: "ALTSelectedLanguage"))
-    }
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool
     {
