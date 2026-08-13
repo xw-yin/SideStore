@@ -32,6 +32,20 @@ extension AppDelegate
     static let importAppDeepLinkURLKey = "fileURL"
     static let appBackupResultKey = "result"
     static let addSourceDeepLinkURLKey = "sourceURL"
+
+    @MainActor static var hasPendingAppImports: Bool {
+        !pendingImportIPAURLs.isEmpty
+    }
+
+    @MainActor static func enqueueAppImport(_ url: URL) {
+        pendingImportIPAURLs.append(url)
+        NotificationCenter.default.post(name: importAppDeepLinkNotification, object: nil)
+    }
+
+    @MainActor static func dequeueAppImport() -> URL? {
+        guard !pendingImportIPAURLs.isEmpty else { return nil }
+        return pendingImportIPAURLs.removeFirst()
+    }
     
     static func dumpSideBackupLogsIfNeeded() async {
         await Task.detached {
@@ -68,17 +82,14 @@ extension AppDelegate
 @UIApplicationMain
 final class AppDelegate: UIResponder, UIApplicationDelegate {
 
+    @MainActor private static var pendingImportIPAURLs = [URL]()
+
     var window: UIWindow?
     
     private let intentHandler = IntentHandler()
     private let viewAppIntentHandler = ViewAppIntentHandler()
     
     public let consoleLog = ConsoleLog()
-
-    // Holds an imported .ipa URL when the app isn't active yet (cold launch),
-    // so the import notification can be posted once the app becomes active.
-    private var pendingImportIPAURL: URL?
-
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool
     {
@@ -211,14 +222,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
 
-    func applicationDidBecomeActive(_ application: UIApplication)
-    {
-        // Flush any .ipa import that arrived before the app was active (cold launch).
-        guard let url = self.pendingImportIPAURL else { return }
-        self.pendingImportIPAURL = nil
-        NotificationCenter.default.post(name: AppDelegate.importAppDeepLinkNotification, object: nil, userInfo: [AppDelegate.importAppDeepLinkURLKey: url])
-    }
-
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any]) -> Bool
     {
         return self.open(url)
@@ -327,12 +330,7 @@ private extension AppDelegate
                 return false
             }
 
-            if UIApplication.shared.applicationState == .active {
-                NotificationCenter.default.post(name: AppDelegate.importAppDeepLinkNotification, object: nil, userInfo: [AppDelegate.importAppDeepLinkURLKey: ipaURL])
-            } else {
-                // Defer until the app is active (cold launch) — see applicationDidBecomeActive.
-                self.pendingImportIPAURL = ipaURL
-            }
+            AppDelegate.enqueueAppImport(ipaURL)
 
             return true
         }

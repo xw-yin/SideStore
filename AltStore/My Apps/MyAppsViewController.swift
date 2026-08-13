@@ -60,6 +60,7 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
     
     private var _imagePickerInstalledApp: InstalledApp?
     private var _viewDidAppear = false
+    private var isPresentingAppImport = false
     
     private var minimuxerStatusCheckTask: Task<Void, Never>?
     
@@ -180,6 +181,7 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
         super.viewDidAppear(animated)
         
         _viewDidAppear = true
+        self.presentNextAppImportIfNeeded()
     }
     
     override func viewWillDisappear(_ animated: Bool)
@@ -1612,10 +1614,30 @@ private extension MyAppsViewController
     
     @objc func importApp(_ notification: Notification)
     {
-        // Make sure left UIBarButtonItem has been set.
-        self.loadViewIfNeeded()
-        
-        guard let url = notification.userInfo?[AppDelegate.importAppDeepLinkURLKey] as? URL else { return }
+        // Accept notifications from older integrations while new callers use the queue directly.
+        if let url = notification.userInfo?[AppDelegate.importAppDeepLinkURLKey] as? URL {
+            AppDelegate.enqueueAppImport(url)
+        }
+
+        self.presentNextAppImportIfNeeded()
+    }
+
+    func presentNextAppImportIfNeeded()
+    {
+        guard !self.isPresentingAppImport,
+              self.viewIfLoaded?.window != nil
+        else { return }
+
+        if let presentedViewController = self.presentedViewController {
+            presentedViewController.dismiss(animated: true) { [weak self] in
+                self?.presentNextAppImportIfNeeded()
+            }
+            return
+        }
+
+        guard let url = AppDelegate.dequeueAppImport() else { return }
+
+        self.isPresentingAppImport = true
         
         let cleanup = {
             guard url.isFileURL else { return }
@@ -1628,18 +1650,23 @@ private extension MyAppsViewController
                 debugLog("Unable to remove imported .ipa. \(error)")
             }
         }
+
+        let finish = { [weak self] in
+            cleanup()
+            self?.isPresentingAppImport = false
+            DispatchQueue.main.async {
+                self?.presentNextAppImportIfNeeded()
+            }
+        }
         
         InstallAppDialog.present(
             ipaURL: url,
             from: self,
             onConfirm: { [weak self] in
-                self?.sideloadApp(at: url) { _ in
-                    cleanup()
-                }
+                guard let self else { return finish() }
+                self.sideloadApp(at: url) { _ in finish() }
             },
-            onCancel: {
-                cleanup()
-            }
+            onCancel: finish
         )
     }
     

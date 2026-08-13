@@ -80,6 +80,10 @@ final class TabBarController: UITabBarController
         super.viewDidAppear(animated)
         
         _viewDidAppear = true
+
+        if AppDelegate.hasPendingAppImports {
+            selectTab(.myApps)
+        }
         
         if let (identifier, sender) = self.initialSegue
         {
