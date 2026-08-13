@@ -141,9 +141,6 @@ public final class AppBootManager: @unchecked Sendable {
     }
 
     public nonisolated func ensureMinimuxerStarted() async throws {
-        if !UserDefaults.standard.isMinimuxerStatusCheckEnabled {
-            return
-        }
         #if targetEnvironment(simulator)
         return
         #else
