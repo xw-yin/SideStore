@@ -545,7 +545,7 @@ private struct DetailRowV2: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(label)
+            Text(NSLocalizedString(label, comment: ""))
                 .font(.caption)
                 .foregroundColor(.secondary)
             Text(value)

@@ -276,7 +276,7 @@ struct CertificateDetailView: View {
     
     private func detailRow(title: String, value: String) -> some View {
         HStack {
-            Text(title)
+            Text(NSLocalizedString(title, comment: ""))
                 .font(.subheadline)
                 .foregroundColor(.primary)
             Spacer()
@@ -290,7 +290,7 @@ struct CertificateDetailView: View {
     
     private func detailRowWithCopy(title: String, value: String, isCopied: Binding<Bool>) -> some View {
         HStack {
-            Text(title)
+            Text(NSLocalizedString(title, comment: ""))
                 .font(.subheadline)
                 .foregroundColor(.primary)
             Spacer()

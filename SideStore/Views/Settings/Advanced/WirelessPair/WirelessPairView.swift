@@ -208,7 +208,7 @@ struct ConnectionDetailsCard: View {
                     
                     VStack(alignment: .leading, spacing: 0) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(label)
+                            Text(NSLocalizedString(label, comment: ""))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             Text(value)
