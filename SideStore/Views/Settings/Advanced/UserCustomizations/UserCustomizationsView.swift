@@ -10,8 +10,8 @@ import SwiftUI
 import AltStoreCore
 
 private extension Color {
-    static let settingsRowBackground = Color.white.opacity(0.15)
-    static let settingsDivider = Color.white.opacity(0.15)
+    static let settingsRowBackground = Color(uiColor: .secondarySystemGroupedBackground)
+    static let settingsDivider = Color(uiColor: .separator)
 }
 
 struct UserCustomizationsView: View {
@@ -28,14 +28,14 @@ struct UserCustomizationsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("APPEARANCE & THEMES")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     NavigationLink(destination: ThemePickerView()) {
                         HStack {
                             Text("Theme Manager")
                                 .font(.system(size: 17, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(.primary)
                             Spacer()
                             HStack(spacing: 6) {
                                 Circle()
@@ -43,7 +43,7 @@ struct UserCustomizationsView: View {
                                     .frame(width: 14, height: 14)
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color.white.opacity(0.4))
+                                    .foregroundColor(Color.secondary.opacity(0.65))
                             }
                         }
                         .padding(.horizontal, 16)
@@ -57,7 +57,7 @@ struct UserCustomizationsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("CUSTOMIZATION OPTIONS")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -117,7 +117,7 @@ struct UserCustomizationsView: View {
             .padding(.top, 16)
             .padding(.bottom, 32)
         }
-        .background(Color(uiColor: .settingsBackground).ignoresSafeArea())
+        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
         .navigationTitle("User Customizations")
         .navigationBarTitleDisplayMode(.large)
     }
@@ -126,7 +126,7 @@ struct UserCustomizationsView: View {
         HStack {
             Text(LocalizedStringKey(title))
                 .font(.system(size: 17, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
             Toggle("", isOn: isOn)

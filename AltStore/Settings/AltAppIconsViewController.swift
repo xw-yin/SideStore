@@ -81,7 +81,7 @@ class AltAppIconsViewController: UICollectionViewController
         let collectionViewLayout = self.makeLayout()
         self.collectionView.collectionViewLayout = collectionViewLayout
         
-        self.collectionView.backgroundColor = UIColor(resource: .settingsBackground)
+        self.collectionView.backgroundColor = .systemGroupedBackground
         
         do
         {
@@ -111,7 +111,7 @@ class AltAppIconsViewController: UICollectionViewController
             var configuration = UIListContentConfiguration.cell()
             configuration.text = section.localizedName
             configuration.textProperties.font = font
-            configuration.textProperties.color = .white.withAlphaComponent(0.8)
+            configuration.textProperties.color = .secondaryLabel
             headerView.contentConfiguration = configuration
             
             headerView.backgroundConfiguration = .clear()
@@ -163,7 +163,7 @@ private extension AltAppIconsViewController
 
             if isSelected
             {
-                cell.accessories = [.checkmark(options: .init(tintColor: .white))]
+                cell.accessories = [.checkmark(options: .init(tintColor: .altPrimary))]
             }
             else
             {
@@ -175,10 +175,10 @@ private extension AltAppIconsViewController
                 if let state = cell?.configurationState, state.isHighlighted 
                 {
                     // Highlighted, so use darker white for background.
-                    return .white.withAlphaComponent(0.4)
+                    return .tertiarySystemFill
                 }
                 
-                return .white.withAlphaComponent(0.25)
+                return .secondarySystemGroupedBackground
             }
             cell.backgroundConfiguration = backgroundConfiguration
                         

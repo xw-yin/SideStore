@@ -3,8 +3,8 @@ import UniformTypeIdentifiers
 import AltStoreCore
 
 private extension Color {
-    static let settingsRowBackground = Color.white.opacity(0.15)
-    static let settingsDivider = Color.white.opacity(0.15)
+    static let settingsRowBackground = Color(uiColor: .secondarySystemGroupedBackground)
+    static let settingsDivider = Color(uiColor: .separator)
 }
 
 struct BackupAndRestoreView: View {
@@ -28,7 +28,7 @@ struct BackupAndRestoreView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("ACCOUNT, CERTIFICATE, & PAIRING DATA")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -38,10 +38,10 @@ struct BackupAndRestoreView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "square.and.arrow.down")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Text("Import Account")
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                             }
                             .padding(.horizontal, 16)
@@ -56,10 +56,10 @@ struct BackupAndRestoreView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "square.and.arrow.up")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Text("Export Account")
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                             }
                             .padding(.horizontal, 16)
@@ -74,7 +74,7 @@ struct BackupAndRestoreView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("SOURCES DATA")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -84,10 +84,10 @@ struct BackupAndRestoreView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "square.and.arrow.down")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Text("Import Sources")
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                             }
                             .padding(.horizontal, 16)
@@ -102,10 +102,10 @@ struct BackupAndRestoreView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "square.and.arrow.up")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Text("Export Sources")
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                             }
                             .padding(.horizontal, 16)
@@ -120,7 +120,7 @@ struct BackupAndRestoreView: View {
             .padding(.top, 16)
             .padding(.bottom, 32)
         }
-        .background(Color(uiColor: .settingsBackground).ignoresSafeArea())
+        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
         .navigationTitle("Backup & Restore")
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showingImportFilePicker) {

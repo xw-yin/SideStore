@@ -193,6 +193,9 @@ final class SettingsViewController: UITableViewController
     override func viewDidLoad()
     {
         super.viewDidLoad()
+
+        self.tableView.backgroundColor = .systemGroupedBackground
+        self.tableView.tintColor = .altPrimary
         
         // --- iOS 26 fix ---
         if #available(iOS 26.0, *) {
@@ -1283,14 +1286,14 @@ extension SettingsViewController
             case .backupAndRestore:
                 let backupView = BackupAndRestoreView()
                 let vc = UIHostingController(rootView: backupView)
-                vc.view.backgroundColor = .settingsBackground
+                vc.view.backgroundColor = .systemGroupedBackground
                 vc.title = NSLocalizedString("Backup & Restore", comment: "")
                 self.prepare(for: UIStoryboardSegue(identifier: "diagnostics", source: self, destination: vc), sender: nil)
                 
             case .userCustomizations:
                 let userCustomizationsView = UserCustomizationsView()
                 let vc = UIHostingController(rootView: userCustomizationsView)
-                vc.view.backgroundColor = .settingsBackground
+                vc.view.backgroundColor = .systemGroupedBackground
                 vc.title = NSLocalizedString("User Customizations", comment: "")
                 self.prepare(for: UIStoryboardSegue(identifier: "diagnostics", source: self, destination: vc), sender: nil)
                 
@@ -1303,13 +1306,13 @@ extension SettingsViewController
             case .developerOptions:
                 let developerOptionsView = DeveloperOptionsView()
                 let hostingController = UIHostingController(rootView: developerOptionsView)
-                hostingController.view.backgroundColor = .settingsBackground
+                hostingController.view.backgroundColor = .systemGroupedBackground
                 hostingController.title = NSLocalizedString("Developer Options", comment: "")
                 self.prepare(for: UIStoryboardSegue(identifier: "diagnostics", source: self, destination: hostingController), sender: nil)
             case .experimentalFeatures:
                 let experimentalFeaturesView = ExperimentalFeaturesView()
                 let hostingController = UIHostingController(rootView: experimentalFeaturesView)
-                hostingController.view.backgroundColor = .settingsBackground
+                hostingController.view.backgroundColor = .systemGroupedBackground
                 hostingController.title = NSLocalizedString("Experimental Features", comment: "")
                 self.prepare(for: UIStoryboardSegue(identifier: "diagnostics", source: self, destination: hostingController), sender: nil)
             }

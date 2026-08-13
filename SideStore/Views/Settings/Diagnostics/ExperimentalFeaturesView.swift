@@ -10,8 +10,8 @@ import SwiftUI
 import AltStoreCore
 
 private extension Color {
-    static let settingsRowBackground = Color.white.opacity(0.15)
-    static let settingsDivider = Color.white.opacity(0.15)
+    static let settingsRowBackground = Color(uiColor: .secondarySystemGroupedBackground)
+    static let settingsDivider = Color(uiColor: .separator)
 }
 
 struct ExperimentalFeaturesView: View {
@@ -27,7 +27,7 @@ struct ExperimentalFeaturesView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("STANDALONE FEATURES")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -36,11 +36,11 @@ struct ExperimentalFeaturesView: View {
                                 HStack {
                                     Text("Wireless Pairing")
                                         .font(.system(size: 17, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(.primary)
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                         .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(Color.white.opacity(0.4))
+                                        .foregroundColor(Color.secondary.opacity(0.65))
                                 }
                                 .padding(.horizontal, 16)
                                 .frame(height: 50)
@@ -53,11 +53,11 @@ struct ExperimentalFeaturesView: View {
                             HStack {
                                 Text("Cache Management")
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color.white.opacity(0.4))
+                                    .foregroundColor(Color.secondary.opacity(0.65))
                             }
                             .padding(.horizontal, 16)
                             .frame(height: 50)
@@ -71,7 +71,7 @@ struct ExperimentalFeaturesView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("FEATURE FLAGS")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -121,7 +121,7 @@ struct ExperimentalFeaturesView: View {
             .padding(.top, 16)
             .padding(.bottom, 32)
         }
-        .background(Color(uiColor: .settingsBackground).ignoresSafeArea())
+        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
         .navigationTitle("Experimental Features")
         .navigationBarTitleDisplayMode(.large)
     }
@@ -137,7 +137,7 @@ struct ExperimentalFeaturesView: View {
         HStack {
             Text(LocalizedStringKey(title))
                 .font(.system(size: 17, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
             Toggle("", isOn: isOn)

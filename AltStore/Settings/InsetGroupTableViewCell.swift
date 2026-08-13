@@ -48,13 +48,13 @@ final class InsetGroupTableViewCell: UITableViewCell
         self.updateContentMargins()
         
         self.separatorView.translatesAutoresizingMaskIntoConstraints = false
-        self.separatorView.backgroundColor = UIColor.white.withAlphaComponent(0.25)
+        self.separatorView.backgroundColor = .separator
         self.addSubview(self.separatorView)
         
         self.insetView.layer.masksToBounds = true
         self.insetView.layer.cornerRadius = 20
         self.insetView.layer.borderWidth = 1.0
-        self.insetView.layer.borderColor = UIColor.white.withAlphaComponent(0.10).cgColor
+        self.updateBorderColor()
         
         // Get the preferred background color from Interface Builder.
         self.insetView.backgroundColor = self.backgroundColor
@@ -80,6 +80,12 @@ final class InsetGroupTableViewCell: UITableViewCell
     {
         super.safeAreaInsetsDidChange()
         self.updateContentMargins()
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?)
+    {
+        super.traitCollectionDidChange(previousTraitCollection)
+        self.updateBorderColor()
     }
     
     override func setSelected(_ selected: Bool, animated: Bool)
@@ -122,6 +128,11 @@ private extension InsetGroupTableViewCell
         )
     }
 
+    func updateBorderColor()
+    {
+        self.insetView.layer.borderColor = UIColor.separator.cgColor
+    }
+
     func update()
     {
         switch self.style
@@ -145,11 +156,11 @@ private extension InsetGroupTableViewCell
         
         if self.isSelectable && (self.isHighlighted || self.isSelected)
         {
-            self.insetView.backgroundColor = UIColor.white.withAlphaComponent(0.55)
+            self.insetView.backgroundColor = .tertiarySystemFill
         }
         else
         {
-            self.insetView.backgroundColor = UIColor.white.withAlphaComponent(0.25)
+            self.insetView.backgroundColor = .secondarySystemGroupedBackground
         }
     }
 }
