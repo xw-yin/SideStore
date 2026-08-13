@@ -119,7 +119,7 @@ struct ConnectionConfigView: View {
                     }
                 }
 
-                if draftUseLocalVPN || UserDefaults.standard.alwaysShowWireGuardConfig {
+                if UserDefaults.standard.enableEMPforWireguard || UserDefaults.standard.alwaysShowWireGuardConfig {
                     Section {
                         networkConfigRow(
                             label: "Bind Host / IP",
@@ -203,7 +203,7 @@ struct ConnectionConfigView: View {
     }
 
     private func validateInputs() -> String? {
-        if draftUseLocalVPN || alwaysShowWireGuardConfig {
+        if UserDefaults.standard.enableEMPforWireguard || UserDefaults.standard.alwaysShowWireGuardConfig {
             let host = draftWireGuardServerHost.trimmingCharacters(in: .whitespaces)
             guard !host.isEmpty else {
                 return "Bind Host / IP cannot be empty."

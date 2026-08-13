@@ -155,9 +155,6 @@ class SourceDetailViewController: HeaderContentViewController<SourceHeaderView, 
             
             let title: String
             
-            // temporarily fix crash on source view
-            self.viewModel.isSourceAdded = nil
-
             switch self.viewModel.isSourceAdded
             {
             case true?:
@@ -183,11 +180,6 @@ class SourceDetailViewController: HeaderContentViewController<SourceHeaderView, 
             case nil:
                 title = ""
                 self.navigationBarButton.isHidden = true
-                
-                if #available(iOS 16, *)
-                {
-                    self.navigationItem.rightBarButtonItem?.isHidden = true
-                }
             }
             
             if title != self.navigationBarButton.title(for: .normal) && !self.navigationBarButton.isIndicatingActivity

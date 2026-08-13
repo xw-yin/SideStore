@@ -57,7 +57,6 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
     private var isCheckingForUpdates = false
     private var didChangeActiveApps = false
     private var previousInactiveAppsCount = 0
-    private var statusDotView: UIView?
     
     private var _imagePickerInstalledApp: InstalledApp?
     private var _viewDidAppear = false
@@ -85,6 +84,8 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
     override func viewDidLoad()
     {
         super.viewDidLoad()
+
+        self.configureEmbeddedLiveContainerButton()
         
         // Allows us to intercept delegate callbacks.
         self.updatesDataSource.fetchedResultsController.delegate = self
@@ -186,84 +187,14 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
         super.viewWillDisappear(animated)
     }
     
-    private func findView(in view: UIView, where predicate: (UIView) -> Bool) -> UIView? {
-        if predicate(view) {
-            return view
-        }
-        for subview in view.subviews {
-            if let found = findView(in: subview, where: predicate) {
-                return found
-            }
-        }
-        return nil
-    }
-
     private func updateStatusDot(with status: MinimuxerStatus)
     {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            
-            guard let navigationBar = self.navigationController?.navigationBar else { return }
-            
-            guard let largeTitleView = self.findView(in: navigationBar, where: { NSStringFromClass(type(of: $0)).contains("LargeTitle") }) else {
-                return
-            }
-            
-            let updateColorClosure: (MinimuxerStatus) -> Void = { [weak self] status in
-                guard let self = self, let existingDot = self.statusDotView else { return }
-                let targetColor: UIColor = (status == .ready) ? .systemGreen : .systemRed
-                
-                if existingDot.backgroundColor != targetColor {
-                    UIView.animate(withDuration: 0.25, delay: 0.0, options: [.beginFromCurrentState, .curveEaseInOut]) {
-                        existingDot.backgroundColor = targetColor
-                        existingDot.transform = CGAffineTransform(scaleX: 1.25, y: 1.25)
-                    } completion: { _ in
-                        UIView.animate(withDuration: 0.15, delay: 0.0, options: .curveEaseInOut) {
-                            existingDot.transform = .identity
-                        }
-                    }
-                }
-            }
-            
-            // If the dot is already created and attached to largeTitleView, just update color O(1)
-            if let existingDot = self.statusDotView, existingDot.superview == largeTitleView {
-                updateColorClosure(status)
-                return
-            }
-            
-            self.statusDotView?.removeFromSuperview()
-            
-            let titleText = NSLocalizedString("My Apps", comment: "")
-            let font = UIFont.systemFont(ofSize: 34, weight: .bold)
-            let textWidth = titleText.size(withAttributes: [.font: font]).width
-            let leftMargin: CGFloat = 20
-            
-            let dot = UIView()
-            dot.translatesAutoresizingMaskIntoConstraints = false
-            dot.layer.cornerRadius = 3.5
-            dot.transform = CGAffineTransform(scaleX: 0.01, y: 0.01)
-            dot.alpha = 0.0
-            largeTitleView.addSubview(dot)
-            self.statusDotView = dot
-            
-            NSLayoutConstraint.activate([
-                dot.leadingAnchor.constraint(equalTo: largeTitleView.leadingAnchor, constant: leftMargin + textWidth - 2),
-                dot.bottomAnchor.constraint(equalTo: largeTitleView.bottomAnchor, constant: -32),
-                dot.widthAnchor.constraint(equalToConstant: 7),
-                dot.heightAnchor.constraint(equalToConstant: 7)
-            ])
-            
-            let animateEntranceClosure: (MinimuxerStatus) -> Void = { status in
-                let targetColor: UIColor = (status == .ready) ? .systemGreen : .systemRed
-                dot.backgroundColor = targetColor
-                UIView.animate(withDuration: 0.35, delay: 0.1, usingSpringWithDamping: 0.6, initialSpringVelocity: 0.8, options: [], animations: {
-                    dot.transform = .identity
-                    dot.alpha = 1.0
-                }, completion: nil)
-            }
-            
-            animateEntranceClosure(status)
-            return
+
+            self.tabBarItem.badgeValue = " "
+            self.tabBarItem.badgeColor = (status == .ready) ? .systemGreen : .systemRed
+            self.tabBarItem.setBadgeTextAttributes([.foregroundColor: UIColor.clear], for: .normal)
         }
     }
     
@@ -299,7 +230,7 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
     {
     }
 
-    @IBAction func openLC(_ sender: UIBarButtonItem)
+    @IBAction func openLC(_ sender: Any)
     {
         guard Bundle.isBundledWithLiveContainer,
               let url = URL(string: "livecontainer://livecontainer-launch?bundle-name=ui")
@@ -325,6 +256,25 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
 
 private extension MyAppsViewController
 {
+    func configureEmbeddedLiveContainerButton()
+    {
+        guard Bundle.isBundledWithLiveContainer,
+              let items = self.navigationItem.leftBarButtonItems,
+              items.count == 2
+        else { return }
+
+        let liveContainerButton = UIButton(type: .system)
+        liveContainerButton.translatesAutoresizingMaskIntoConstraints = false
+        liveContainerButton.setImage(UIImage(systemName: "escape"), for: .normal)
+        liveContainerButton.addTarget(self, action: #selector(openLC(_:)), for: .touchUpInside)
+        liveContainerButton.accessibilityLabel = "LiveContainer"
+        NSLayoutConstraint.activate([
+            liveContainerButton.widthAnchor.constraint(equalToConstant: 30),
+            liveContainerButton.heightAnchor.constraint(equalToConstant: 30)
+        ])
+        items[1].customView = liveContainerButton
+    }
+
     func makeDataSource() -> RSTCompositeCollectionViewPrefetchingDataSource<InstalledApp, UIImage>
     {
         let dataSource = RSTCompositeCollectionViewPrefetchingDataSource<InstalledApp, UIImage>(dataSources: [self.noUpdatesDataSource, self.updatesDataSource, self.activeAppsDataSource, self.inactiveAppsDataSource])
@@ -983,7 +933,7 @@ private extension MyAppsViewController
         }
     }
     
-    @IBAction func sideloadApp(_ sender: UIBarButtonItem)
+    @IBAction func sideloadApp(_ sender: Any)
     {
         Task { @MainActor in
             let supportedTypes = UTType.types(tag: "ipa", tagClass: .filenameExtension, conformingTo: nil)

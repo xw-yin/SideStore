@@ -28,7 +28,7 @@ final class LaunchViewController: UIViewController, UIDocumentPickerDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         splashView = SplashView(frame: view.bounds, appName: "SideStore")
-        destinationViewController = storyboard!.instantiateViewController(withIdentifier: "tabBarController") as? TabBarController
+        destinationViewController = storyboard?.instantiateViewController(withIdentifier: "tabBarController") as? TabBarController
         view.addSubview(splashView)
     }
 
@@ -208,6 +208,10 @@ extension LaunchViewController {
     @MainActor
     func finishLaunching() async {
         guard !didFinishLaunching else { return }
+        guard let destinationVC = destinationViewController else {
+            displayError(NSLocalizedString("The main SideStore interface could not be loaded.", comment: ""))
+            return
+        }
         didFinishLaunching = true
         
         await AppManager.shared.reconcileInstalledApps()
@@ -224,14 +228,12 @@ extension LaunchViewController {
                 mode = .localizedDescription    // dont make noise!
             }
             let toastView = ToastView(error: error, mode: mode)
-            toastView.addTarget(self.destinationViewController, action: #selector(TabBarController.presentSources), for: .touchUpInside)
-            toastView.show(in: self.destinationViewController!.selectedViewController ?? self.destinationViewController!)
+            toastView.addTarget(destinationVC, action: #selector(TabBarController.presentSources), for: .touchUpInside)
+            toastView.show(in: destinationVC.selectedViewController ?? destinationVC)
         }
         updateKnownSources()
         await WidgetDataManager.publishCurrentInstalledApps(in: DatabaseManager.shared.viewContext)
         didFinishLaunching = true
-        
-        let destinationVC = destinationViewController!
         
         let elapsed = abs(startTime.timeIntervalSinceNow)
         let remaining = elapsed >= 1 ? 0 : 1 - elapsed
