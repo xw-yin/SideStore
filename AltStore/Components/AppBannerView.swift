@@ -377,6 +377,10 @@ extension AppBannerView
         self.layer.shadowOffset = CGSize(width: 0, height: 6)
         self.layer.shadowRadius = 12
         self.layer.masksToBounds = false
+        self.layer.shadowPath = UIBezierPath(
+            roundedRect: self.bounds,
+            cornerRadius: self.backgroundEffectView.layer.cornerRadius
+        ).cgPath
     }
 }
 
@@ -384,7 +388,9 @@ private extension AppBannerView
 {
     func update()
     {
-        self.clipsToBounds = true
+        // The background view clips the card contents. This outer layer must remain
+        // unclipped so its shadow survives subsequent configure/update passes.
+        self.clipsToBounds = false
         self.layer.cornerRadius = 22
         
         let tintColor = self.originalTintColor ?? self.tintColor
