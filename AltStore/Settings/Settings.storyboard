@@ -310,7 +310,7 @@
                                             <segue destination="1z3-Yk-n8E" kind="show" identifier="" id="7I2-qT-zAU"/>
                                         </connections>
                                     </tableViewCell>
-                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" accessoryType="disclosureIndicator" indentationWidth="10" textLabel="Lng-Ti-tle" detailTextLabel="Lng-De-tail" rowHeight="51" style="IBUITableViewCellStyleValue1" id="Lng-Ce-ll1" customClass="InsetGroupTableViewCell" customModule="SideStore" customModuleProvider="target">
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" textLabel="Lng-Ti-tle" detailTextLabel="Lng-De-tail" rowHeight="51" style="IBUITableViewCellStyleValue1" id="Lng-Ce-ll1" customClass="InsetGroupTableViewCell" customModule="SideStore" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="431.33333206176758" width="402" height="51"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="Lng-Ce-ll1" id="Lng-Co-nt1">
@@ -1327,6 +1327,7 @@
                     </tableView>
                     <navigationItem key="navigationItem" title="Settings" id="Ddg-UQ-KJ8"/>
                     <connections>
+                        <outlet property="languageCell" destination="Lng-Ce-ll1" id="Lng-Ou-tlt"/>
                         <outlet property="accountEmailLabel" destination="0uP-Cd-tNX" id="14b-aL-yE3"/>
                         <outlet property="accountNameLabel" destination="CnN-M1-AYK" id="Ldc-Py-Bix"/>
                         <outlet property="accountTypeLabel" destination="434-MW-Den" id="mNB-QE-4Jg"/>

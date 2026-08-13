@@ -104,6 +104,7 @@ final class SettingsViewController: UITableViewController
     // Add outlet
     @IBOutlet private var betaTrackLabel: UILabel!
     @IBOutlet private var betaTrackPopupButton: UIButton!
+    @IBOutlet private var languageCell: UITableViewCell!
 
     private var debugGestureCounter = 0
     private weak var debugGestureTimer: Timer?
@@ -196,6 +197,7 @@ final class SettingsViewController: UITableViewController
 
         self.tableView.backgroundColor = .systemGroupedBackground
         self.tableView.tintColor = .altPrimary
+        self.configureLanguageDisclosureIndicator()
         
         // --- iOS 26 fix ---
         if #available(iOS 26.0, *) {
@@ -252,6 +254,19 @@ final class SettingsViewController: UITableViewController
             }
             configureReleaseChannelButton()
         }
+    }
+
+    private func configureLanguageDisclosureIndicator()
+    {
+        let configuration = UIImage.SymbolConfiguration(scale: .large)
+        let image = UIImage(systemName: "chevron.right", withConfiguration: configuration)
+        let imageView = UIImageView(image: image)
+        imageView.tintColor = .altPrimary
+        imageView.contentMode = .scaleAspectFit
+        imageView.frame.size = CGSize(width: 16, height: 23)
+
+        self.languageCell.accessoryType = .none
+        self.languageCell.accessoryView = imageView
     }
     
     override func viewWillAppear(_ animated: Bool)
