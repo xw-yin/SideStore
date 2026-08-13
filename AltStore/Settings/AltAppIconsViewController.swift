@@ -182,8 +182,6 @@ private extension AltAppIconsViewController
             }
             cell.backgroundConfiguration = backgroundConfiguration
                         
-            // Ensure text is legible on green background.
-            cell.overrideUserInterfaceStyle = .dark
         }
         
         return dataSource

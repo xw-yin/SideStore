@@ -266,12 +266,14 @@ private extension MyAppsViewController
         let liveContainerButton = UIButton(type: .system)
         liveContainerButton.translatesAutoresizingMaskIntoConstraints = false
         liveContainerButton.setImage(UIImage(systemName: "escape"), for: .normal)
+        liveContainerButton.tintColor = .label
         liveContainerButton.addTarget(self, action: #selector(openLC(_:)), for: .touchUpInside)
         liveContainerButton.accessibilityLabel = "LiveContainer"
         NSLayoutConstraint.activate([
             liveContainerButton.widthAnchor.constraint(equalToConstant: 30),
             liveContainerButton.heightAnchor.constraint(equalToConstant: 30)
         ])
+        items[0].tintColor = .label
         items[1].customView = liveContainerButton
     }
 

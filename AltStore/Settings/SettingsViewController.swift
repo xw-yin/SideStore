@@ -134,7 +134,7 @@ final class SettingsViewController: UITableViewController
     @IBOutlet private var recreateDatabaseSwitch: UISwitch!
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
-        return .lightContent
+        return .default
     }
     
     private static var exportDBInProgress = false

@@ -16,14 +16,19 @@ final class InstructionsViewController: UIViewController
     
     @IBOutlet private var contentStackView: UIStackView!
     @IBOutlet private var dismissButton: UIButton!
+
+    private let scrollView = UIScrollView()
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
-        return .lightContent
+        return .default
     }
     
     override func viewDidLoad()
     {
         super.viewDidLoad()
+
+        self.configureAdaptiveAppearance()
+        self.embedContentInScrollView()
         
         if UIScreen.main.isExtraCompactHeight
         {
@@ -43,10 +48,66 @@ final class InstructionsViewController: UIViewController
             self.dismissButton.isHidden = true
         }
         
-        if let scrollView = self.view.subviews.first(where: { $0 is UIScrollView }) as? UIScrollView,
-           let containerView = scrollView.subviews.first {
-            containerView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor).isActive = true
+    }
+
+    private func configureAdaptiveAppearance()
+    {
+        self.view.backgroundColor = .systemGroupedBackground
+
+        for label in self.contentStackView.allDescendants.compactMap({ $0 as? UILabel })
+        {
+            if label.font.pointSize >= 70
+            {
+                label.textColor = .tertiaryLabel
+            }
+            else if label.font.fontDescriptor.symbolicTraits.contains(.traitBold)
+            {
+                label.textColor = .label
+            }
+            else
+            {
+                label.textColor = .secondaryLabel
+            }
         }
+    }
+
+    private func embedContentInScrollView()
+    {
+        let constraintsToRemove = self.view.constraints.filter {
+            ($0.firstItem as? UIView) === self.contentStackView ||
+            ($0.secondItem as? UIView) === self.contentStackView
+        }
+        NSLayoutConstraint.deactivate(constraintsToRemove)
+
+        self.scrollView.translatesAutoresizingMaskIntoConstraints = false
+        self.scrollView.alwaysBounceVertical = true
+        self.scrollView.keyboardDismissMode = .interactive
+        self.view.insertSubview(self.scrollView, belowSubview: self.dismissButton)
+
+        self.contentStackView.removeFromSuperview()
+        self.scrollView.addSubview(self.contentStackView)
+
+        let safeArea = self.view.safeAreaLayoutGuide
+        let bottomAnchor = self.showsBottomButton ? self.dismissButton.topAnchor : safeArea.bottomAnchor
+        NSLayoutConstraint.activate([
+            self.scrollView.topAnchor.constraint(equalTo: safeArea.topAnchor),
+            self.scrollView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor),
+            self.scrollView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor),
+            self.scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            self.contentStackView.topAnchor.constraint(equalTo: self.scrollView.contentLayoutGuide.topAnchor),
+            self.contentStackView.leadingAnchor.constraint(equalTo: self.scrollView.contentLayoutGuide.leadingAnchor),
+            self.contentStackView.trailingAnchor.constraint(equalTo: self.scrollView.contentLayoutGuide.trailingAnchor),
+            self.contentStackView.bottomAnchor.constraint(equalTo: self.scrollView.contentLayoutGuide.bottomAnchor),
+            self.contentStackView.widthAnchor.constraint(equalTo: self.scrollView.frameLayoutGuide.widthAnchor)
+        ])
+    }
+}
+
+private extension UIView
+{
+    var allDescendants: [UIView] {
+        return self.subviews + self.subviews.flatMap(\.allDescendants)
     }
 }
 
