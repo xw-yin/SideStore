@@ -730,11 +730,6 @@
                                     <action selector="sideloadApp:" destination="hv7-Ar-voT" id="Tjv-oi-2H0"/>
                                 </connections>
                             </barButtonItem>
-                            <barButtonItem title="Item" image="escape" catalog="system" id="XLE-l0-Jf0" userLabel="OpenLC">
-                                <connections>
-                                    <action selector="openLC:" destination="hv7-Ar-voT" id="urR-gL-glB"/>
-                                </connections>
-                            </barButtonItem>
                         </leftBarButtonItems>
                     </navigationItem>
                     <connections>
@@ -954,7 +949,6 @@
         <image name="MyApps" width="20" height="20"/>
         <image name="News" width="19" height="20"/>
         <image name="Settings" width="20" height="20"/>
-        <image name="escape" catalog="system" width="128" height="123"/>
         <namedColor name="Background">
             <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>

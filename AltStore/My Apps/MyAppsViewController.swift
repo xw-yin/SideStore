@@ -85,8 +85,6 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
     override func viewDidLoad()
     {
         super.viewDidLoad()
-
-        self.configureEmbeddedLiveContainerButton()
         
         // Allows us to intercept delegate callbacks.
         self.updatesDataSource.fetchedResultsController.delegate = self
@@ -232,15 +230,6 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
     {
     }
 
-    @IBAction func openLC(_ sender: Any)
-    {
-        guard Bundle.isBundledWithLiveContainer,
-              let url = URL(string: "livecontainer://livecontainer-launch?bundle-name=ui")
-        else { return }
-
-        UIApplication.shared.open(url)
-    }
-
     var isMinimuxerReady: Bool {
         get async {
             if let error = await getMinimuxerStatus().operationError {
@@ -255,28 +244,6 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
 
 private extension MyAppsViewController
 {
-    func configureEmbeddedLiveContainerButton()
-    {
-        guard Bundle.isBundledWithLiveContainer,
-              let items = self.navigationItem.leftBarButtonItems,
-              items.count == 2
-        else { return }
-
-        let liveContainerButton = UIButton(type: .system)
-        liveContainerButton.translatesAutoresizingMaskIntoConstraints = false
-        let symbolConfiguration = UIImage.SymbolConfiguration(pointSize: 17, weight: .medium, scale: .large)
-        liveContainerButton.setImage(UIImage(systemName: "escape", withConfiguration: symbolConfiguration), for: .normal)
-        liveContainerButton.tintColor = .label
-        liveContainerButton.addTarget(self, action: #selector(openLC(_:)), for: .touchUpInside)
-        liveContainerButton.accessibilityLabel = "LiveContainer"
-        NSLayoutConstraint.activate([
-            liveContainerButton.widthAnchor.constraint(equalToConstant: 30),
-            liveContainerButton.heightAnchor.constraint(equalToConstant: 30)
-        ])
-        items[0].tintColor = .label
-        items[1].customView = liveContainerButton
-    }
-
     func makeDataSource() -> RSTCompositeCollectionViewPrefetchingDataSource<InstalledApp, UIImage>
     {
         let dataSource = RSTCompositeCollectionViewPrefetchingDataSource<InstalledApp, UIImage>(dataSources: [self.noUpdatesDataSource, self.updatesDataSource, self.activeAppsDataSource, self.inactiveAppsDataSource])
