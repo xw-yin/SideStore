@@ -317,9 +317,7 @@ public class DatabaseManager
         return activeTeam
     }
 
-private extension DatabaseManager
-{
-    func embeddedLiveContainerApplication(from hostBundle: Bundle) -> (application: ALTApplication, temporaryBundleURL: URL)?
+    private func embeddedLiveContainerApplication(from hostBundle: Bundle) -> (application: ALTApplication, temporaryBundleURL: URL)?
     {
         guard Bundle.isBundledWithLiveContainer,
               let executableURL = hostBundle.executableURL,
