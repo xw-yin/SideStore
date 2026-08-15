@@ -7,7 +7,6 @@
 //
 
 @preconcurrency import UIKit
-@preconcurrency import AltStoreCore
 
 
 class TitleCollectionReusableView: UICollectionReusableView

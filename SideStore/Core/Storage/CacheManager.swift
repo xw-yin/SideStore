@@ -7,7 +7,6 @@
 //
 
 import Foundation
-@preconcurrency import AltStoreCore
 
 public final class CacheManager {
     public static let shared = CacheManager()

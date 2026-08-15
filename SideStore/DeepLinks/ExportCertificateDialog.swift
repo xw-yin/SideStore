@@ -7,7 +7,6 @@
 //
 
 import UIKit
-@preconcurrency import AltStoreCore
 
 @MainActor
 public enum ExportCertificateDialog {
@@ -55,21 +54,22 @@ public enum ExportCertificateDialog {
         presentingVC.present(alert, animated: true)
     }
     
-    private static func topViewController(base: UIViewController? = UIApplication.shared.connectedScenes
-        .compactMap { ($0 as? UIWindowScene)?.keyWindow }
-        .first?.rootViewController) -> UIViewController? {
+    @MainActor
+    private static func topViewController(base: UIViewController? = nil) -> UIViewController?
+    {
+        let baseVC = base ?? UIApplication.shared.alt_keyWindow?.rootViewController
             
-        if let nav = base as? UINavigationController {
+        if let nav = baseVC as? UINavigationController {
             return topViewController(base: nav.visibleViewController)
         }
-        if let tab = base as? UITabBarController {
+        if let tab = baseVC as? UITabBarController {
             if let selected = tab.selectedViewController {
                 return topViewController(base: selected)
             }
         }
-        if let presented = base?.presentedViewController {
+        if let presented = baseVC?.presentedViewController {
             return topViewController(base: presented)
         }
-        return base
+        return baseVC
     }
 }

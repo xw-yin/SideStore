@@ -8,7 +8,6 @@
 
 @preconcurrency import UIKit
 import Foundation
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext, ALTApplication>, @unchecked Sendable {
@@ -123,8 +122,9 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
         try self.prepare(appBundle, bundleID: bundleIdentifier, additionalInfoDictionaryValues: additionalValues, profiles: profiles, appexBundleIds: appexBundleIds)
         try self.removeMissingAppExtensionReferences(from: appBundle)
         
-        if let directory = appBundle.builtInPlugInsURL, let enumerator = FileManager.default.enumerator(at: directory, includingPropertiesForKeys: nil, options: [.skipsSubdirectoryDescendants]) {
-            for case let fileURL as URL in enumerator {
+        if let directory = appBundle.builtInPlugInsURL,
+           let enumerator = FileManager.default.enumerator(at: directory, includingPropertiesForKeys: nil, options: [.skipsSubdirectoryDescendants]) {
+            while let fileURL = enumerator.nextObject() as? URL {
                 // for both sim and device, in debug mode builds, remove the tests bundles (if any)
                 #if DEBUG
                 guard !fileURL.lastPathComponent.lowercased().contains(".xctest") else {

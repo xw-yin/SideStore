@@ -8,7 +8,6 @@
 
 import SwiftUI
 import WidgetKit
-@preconcurrency import AltStoreCore
 
 import GameplayKit
 
@@ -37,6 +36,7 @@ struct ActiveAppsWidget: Widget
     init(){
         widgetKind = "ActiveApps - \(Self.id)"
         Self.id += 1
+        debugLog("[ActiveAppsWidget] Initialized instance with widgetKind: \(widgetKind)")
     }
     
     public var body: some WidgetConfiguration {
@@ -219,6 +219,9 @@ private struct ActiveAppsWidgetView: View
                 
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onAppear {
+                debugLog("[ActiveAppsWidgetView] onAppear: isPlaceholder=\(entry.isPlaceholder), appsCount=\(entry.apps.count), date=\(entry.date)")
+            }
         }
     }
     
@@ -234,6 +237,7 @@ private struct ActiveAppsWidgetView: View
                 .multilineTextAlignment(.center)
         }
         .padding()
+        .unredacted()
     }
 }
 

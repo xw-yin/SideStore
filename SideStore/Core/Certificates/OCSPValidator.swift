@@ -9,7 +9,6 @@
 import Foundation
 import Security
 import CommonCrypto
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 public enum OCSPValidationError: Error, LocalizedError {

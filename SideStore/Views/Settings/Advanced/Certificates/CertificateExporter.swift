@@ -8,7 +8,6 @@
 
 @preconcurrency import UIKit
 @preconcurrency import AltSign
-@preconcurrency import AltStoreCore
 
 enum CertificateExporter {
     
@@ -62,7 +61,7 @@ enum CertificateExporter {
             return
         }
         let activityVC = UIActivityViewController(activityItems: [tempURL], applicationActivities: nil)
-        guard let rootVC = UIApplication.shared.windows.first?.rootViewController else { return }
+        guard let rootVC = UIApplication.shared.alt_keyWindow?.rootViewController else { return }
         let presenter = rootVC.presentedViewController ?? rootVC
         if let popover = activityVC.popoverPresentationController {
             popover.sourceView = presenter.view

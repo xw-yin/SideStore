@@ -8,11 +8,18 @@
 
 import Foundation
 
+// @livecontainer
+private extension Bundle {
+    @objc dynamic static let activeBundle: Bundle = Bundle.main
+    @objc dynamic static let storeAppBundleIdentifier = "com.SideStore.SideStore"
+    @objc dynamic static let appbundleIdentifier = "com.SideStore.SideStore"
+}
+
 public extension Bundle
 {
     struct Info
     {
-        public static let activeBundle: Bundle = Bundle.main
+        public static let activeBundle: Bundle = Bundle.activeBundle
         public static let activeBundleURL: URL = activeBundle.bundleURL
         public static let activeBundleVersion: String = {
             let info = activeBundle.infoDictionary
@@ -21,10 +28,8 @@ public extension Bundle
             return NSLocalizedString(String(format: "Version %@%@", version, build), comment: "SideStore Version")
         }()
         public static let activeBundleIdentifier: String = activeBundle.bundleIdentifier!
-        public static let storeAppBundleIdentifier = "com.SideStore.SideStore"
-        public static var appbundleIdentifier: String {
-            Bundle.isBundledWithLiveContainer ? "com.kdt.livecontainer" : storeAppBundleIdentifier
-        }
+        public static let storeAppBundleIdentifier = Bundle.storeAppBundleIdentifier
+        public static let appbundleIdentifier = Bundle.appbundleIdentifier
  
         public static let deviceID = "ALTDeviceID"
         public static let serverID = "ALTServerID"
@@ -69,7 +74,8 @@ public extension Bundle
 
 public extension Bundle
 {
-    static let baseAltStoreAppGroupID = "group.com.SideStore.SideStore"
+    // @livecontainer
+    @objc dynamic static let baseAltStoreAppGroupID = "group." + Bundle.Info.appbundleIdentifier
     static let isBundledWithLiveContainer = Bundle.main.bundleURL.lastPathComponent == "SideStoreApp.framework" || Bundle.main.bundleURL.lastPathComponent == "LiveWidgetExtension.appex"
 
     var appGroups: [String] {
@@ -84,11 +90,10 @@ public extension Bundle
         Bundle.isBundledWithLiveContainer ? Bundle.lcBundle ?? Bundle.main : Bundle.main
     }
 
-    var altstoreAppGroup: String? {
-        if Bundle.isBundledWithLiveContainer, let lcBundle = Bundle.lcBundle {
-            return lcBundle.appGroups.first { $0.contains(Bundle.baseAltStoreAppGroupID) }
-        }
-        return self.appGroups.first { $0.contains(Bundle.baseAltStoreAppGroupID) }
+    // @livecontainer
+    @objc dynamic var altstoreAppGroup: String? {
+        let appGroup = self.appGroups.first { $0.contains(Bundle.baseAltStoreAppGroupID) }
+        return appGroup
     }
     
     var completeInfoDictionary: [String : Any]? {

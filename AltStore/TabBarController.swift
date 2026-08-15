@@ -7,7 +7,6 @@
 //
 
 @preconcurrency import UIKit
-@preconcurrency import AltStoreCore
 
 extension TabBarController
 {
@@ -41,6 +40,7 @@ final class TabBarController: UITabBarController
     override func viewDidLoad() 
     {
         super.viewDidLoad()
+        debugLog("[TabBarController] viewDidLoad()")
 
         guard let viewControllers = self.viewControllers else {
             debugLog("[TabBarController] No child view controllers were loaded from Main.storyboard")
@@ -76,6 +76,7 @@ final class TabBarController: UITabBarController
     override func viewDidAppear(_ animated: Bool)
     {
         super.viewDidAppear(animated)
+        debugLog("[TabBarController] viewDidAppear() — TabBarController is now visible")
         
         _viewDidAppear = true
 

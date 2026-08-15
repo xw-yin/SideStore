@@ -10,7 +10,6 @@ import UserNotifications
 import Foundation
 import Network
 import CoreData
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 let shortcutURLonDelay = URL(string: "shortcuts://run-shortcut?name=TurnOnDataDelay")!
@@ -138,7 +137,7 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
             let isSelfReinstall = !isDifferentSideStore &&
                                    installedApp.storeApp?.bundleIdentifier.range(of: Bundle.Info.appbundleIdentifier) != nil
             if isSelfReinstall {
-                if let newProfile = provisioningProfiles[installedApp.bundleIdentifier],
+                if let _ = provisioningProfiles[installedApp.bundleIdentifier],
                    let appGroup = Bundle.main.altstoreAppGroup,
                    let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) 
                 {

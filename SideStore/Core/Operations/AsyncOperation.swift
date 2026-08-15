@@ -7,7 +7,6 @@
 //
 
 @preconcurrency import UIKit
-@preconcurrency import AltStoreCore
 
 protocol AsyncOperation<T>: AnyObject, ProgressReporting, OperationLogging {
     associatedtype T

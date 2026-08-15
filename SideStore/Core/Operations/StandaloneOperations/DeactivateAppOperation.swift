@@ -7,7 +7,6 @@
 //
 
 import Foundation
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 import CoreData
 
@@ -34,15 +33,15 @@ final class DeactivateAppOperation: BasePipelineOperation<PipelineOperationConte
             throw OperationError.invalidParameters("DeactivateAppOperation: target app is nil")
         }
         
-        
+        let appObjectID = app.objectID
         let installedApp = await backgroundContext.perform {
-            backgroundContext.object(with: app.objectID) as! InstalledApp
+            backgroundContext.object(with: appObjectID) as! InstalledApp
         }
 
         try await self.performDeactivate(for: installedApp)
         
         let result = await backgroundContext.perform {
-            backgroundContext.object(with: app.objectID) as! InstalledApp
+            backgroundContext.object(with:appObjectID) as! InstalledApp
         }
         self.setProgress(100)
         return result

@@ -7,12 +7,11 @@
 //
 
 @preconcurrency import UIKit
-@preconcurrency import AltStoreCore
 
 extension PillButton
 {
-    static let minimumSize = CGSize(width: 77, height: 31)
-    static let contentInsets = NSDirectionalEdgeInsets(top: 7, leading: 13, bottom: 7, trailing: 13)
+    static let minimumSize = CGSize(width: 77, height: 35)
+    static let contentInsets = NSDirectionalEdgeInsets(top: 10.5, leading: 14, bottom: 10.5, trailing: 14)
 }
 
 extension PillButton
@@ -88,6 +87,12 @@ class PillButton: UIButton
         }
     }
     
+    override var isIndicatingActivity: Bool {
+        didSet {
+            self.update()
+        }
+    }
+
     var style: Style = .pill {
         didSet {
             guard self.style != oldValue else { return }
@@ -95,11 +100,49 @@ class PillButton: UIButton
             if self.style == .custom
             {
                 // Reset insets for custom style.
-                self.contentEdgeInsets = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
+                let size = self.fontSize ?? self.storyboardFontSize ?? 14
+                let font = UIFont.boldSystemFont(ofSize: size)
+                var config = self.configuration ?? UIButton.Configuration.plain()
+                config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
+                config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { [weak self] incoming in
+                    var outgoing = incoming
+                    outgoing.font = font
+                    if let self = self {
+                        outgoing.foregroundColor = (self.progress == nil && !self.isIndicatingActivity) ? UIColor.white : UIColor.clear
+                    }
+                    return outgoing
+                }
+                self.configuration = config
             }
             
             self.update()
         }
+    }
+
+    override var intrinsicContentSize: CGSize {
+        var size = super.intrinsicContentSize
+        switch self.style {
+        case .pill:
+            size.width = max(size.width, PillButton.minimumSize.width)
+        case .custom:
+            break
+        }
+        return size
+    }
+
+    override func sizeThatFits(_ size: CGSize) -> CGSize
+    {
+        var size = super.sizeThatFits(size)
+        
+        switch self.style 
+        {
+        case .pill:
+            size.width = max(size.width, PillButton.minimumSize.width)
+            
+        case .custom: break
+        }
+        
+        return size
     }
     
     var fontSize: CGFloat? {
@@ -126,11 +169,6 @@ class PillButton: UIButton
         dateComponentsFormatter.collapsesLargestUnit = false
         return dateComponentsFormatter
     }()
-    
-    override var intrinsicContentSize: CGSize {
-        let size = self.sizeThatFits(CGSize(width: Double.infinity, height: .infinity))
-        return size
-    }
     
     deinit
     {
@@ -192,48 +230,6 @@ class PillButton: UIButton
         super.tintColorDidChange()
         
         self.update()
-    }
-    
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        super.touchesBegan(touches, with: event)
-        UIView.animate(withDuration: 0.15, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction], animations: {
-            self.transform = CGAffineTransform(scaleX: 0.94, y: 0.94)
-        }, completion: nil)
-        
-        let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
-        feedbackGenerator.prepare()
-        feedbackGenerator.impactOccurred()
-    }
-    
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        super.touchesEnded(touches, with: event)
-        UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.5, initialSpringVelocity: 1.0, options: [.beginFromCurrentState, .allowUserInteraction], animations: {
-            self.transform = .identity
-        }, completion: nil)
-    }
-    
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        super.touchesCancelled(touches, with: event)
-        UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.5, initialSpringVelocity: 1.0, options: [.beginFromCurrentState, .allowUserInteraction], animations: {
-            self.transform = .identity
-        }, completion: nil)
-    }
-    
-    override func sizeThatFits(_ size: CGSize) -> CGSize
-    {
-        var size = super.sizeThatFits(size)
-        
-        switch self.style 
-        {
-        case .pill:
-            // Enforce minimum size for pill style.
-            size.width = max(size.width, PillButton.minimumSize.width)
-            size.height = max(size.height, PillButton.minimumSize.height)
-            
-        case .custom: break
-        }
-        
-        return size
     }
 }
 
@@ -324,7 +320,7 @@ private extension PillButton
 {
     func update()
     {
-        if self.progress == nil
+        if self.progress == nil && !self.isIndicatingActivity
         {
             self.setTitleColor(.white, for: .normal)
             self.backgroundColor = self.tintColor
@@ -334,30 +330,41 @@ private extension PillButton
         }
         else
         {
-            self.setTitleColor(self.tintColor, for: .normal)
+            self.setTitleColor(.clear, for: .normal)
+            self.setTitleColor(.clear, for: .disabled)
             self.backgroundColor = self.tintColor.withAlphaComponent(0.15)
             self.progressView.progressTintColor = self.progressTintColor ?? self.tintColor
             self.layer.borderColor = nil
             self.layer.borderWidth = 0
         }
         
-//        verboseLog("[PillButton] update() applied: title='\(self.title(for: .normal) ?? "")', borderWidth=\(self.layer.borderWidth), hasBorderColor=\(self.layer.borderColor != nil), progressNil=\(self.progress == nil)")
-        
         // Update font after init because the original titleLabel is replaced.
         let size = self.fontSize ?? self.storyboardFontSize ?? 14
-        self.titleLabel?.font = UIFont.boldSystemFont(ofSize: size)
+        let font = UIFont.boldSystemFont(ofSize: size)
+        self.titleLabel?.font = font
         self.titleLabel?.adjustsFontSizeToFitWidth = false
         
         switch self.style
         {
         case .custom: break // Don't update insets in case client has updated them.
         case .pill:
-            self.contentEdgeInsets = UIEdgeInsets(
+            var config = self.configuration ?? UIButton.Configuration.plain()
+            config.cornerStyle = .capsule
+            config.contentInsets = NSDirectionalEdgeInsets(
                 top: Self.contentInsets.top,
-                left: Self.contentInsets.leading,
+                leading: Self.contentInsets.leading,
                 bottom: Self.contentInsets.bottom,
-                right: Self.contentInsets.trailing
+                trailing: Self.contentInsets.trailing
             )
+            config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { [weak self] incoming in
+                var outgoing = incoming
+                outgoing.font = font
+                if let self = self {
+                    outgoing.foregroundColor = (self.progress == nil && !self.isIndicatingActivity) ? UIColor.white : UIColor.clear
+                }
+                return outgoing
+            }
+            self.configuration = config
             self.layer.cornerRadius = self.bounds.height / 2
         }
     }

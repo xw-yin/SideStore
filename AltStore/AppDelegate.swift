@@ -10,7 +10,6 @@
 import UserNotifications
 import AVFoundation
 import Intents
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 import CoreData
 
@@ -23,15 +22,15 @@ extension UIApplication: LegacyBackgroundFetching {}
 
 extension AppDelegate
 {
-    static let openPatreonSettingsDeepLinkNotification = Notification.Name(Bundle.Info.appbundleIdentifier + ".OpenPatreonSettingsDeepLinkNotification")
-    static let importAppDeepLinkNotification = Notification.Name(Bundle.Info.appbundleIdentifier + ".ImportAppDeepLinkNotification")
-    static let addSourceDeepLinkNotification = Notification.Name(Bundle.Info.appbundleIdentifier + ".AddSourceDeepLinkNotification")
+    nonisolated static let openPatreonSettingsDeepLinkNotification = Notification.Name(Bundle.Info.appbundleIdentifier + ".OpenPatreonSettingsDeepLinkNotification")
+    nonisolated static let importAppDeepLinkNotification = Notification.Name(Bundle.Info.appbundleIdentifier + ".ImportAppDeepLinkNotification")
+    nonisolated static let addSourceDeepLinkNotification = Notification.Name(Bundle.Info.appbundleIdentifier + ".AddSourceDeepLinkNotification")
     
-    static let appBackupDidFinish = Notification.Name(Bundle.Info.appbundleIdentifier + ".AppBackupDidFinish")
+    nonisolated static let appBackupDidFinish = Notification.Name(Bundle.Info.appbundleIdentifier + ".AppBackupDidFinish")
     
-    static let importAppDeepLinkURLKey = "fileURL"
-    static let appBackupResultKey = "result"
-    static let addSourceDeepLinkURLKey = "sourceURL"
+    nonisolated static let importAppDeepLinkURLKey = "fileURL"
+    nonisolated static let appBackupResultKey = "result"
+    nonisolated static let addSourceDeepLinkURLKey = "sourceURL"
 
     @MainActor static var hasPendingAppImports: Bool {
         !pendingImportIPAURLs.isEmpty
@@ -126,7 +125,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         #endif
         
         SideStoreLogging.setLogging(UserDefaults.standard.isSideStoreVerboseLoggingEnabled)
-        AltStoreCore.SideStoreLogging.setLogging(UserDefaults.standard.isSideStoreVerboseLoggingEnabled)
         AltSign.setLogging(UserDefaults.standard.isAltSignVerboseLoggingEnabled)
         minimuxerSetLogging(UserDefaults.standard.isMinimuxerVerboseLoggingEnabled)
 
@@ -160,6 +158,13 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             debugLog("[AppDelegate] Boot sequence completed.")
         }
         
+        
+        let isFirstLaunch = (UserDefaults.standard.firstLaunch == nil)
+        if isFirstLaunch
+        {
+            UserDefaults.standard.firstLaunch = Date()
+        }
+        
         DatabaseManager.shared.start { (error) in
             if let error = error
             {
@@ -171,6 +176,15 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                 debugLog("Reconciling any staged drafts started...")
                 Self.reconcileSelfReinstallationIfNeeded()
                 debugLog("Reconcile any staged drafts completed.")
+                
+                Task {
+                    await WidgetDataManager.publishCurrentInstalledAppsIfNeeded(in: DatabaseManager.shared.viewContext)
+                }
+                
+                if isFirstLaunch
+                {
+                    AuthManager.shared.signOut()
+                }
             }
         }
         
@@ -179,12 +193,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
         SecureValueTransformer.register()        
-        
-        if UserDefaults.standard.firstLaunch == nil
-        {
-            AuthManager.shared.signOut()
-            UserDefaults.standard.firstLaunch = Date()
-        }
         
         UserDefaults.standard.preferredServerID = Bundle.main.object(forInfoDictionaryKey: Bundle.Info.serverID) as? String
         
@@ -558,7 +566,7 @@ private extension AppDelegate {
             let stackTrace = exception.callStackSymbols.joined(separator: "\n")
             let message = """
             \n===================================================
-            |                UNCAUGHT CRASH                   |
+            |           UNCAUGHT NSEXCEPTION CRASH            |
             ===================================================
               • Name: \(exception.name.rawValue)
               • Reason: \(exception.reason ?? "Unknown")
@@ -576,6 +584,43 @@ private extension AppDelegate {
             
             // Also write to NSLog (Apple System Log)
             NSLog("%@", message)
+        }
+        
+        let fatalSignals = [SIGABRT, SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGTRAP]
+        for sig in fatalSignals {
+            signal(sig) { signalNumber in
+                signal(signalNumber, SIG_DFL)
+                
+                let signalName: String
+                switch signalNumber {
+                case SIGABRT: signalName = "SIGABRT (Abort/Assertion Failure)"
+                case SIGSEGV: signalName = "SIGSEGV (Segmentation Fault)"
+                case SIGBUS: signalName = "SIGBUS (Bus Error)"
+                case SIGILL: signalName = "SIGILL (Illegal Instruction)"
+                case SIGFPE: signalName = "SIGFPE (Floating Point Exception)"
+                case SIGTRAP: signalName = "SIGTRAP (Trace Trap)"
+                default: signalName = "Signal \(signalNumber)"
+                }
+                
+                let stackTrace = Thread.callStackSymbols.joined(separator: "\n")
+                let message = """
+                \n===================================================
+                |             UNCAUGHT FATAL SIGNAL               |
+                ===================================================
+                  • Signal: \(signalName)
+                
+                Call Stack:
+                \(stackTrace)
+                ===================================================\n
+                """
+                
+                debugLog(message)
+                fputs(message, stderr)
+                fflush(stderr)
+                NSLog("%@", message)
+                
+                raise(signalNumber)
+            }
         }
     }
     

@@ -8,7 +8,6 @@
 
 import UserNotifications
 import Foundation
-@preconcurrency import AltStoreCore
 
 final class ScheduleExpirationWarningNotificationOperation: BaseStandaloneOperation<StandaloneOperationContext, Bool>, @unchecked Sendable {
     let installedApp: InstalledApp

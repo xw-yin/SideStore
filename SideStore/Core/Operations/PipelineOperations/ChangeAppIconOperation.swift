@@ -7,7 +7,6 @@
 //
 
 @preconcurrency import UIKit
-@preconcurrency import AltStoreCore
 
 final class ChangeAppIconOperation: BasePipelineOperation<InstallAppOperationContext, URL>, @unchecked Sendable {
     

@@ -9,7 +9,6 @@
 import Foundation
 import WebKit
 import UniformTypeIdentifiers
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 final class DownloadAppOperation: BasePipelineOperation<InstallAppOperationContext, ALTApplication>, @unchecked Sendable {
@@ -142,6 +141,9 @@ final class DownloadAppOperation: BasePipelineOperation<InstallAppOperationConte
         }
         
         let dependencies = try await self.downloadDependencies(for: appBundle)
+        if !dependencies.isEmpty {
+            self.debugLog("[DownloadAppOperation] Downloaded \(dependencies.count) dependencies for \(appBundle.name): \(dependencies.map(\.lastPathComponent))")
+        }
         
         try FileManager.default.copyItem(at: appBundle.fileURL, to: self.destinationURL, shouldReplace: true)
         
@@ -250,7 +252,7 @@ final class DownloadAppOperation: BasePipelineOperation<InstallAppOperationConte
     
     private func download(_ dependency: Dependency, for appBundle: ALTApplication) async throws -> URL {
         do {
-            let (fileURL, response) = try await self.session.download(from: dependency.downloadURL)
+            let (fileURL, _) = try await self.session.download(from: dependency.downloadURL)
             defer { try? FileManager.default.removeItem(at: fileURL) }
             
             let path = dependency.path ?? dependency.preferredFilename

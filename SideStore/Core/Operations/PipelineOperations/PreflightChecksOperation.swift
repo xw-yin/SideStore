@@ -8,7 +8,6 @@
 
 
 import Foundation
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 final class PreflightChecksOperation: BasePipelineOperation<AuthenticatedOperationContext, Bool>, @unchecked Sendable {

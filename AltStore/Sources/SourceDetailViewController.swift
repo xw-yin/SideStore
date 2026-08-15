@@ -9,7 +9,6 @@
 @preconcurrency import UIKit
 import SafariServices
 import Combine
-@preconcurrency import AltStoreCore
 
 import Nuke
 
@@ -217,12 +216,12 @@ class SourceDetailViewController: HeaderContentViewController<SourceHeaderView, 
     {
         self.viewModel.isAddingSource = true
         
-        Task { /* @MainActor in */ // Already on MainActor, even though this function wasn't called from async context.
+        Task {
             var errorTitle = NSLocalizedString("Unable to Add Source", comment: "")
             
             do
             {
-                let isAdded = try await self.source.isAdded
+                let isAdded = try await self.source.isAdded()
                 if isAdded
                 {
                     errorTitle = NSLocalizedString("Unable to Remove Source", comment: "")

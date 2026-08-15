@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import AltStoreCore
 
 final class PrepareAppExtensionBundleIDsOperation: BasePipelineOperation<AppOperationContext, Void>, @unchecked Sendable {
     override func execute(parentProgress: Progress?) async throws {

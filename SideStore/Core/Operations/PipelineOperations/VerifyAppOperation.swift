@@ -9,7 +9,6 @@
 
 import Foundation
 import CryptoKit
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 import RegexBuilder

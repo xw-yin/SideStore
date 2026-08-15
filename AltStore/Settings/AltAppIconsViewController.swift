@@ -10,7 +10,6 @@
 import SwiftUI
 
 @preconcurrency import AltSign
-@preconcurrency import AltStoreCore
 
 extension UIApplication
 {

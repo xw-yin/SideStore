@@ -7,7 +7,6 @@
 //
 
 @preconcurrency import UIKit
-@preconcurrency import AltStoreCore
 
 
 @available(iOS 13, *)
@@ -42,6 +41,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate
         
         Task {
             await AppManager.shared.reconcileInstalledApps()
+            await WidgetDataManager.publishCurrentInstalledAppsIfNeeded(in: DatabaseManager.shared.viewContext)
         }
     }
 
@@ -51,6 +51,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate
         defer {
             // dump sidebackup logs if any
             Task.detached { await AppDelegate.dumpSideBackupLogsIfNeeded() }
+        }
+        if DatabaseManager.shared.isStarted {
+            Task {
+                await WidgetDataManager.publishCurrentInstalledAppsIfNeeded(in: DatabaseManager.shared.viewContext)
+            }
         }
     }
 

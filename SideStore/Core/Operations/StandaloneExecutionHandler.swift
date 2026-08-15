@@ -8,7 +8,6 @@
 
 import Foundation
 @preconcurrency import AltSign
-@preconcurrency import AltStoreCore
 
 protocol AnisetteServerHandler: AnyObject {
     func warnOutdatedAnisetteServer() async throws -> Bool

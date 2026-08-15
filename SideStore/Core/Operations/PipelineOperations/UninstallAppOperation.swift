@@ -8,7 +8,6 @@
 
 import Foundation
 import CoreData
-@preconcurrency import AltStoreCore
 
 final class UninstallAppOperation: BasePipelineOperation<InstallAppOperationContext, InstalledApp>, @unchecked Sendable {
     
@@ -19,6 +18,7 @@ final class UninstallAppOperation: BasePipelineOperation<InstallAppOperationCont
         guard let installedApp = self.context.installedApp else {
             throw OperationError.invalidParameters("UninstallAppOperation.main: self.context.installedApp is nil")
         }
+        
         
         let bundleID = await installedApp.managedObjectContext?.perform { installedApp.bundleIdentifier }
         if bundleID?.isAltStoreAppID == true {

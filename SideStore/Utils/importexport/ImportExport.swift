@@ -9,7 +9,6 @@
 
 @preconcurrency import UIKit
 @preconcurrency import AltSign
-@preconcurrency import AltStoreCore
 import CryptoKit
 import CommonCrypto
 
@@ -233,8 +232,8 @@ class ImportExport {
 }
 
 #if DEBUG
-private extension ImportExport {
-        public static func exportAccountJSON(password: String) -> ImportedAccount? {
+extension ImportExport {
+    static func exportAccountJSON(password: String) -> ImportedAccount? {
         guard let email = AuthManager.shared.currentAppleID,
               let passwordStr = AuthManager.shared.password,
               let activeCert = CertificateManager.shared.activeCertificate,
@@ -249,7 +248,7 @@ private extension ImportExport {
         }
     }
 
-    public static func importAccountJSON(from file: URL) throws {
+    static func importAccountJSON(from file: URL) throws {
         _ = file.startAccessingSecurityScopedResource()
         defer { file.stopAccessingSecurityScopedResource() }
         
@@ -269,7 +268,7 @@ private extension ImportExport {
 #endif
 
 private struct AssociatedKeys {
-    static var documentPickerHandler = "documentPickerHandler"
+    static var documentPickerHandler: UInt8 = 0
 }
 
 

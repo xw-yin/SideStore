@@ -40,7 +40,7 @@ public final class ThemeManager: ObservableObject {
             UserDefaults.standard.set(primaryColor.hexString, forKey: Self.userDefaultsKey)
             NotificationCenter.default.post(name: Self.themeDidChangeNotification, object: primaryColor)
             DispatchQueue.main.async {
-                if let window = UIApplication.alt_shared?.windows.first(where: { $0.isKeyWindow }) {
+                if let window = UIApplication.alt_shared?.alt_keyWindow {
                     window.tintColor = self.primaryColor
                 }
             }

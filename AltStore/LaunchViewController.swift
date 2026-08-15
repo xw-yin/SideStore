@@ -11,13 +11,10 @@
 import WidgetKit
 
 @preconcurrency import AltSign
-@preconcurrency import AltStoreCore
 import UniformTypeIdentifiers
 import CryptoKit
 
-let pairingFileName = "ALTPairingFile.mobiledevicepairing"
-
-final class LaunchViewController: UIViewController, UIDocumentPickerDelegate {
+final class LaunchViewController: UIViewController {
     private var didFinishLaunching = false
     private var retries = 0
     private var maxRetries = 3
@@ -27,6 +24,7 @@ final class LaunchViewController: UIViewController, UIDocumentPickerDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        debugLog("[LaunchViewController] viewDidLoad()")
         splashView = SplashView(frame: view.bounds, appName: "SideStore")
         destinationViewController = storyboard?.instantiateViewController(withIdentifier: "tabBarController") as? TabBarController
         view.addSubview(splashView)
@@ -37,6 +35,7 @@ final class LaunchViewController: UIViewController, UIDocumentPickerDelegate {
         super.viewDidAppear(animated)
         guard !didFinishLaunching else { return }
         startTime = Date()
+        splashView.updateStatus(NSLocalizedString("Starting…", comment: ""))
         
         // spin off the startup sequence concurrently
         Task.detached { [weak self] in
@@ -75,95 +74,6 @@ final class LaunchViewController: UIViewController, UIDocumentPickerDelegate {
     }
 
     @MainActor
-    func showPairingPrompt(isRetry: Bool) {
-        let title = isRetry ? NSLocalizedString("Invalid Pairing File", comment: "") : NSLocalizedString("Pairing File", comment: "")
-        let message = isRetry
-            ? NSLocalizedString("The selected pairing file is invalid or not usable. Please select a valid pairing file.", comment: "")
-            : NSLocalizedString("Select the pairing file or select \"Help\" for help.", comment: "")
-        
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        
-        alert.addAction(UIAlertAction(title: NSLocalizedString("Help", comment: ""), style: .default) { _ in
-            if let url = URL(string: "https://docs.sidestore.io/docs/advanced/pairing-file") { UIApplication.shared.open(url) }
-            sleep(2); exit(0)
-        })
-        
-        alert.addAction(UIAlertAction(title: NSLocalizedString("Select File", comment: ""), style: .default) { _ in
-            var types = UTType.types(tag: "plist", tagClass: .filenameExtension, conformingTo: nil)
-            types.append(contentsOf: UTType.types(tag: "mobiledevicepairing", tagClass: .filenameExtension, conformingTo: .data))
-            types.append(.xml)
-            let picker = UIDocumentPickerViewController(forOpeningContentTypes: types)
-            picker.delegate = self
-            picker.shouldShowFileExtensions = true
-            self.present(picker, animated: true)
-        })
-        
-        let cancelTitle = isRetry ? NSLocalizedString("Skip", comment: "") : NSLocalizedString("Cancel", comment: "")
-        alert.addAction(UIAlertAction(title: cancelTitle, style: .cancel) { _ in
-            self.showPairingWarningAndProceed()
-        })
-        
-        self.present(alert, animated: true)
-    }
-
-    func showPairingWarningAndProceed() {
-        let warningAlert = UIAlertController(
-            title: "⚠️ " + NSLocalizedString("Pairing Required", comment: ""),
-            message: NSLocalizedString("Without a valid pairing file, operations that require a pairing file (such as installing, refreshing, or resigning apps) will not function.", comment: ""),
-            preferredStyle: .alert
-        )
-        warningAlert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default))
-        self.present(warningAlert, animated: true)
-    }
-
-    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-        guard let url = urls.first else { return }
-        let isSecuredURL = url.startAccessingSecurityScopedResource()
-        defer {
-            if isSecuredURL {
-                url.stopAccessingSecurityScopedResource()
-            }
-        }
-        
-        do {
-            debugLog("[LaunchViewController] User picked pairing file from: \(url.path)")
-            let data = try Data(contentsOf: url)
-            guard let pairingString = String(data: data, encoding: .utf8) else {
-                debugLog("[LaunchViewController] Unable to read pairing file")
-                self.showPairingPrompt(isRetry: true)
-                return
-            }
-            let fm = FileManager.default
-            let documentsPath = fm.documentsDirectory.appendingPathComponent(pairingFileName)
-            if fm.fileExists(atPath: documentsPath.path) {
-                try? fm.removeItem(at: documentsPath)
-            }
-            try pairingString.write(to: documentsPath, atomically: true, encoding: .utf8)
-            debugLog("[LaunchViewController] Successfully copied and saved pairing file to: \(documentsPath.path)")
-            UserDefaults.standard.isPairingReset = false
-            
-            Task.detached {
-                do {
-                    try await AppBootManager.shared.startMinimuxer(pairingFile: pairingString)
-                } catch {
-                    await MainActor.run {
-                        self.showPairingPrompt(isRetry: true)
-                    }
-                }
-            }
-        } catch {
-            debugLog("[LaunchViewController] Error importing pairing file: \(error)")
-            self.showPairingPrompt(isRetry: true)
-        }
-    }
-    
-    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
-        self.showPairingPrompt(isRetry: true)
-    }
-
-    func fetchPairingFile() -> String? { AppBootManager.shared.getSavedPairingFile() }
-
-    @MainActor
     func displayError(_ msg: String) {
         debugLog("[SideStore] \(msg)")
         let alert = UIAlertController(title: "Error launching SideStore", message: msg, preferredStyle: .alert)
@@ -184,9 +94,7 @@ final class LaunchViewController: UIViewController, UIDocumentPickerDelegate {
         let alert = ImportAccountAlertController.make(data: data, checksum: checksum, presentingViewController: self)
         self.present(alert, animated: true)
     }
-}
 
-extension LaunchViewController {
     @MainActor
     func handleLaunchError(_ error: Error, retryCallback: (() async -> Void)? = nil) {
         do { throw error } catch let error as NSError {
@@ -214,7 +122,9 @@ extension LaunchViewController {
         }
         didFinishLaunching = true
         
+        splashView.updateStatus(NSLocalizedString("Loading apps…", comment: ""))
         await AppManager.shared.reconcileInstalledApps()
+        splashView.updateStatus(NSLocalizedString("Updating sources…", comment: ""))
         AppManager.shared.updateAllSources { result in
             guard case .failure(let error) = result else { return }
             debugLog("Failed to update sources on launch. \(error.localizedDescription)")
@@ -223,16 +133,12 @@ extension LaunchViewController {
             let errorDesc = ErrorProcessing(.fullError).getDescription(error: error as NSError)
             debugLog("Failed to update sources on launch. \(errorDesc)")
             
-            var mode: ToastView.InfoMode = .fullError
-            if String(describing: error).contains("The Internet connection appears to be offline"){
-                mode = .localizedDescription    // dont make noise!
-            }
-            let toastView = ToastView(error: error, mode: mode)
+            let toastView = ToastView(text: NSLocalizedString("Some sources were unable to load", comment: ""), detailText: nil)
             toastView.addTarget(destinationVC, action: #selector(TabBarController.presentSources), for: .touchUpInside)
             toastView.show(in: destinationVC.selectedViewController ?? destinationVC)
         }
         updateKnownSources()
-        await WidgetDataManager.publishCurrentInstalledApps(in: DatabaseManager.shared.viewContext)
+        splashView.updateStatus(NSLocalizedString("Almost there…", comment: ""))
         didFinishLaunching = true
         
         let elapsed = abs(startTime.timeIntervalSinceNow)
@@ -260,11 +166,12 @@ extension LaunchViewController {
             self.splashView.alpha = 0
             destinationVC.view.alpha = 1
         } completion: { [self] _ in
+            debugLog("[LaunchViewController] Transition complete — exiting LaunchViewController, handing off to TabBarController")
             self.splashView.removeFromSuperview()
             self.destinationViewController = destinationVC
             
             if AppBootManager.shared.needsPairingPrompt {
-                self.showPairingPrompt(isRetry: false)
+                PairingFileManager.shared.presentPairingFileAlert(on: self, isRetry: false)
             }
             
             if AppBootManager.shared.needsSideJITPrompt {
@@ -297,78 +204,5 @@ extension LaunchViewController {
                 }
             }
         }
-    }
-}
-
-// MARK: - SplashView
-final class SplashView: UIView {
-    let iconView = UIImageView()
-    let titleLabel = UILabel()
-
-    init(frame: CGRect, appName: String) {
-        super.init(frame: frame)
-        backgroundColor = .systemBackground
-        setupIcon()
-        setupTitle(appName: appName)
-    }
-
-    required init?(coder: NSCoder) { fatalError() }
-
-    private func setupIcon() {
-        let container = UIView()
-        container.translatesAutoresizingMaskIntoConstraints = false
-        container.layer.shadowColor = UIColor.black.cgColor
-        container.layer.shadowOpacity = 0.25
-        container.layer.shadowOffset = CGSize(width: 0, height: 4)
-        container.layer.shadowRadius = 8
-        addSubview(container)
-
-        iconView.image = UIImage(named: "AppIcon") ?? UIImage(named: "AppIcon60x60") ?? UIImage(systemName: "app.fill")
-        iconView.contentMode = .scaleAspectFit
-        iconView.translatesAutoresizingMaskIntoConstraints = false
-        iconView.layer.cornerRadius = 24
-        iconView.clipsToBounds = true
-        container.addSubview(iconView)
-
-        NSLayoutConstraint.activate([
-            container.centerXAnchor.constraint(equalTo: centerXAnchor),
-            container.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -20),
-            container.widthAnchor.constraint(equalToConstant: 120),
-            container.heightAnchor.constraint(equalToConstant: 120),
-            iconView.topAnchor.constraint(equalTo: container.topAnchor),
-            iconView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-            iconView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            iconView.trailingAnchor.constraint(equalTo: container.trailingAnchor)
-        ])
-    }
-
-    private func setupTitle(appName: String) {
-        titleLabel.text = appName
-        titleLabel.font = .systemFont(ofSize: 24, weight: .bold)
-        titleLabel.textColor = .label
-        titleLabel.textAlignment = .center
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(titleLabel)
-        NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: iconView.bottomAnchor, constant: 12),
-            titleLabel.centerXAnchor.constraint(equalTo: centerXAnchor)
-        ])
-    }
-}
-
-
-final class SideJITManager {
-    static let shared = SideJITManager()
-    
-    @MainActor
-    func presentJITPrompt(presentingVC: UIViewController) {
-        let alert = UIAlertController(
-            title: "SideJITServer Detected",
-            message: "Would you like to enable SideJITServer",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in UserDefaults.standard.sidejitenable = true })
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        presentingVC.present(alert, animated: true)
     }
 }

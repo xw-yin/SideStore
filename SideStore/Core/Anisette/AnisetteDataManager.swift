@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import AltStoreCore
 
 public final class AnisetteDataManager: @unchecked Sendable {
     public static let shared = AnisetteDataManager()

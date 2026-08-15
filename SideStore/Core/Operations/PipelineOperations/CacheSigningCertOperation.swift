@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import AltStoreCore
 import AltSign
 
 final class CacheSigningCertOperation: BasePipelineOperation<AppOperationContext, Void>, @unchecked Sendable {

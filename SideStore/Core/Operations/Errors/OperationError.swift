@@ -8,7 +8,6 @@
 
 import Foundation
 @preconcurrency import AltSign
-@preconcurrency import AltStoreCore
 
 extension OperationError
 {

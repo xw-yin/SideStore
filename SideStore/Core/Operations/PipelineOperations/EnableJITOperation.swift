@@ -9,7 +9,6 @@
 @preconcurrency import UIKit
 import Combine
 import UniformTypeIdentifiers
-@preconcurrency import AltStoreCore
 
 enum SideJITServerErrorType: Error {
      case invalidURL

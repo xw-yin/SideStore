@@ -14,7 +14,6 @@ import Intents
 import IntentsUI
 
 import SemanticVersion
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 import UniformTypeIdentifiers
 

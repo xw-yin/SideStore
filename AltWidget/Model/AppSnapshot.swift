@@ -8,8 +8,6 @@
 
 @preconcurrency import UIKit
 import WidgetKit
-@preconcurrency import AltStoreCore
-@preconcurrency import AltSign
 
 struct AppSnapshot
 {

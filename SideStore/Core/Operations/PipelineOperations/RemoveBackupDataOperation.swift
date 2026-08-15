@@ -7,9 +7,8 @@
 //
 
 import Foundation
-@preconcurrency import AltStoreCore
 
-final class RemoveBackupDataOperation: BasePipelineOperation<InstallAppOperationContext, Bool>
+final class RemoveBackupDataOperation: BasePipelineOperation<InstallAppOperationContext, Bool>, @unchecked Sendable
 {
     private let coordinator = NSFileCoordinator()
     private let coordinatorQueue = OperationQueue()

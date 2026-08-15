@@ -8,7 +8,6 @@
 
 import UIKit
 import AltSign
-import AltStoreCore
 
 class AuthFlowHandler: AnyObject, AuthenticationHandler, AnisetteServerHandler {
     

@@ -9,7 +9,6 @@
 @preconcurrency import UIKit
 import Foundation
 import SwiftUI
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 struct SignableCertificateRowView: View {
@@ -194,7 +193,7 @@ final class SignableCertificatesListViewController: UITableViewController {
         let cert = certificates[indexPath.row]
         let isCurrent = (cert.serialNumber == installedApp.certificateSerialNumber)
         
-        debugLog("[SignableCertList] cellForRowAt[\(indexPath.row)]: serial='\(cert.serialNumber)', name='\(cert.name ?? "nil")', machineName='\(cert.machineName ?? "nil")', email='\(cert.requesterEmail ?? "nil")'")
+        debugLog("[SignableCertList] cellForRowAt[\(indexPath.row)]: serial='\(cert.serialNumber)', name='\(cert.name)', machineName='\(cert.machineName ?? "nil")', email='\(cert.requesterEmail ?? "nil")'")
         
         if #available(iOS 16.0, *) {
             cell.contentConfiguration = UIHostingConfiguration {
@@ -202,7 +201,7 @@ final class SignableCertificatesListViewController: UITableViewController {
             }
             .background(Color(uiColor: .secondarySystemGroupedBackground))
         } else {
-            let certName = cert.name ?? "N/A"
+            let certName = cert.name
             let machineName = cert.machineName ?? "N/A"
             let brief = getBriefInfo(for: cert.data)
             let typeStr = brief?.type ?? "N/A"

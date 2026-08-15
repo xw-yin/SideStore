@@ -9,7 +9,6 @@
 
 import Foundation
 import CoreData
-@preconcurrency import AltStoreCore
 
 enum AppOperation
 {

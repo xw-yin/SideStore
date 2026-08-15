@@ -10,7 +10,6 @@
 import Foundation
 import CommonCrypto
 import Starscream
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 final class FetchAnisetteDataOperation: BaseStandaloneOperation<AuthenticatedOperationContext, ALTAnisetteData>, @unchecked Sendable {
@@ -70,7 +69,7 @@ final class FetchAnisetteDataOperation: BaseStandaloneOperation<AuthenticatedOpe
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         self.setProgress(10)
         
-        if let authContext = self.context as? AuthenticatedOperationContext,
+        if let authContext = self.context,
            let session = authContext.session,
            session.anisetteData.date.timeIntervalSinceNow > -30.0 {
             self.debugLog("[FetchAnisetteDataOperation] Skipping anisette fetch: Anisette data is still fresh (\(-session.anisetteData.date.timeIntervalSinceNow)s old).")
@@ -745,7 +744,7 @@ final class SafeContinuation<T, E: Error>: @unchecked Sendable {
     }
 }
 
-extension HTTPUpgradeError: LocalizedError {
+extension HTTPUpgradeError: @retroactive LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .notAnUpgrade(let statusCode, _):
@@ -756,7 +755,7 @@ extension HTTPUpgradeError: LocalizedError {
     }
 }
 
-extension WSError: LocalizedError {
+extension WSError: @retroactive LocalizedError {
     public var errorDescription: String? {
         return "\(self.message) (code: \(self.code))"
     }

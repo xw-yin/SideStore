@@ -8,7 +8,6 @@
 
 @preconcurrency import UIKit
 import CoreData
-@preconcurrency import AltStoreCore
 
 typealias RefreshError = RefreshErrorCode.Error
 enum RefreshErrorCode: Int, ALTErrorEnum, CaseIterable {

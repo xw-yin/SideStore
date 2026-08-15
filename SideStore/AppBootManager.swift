@@ -7,7 +7,6 @@
 //
 
 import Foundation
-@preconcurrency import AltStoreCore
 
 public final class AppBootManager: @unchecked Sendable {
     public static let shared = AppBootManager()
@@ -34,31 +33,6 @@ public final class AppBootManager: @unchecked Sendable {
     }
     
     private init() {}
-    
-    public nonisolated func getSavedPairingFile() -> String? {
-        let fm = FileManager.default
-        let pairingFileName = "ALTPairingFile.mobiledevicepairing"
-        let documentsPath = fm.documentsDirectory.appendingPathComponent(pairingFileName)
-        if fm.fileExists(atPath: documentsPath.path),
-           let contents = try? String(contentsOf: documentsPath), !contents.isEmpty {
-            return contents
-        }
-        if let groupURL = fm.containerURL(forSecurityApplicationGroupIdentifier: "group.com.rileytestut.AltStore") {
-            let groupPath = groupURL.appendingPathComponent(pairingFileName)
-            if fm.fileExists(atPath: groupPath.path),
-               let contents = try? String(contentsOf: groupPath), !contents.isEmpty {
-                return contents
-            }
-        }
-        if let url = Bundle.main.url(forResource: "ALTPairingFile", withExtension: "mobiledevicepairing"),
-           fm.fileExists(atPath: url.path),
-           let data = fm.contents(atPath: url.path),
-           let contents = String(data: data, encoding: .utf8),
-           !contents.isEmpty, !UserDefaults.standard.isPairingReset { return contents }
-        if let plistString = Bundle.main.object(forInfoDictionaryKey: "ALTPairingFile") as? String,
-           !plistString.isEmpty, !plistString.contains("insert pairing file here"), !UserDefaults.standard.isPairingReset { return plistString }
-        return nil
-    }
     
     private nonisolated func runMinimuxerStartup(pairingFile: String, generation: UInt) async throws {
         debugLog("[AppBootManager] Minimuxer startup task entered")
@@ -149,7 +123,7 @@ public final class AppBootManager: @unchecked Sendable {
             return
         }
 
-        guard let pairingFile = self.getSavedPairingFile() else {
+        guard let pairingFile = PairingFileManager.shared.fetchPairingFile() else {
             self.needsPairingPrompt = true
             throw OperationError.invalidPairingFile(reason: nil)
         }
@@ -172,17 +146,15 @@ public final class AppBootManager: @unchecked Sendable {
             }
             if #available(iOS 17, *), !UserDefaults.standard.sidejitenable {
                 do {
-                    try await self.isSideJITServerDetected()
-                    await MainActor.run {
-                        self.needsSideJITPrompt = true
-                    }
+                    try await SideJITManager.shared.isSideJITServerDetected()
+                    self.needsSideJITPrompt = true
                 } catch {
                     debugLog("[AppBootManager] Cannot find sideJITServer")
                 }
             }
             
             if #available(iOS 17, *), UserDefaults.standard.sidejitenable {
-                await self.askForNetwork()
+                await SideJITManager.shared.askForNetwork()
                 debugLog("[AppBootManager] SideJITServer Enabled")
             }
         }()
@@ -200,7 +172,7 @@ public final class AppBootManager: @unchecked Sendable {
                 debugLog("[AppBootManager] Failed to start minimuxer: \(error)")
             }
             #else
-            if self.getSavedPairingFile() != nil {
+            if PairingFileManager.shared.fetchPairingFile() != nil {
                 do {
                     try await self.ensureMinimuxerStarted()
                 } catch {
@@ -213,50 +185,5 @@ public final class AppBootManager: @unchecked Sendable {
         }()
 
         _ = await (jitCheck, minimuxerCheck)
-    }
-    
-    private nonisolated func askForNetwork() async {
-        let address = UserDefaults.standard.textInputSideJITServerurl ?? ""
-        let SJSURL = address.isEmpty ? "http://sidejitserver._http._tcp.local:8080" : address
-        guard let url = URL(string: "\(SJSURL)/re/") else { return }
-        do {
-            var request = URLRequest(url: url)
-            request.timeoutInterval = 2.0
-            
-            try await withThrowingTaskGroup(of: Void.self) { group in
-                group.addTask {
-                    let (data, response) = try await URLSession.shared.data(for: request)
-                    debugLog("data: \(data), response: \(response)")
-                }
-                group.addTask {
-                    try await Task.sleep(nanoseconds: 2_000_000_000) // 2.0 seconds
-                    throw URLError(.timedOut)
-                }
-                try await group.next()
-                group.cancelAll()
-            }
-        } catch {
-            debugLog("error: \(error)")
-        }
-    }
-
-    private nonisolated func isSideJITServerDetected() async throws {
-        let address = UserDefaults.standard.textInputSideJITServerurl ?? ""
-        let SJSURL = address.isEmpty ? "http://sidejitserver._http._tcp.local:8080" : address
-        guard let url = URL(string: SJSURL) else { throw URLError(.badURL) }
-        var request = URLRequest(url: url)
-        request.timeoutInterval = 2.0
-        
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            group.addTask {
-                _ = try await URLSession.shared.data(for: request)
-            }
-            group.addTask {
-                try await Task.sleep(nanoseconds: 2_000_000_000) // 2.0 seconds
-                throw URLError(.timedOut)
-            }
-            try await group.next()
-            group.cancelAll()
-        }
     }
 }

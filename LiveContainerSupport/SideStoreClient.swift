@@ -5,8 +5,6 @@
 //  Created by s s on 2025/7/20.
 //  Copyright © 2025 SideStore. All rights reserved.
 //
-import AltStoreCore
-
 @objc extension SideStoreClient {
 
     @objc func performRefreshForReal(server: any RefreshServer) {

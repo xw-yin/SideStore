@@ -238,7 +238,7 @@ class AnisetteDataViewModel: ObservableObject {
             toast = ToastView(text: text, detailText: detailText)
         }
         
-        let keyWindow = UIApplication.shared.windows.first { $0.isKeyWindow }
+        let keyWindow = UIApplication.shared.alt_keyWindow
         if let rootVC = keyWindow?.rootViewController {
             let presentingVC = rootVC.presentedViewController ?? rootVC
             toast.show(in: presentingVC)

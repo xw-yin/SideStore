@@ -8,7 +8,6 @@
 
 @preconcurrency import UIKit
 import Foundation
-@preconcurrency import AltStoreCore
 
 final class CleanStagedAppOperation: BasePipelineOperation<InstallAppOperationContext, Void>, @unchecked Sendable {
     

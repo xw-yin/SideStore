@@ -9,7 +9,7 @@
 		<string>group.$(APP_GROUP_IDENTIFIER)</string>
 	</array>
 	<key>ALTDeviceID</key>
-	<string>00008120-001270DA119B401E</string>
+	<string>XXXXXXXX-XXXXXXXXXXXXXXXX</string>
 	<key>ALTPairingFile</key>
 	<string>&lt;insert pairing file here&gt;</string>
 	<key>ALTServerID</key>

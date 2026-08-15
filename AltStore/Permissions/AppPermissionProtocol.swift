@@ -5,7 +5,6 @@
 //  Created by Riley Testut on 5/23/23.
 //  Copyright © 2023 Riley Testut. All rights reserved.
 //
-@preconcurrency import AltStoreCore
 
 @dynamicMemberLookup
 protocol AppPermissionProtocol: Hashable

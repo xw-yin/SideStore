@@ -8,7 +8,6 @@
 
 import UIKit
 import AltSign
-import AltStoreCore
 
 class PipelineHandler: PipelineExecutionHandler, 
                          PreflightChecksHandler, 
@@ -243,6 +242,34 @@ class PipelineHandler: PipelineExecutionHandler,
             }
             alert.addAction(cancelAction)
             alert.addAction(okAction)
+            presenter.present(alert, animated: true)
+        }
+    }
+
+    @MainActor
+    func resolveAppGroupMismatch(originalGroup: String, correctedGroup: String) async throws -> AppGroupResolution {
+        guard let presenter = self.presentingViewController else {
+            return .correctAndProceed(correctedGroup)
+        }
+        
+        let title = NSLocalizedString("App Group Discrepancy", comment: "")
+        let message = String(format: NSLocalizedString("The app group '%@' does not match the app's bundle ID casing. Would you like to correct it to '%@'?", comment: ""), originalGroup, correctedGroup)
+        
+        return await withCheckedContinuation { continuation in
+            let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+            
+            alert.addAction(UIAlertAction(title: NSLocalizedString("Correct & Proceed", comment: ""), style: .default) { _ in
+                continuation.resume(returning: .correctAndProceed(correctedGroup))
+            })
+            
+            alert.addAction(UIAlertAction(title: NSLocalizedString("Keep Original", comment: ""), style: .destructive) { _ in
+                continuation.resume(returning: .keepOriginal(originalGroup))
+            })
+            
+            alert.addAction(UIAlertAction(title: UIAlertAction.cancel.title, style: .cancel) { _ in
+                continuation.resume(returning: .keepOriginal(originalGroup))
+            })
+            
             presenter.present(alert, animated: true)
         }
     }

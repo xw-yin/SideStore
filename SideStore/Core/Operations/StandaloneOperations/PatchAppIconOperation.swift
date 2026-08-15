@@ -8,7 +8,6 @@
 
 import UIKit
 import Foundation
-import AltStoreCore
 
 @objc(PatchAppIconOperation)
 class PatchAppIconOperation: ResultOperation<Void>, OperationLogging, @unchecked Sendable {
