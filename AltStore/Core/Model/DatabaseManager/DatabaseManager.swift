@@ -402,8 +402,17 @@ public class DatabaseManager
                 }
 
                 if Bundle.isBundledWithLiveContainer {
-                    storeApp.configureForEmbeddedLiveContainer()
-                    storeApp.source = altStoreSource
+                    let liveContainerSourceURL = URL(string: "https://github.com/LiveContainer/LiveContainer/releases/download/1.0/apps_ss_lc.json")!
+                    if let lcSourceID = try? Source.sourceID(from: liveContainerSourceURL) {
+                        let lcSource = Source.first(satisfying: NSPredicate(format: "%K == %@", #keyPath(Source.identifier), lcSourceID), in: context) ?? {
+                            return Source.make(name: "LiveContainer", groupID: Source.altStoreGroupIdentifier, sourceURL: liveContainerSourceURL, context: context)
+                        }()
+                        storeApp.configureForEmbeddedLiveContainer()
+                        storeApp.source = lcSource
+                    } else {
+                        storeApp.configureForEmbeddedLiveContainer()
+                        storeApp.source = altStoreSource
+                    }
                 }
                             
                 let serialNumber = (appBundle.object(forInfoDictionaryKey: Bundle.Info.certificateID) as? String) ?? CertificateManager.shared.getSigningCertificate(at: Bundle.Info.activeBundleURL)?.serialNumber

@@ -133,7 +133,7 @@ final class SettingsViewController: UITableViewController
     @IBOutlet private var recreateDatabaseSwitch: UISwitch!
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
-        return .default
+        return .lightContent
     }
     
     private static var exportDBInProgress = false
@@ -196,8 +196,8 @@ final class SettingsViewController: UITableViewController
         // --- iOS 26 fix ---
         if #available(iOS 26.0, *) {
             let appearance = UINavigationBarAppearance()
-            appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
-            appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
+            appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+            appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
             navigationController?.navigationBar.standardAppearance = appearance
             navigationController?.navigationBar.scrollEdgeAppearance = appearance       // required for iOS 26, maybe enforce it in storyboard?
         } 
@@ -205,7 +205,6 @@ final class SettingsViewController: UITableViewController
         self.prototypeHeaderFooterView = nib.instantiate(withOwner: nil, options: nil)[0] as? SettingsHeaderFooterView
         
         self.tableView.register(nib, forHeaderFooterViewReuseIdentifier: "HeaderFooterView")
-        self.tableView.backgroundColor = .systemGroupedBackground
         self.configureLanguageDisclosureIndicator()
         
         let debugModeGestureRecognizer = UISwipeGestureRecognizer(target: self, action: #selector(SettingsViewController.handleDebugModeGesture(_:)))
@@ -274,8 +273,8 @@ final class SettingsViewController: UITableViewController
             {
                 let appearance = UINavigationBarAppearance()
                 appearance.configureWithDefaultBackground()
-                appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
-                appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
+                appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+                appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
                 controller.navigationItem.largeTitleDisplayMode = .always
                 controller.navigationItem.standardAppearance = appearance
                 controller.navigationItem.scrollEdgeAppearance = appearance
