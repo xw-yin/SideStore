@@ -48,16 +48,16 @@ final class InsetGroupTableViewCell: UITableViewCell
         self.updateContentMargins()
         
         self.separatorView.translatesAutoresizingMaskIntoConstraints = false
-        self.separatorView.backgroundColor = UIColor.white.withAlphaComponent(0.25)
+        self.separatorView.backgroundColor = UIColor.separator
         self.addSubview(self.separatorView)
         
         self.insetView.layer.masksToBounds = true
         self.insetView.layer.cornerRadius = 20
         self.insetView.layer.borderWidth = 1.0
-        self.insetView.layer.borderColor = UIColor.white.withAlphaComponent(0.10).cgColor
+        self.insetView.layer.borderColor = UIColor.separator.withAlphaComponent(0.2).cgColor
         
         // Get the preferred background color from Interface Builder.
-        self.insetView.backgroundColor = self.backgroundColor
+        self.insetView.backgroundColor = self.backgroundColor ?? .secondarySystemGroupedBackground
         self.backgroundColor = nil
         
         self.insetView.translatesAutoresizingMaskIntoConstraints = false
@@ -145,11 +145,11 @@ private extension InsetGroupTableViewCell
         
         if self.isSelectable && (self.isHighlighted || self.isSelected)
         {
-            self.insetView.backgroundColor = UIColor.white.withAlphaComponent(0.55)
+            self.insetView.backgroundColor = UIColor.systemFill
         }
         else
         {
-            self.insetView.backgroundColor = UIColor.white.withAlphaComponent(0.25)
+            self.insetView.backgroundColor = UIColor.secondarySystemGroupedBackground
         }
     }
 }

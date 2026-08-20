@@ -49,7 +49,7 @@ struct ThemePickerView: View {
 
     private var previewSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("LIVE INTERFACE PREVIEW")
+            Text(LocalizedStringKey("LIVE INTERFACE PREVIEW"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 16)
@@ -106,14 +106,14 @@ struct ThemePickerView: View {
 
     private var colorWheelSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("COLOR SELECTION & WHEEL")
+            Text(LocalizedStringKey("COLOR SELECTION & WHEEL"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 16)
 
             VStack(spacing: 0) {
                 HStack {
-                    Text("Full Spectrum Color Wheel")
+                    Text(LocalizedStringKey("Full Spectrum Color Wheel"))
                         .font(.system(size: 17, weight: .bold))
                         .foregroundColor(.primary)
                     Spacer()
@@ -134,7 +134,7 @@ struct ThemePickerView: View {
 
     private var presetsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("PRESET THEMES")
+            Text(LocalizedStringKey("PRESET THEMES"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 16)
@@ -167,7 +167,7 @@ struct ThemePickerView: View {
                                 .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
                         )
 
-                    Text(preset.name)
+                    Text(LocalizedStringKey(preset.name))
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.primary)
                         .padding(.leading, 8)
@@ -204,7 +204,7 @@ struct ThemePickerView: View {
         let hsl = uiColor.hslComponents
 
         return VStack(alignment: .leading, spacing: 8) {
-            Text("PRECISE COLOR METRICS")
+            Text(LocalizedStringKey("PRECISE COLOR METRICS"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 16)
@@ -228,7 +228,7 @@ struct ThemePickerView: View {
         }) {
             HStack {
                 Spacer()
-                Text("Reset to SideStore Classic")
+                Text(LocalizedStringKey("Reset to SideStore Classic"))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.red)
                 Spacer()
@@ -245,7 +245,7 @@ struct ThemePickerView: View {
 
     private func metricRow(label: String, value: String) -> some View {
         HStack {
-            Text(label)
+            Text(LocalizedStringKey(label))
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(.secondary)
             Spacer()
