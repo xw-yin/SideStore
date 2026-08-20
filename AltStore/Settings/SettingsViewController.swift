@@ -266,21 +266,13 @@ final class SettingsViewController: UITableViewController
         if segue.identifier == "anisetteServers" || segue.identifier == "certificateManagement" || segue.identifier == "diagnostics" {
             let controller = segue.destination
             
-            if segue.identifier == "anisetteServers"        || 
-                segue.identifier == "certificateManagement" || 
-                segue.identifier == "diagnostics"
-            {
-                let appearance = UINavigationBarAppearance()
-                appearance.configureWithDefaultBackground()
-                appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
-                appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
-                controller.navigationItem.largeTitleDisplayMode = .always
-                controller.navigationItem.standardAppearance = appearance
-                controller.navigationItem.scrollEdgeAppearance = appearance
-            }
-            
-            // disable bottom tab bar since 'back' button is already available
-//            controller.hidesBottomBarWhenPushed = true
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithDefaultBackground()
+            appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
+            appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
+            controller.navigationItem.largeTitleDisplayMode = .always
+            controller.navigationItem.standardAppearance = appearance
+            controller.navigationItem.scrollEdgeAppearance = appearance
             
             self.show(controller, sender: nil)
         } else {
