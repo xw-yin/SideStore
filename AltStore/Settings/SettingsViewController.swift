@@ -205,7 +205,6 @@ final class SettingsViewController: UITableViewController
         self.prototypeHeaderFooterView = nib.instantiate(withOwner: nil, options: nil)[0] as? SettingsHeaderFooterView
         
         self.tableView.register(nib, forHeaderFooterViewReuseIdentifier: "HeaderFooterView")
-        self.configureLanguageDisclosureIndicator()
         
         let debugModeGestureRecognizer = UISwipeGestureRecognizer(target: self, action: #selector(SettingsViewController.handleDebugModeGesture(_:)))
         debugModeGestureRecognizer.delegate = self
@@ -1311,12 +1310,7 @@ extension SettingsViewController
             }
             
             
-        // case .account, .patreon, .display, .instructions, .macDirtyCow: break
-        case .display:
-            if indexPath.row == 1 {
-                self.showLanguageSelection(from: tableView.cellForRow(at: indexPath))
-            }
-        case .account, .patreon, .instructions, .betaTesting: break
+        case .display, .account, .patreon, .instructions, .betaTesting: break
         }
         
         
@@ -1338,68 +1332,6 @@ private extension SettingsViewController
         }
 
         view.subviews.forEach { self.localizeSettingsControls(in: $0) }
-    }
-
-    func showLanguageSelection(from sourceView: UIView?)
-    {
-        let currentLanguage = UserDefaults.standard.string(forKey: "ALTSelectedLanguage")
-        let alert = UIAlertController(
-            title: NSLocalizedString("Language", comment: ""),
-            message: NSLocalizedString("Choose your preferred language:", comment: ""),
-            preferredStyle: .actionSheet
-        )
-
-        let languages: [(title: String, code: String?)] = [
-            (NSLocalizedString("System Default", comment: ""), nil),
-            ("English", "en"),
-            ("中文（简体）", "zh-Hans")
-        ]
-
-        for language in languages {
-            let isSelected = language.code == currentLanguage || (language.code == nil && currentLanguage == nil)
-            let title = isSelected ? "\(language.title) ✓" : language.title
-            alert.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
-                self?.changeLanguage(to: language.code)
-            })
-        }
-        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
-
-        if let popover = alert.popoverPresentationController {
-            popover.sourceView = sourceView ?? self.view
-            popover.sourceRect = sourceView?.bounds ?? CGRect(
-                x: self.view.bounds.midX,
-                y: self.view.bounds.midY,
-                width: 1,
-                height: 1
-            )
-        }
-        self.present(alert, animated: true)
-    }
-
-    func changeLanguage(to languageCode: String?)
-    {
-        if let languageCode {
-            UserDefaults.standard.set(languageCode, forKey: "ALTSelectedLanguage")
-            UserDefaults.standard.set([languageCode], forKey: "AppleLanguages")
-        } else {
-            UserDefaults.standard.removeObject(forKey: "ALTSelectedLanguage")
-            UserDefaults.standard.removeObject(forKey: "AppleLanguages")
-        }
-        UserDefaults.standard.synchronize()
-
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = windowScene.windows.first(where: \.isKeyWindow) ?? windowScene.windows.first,
-              let rootViewController = UIStoryboard(name: "Main", bundle: nil).instantiateInitialViewController()
-        else { return }
-
-        UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve) {
-            window.rootViewController = rootViewController
-        }
-    }
-
-    private func configureLanguageDisclosureIndicator()
-    {
-        _ = UIImage.SymbolConfiguration(scale: .large)
     }
 }
 
