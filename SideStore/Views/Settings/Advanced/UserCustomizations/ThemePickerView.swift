@@ -80,7 +80,7 @@ struct ThemePickerView: View {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 4)
-                            .fill(Color(uiColor: .tertiarySystemFill))
+                            .fill(Color.secondary.opacity(0.2))
                         RoundedRectangle(cornerRadius: 4)
                             .fill(selectedColor)
                             .frame(width: geo.size.width * 0.7)
@@ -164,7 +164,7 @@ struct ThemePickerView: View {
                         .frame(width: 24, height: 24)
                         .overlay(
                             Circle()
-                                .stroke(Color(uiColor: .separator), lineWidth: 1)
+                                .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
                         )
 
                     Text(preset.name)
@@ -245,7 +245,7 @@ struct ThemePickerView: View {
 
     private func metricRow(label: String, value: String) -> some View {
         HStack {
-            Text(NSLocalizedString(label, comment: ""))
+            Text(label)
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(.secondary)
             Spacer()

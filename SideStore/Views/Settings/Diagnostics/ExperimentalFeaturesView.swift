@@ -16,8 +16,6 @@ private extension Color {
 struct ExperimentalFeaturesView: View {
     @State private var freeAcctAppIdDeletion: Bool = UserDefaults.standard.freeAcctAppIdDeletion
     @State private var isCellularRefreshEnabled: Bool = UserDefaults.standard.isCellularRefreshEnabled
-    @State private var permissionCheckingDisabled: Bool = UserDefaults.standard.permissionCheckingDisabled
-    @State private var appVerificationDisabled: Bool = UserDefaults.standard.appVerificationDisabled
 
     var body: some View {
         ScrollView {
@@ -39,7 +37,7 @@ struct ExperimentalFeaturesView: View {
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                         .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(Color.secondary.opacity(0.65))
+                                        .foregroundColor(.secondary)
                                 }
                                 .padding(.horizontal, 16)
                                 .frame(height: 50)
@@ -56,7 +54,7 @@ struct ExperimentalFeaturesView: View {
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color.secondary.opacity(0.65))
+                                    .foregroundColor(.secondary)
                             }
                             .padding(.horizontal, 16)
                             .frame(height: 50)
@@ -89,26 +87,6 @@ struct ExperimentalFeaturesView: View {
                             set: { newValue in
                                 isCellularRefreshEnabled = newValue
                                 UserDefaults.standard.isCellularRefreshEnabled = newValue
-                            }
-                        ))
-                        
-                        divider
-                        
-                        toggleRow(title: "Permission Checks", isOn: Binding(
-                            get: { !permissionCheckingDisabled },
-                            set: { newValue in
-                                permissionCheckingDisabled = !newValue
-                                UserDefaults.standard.permissionCheckingDisabled = !newValue
-                            }
-                        ))
-                        
-                        divider
-                        
-                        toggleRow(title: "App Verification", isOn: Binding(
-                            get: { !appVerificationDisabled },
-                            set: { newValue in
-                                appVerificationDisabled = !newValue
-                                UserDefaults.standard.appVerificationDisabled = !newValue
                             }
                         ))
                     }

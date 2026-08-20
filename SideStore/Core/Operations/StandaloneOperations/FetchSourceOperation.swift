@@ -251,7 +251,7 @@ final class FetchSourceOperation: BaseStandaloneOperation<StandaloneOperationCon
     }
     
     private func verifySourceNotBlocked(_ source: Source, response: URLResponse?) throws {
-        guard let blockedSources = UserDefaults.shared.blockedSources else { return }
+        guard let blockedSources = UserDefaults.standard.blockedSources else { return }
         
         for blockedSource in blockedSources {
             guard

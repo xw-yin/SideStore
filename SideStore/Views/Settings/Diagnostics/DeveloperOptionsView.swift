@@ -21,7 +21,7 @@ struct DeveloperOptionsView: View {
     @State private var responseCachingDisabled: Bool = UserDefaults.standard.responseCachingDisabled
     @State private var isVerboseOperationsLoggingEnabled: Bool = UserDefaults.standard.isVerboseOperationsLoggingEnabled
     @State private var isSideStoreVerboseLoggingEnabled: Bool = UserDefaults.standard.isSideStoreVerboseLoggingEnabled
-    @State private var isAltWidgetVerboseLoggingEnabled: Bool = UserDefaults.standard.isAltWidgetVerboseLoggingEnabled
+    @State private var isAltWidgetVerboseLoggingEnabled: Bool = WidgetDataManager.shared.isVerboseLoggingEnabled
     @State private var isAltSignVerboseLoggingEnabled: Bool = UserDefaults.standard.isAltSignVerboseLoggingEnabled
     @State private var isMinimuxerVerboseLoggingEnabled: Bool = UserDefaults.standard.isMinimuxerVerboseLoggingEnabled
     @State private var isRotateLogsOnStartupEnabled: Bool = UserDefaults.standard.isRotateLogsOnStartupEnabled
@@ -85,7 +85,7 @@ struct DeveloperOptionsView: View {
                             get: { isAltWidgetVerboseLoggingEnabled },
                             set: { newValue in
                                 isAltWidgetVerboseLoggingEnabled = newValue
-                                UserDefaults.standard.isAltWidgetVerboseLoggingEnabled = newValue
+                                WidgetDataManager.shared.isVerboseLoggingEnabled = newValue
                             }
                         ))
                         
@@ -131,7 +131,7 @@ struct DeveloperOptionsView: View {
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color.secondary.opacity(0.65))
+                                    .foregroundColor(.secondary)
                             }
                             .padding(.horizontal, 16)
                             .frame(height: 50)
@@ -147,7 +147,7 @@ struct DeveloperOptionsView: View {
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color.secondary.opacity(0.65))
+                                    .foregroundColor(.secondary)
                             }
                             .padding(.horizontal, 16)
                             .frame(height: 50)
@@ -161,7 +161,7 @@ struct DeveloperOptionsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("WIDGET OPTIONS")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -169,10 +169,10 @@ struct DeveloperOptionsView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "arrow.clockwise")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Text("Reload All Widgets")
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                             }
                             .padding(.horizontal, 16)
@@ -185,10 +185,10 @@ struct DeveloperOptionsView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "arrow.triangle.2.circlepath")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Text("Rotate Widget Log")
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                             }
                             .padding(.horizontal, 16)
@@ -218,7 +218,7 @@ struct DeveloperOptionsView: View {
                                 Spacer()
                                 if isExportingDB {
                                     ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .accentColor))
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 }
                             }
                             .padding(.horizontal, 16)
@@ -296,22 +296,6 @@ struct DeveloperOptionsView: View {
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
-                        SwiftUI.Button(action: { exportWireGuardConfig() }) {
-                            HStack(spacing: 12) {
-                                Image(systemName: "square.and.arrow.up")
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.primary)
-                                Text("Export WireGuard Config")
-                                    .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.primary)
-                                Spacer()
-                            }
-                            .padding(.horizontal, 16)
-                            .frame(height: 50)
-                        }
-                        
-                        divider
-                        
                         SwiftUI.Button(action: { triggerStartEMProxy() }) {
                             HStack(spacing: 12) {
                                 Image(systemName: "play.circle")
@@ -567,17 +551,7 @@ struct DeveloperOptionsView: View {
             }
         }
     }
-    
-    private func exportWireGuardConfig() {
-        guard let top = topViewController() else { return }
-        guard let url = Bundle.main.url(forResource: "SideStore", withExtension: "conf") else {
-            let toastView = ToastView(text: NSLocalizedString("SideStore.conf missing!", comment: ""), detailText: "Unable to locate SideStore.conf in bundle resources.")
-            toastView.show(in: top)
-            return
-        }
-        let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-        top.present(activityVC, animated: true)
-    }
+
     
     private func triggerStartEMProxy() {
         guard let top = topViewController() else { return }

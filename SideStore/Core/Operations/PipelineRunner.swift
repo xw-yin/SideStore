@@ -322,7 +322,7 @@ final class PipelineRunner: Sendable
             default: permissionReviewMode = .none
         }
         
-        let permissionsMode = UserDefaults.shared.permissionCheckingDisabled ? .none : permissionReviewMode
+        let permissionsMode = UserDefaults.standard.permissionCheckingDisabled ? .none : permissionReviewMode
         let operationProgress = progress.progress(for: operation)
         return try await PipelineExecutor.shared.executePipeline(
             steps: pipelineSteps,

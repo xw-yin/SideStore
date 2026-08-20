@@ -41,7 +41,7 @@ final class TabBarController: UITabBarController
     {
         super.viewDidLoad()
         debugLog("[TabBarController] viewDidLoad()")
-
+        
         guard let viewControllers = self.viewControllers else {
             debugLog("[TabBarController] No child view controllers were loaded from Main.storyboard")
             return
@@ -70,7 +70,6 @@ final class TabBarController: UITabBarController
             }
             viewControllers[tab.rawValue].tabBarItem.title = title
         }
-
     }
     
     override func viewDidAppear(_ animated: Bool)
@@ -79,9 +78,9 @@ final class TabBarController: UITabBarController
         debugLog("[TabBarController] viewDidAppear() — TabBarController is now visible")
         
         _viewDidAppear = true
-
+        
         if AppDelegate.hasPendingAppImports {
-            selectTab(.myApps)
+            self.selectTab(.myApps)
         }
         
         if let (identifier, sender) = self.initialSegue

@@ -52,6 +52,7 @@ public extension UIColor
 
     var adjustedForDisplay: UIColor {
         guard self.isTooBright || self.isTooDark else { return self }
+
         return UIColor { traits in
             var hue: CGFloat = 0
             var saturation: CGFloat = 0

@@ -103,6 +103,7 @@ class PillButton: UIButton
                 let size = self.fontSize ?? self.storyboardFontSize ?? 14
                 let font = UIFont.boldSystemFont(ofSize: size)
                 var config = self.configuration ?? UIButton.Configuration.plain()
+                config.titleLineBreakMode = .byClipping
                 config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
                 config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { [weak self] incoming in
                     var outgoing = incoming
@@ -124,6 +125,7 @@ class PillButton: UIButton
         switch self.style {
         case .pill:
             size.width = max(size.width, PillButton.minimumSize.width)
+            size.height = max(size.height, PillButton.minimumSize.height)
         case .custom:
             break
         }
@@ -138,6 +140,7 @@ class PillButton: UIButton
         {
         case .pill:
             size.width = max(size.width, PillButton.minimumSize.width)
+            size.height = max(size.height, PillButton.minimumSize.height)
             
         case .custom: break
         }
@@ -230,6 +233,32 @@ class PillButton: UIButton
         super.tintColorDidChange()
         
         self.update()
+    }
+    
+    // @livecontainer: haptic + scale animation on tap
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        UIView.animate(withDuration: 0.15, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction], animations: {
+            self.transform = CGAffineTransform(scaleX: 0.94, y: 0.94)
+        }, completion: nil)
+        
+        let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
+        feedbackGenerator.prepare()
+        feedbackGenerator.impactOccurred()
+    }
+    
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesEnded(touches, with: event)
+        UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.5, initialSpringVelocity: 1.0, options: [.beginFromCurrentState, .allowUserInteraction], animations: {
+            self.transform = .identity
+        }, completion: nil)
+    }
+    
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesCancelled(touches, with: event)
+        UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.5, initialSpringVelocity: 1.0, options: [.beginFromCurrentState, .allowUserInteraction], animations: {
+            self.transform = .identity
+        }, completion: nil)
     }
 }
 
@@ -343,6 +372,8 @@ private extension PillButton
         let font = UIFont.boldSystemFont(ofSize: size)
         self.titleLabel?.font = font
         self.titleLabel?.adjustsFontSizeToFitWidth = false
+        self.titleLabel?.numberOfLines = 1
+        self.titleLabel?.lineBreakMode = .byClipping
         
         switch self.style
         {
@@ -350,6 +381,7 @@ private extension PillButton
         case .pill:
             var config = self.configuration ?? UIButton.Configuration.plain()
             config.cornerStyle = .capsule
+            config.titleLineBreakMode = .byClipping
             config.contentInsets = NSDirectionalEdgeInsets(
                 top: Self.contentInsets.top,
                 leading: Self.contentInsets.leading,

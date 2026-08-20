@@ -316,8 +316,7 @@ public class DatabaseManager
         let activeTeam = Team.first(satisfying: predicate, in: context)
         return activeTeam
     }
-
-    private func embeddedLiveContainerApplication(from hostBundle: Bundle) -> (application: ALTApplication, temporaryBundleURL: URL)?
+    func embeddedLiveContainerApplication(from hostBundle: Bundle) -> (application: ALTApplication, temporaryBundleURL: URL)?
     {
         guard Bundle.isBundledWithLiveContainer,
               let executableURL = hostBundle.executableURL,
@@ -403,8 +402,17 @@ public class DatabaseManager
                 }
 
                 if Bundle.isBundledWithLiveContainer {
-                    storeApp.configureForEmbeddedLiveContainer()
-                    storeApp.source = altStoreSource
+                    let liveContainerSourceURL = URL(string: "https://github.com/LiveContainer/LiveContainer/releases/download/1.0/apps_ss_lc.json")!
+                    if let lcSourceID = try? Source.sourceID(from: liveContainerSourceURL) {
+                        let lcSource = Source.first(satisfying: NSPredicate(format: "%K == %@", #keyPath(Source.identifier), lcSourceID), in: context) ?? {
+                            return Source.make(name: "LiveContainer", groupID: Source.altStoreGroupIdentifier, sourceURL: liveContainerSourceURL, context: context)
+                        }()
+                        storeApp.configureForEmbeddedLiveContainer()
+                        storeApp.source = lcSource
+                    } else {
+                        storeApp.configureForEmbeddedLiveContainer()
+                        storeApp.source = altStoreSource
+                    }
                 }
                             
                 let serialNumber = (appBundle.object(forInfoDictionaryKey: Bundle.Info.certificateID) as? String) ?? CertificateManager.shared.getSigningCertificate(at: Bundle.Info.activeBundleURL)?.serialNumber
@@ -634,7 +642,7 @@ public class DatabaseManager
     private func migrateDatabaseToAppGroupIfNeeded(completion: @escaping (Result<Void, Error>) -> Void)
     {
         // Only migrate if we haven't migrated yet and there's a valid AltStore app group.
-        guard UserDefaults.shared.requiresAppGroupMigration && Bundle.main.altstoreAppGroup != nil else { return completion(.success(())) }
+        guard UserDefaults.standard.requiresAppGroupMigration && Bundle.main.altstoreAppGroup != nil else { return completion(.success(())) }
 
         func finish(_ result: Result<Void, Error>)
         {
@@ -642,7 +650,7 @@ public class DatabaseManager
             {
             case .failure(let error): completion(.failure(error))
             case .success:
-                UserDefaults.shared.requiresAppGroupMigration = false
+                UserDefaults.standard.requiresAppGroupMigration = false
                 completion(.success(()))
             }
         }

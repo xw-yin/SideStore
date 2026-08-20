@@ -35,7 +35,7 @@ class BrowseViewController: UICollectionViewController, PeekPopPreviewing
     private let prototypeCell = AppCardCollectionViewCell(frame: .zero)
     private var sortButton: UIBarButtonItem?
     
-    private var preferredAppSorting: AppSorting = UserDefaults.shared.preferredAppSorting
+    private var preferredAppSorting: AppSorting = UserDefaults.standard.preferredAppSorting
     
     private var cancellables = Set<AnyCancellable>()
     
@@ -500,7 +500,7 @@ private extension BrowseViewController
             self.preferredAppSorting = .lastUpdated
             
             // Don't update UserDefaults unless explicitly changed by user.
-            // UserDefaults.shared.preferredAppSorting = .lastUpdated
+            // UserDefaults.standard.preferredAppSorting = .lastUpdated
         }
         
         let children = UIDeferredMenuElement.uncached { [weak self] completion in
@@ -517,7 +517,7 @@ private extension BrowseViewController
                 let state: UIMenuElement.State = (sorting == self.preferredAppSorting) ? .on : .off
                 let action = UIAction(title: sorting.localizedName, image: nil, state: state) { action in
                     self.preferredAppSorting = sorting
-                    UserDefaults.shared.preferredAppSorting = sorting // Update separately to save change.
+                    UserDefaults.standard.preferredAppSorting = sorting // Update separately to save change.
                     
                     self.updateDataSource()
                 }

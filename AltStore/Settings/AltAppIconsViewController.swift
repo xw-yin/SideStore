@@ -110,7 +110,7 @@ class AltAppIconsViewController: UICollectionViewController
             var configuration = UIListContentConfiguration.cell()
             configuration.text = section.localizedName
             configuration.textProperties.font = font
-            configuration.textProperties.color = .secondaryLabel
+            configuration.textProperties.color = .white.withAlphaComponent(0.8)
             headerView.contentConfiguration = configuration
             
             headerView.backgroundConfiguration = .clear()
@@ -162,7 +162,7 @@ private extension AltAppIconsViewController
 
             if isSelected
             {
-                cell.accessories = [.checkmark(options: .init(tintColor: .altPrimary))]
+                cell.accessories = [.checkmark(options: .init(tintColor: .white))]
             }
             else
             {
@@ -174,13 +174,12 @@ private extension AltAppIconsViewController
                 if let state = cell?.configurationState, state.isHighlighted 
                 {
                     // Highlighted, so use darker white for background.
-                    return .tertiarySystemFill
+                    return .white.withAlphaComponent(0.4)
                 }
                 
-                return .secondarySystemGroupedBackground
+                return .white.withAlphaComponent(0.25)
             }
             cell.backgroundConfiguration = backgroundConfiguration
-                        
         }
         
         return dataSource

@@ -46,6 +46,23 @@ extension AppDelegate
         return pendingImportIPAURLs.removeFirst()
     }
     
+    private static var pendingImportIPAURLs = [URL]()
+
+    @MainActor static func enqueueAppImport(_ url: URL) {
+        self.pendingImportIPAURLs.append(url)
+        NotificationCenter.default.post(name: AppDelegate.importAppDeepLinkNotification, object: nil, userInfo: [AppDelegate.importAppDeepLinkURLKey: url])
+    }
+
+    @MainActor static func dequeueAppImport() -> URL? {
+        guard !self.pendingImportIPAURLs.isEmpty else { return nil }
+        return self.pendingImportIPAURLs.removeFirst()
+    }
+
+    @MainActor
+    static var hasPendingAppImports: Bool {
+        return !self.pendingImportIPAURLs.isEmpty
+    }
+    
     static func dumpSideBackupLogsIfNeeded() async {
         await Task.detached {
             for appGroup in Bundle.main.appGroups {
@@ -656,11 +673,13 @@ private extension AppDelegate {
             let context = DatabaseManager.shared.persistentContainer.newBackgroundContext()
             context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
             
+            var didSave = false
             context.performAndWait {
                 do {
                     if let _ = InstalledApp.deserialize(from: jsonData, format: .json, context: context) {
                         if context.hasChanges {
                             try context.save()
+                            didSave = true
                             debugLog("[AppDelegate] reconcileSelfReinstallation: Database successfully updated and saved.")
                         }
                     } else {
@@ -668,6 +687,12 @@ private extension AppDelegate {
                     }
                 } catch {
                     debugLog("[AppDelegate] reconcileSelfReinstallation: CoreData error during save: \(error)")
+                }
+            }
+            
+            if didSave {
+                Task {
+                    await WidgetDataManager.publishCurrentInstalledApps(in: context)
                 }
             }
         } else {

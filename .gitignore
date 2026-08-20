@@ -92,3 +92,7 @@ local
 tmp/
 tmp
 *.log
+*.zip
+*.mp4
+*.mp3
+

@@ -103,7 +103,6 @@ final class SettingsViewController: UITableViewController
     // Add outlet
     @IBOutlet private var betaTrackLabel: UILabel!
     @IBOutlet private var betaTrackPopupButton: UIButton!
-    @IBOutlet private var languageCell: UITableViewCell!
 
     private var debugGestureCounter = 0
     private weak var debugGestureTimer: Timer?
@@ -134,7 +133,7 @@ final class SettingsViewController: UITableViewController
     @IBOutlet private var recreateDatabaseSwitch: UISwitch!
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
-        return .default
+        return .lightContent
     }
     
     private static var exportDBInProgress = false
@@ -193,17 +192,12 @@ final class SettingsViewController: UITableViewController
     override func viewDidLoad()
     {
         super.viewDidLoad()
-
-        self.tableView.backgroundColor = .systemGroupedBackground
-        self.tableView.tintColor = .altPrimary
-        self.configureLanguageDisclosureIndicator()
         
         // --- iOS 26 fix ---
         if #available(iOS 26.0, *) {
             let appearance = UINavigationBarAppearance()
-            appearance.configureWithDefaultBackground()
-            appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
-            appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
+            appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+            appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
             navigationController?.navigationBar.standardAppearance = appearance
             navigationController?.navigationBar.scrollEdgeAppearance = appearance       // required for iOS 26, maybe enforce it in storyboard?
         } 
@@ -219,7 +213,7 @@ final class SettingsViewController: UITableViewController
         self.tableView.addGestureRecognizer(debugModeGestureRecognizer)
         
         // set the version label to show in settings screen
-        self.versionLabel.text = getVersionLabel()
+        self.versionLabel.attributedText = getVersionAttributedString()
         self.versionLabel.isUserInteractionEnabled = true
         self.versionLabel.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(copyVersionLabelTapped)))
         
@@ -254,19 +248,6 @@ final class SettingsViewController: UITableViewController
             configureReleaseChannelButton()
         }
     }
-
-    private func configureLanguageDisclosureIndicator()
-    {
-        let configuration = UIImage.SymbolConfiguration(scale: .large)
-        let image = UIImage(systemName: "chevron.right", withConfiguration: configuration)
-        let imageView = UIImageView(image: image)
-        imageView.tintColor = .altPrimary
-        imageView.contentMode = .scaleAspectFit
-        imageView.frame.size = CGSize(width: 16, height: 23)
-
-        self.languageCell.accessoryType = .none
-        self.languageCell.accessoryView = imageView
-    }
     
     override func viewWillAppear(_ animated: Bool)
     {
@@ -285,21 +266,13 @@ final class SettingsViewController: UITableViewController
         if segue.identifier == "anisetteServers" || segue.identifier == "certificateManagement" || segue.identifier == "diagnostics" {
             let controller = segue.destination
             
-            if segue.identifier == "anisetteServers"        || 
-                segue.identifier == "certificateManagement" || 
-                segue.identifier == "diagnostics"
-            {
-                let appearance = UINavigationBarAppearance()
-                appearance.configureWithDefaultBackground()
-                appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
-                appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
-                controller.navigationItem.largeTitleDisplayMode = .always
-                controller.navigationItem.standardAppearance = appearance
-                controller.navigationItem.scrollEdgeAppearance = appearance
-            }
-            
-            // disable bottom tab bar since 'back' button is already available
-//            controller.hidesBottomBarWhenPushed = true
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithDefaultBackground()
+            appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
+            appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
+            controller.navigationItem.largeTitleDisplayMode = .always
+            controller.navigationItem.standardAppearance = appearance
+            controller.navigationItem.scrollEdgeAppearance = appearance
             
             self.show(controller, sender: nil)
         } else {
@@ -312,66 +285,63 @@ final class SettingsViewController: UITableViewController
 
 private extension SettingsViewController
 {
-    private func getVersionLabel() -> String {
-        let buildInfo = BuildInfo()
+    
+    private func getVersionAttributedString() -> NSAttributedString {
+        let appVersion = Bundle.Info.activeBundleVersion
+        let iosVersion = "iOS \(UIDevice.current.systemVersion) (\(ProcessInfo.processInfo.operatingSystemBuild))"
         
-        func getXcodeVersion() -> String {
-            var xcodeVersion =  buildInfo.xcode.map { version in
-                "Xcode \(version)" + (buildInfo.xcode_revision.map { revision in " - \(revision)" } ?? "")       // Ex: "0.6.0 - Xcode 16.2 - 21ac1ef"
-            } ?? ""
-
-            if let pairing = Bundle.main.object(forInfoDictionaryKey: "ALTPairingFile") as? String,
-                pairing != "<insert pairing file here>"{
-                xcodeVersion += " - true"
-            }
-            return xcodeVersion
-        }
-
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        paragraphStyle.lineSpacing = 4
         
-        var versionLabel: String = ""
-        let installedApp: InstalledApp? = nil
-        // first check if there is installed app entity, if so, get version info from that
-        if let installedApp
-        {
-            var localizedVersion = installedApp.version
-            // Only show build version for non stable builds.
-            localizedVersion += buildInfo.project_version.map{ version in
-                version.isEmpty  ? "" : " (\(version))"
-            } ?? installedApp.localizedVersion
+        let fullString = NSMutableAttributedString()
         
-            versionLabel = NSLocalizedString(String(format: "Version %@", localizedVersion), comment: "SideStore Version")
-        }
-        else if let version = buildInfo.marketing_version
-        {
-            versionLabel = NSLocalizedString(String(format: "Version %@", version), comment: "SideStore Version")
-        }
-        else
-        {
-            var version = "SideStore\t"
-            version += "\n\(Bundle.Info.appbundleIdentifier)"
-            versionLabel = NSLocalizedString(version, comment: "SideStore Version")
-        }
+        let appVersionAttr = NSAttributedString(
+            string: appVersion,
+            attributes: [
+                .font: UIFont.systemFont(ofSize: 14),
+                .foregroundColor: UIColor.white.withAlphaComponent(0.7),
+                .paragraphStyle: paragraphStyle
+            ]
+        )
         
-        // add xcode build version for local builds
-        if let installedApp,
-           SemanticVersion(installedApp.version)?.preRelease == "local"
-        {
-            versionLabel += "\n\(getXcodeVersion())"
-        }
+        let iosVersionAttr = NSAttributedString(
+            string: "\n" + iosVersion,
+            attributes: [
+                .font: UIFont.systemFont(ofSize: 12),
+                .foregroundColor: UIColor.white.withAlphaComponent(0.5),
+                .paragraphStyle: paragraphStyle
+            ]
+        )
         
-        return versionLabel
+        fullString.append(appVersionAttr)
+        fullString.append(iosVersionAttr)
+        return fullString
     }
     
     @objc private func copyVersionLabelTapped() {
-        let text = self.versionLabel.text ?? ""
-        UIPasteboard.general.string = text.hasPrefix("Version ") ? String(text.dropFirst("Version ".count)) : text
-        let original = self.versionLabel.text
-        let attributed = NSMutableAttributedString(string: "Copied! ")
-        attributed.append(NSAttributedString(string: "✓", attributes: [.foregroundColor: UIColor.systemGreen]))
+        let appVersion = Bundle.Info.activeBundleVersion
+        let iosVersion = "iOS \(UIDevice.current.systemVersion) (\(ProcessInfo.processInfo.operatingSystemBuild))"
+        let fullText = "\(appVersion)\n\(iosVersion)"
+        UIPasteboard.general.string = fullText.hasPrefix("Version ") ? String(fullText.dropFirst("Version ".count)) : fullText
+        
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        let attributed = NSMutableAttributedString(
+            string: "Copied! ",
+            attributes: [
+                .font: UIFont.systemFont(ofSize: 14),
+                .foregroundColor: UIColor.white.withAlphaComponent(0.7),
+                .paragraphStyle: paragraphStyle
+            ]
+        )
+        attributed.append(NSAttributedString(string: "✓", attributes: [
+            .font: UIFont.systemFont(ofSize: 14),
+            .foregroundColor: UIColor.systemGreen
+        ]))
         self.versionLabel.attributedText = attributed
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            self?.versionLabel.attributedText = nil
-            self?.versionLabel.text = original
+            self?.versionLabel.attributedText = self?.getVersionAttributedString()
         }
     }
     
@@ -1332,12 +1302,7 @@ extension SettingsViewController
             }
             
             
-        // case .account, .patreon, .display, .instructions, .macDirtyCow: break
-        case .display:
-            if indexPath.row == 1 {
-                self.showLanguageSelection(from: tableView.cellForRow(at: indexPath))
-            }
-        case .account, .patreon, .instructions, .betaTesting: break
+        case .display, .account, .patreon, .instructions, .betaTesting: break
         }
         
         
@@ -1359,63 +1324,6 @@ private extension SettingsViewController
         }
 
         view.subviews.forEach { self.localizeSettingsControls(in: $0) }
-    }
-
-    func showLanguageSelection(from sourceView: UIView?)
-    {
-        let currentLanguage = UserDefaults.standard.string(forKey: "ALTSelectedLanguage")
-        let alert = UIAlertController(
-            title: NSLocalizedString("Language", comment: ""),
-            message: NSLocalizedString("Choose your preferred language:", comment: ""),
-            preferredStyle: .actionSheet
-        )
-
-        let languages: [(title: String, code: String?)] = [
-            (NSLocalizedString("System Default", comment: ""), nil),
-            ("English", "en"),
-            ("中文（简体）", "zh-Hans")
-        ]
-
-        for language in languages {
-            let isSelected = language.code == currentLanguage || (language.code == nil && currentLanguage == nil)
-            let title = isSelected ? "\(language.title) ✓" : language.title
-            alert.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
-                self?.changeLanguage(to: language.code)
-            })
-        }
-        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
-
-        if let popover = alert.popoverPresentationController {
-            popover.sourceView = sourceView ?? self.view
-            popover.sourceRect = sourceView?.bounds ?? CGRect(
-                x: self.view.bounds.midX,
-                y: self.view.bounds.midY,
-                width: 1,
-                height: 1
-            )
-        }
-        self.present(alert, animated: true)
-    }
-
-    func changeLanguage(to languageCode: String?)
-    {
-        if let languageCode {
-            UserDefaults.standard.set(languageCode, forKey: "ALTSelectedLanguage")
-            UserDefaults.standard.set([languageCode], forKey: "AppleLanguages")
-        } else {
-            UserDefaults.standard.removeObject(forKey: "ALTSelectedLanguage")
-            UserDefaults.standard.removeObject(forKey: "AppleLanguages")
-        }
-        UserDefaults.standard.synchronize()
-
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = windowScene.windows.first(where: \.isKeyWindow) ?? windowScene.windows.first,
-              let rootViewController = UIStoryboard(name: "Main", bundle: nil).instantiateInitialViewController()
-        else { return }
-
-        UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve) {
-            window.rootViewController = rootViewController
-        }
     }
 }
 

@@ -28,8 +28,10 @@ public extension Bundle
             return NSLocalizedString(String(format: "Version %@%@", version, build), comment: "SideStore Version")
         }()
         public static let activeBundleIdentifier: String = activeBundle.bundleIdentifier!
-        public static let storeAppBundleIdentifier = Bundle.storeAppBundleIdentifier
-        public static let appbundleIdentifier = Bundle.appbundleIdentifier
+        public static let storeAppBundleIdentifier = "com.SideStore.SideStore"
+        public static var appbundleIdentifier: String {
+            Bundle.isBundledWithLiveContainer ? "com.kdt.livecontainer" : storeAppBundleIdentifier
+        }
  
         public static let deviceID = "ALTDeviceID"
         public static let serverID = "ALTServerID"
@@ -75,13 +77,14 @@ public extension Bundle
 public extension Bundle
 {
     // @livecontainer
-    @objc dynamic static let baseAltStoreAppGroupID = "group." + Bundle.Info.appbundleIdentifier
+    static let baseAltStoreAppGroupID = "group.com.SideStore.SideStore"
     static let isBundledWithLiveContainer = Bundle.main.bundleURL.lastPathComponent == "SideStoreApp.framework" || Bundle.main.bundleURL.lastPathComponent == "LiveWidgetExtension.appex"
 
     var appGroups: [String] {
         return self.infoDictionary?[Bundle.Info.appGroups] as? [String] ?? []
     }
     
+    // @livecontainer
     static var lcBundle: Bundle? {
         Bundle(url: Bundle.main.bundleURL.deletingLastPathComponent().deletingLastPathComponent())
     }
@@ -90,10 +93,11 @@ public extension Bundle
         Bundle.isBundledWithLiveContainer ? Bundle.lcBundle ?? Bundle.main : Bundle.main
     }
 
-    // @livecontainer
-    @objc dynamic var altstoreAppGroup: String? {
-        let appGroup = self.appGroups.first { $0.contains(Bundle.baseAltStoreAppGroupID) }
-        return appGroup
+    var altstoreAppGroup: String? {
+        if Bundle.isBundledWithLiveContainer, let lcBundle = Bundle.lcBundle {
+            return lcBundle.appGroups.first { $0.contains(Bundle.baseAltStoreAppGroupID) }
+        }
+        return self.appGroups.first { $0.contains(Bundle.baseAltStoreAppGroupID) }
     }
     
     var completeInfoDictionary: [String : Any]? {

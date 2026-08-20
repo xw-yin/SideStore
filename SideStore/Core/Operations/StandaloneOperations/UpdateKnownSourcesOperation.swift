@@ -10,7 +10,7 @@ import Foundation
 
 private extension URL
 {
-   static let sources = URL(string: "https://sidestore.io/default-sources")!
+   static let sources = URL(string: "https://sidestore.io/default-sources/")!
 }
 
 extension UpdateKnownSourcesOperation
@@ -61,11 +61,11 @@ class UpdateKnownSourcesOperation: OperationLogging
         let sources = (defaultSources: decoded.defaultSources ?? [], blocked: decoded.blocked ?? [])
         
         // Cache sources
-        UserDefaults.shared.recommendedSources = sources.defaultSources
-        UserDefaults.shared.blockedSources = sources.blocked
+        UserDefaults.standard.recommendedSources = sources.defaultSources
+        UserDefaults.standard.blockedSources = sources.blocked
         
         // Cache default source IDs.
-        UserDefaults.shared.defaultSourceIDs = sources.defaultSources.map { $0.identifier }
+        UserDefaults.standard.defaultSourceIDs = sources.defaultSources.map { $0.identifier }
         
         return sources
     }

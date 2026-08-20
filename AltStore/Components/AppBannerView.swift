@@ -369,7 +369,6 @@ extension AppBannerView
         // Add a delicate translucent border (Glow Border) to backgroundEffectView
         self.backgroundEffectView.layer.borderColor = UIColor.white.withAlphaComponent(0.12).cgColor
         self.backgroundEffectView.layer.borderWidth = 1.0
-        
     }
 }
 

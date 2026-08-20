@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A809CCB53033E85E005DF922 /* AnisetteKit in Frameworks */ = {isa = PBXBuildFile; productRef = A809CCB43033E85E005DF922 /* AnisetteKit */; };
 		A84596F62F7DC4C90000B8CD /* SideStore.conf in Resources */ = {isa = PBXBuildFile; fileRef = A84596F52F7DC4C90000B8CD /* SideStore.conf */; };
 		A8C37026302DA7BA0010213A /* Minimuxer in Frameworks */ = {isa = PBXBuildFile; productRef = A8C37025302DA7BA0010213A /* Minimuxer */; };
 		A8C37029302DA7F30010213A /* MarkdownKit in Frameworks */ = {isa = PBXBuildFile; productRef = A8C37028302DA7F30010213A /* MarkdownKit */; };
@@ -138,7 +139,6 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		177EB19D2F4D48B9008CAAE1 /* LiveContainerSupport */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = LiveContainerSupport; sourceTree = "<group>"; };
 		A8EEC3482F4B0D8600F2436D /* Shared */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A8EEC36B2F4B0D8700F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Shared; sourceTree = "<group>"; };
 		A8EEC3B92F4B0EFC00F2436D /* AltWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A8EEC3CA2F4B0EFC00F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = AltWidget; sourceTree = "<group>"; };
 		A8EEC3D92F4B0FC800F2436D /* SideBackup */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A8EEC3E22F4B0FC800F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SideBackup; sourceTree = "<group>"; };
@@ -166,6 +166,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A809CCB53033E85E005DF922 /* AnisetteKit in Frameworks */,
 				A8C37026302DA7BA0010213A /* Minimuxer in Frameworks */,
 				A8C37029302DA7F30010213A /* MarkdownKit in Frameworks */,
 				A8C3702C302DA80D0010213A /* KeychainAccess in Frameworks */,
@@ -182,7 +183,6 @@
 		BFD247612284B9A500981D42 = {
 			isa = PBXGroup;
 			children = (
-				177EB19D2F4D48B9008CAAE1 /* LiveContainerSupport */,
 				A8EEC8412F4B146A00F2436D /* AltStore */,
 				A8EEC3B92F4B0EFC00F2436D /* AltWidget */,
 				A8EEC3482F4B0D8600F2436D /* Shared */,
@@ -273,7 +273,6 @@
 				BF989176250AABF4002ACF50 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				177EB19D2F4D48B9008CAAE1 /* LiveContainerSupport */,
 				A8EEC3482F4B0D8600F2436D /* Shared */,
 				A8EEC8412F4B146A00F2436D /* AltStore */,
 				A8EECF2A2F4B195000F2436D /* SideStore */,
@@ -287,6 +286,7 @@
 				A8C37034302DA84D0010213A /* Starscream */,
 				A8C37038302DA8D90010213A /* SemanticVersion */,
 				A8C38DEB302DB4E40010213A /* AltSign-Dynamic */,
+				A809CCB43033E85E005DF922 /* AnisetteKit */,
 			);
 			productName = AltStore;
 			productReference = BFD2476A2284B9A500981D42 /* SideStore.app */;
@@ -341,6 +341,7 @@
 				A8C3702D302DA82A0010213A /* XCRemoteSwiftPackageReference "Nuke" */,
 				A8C37033302DA84D0010213A /* XCRemoteSwiftPackageReference "Starscream" */,
 				A8C37037302DA8D90010213A /* XCRemoteSwiftPackageReference "SemanticVersion" */,
+				A809CCB33033E85E005DF922 /* XCRemoteSwiftPackageReference "AnisetteKit" */,
 			);
 			productRefGroup = BFD2476B2284B9A500981D42 /* Products */;
 			projectDirPath = "";
@@ -753,7 +754,6 @@
 				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "debug-only";
-				SWIFT_OBJC_BRIDGING_HEADER = "AltStore/AltStore-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -802,7 +802,6 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "debug-only";
-				SWIFT_OBJC_BRIDGING_HEADER = "AltStore/AltStore-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Osize";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -862,6 +861,14 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		A809CCB33033E85E005DF922 /* XCRemoteSwiftPackageReference "AnisetteKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mahee96/AnisetteKit";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		A8C37027302DA7F30010213A /* XCRemoteSwiftPackageReference "MarkdownKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/bmoliveira/MarkdownKit.git";
@@ -905,6 +912,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		A809CCB43033E85E005DF922 /* AnisetteKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A809CCB33033E85E005DF922 /* XCRemoteSwiftPackageReference "AnisetteKit" */;
+			productName = AnisetteKit;
+		};
 		A8C37025302DA7BA0010213A /* Minimuxer */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Minimuxer;

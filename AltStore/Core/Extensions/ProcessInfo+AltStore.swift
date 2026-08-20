@@ -78,10 +78,20 @@ extension ProcessInfo {
     }
     
     public var operatingSystemBuild: String {
+        var size = 0
+        sysctlbyname("kern.osversion", nil, &size, nil, 0)
+        if size > 0 {
+            var osversion = [CChar](repeating: 0, count: size)
+            if sysctlbyname("kern.osversion", &osversion, &size, nil, 0) == 0 {
+                return String(cString: osversion)
+            }
+        }
         if let start = shortVersion.range(of: "(")?.upperBound,
            let end = shortVersion.range(of: ")")?.lowerBound {
-            shortVersion[start..<end].replacingOccurrences(of: "Build ", with: "")
-        } else { "???" }
+            return String(shortVersion[start..<end].replacingOccurrences(of: "Build ", with: ""))
+        } else {
+            return "???"
+        }
     }
     
     public var sparseRestorePatched: Bool {

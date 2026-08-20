@@ -107,3 +107,25 @@ public final class WidgetDataManager: @unchecked Sendable {
     }
 }
 
+public extension WidgetDataManager {
+    static let sharedDefaults: UserDefaults? = {
+        guard let appGroup = Bundle.main.altstoreAppGroup else { return nil }
+        return UserDefaults(suiteName: appGroup)
+    }()
+
+    private static let isVerboseLoggingKey = "isAltWidgetVerboseLoggingEnabled"
+
+    var isVerboseLoggingEnabled: Bool {
+        get {
+            guard let defaults = Self.sharedDefaults else { return true }
+            if defaults.object(forKey: Self.isVerboseLoggingKey) == nil {
+                return true
+            }
+            return defaults.bool(forKey: Self.isVerboseLoggingKey)
+        }
+        set {
+            Self.sharedDefaults?.set(newValue, forKey: Self.isVerboseLoggingKey)
+        }
+    }
+}
+

@@ -86,7 +86,7 @@ final class LaunchViewController: UIViewController {
         guard let data = try? Data(contentsOf: accountFileURL) else { return }
         
         let checksum = SHA256.hash(data: data).compactMap { String(format: "%02x", $0) }.joined()
-        guard checksum != UserDefaults.shared.acctFileChecksum else {
+        guard checksum != UserDefaults.standard.acctFileChecksum else {
             debugLog("[LaunchViewController] Skipping import for \(accountFileURL.lastPathComponent): checksum unchanged.")
             return
         }
@@ -133,7 +133,11 @@ final class LaunchViewController: UIViewController {
             let errorDesc = ErrorProcessing(.fullError).getDescription(error: error as NSError)
             debugLog("Failed to update sources on launch. \(errorDesc)")
             
-            let toastView = ToastView(text: NSLocalizedString("Some sources were unable to load", comment: ""), detailText: nil)
+            var mode: ToastView.InfoMode = .fullError
+            if String(describing: error).contains("The Internet connection appears to be offline"){
+                mode = .localizedDescription    // dont make noise!
+            }
+            let toastView = ToastView(error: error, mode: mode)
             toastView.addTarget(destinationVC, action: #selector(TabBarController.presentSources), for: .touchUpInside)
             toastView.show(in: destinationVC.selectedViewController ?? destinationVC)
         }

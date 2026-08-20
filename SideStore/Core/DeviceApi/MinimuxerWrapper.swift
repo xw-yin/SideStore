@@ -25,6 +25,8 @@ func bindConnectionConfig() async {
     let configBinding = ConnectionConfigBinding(
         setTunnelIfaceIp: { value in Task { @MainActor in config.tunnelIfaceIp = value } },
         setTunnelPeerIp: { value in Task { @MainActor in config.tunnelPeerIp = value } },
+        setTunnelPeerSubnetMask: { value in Task { @MainActor in config.tunnelPeerSubnetMask = value } },
+        setTunnelPeerReachable: { value in Task { @MainActor in config.tunnelPeerReachable = value } },
         setTunnelIfaceSubnetMask: { value in Task { @MainActor in config.tunnelIfaceSubnetMask = value } },
         getRemoteServerIp: { config.remoteServerIp },
         setRemoteReachable: { value in Task { @MainActor in config.remoteReachable = value } },

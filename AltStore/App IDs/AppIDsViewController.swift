@@ -58,29 +58,7 @@ final class AppIDsViewController: UICollectionViewController
         
         if !self.didInitialFetch
         {
-            Task { @MainActor in
-                if await getMinimuxerStatus().operationError != nil
-                {
-                    // Silently skip initial network fetch
-                    self.didInitialFetch = true
-                    self.isLoading = false
-                    self.update()
-                }
-                else
-                {
-                    self.fetchAppIDs()
-                }
-            }
-        }
-    }
-
-    var isMinimuxerReady: Bool {
-        get async {
-            if let error = await getMinimuxerStatus().operationError {
-                ToastView(error: error).show(in: self)
-                return false
-            }
-            return true
+            self.fetchAppIDs()
         }
     }
 }
@@ -220,8 +198,8 @@ private extension AppIDsViewController
             self.activityIndicatorBarButtonItem.isIndicatingActivity = false
             
             let activeTeamType = DatabaseManager.shared.activeTeam()?.type
-            let allowsEditMode = (activeTeamType == .individual || activeTeamType == .organization) &&
-                                 (activeTeamType != .free || UserDefaults.standard.freeAcctAppIdDeletion)
+            let allowsEditMode = (activeTeamType == .individual || activeTeamType == .organization) ||
+                                 (activeTeamType == .free && UserDefaults.standard.freeAcctAppIdDeletion)
             
             if allowsEditMode
             {

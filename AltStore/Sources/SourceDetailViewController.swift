@@ -193,7 +193,7 @@ class SourceDetailViewController: HeaderContentViewController<SourceHeaderView, 
                 self.navigationItem.rightBarButtonItem = barButtonItem
             }
             
-            let currentSizeWidth = max(77, self.navigationBarButton.intrinsicContentSize.width)
+            let currentSizeWidth = max(PillButton.minimumSize.width, self.navigationBarButton.intrinsicContentSize.width)
             let targetWidth = currentSizeWidth + 2
             if let existingConstraint = self.widthConstraint
             {
@@ -201,7 +201,8 @@ class SourceDetailViewController: HeaderContentViewController<SourceHeaderView, 
             }
             else
             {
-                let constraint = self.navigationBarButton.widthAnchor.constraint(equalToConstant: targetWidth)
+                let constraint = self.navigationBarButton.widthAnchor.constraint(greaterThanOrEqualToConstant: targetWidth)
+                constraint.priority = .required
                 constraint.isActive = true
                 self.widthConstraint = constraint
             }

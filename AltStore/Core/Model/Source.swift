@@ -274,7 +274,7 @@ public extension Source
     }
     
     var isRecommended: Bool {
-        guard let recommendedSources = UserDefaults.shared.recommendedSources else { return false }
+        guard let recommendedSources = UserDefaults.standard.recommendedSources else { return false }
         
         // TODO: Support alternate URLs
         let isRecommended = recommendedSources.contains { source in

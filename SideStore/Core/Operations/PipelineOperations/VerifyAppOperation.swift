@@ -42,20 +42,31 @@ final class VerifyAppOperation: BasePipelineOperation<InstallAppOperationContext
         }
         
         guard !UserDefaults.standard.appVerificationDisabled else {
-            debugLog("[VerifyAppOperation] App verification was disabled for \(appBundle.bundleIdentifier), skipping verification.")
+            debugLog("[VerifyAppOperation] App verification was disabled for \(appBundle.bundleIdentifier), skipping all verification.")
             self.setProgress(100)
             return true
         }
+        
         self.setProgress(10)
 
-        if !["ny.litritt.ignited", "com.litritt.ignited"].contains(where: { $0 == appBundle.bundleIdentifier }) {
-            guard appBundle.bundleIdentifier == self.context.bundleIdentifier else {
-                throw VerificationError.mismatchedBundleIdentifiers(sourceBundleID: self.context.bundleIdentifier, appBundle: appBundle)
+        // 1. Bundle ID Verification
+        if UserDefaults.standard.isBundleIDVerificationEnabled {
+            if !["ny.litritt.ignited", "com.litritt.ignited"].contains(where: { $0 == appBundle.bundleIdentifier }) {
+                guard appBundle.bundleIdentifier == self.context.bundleIdentifier else {
+                    throw VerificationError.mismatchedBundleIdentifiers(sourceBundleID: self.context.bundleIdentifier, appBundle: appBundle)
+                }
             }
+        } else {
+            debugLog("[VerifyAppOperation] Bundle ID verification disabled, skipping check.")
         }
         
-        guard ProcessInfo.processInfo.isOperatingSystemAtLeast(appBundle.minimumiOSVersion) else {
-            throw VerificationError.iOSVersionNotSupported(app: appBundle, requiredOSVersion: appBundle.minimumiOSVersion)
+        // 2. iOS Version Compatibility Check
+        if UserDefaults.standard.isiOSVersionVerificationEnabled {
+            guard ProcessInfo.processInfo.isOperatingSystemAtLeast(appBundle.minimumiOSVersion) else {
+                throw VerificationError.iOSVersionNotSupported(app: appBundle, requiredOSVersion: appBundle.minimumiOSVersion)
+            }
+        } else {
+            debugLog("[VerifyAppOperation] iOS version verification disabled, skipping check.")
         }
         
         guard let appVersion = context.appVersion else {
@@ -66,15 +77,35 @@ final class VerifyAppOperation: BasePipelineOperation<InstallAppOperationContext
         guard let ipaURL = context.ipaURL else { throw OperationError.appNotFound(name: appBundle.name) }
         self.setProgress(30)
                             
-        try await self.verifyHash(of: appBundle, at: ipaURL, matches: appVersion)
-        self.setProgress(60)
+        // 3. Checksum (SHA-256) Verification
+        if UserDefaults.standard.isChecksumVerificationEnabled {
+            try await self.verifyHash(of: appBundle, at: ipaURL, matches: appVersion)
+        } else {
+            debugLog("[VerifyAppOperation] Checksum verification disabled for \(appBundle.bundleIdentifier), skipping hash check.")
+        }
+        self.setProgress(50)
         
-        try await self.verifyDownloadedVersion(of: appBundle, matches: appVersion)
-        self.setProgress(80)
+        // 4. File Size Verification
+        if UserDefaults.standard.isFileSizeVerificationEnabled {
+            try await self.verifyFileSize(of: appBundle, at: ipaURL, matches: appVersion)
+        } else {
+            debugLog("[VerifyAppOperation] File size verification disabled for \(appBundle.bundleIdentifier), skipping size check.")
+        }
+        self.setProgress(70)
         
-        // process missing permissions check only if the source is V2 or later
-        if let source = appVersion.app?.source,
-           source.isSourceAtLeastV2 {
+        // 5. Version & Build Version Verification
+        if UserDefaults.standard.isAppVersionVerificationEnabled {
+            try await self.verifyDownloadedVersion(of: appBundle, matches: appVersion)
+        } else {
+            debugLog("[VerifyAppOperation] App version verification disabled for \(appBundle.bundleIdentifier), skipping version check.")
+        }
+        self.setProgress(85)
+        
+        // 6. Permissions & Entitlements Verification (for V2+ sources)
+        if !UserDefaults.standard.permissionCheckingDisabled,
+           let source = appVersion.app?.source,
+           source.isSourceAtLeastV2
+        {
             try await self.verifyPermissions(of: appBundle, match: appVersion)
         }
         self.setProgress(100)
@@ -92,6 +123,20 @@ final class VerifyAppOperation: BasePipelineOperation<InstallAppOperationContext
         verboseLog("[VerifyAppOperation] Comparing app hash (\(hashString)) against expected hash (\(expectedHash))...")
         
         guard hashString == expectedHash else { throw VerificationError.mismatchedHash(hashString, expectedHash: expectedHash, app: appBundle) }
+    }
+    
+    private func verifyFileSize(of appBundle: ALTApplication, at ipaURL: URL, @AsyncManaged matches appVersion: AppVersion) async throws {
+        let expectedSize = await $appVersion.size
+        guard expectedSize > 0 else { return }
+
+        let resourceValues = try ipaURL.resourceValues(forKeys: [.fileSizeKey])
+        guard let fileSize = resourceValues.fileSize else { return }
+        
+        verboseLog("[VerifyAppOperation] Comparing app file size (\(fileSize) bytes) against expected size (\(expectedSize) bytes)...")
+        
+        guard Int64(fileSize) == expectedSize else {
+            throw VerificationError.mismatchedSize(Int64(fileSize), expectedSize: expectedSize, app: appBundle)
+        }
     }
     
     private func verifyDownloadedVersion(of appBundle: ALTApplication, @AsyncManaged matches appVersion: AppVersion) async throws {
@@ -219,7 +264,7 @@ final class VerifyAppOperation: BasePipelineOperation<InstallAppOperationContext
                 throw VerificationError.undeclaredPermissions(missingPermissions, app: appBundle)
             }
         } catch let error as VerificationError where error.code == .undeclaredPermissions {
-            if let recommendedSources = UserDefaults.shared.recommendedSources, let (sourceID, sourceURL) = await $storeApp.perform({
+            if let recommendedSources = UserDefaults.standard.recommendedSources, let (sourceID, sourceURL) = await $storeApp.perform({
                 $0.source.map { ($0.identifier, $0.sourceURL) }
             }) {
                 let normalizedSourceURL = try? sourceURL.normalized()

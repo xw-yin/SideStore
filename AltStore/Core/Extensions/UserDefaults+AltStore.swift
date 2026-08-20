@@ -10,13 +10,6 @@ import Foundation
 
 public extension UserDefaults
 {
-    static let shared: UserDefaults = {
-        guard let appGroup = Bundle.main.altstoreAppGroup else { return .standard }
-        
-        let sharedUserDefaults = UserDefaults(suiteName: appGroup)!
-        return sharedUserDefaults
-    }()
-    
     // Default track for beta updates when beta-updates are enabled
     static let defaultBetaUpdatesTrack: String = ReleaseTrackType.nightly.description
 
@@ -159,15 +152,6 @@ public extension UserDefaults
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
-    @objc var isAltWidgetVerboseLoggingEnabled: Bool {
-        get {
-            if self.object(forKey: #function) == nil {
-                return true
-            }
-            return self.bool(forKey: #function)
-        }
-        set { self.set(newValue, forKey: #function) }
-    }
     @objc var isMinimuxerVerboseLoggingEnabled: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
@@ -190,6 +174,10 @@ public extension UserDefaults
         set { self.set(newValue, forKey: #function) }
     }
     @objc var disableAnisetteRotation: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var useOnDeviceAnisette: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
@@ -251,6 +239,26 @@ public extension UserDefaults
     }
     
     @objc var permissionCheckingDisabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var isBundleIDVerificationEnabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var isiOSVersionVerificationEnabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var isAppVersionVerificationEnabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var isChecksumVerificationEnabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var isFileSizeVerificationEnabled: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
@@ -350,6 +358,11 @@ public extension UserDefaults
             #keyPath(UserDefaults.isBackgroundRefreshEnabled): true,
             #keyPath(UserDefaults.isBetaUpdatesEnabled): false,
             #keyPath(UserDefaults.permissionCheckingDisabled): true,
+            #keyPath(UserDefaults.isBundleIDVerificationEnabled): true,
+            #keyPath(UserDefaults.isiOSVersionVerificationEnabled): true,
+            #keyPath(UserDefaults.isAppVersionVerificationEnabled): true,
+            #keyPath(UserDefaults.isChecksumVerificationEnabled): true,
+            #keyPath(UserDefaults.isFileSizeVerificationEnabled): false,
             #keyPath(UserDefaults.appVerificationDisabled): false,
             #keyPath(UserDefaults.isIdleTimeoutDisableEnabled): true,
             #keyPath(UserDefaults.betaUdpatesTrack): defaultBetaUpdatesTrack,
@@ -357,6 +370,7 @@ public extension UserDefaults
             #keyPath(UserDefaults.menuAnisetteURL): "https://ani.sidestore.io",
             #keyPath(UserDefaults.isAnisetteOfflineMode): false,
             #keyPath(UserDefaults.disableAnisetteRotation): false,
+            #keyPath(UserDefaults.useOnDeviceAnisette): true,
             #keyPath(UserDefaults.useLocalVPN): true,
             #keyPath(UserDefaults.enableEMPforWireguard): false,
             #keyPath(UserDefaults.skipNonCopyableBackupFiles): true,
@@ -366,7 +380,6 @@ public extension UserDefaults
             #keyPath(UserDefaults.isExportResignedAppEnabled): false,
             #keyPath(UserDefaults.isVerboseOperationsLoggingEnabled): false,
             #keyPath(UserDefaults.isSideStoreVerboseLoggingEnabled): false,
-            #keyPath(UserDefaults.isAltWidgetVerboseLoggingEnabled): true,
             #keyPath(UserDefaults.isAltSignVerboseLoggingEnabled): false,
             #keyPath(UserDefaults.isMinimuxerVerboseLoggingEnabled): false,
             #keyPath(UserDefaults.isRotateLogsOnStartupEnabled): true,
@@ -378,7 +391,6 @@ public extension UserDefaults
         ] as [String: Any]
         
         UserDefaults.standard.register(defaults: defaults)
-        UserDefaults.shared.register(defaults: defaults)
         
         // MDC is unsupported and spareRestore is patched
         if !isMacDirtyCowSupported && ProcessInfo().sparseRestorePatched
@@ -413,8 +425,9 @@ public extension UserDefaults
         dumpDictionary(UserDefaults.standard.dictionaryRepresentation())
         
         if let appGroup = Bundle.main.altstoreAppGroup,
-           let sharedDefaults = UserDefaults(suiteName: appGroup),
-           sharedDefaults != UserDefaults.standard {
+           let sharedDefaults = WidgetDataManager.sharedDefaults,
+           sharedDefaults != UserDefaults.standard 
+        {
             debugLog("=== [UserDefaults] Shared AppGroup Suite Dump (\(appGroup)) ===")
             dumpDictionary(sharedDefaults.dictionaryRepresentation())
         }

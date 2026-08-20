@@ -101,6 +101,12 @@ final class AppManager: ObservableObject, @unchecked Sendable
                     
                         guard !self.isActivelyManagingApp(withBundleID: app.bundleIdentifier) else { continue }
                     
+                        if Bundle.isBundledWithLiveContainer {
+                            // In LiveContainer, signed apps are managed in guest containers without system-level UTI declarations.
+                            // Do not reconcile or delete them.
+                            continue
+                        }
+                    
                         if !UserDefaults.standard.isLegacyDeactivationSupported
                         {
                             // We can't (ab)use provisioning profiles to deactivate apps,
@@ -161,8 +167,10 @@ final class AppManager: ObservableObject, @unchecked Sendable
                     
                         if isDirectory && !installedAppBundleIDs.contains(bundleID) && !self.isActivelyManagingApp(withBundleID: bundleID)
                         {
-                            debugLog("DELETING CACHED APP: \(bundleID)")
-                            try FileManager.default.removeItem(at: appDirectory)
+                            if !Bundle.isBundledWithLiveContainer {
+                                debugLog("DELETING CACHED APP: \(bundleID)")
+                                try FileManager.default.removeItem(at: appDirectory)
+                            }
                         }
                     } catch {
                         debugLog("Failed to remove cached app directory. \(error)")
@@ -781,12 +789,17 @@ final class AppManager: ObservableObject, @unchecked Sendable
         self.pipelineRunner.performSingleOperation(.restore(installedApp), handler: pipelineHandler, context: context, completionHandler: completionHandler)
     }
     
+    func removeApp(_ installedApp: InstalledApp, presentingViewController: UIViewController? = nil, completionHandler: @escaping (Result<Void, Error>) -> Void)
+    {
+        debugLog("[AppManager] removeApp() called for app: \(installedApp.bundleIdentifier)")
+        let pipelineHandler = self.makePipelineHandler(presentingViewController: presentingViewController)
+        let context = self.makeAuthenticatedContext(presentingViewController: presentingViewController)
+        self.pipelineRunner.performVoidOperation(.removeApp(installedApp), handler: pipelineHandler, context: context, completionHandler: completionHandler)
+    }
+    
     func removeDeactivatedApp(_ installedApp: InstalledApp, completionHandler: @escaping (Result<Void, Error>) -> Void)
     {
-        debugLog("[AppManager] removeDeactivatedApp() called for app: \(installedApp.bundleIdentifier)")
-        let pipelineHandler = self.makePipelineHandler(presentingViewController: nil)
-        let context = self.makeAuthenticatedContext(presentingViewController: nil)
-        self.pipelineRunner.performVoidOperation(.removeDeactivatedApp(installedApp), handler: pipelineHandler, context: context, completionHandler: completionHandler)
+        self.removeApp(installedApp, completionHandler: completionHandler)
     }
     
     func enableJIT(for installedApp: InstalledApp, completionHandler: @escaping (Result<Void, Error>) -> Void)
@@ -889,7 +902,7 @@ extension AppManager: PipelineProgress, PipelineExecutionContext, PipelineErrorL
             {
             case .install, .update: 
                 return self.installationProgress[bundleID]
-            case .refresh, .activate, .deactivate, .deleteApp, .backup, .restore, .resign, .removeDeactivatedApp, .enableJIT: 
+            case .refresh, .activate, .deactivate, .deleteApp, .backup, .restore, .resign, .removeApp, .removeDeactivatedApp, .enableJIT: 
                 return self.refreshProgress[bundleID]
             }
         }
@@ -906,7 +919,7 @@ extension AppManager: PipelineProgress, PipelineExecutionContext, PipelineErrorL
             {
             case .install, .update: 
                 self.installationProgress[bundleID] = progress
-            case .refresh, .activate, .deactivate, .deleteApp, .backup, .restore, .resign, .removeDeactivatedApp, .enableJIT: 
+            case .refresh, .activate, .deactivate, .deleteApp, .backup, .restore, .resign, .removeApp, .removeDeactivatedApp, .enableJIT: 
                 self.refreshProgress[bundleID] = progress
             }
             debugLog("[AppManager] setProgress: \(progress.map { "\($0)" } ?? "nil") for operation: .\(operationName), totalUnitCount: \(progress?.totalUnitCount ?? 0)")
@@ -939,7 +952,7 @@ extension AppManager: PipelineProgress, PipelineExecutionContext, PipelineErrorL
             case .backup:     localizedTitle = String(format: NSLocalizedString("Failed to Backup %@",         comment: ""), appName)
             case .restore:    localizedTitle = String(format: NSLocalizedString("Failed to Restore %@ Backup", comment: ""), appName)
             case .resign:     localizedTitle = String(format: NSLocalizedString("Failed to Resign %@",         comment: ""), appName)
-            case .removeDeactivatedApp: localizedTitle = String(format: NSLocalizedString("Failed to Remove %@", comment: ""), appName)
+            case .removeApp, .removeDeactivatedApp: localizedTitle = String(format: NSLocalizedString("Failed to Remove %@", comment: ""), appName)
             case .enableJIT:  localizedTitle = String(format: NSLocalizedString("Failed to Enable JIT for %@", comment: ""), appName)
         }
         

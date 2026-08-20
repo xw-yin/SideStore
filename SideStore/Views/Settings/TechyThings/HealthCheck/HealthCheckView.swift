@@ -9,14 +9,6 @@
 import SwiftUI
 import Minimuxer
 
-struct LocalInterfaceInfo: Hashable, Identifiable {
-    var id: String { name + "-" + ip }
-    let name: String
-    let ip: String
-    let subnet: String
-    let type: String
-}
-
 struct HealthCheckView: View {
     @StateObject private var viewModel = HealthCheckViewModel()
     
@@ -98,15 +90,19 @@ struct HealthCheckView: View {
                     subtitle: viewModel.isPairingFileVerified ? "Verified" : (viewModel.isPairingFileLoaded ? "Loaded (Connection down)" : "Unverified / Missing"),
                     isSatisfied: viewModel.pairingSatisfied
                 )
-                
+            }
+            
+            // Section 3: JIT Dependencies
+            Section(header: Text("JIT Requirements")) {
                 DependencyRow(
                     title: "Developer Disk Image (DDI)",
-                    subtitle: viewModel.isDDIMounted ? "Mounted" : "Not Mounted",
-                    isSatisfied: viewModel.ddiSatisfied
+                    subtitle: viewModel.isDDIMounted ? "Mounted" : "Not Mounted (JIT unavailable)",
+                    isSatisfied: viewModel.ddiSatisfied,
+                    isOptional: true
                 )
             }
             
-            // Section 3: Connection Configuration
+            // Section 4: Connection Configuration
             Section(header: Text("Connection Configuration")) {
                 HStack {
                     Text("Connection Mode")
@@ -117,7 +113,6 @@ struct HealthCheckView: View {
                 
                 if viewModel.connectionMode == .localVPN {
                     ConfigRow(label: "Tunnel Iface IP", value: viewModel.tunnelIfaceIp)
-                    ConfigRow(label: "Tunnel Subnet Mask", value: viewModel.tunnelIfaceSubnetMask)
                     ConfigRow(label: "Tunnel Peer IP", value: viewModel.tunnelPeerIp)
                     ConfigRow(label: "Override Peer IP", value: viewModel.overrideTunnelPeerIp.isEmpty ? nil : viewModel.overrideTunnelPeerIp)
                     HStack {
@@ -150,8 +145,8 @@ struct HealthCheckView: View {
                         .foregroundColor(.secondary)
                         .italic()
                 } else {
-                    let vpnInterfaces = viewModel.availableInterfaces.filter { $0.type.contains("VPN") }
-                    let localInterfaces = viewModel.availableInterfaces.filter { !$0.type.contains("VPN") }
+                    let vpnInterfaces = viewModel.availableInterfaces.filter { $0.type.isVPN }
+                    let localInterfaces = viewModel.availableInterfaces.filter { !$0.type.isVPN }
                     
                     if !vpnInterfaces.isEmpty {
                         ForEach(vpnInterfaces) { iface in
@@ -179,6 +174,7 @@ struct DependencyRow: View {
     let title: String
     let subtitle: String
     let isSatisfied: Bool?
+    var isOptional: Bool = false
     
     var body: some View {
         HStack {
@@ -191,9 +187,19 @@ struct DependencyRow: View {
             }
             Spacer()
             if let satisfied = isSatisfied {
-                Image(systemName: satisfied ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .foregroundColor(satisfied ? .green : .red)
-                    .font(.title3)
+                if satisfied {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                        .font(.title3)
+                } else if isOptional {
+                    Image(systemName: "minus.circle.fill")
+                        .foregroundColor(.orange)
+                        .font(.title3)
+                } else {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.red)
+                        .font(.title3)
+                }
             } else {
                 Image(systemName: "questionmark.circle.fill")
                     .foregroundColor(.gray)
@@ -220,28 +226,81 @@ struct ConfigRow: View {
 struct InterfaceRow: View {
     let iface: LocalInterfaceInfo
     
+    private var hasIPv4: Bool {
+        !iface.subnet.isEmpty && !iface.ip.contains(":")
+    }
+    
+    private var ipv4Host: String {
+        hasIPv4 ? iface.ip : "N/A"
+    }
+    
+    private var ipv4Mask: String {
+        !iface.subnet.isEmpty ? iface.subnet : "N/A"
+    }
+    
+    private var ipv6Address: String {
+        if let v6 = iface.ipv6, !v6.isEmpty {
+            return v6
+        }
+        if iface.ip.contains(":") {
+            return iface.ip
+        }
+        return "N/A"
+    }
+    
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    Text(iface.name)
-                        .fontWeight(.semibold)
-                    Text(iface.type)
-                        .font(.caption)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(iface.type.contains("VPN") ? Color.blue.opacity(0.15) : Color.gray.opacity(0.15))
-                        .foregroundColor(iface.type.contains("VPN") ? .blue : .primary)
-                        .cornerRadius(4)
-                }
-                Text("Subnet: \(iface.subnet)")
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Text("Iface:")
                     .font(.caption)
                     .foregroundColor(.secondary)
+                    .frame(width: 36, alignment: .leading)
+                
+                Text(iface.name)
+                    .fontWeight(.semibold)
+                
+                Text(iface.type.rawValue)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(iface.type.isVPN ? Color.blue.opacity(0.15) : Color.gray.opacity(0.15))
+                    .foregroundColor(iface.type.isVPN ? .blue : .primary)
+                    .cornerRadius(4)
+                
+                Spacer()
             }
-            Spacer()
-            Text(iface.ip)
-                .font(.system(.body, design: .monospaced))
-                .foregroundColor(.secondary)
+            .padding(.bottom, 2)
+            
+            HStack(alignment: .top, spacing: 8) {
+                Text("IPv4:")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .frame(width: 36, alignment: .leading)
+                
+                Text(ipv4Host)
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundColor(hasIPv4 ? .primary : .secondary)
+                
+                if hasIPv4 {
+                    Text("(\(ipv4Mask))")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            HStack(alignment: .top, spacing: 8) {
+                Text("IPv6:")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .frame(width: 36, alignment: .leading)
+                
+                Text(ipv6Address)
+                    .font(.system(.caption2, design: .monospaced))
+                    .foregroundColor(ipv6Address != "N/A" ? .primary : .secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
+        .padding(.vertical, 4)
     }
 }

@@ -13,11 +13,7 @@ internal enum AltWidgetLogging {
     private static var hasWrittenBootHeader = false
 
     internal static var isVerboseLoggingEnabled: Bool {
-        let defaults = UserDefaults.standard
-        if defaults.object(forKey: "isAltWidgetVerboseLoggingEnabled") == nil {
-            return true
-        }
-        return defaults.bool(forKey: "isAltWidgetVerboseLoggingEnabled")
+        WidgetDataManager.shared.isVerboseLoggingEnabled
     }
 
     internal static func setLogging(_ enabled: Bool) {

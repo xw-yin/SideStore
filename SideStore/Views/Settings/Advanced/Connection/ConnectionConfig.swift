@@ -20,6 +20,8 @@ final class ConnectionConfig: ObservableObject {
     @Published var tunnelIfaceIp: String?
     @Published var tunnelIfaceSubnetMask: String?
     @Published var tunnelPeerIp: String?
+    @Published var tunnelPeerSubnetMask: String?
+    @Published var tunnelPeerReachable: Bool = false
     @Published var overrideTunnelPeerIp: String = overrideIPStorage {
         didSet { Self.overrideIPStorage = overrideTunnelPeerIp }
     }
@@ -68,8 +70,31 @@ final class ConnectionConfig: ObservableObject {
         set { setStoredWireGuardServerPort(newValue) }
     }
 
+    var tunnelPeerActive: ActiveState { tunnelPeerReachable ? .yes : .no }
     var overrideTunnelPeerActive: ActiveState { overrideTunnelPeerReachable ? .yes : .no }
     var remoteActive: ActiveState { remoteReachable ? .yes : .no }
+
+    var formattedTunnelIface: String? {
+        guard let ip = tunnelIfaceIp, !ip.isEmpty else { return nil }
+        if let mask = tunnelIfaceSubnetMask, let cidr = Self.cidrPrefix(from: mask) {
+            return "\(ip)/\(cidr)"
+        }
+        return ip
+    }
+
+    var formattedTunnelPeer: String? {
+        guard let ip = tunnelPeerIp, !ip.isEmpty else { return nil }
+        if let mask = tunnelPeerSubnetMask, let cidr = Self.cidrPrefix(from: mask) {
+            return "\(ip)/\(cidr)"
+        }
+        return ip
+    }
+
+    static func cidrPrefix(from subnetMask: String) -> Int? {
+        let octets = subnetMask.split(separator: ".").compactMap { UInt8($0) }
+        guard octets.count == 4 else { return nil }
+        return octets.reduce(0) { $0 + $1.nonzeroBitCount }
+    }
 }
 
 // MARK: - Private ConnectionConfig Domain Persistence Extension

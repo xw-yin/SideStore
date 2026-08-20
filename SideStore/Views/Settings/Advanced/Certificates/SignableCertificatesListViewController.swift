@@ -43,7 +43,7 @@ struct SignableCertificateRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(cert.machineName ?? cert.name)
                     .font(.headline)
-                    .foregroundColor(.primary)
+                    .foregroundColor(.white)
                 
                 let certName = cert.name
                 if cert.machineName != nil {
@@ -144,14 +144,12 @@ final class SignableCertificatesListViewController: UITableViewController {
         self.tableView.backgroundColor = .systemGroupedBackground
         
         let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = .systemBackground
+        appearance.configureWithDefaultBackground()
         appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
         self.navigationItem.standardAppearance = appearance
         self.navigationItem.scrollEdgeAppearance = appearance
         
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancelTapped))
-        self.navigationItem.leftBarButtonItem?.tintColor = .altPrimary
         
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "CertCell")
     }
@@ -199,7 +197,7 @@ final class SignableCertificatesListViewController: UITableViewController {
             cell.contentConfiguration = UIHostingConfiguration {
                 SignableCertificateRowView(cert: cert, appName: installedApp.name, appCertSerial: installedApp.certificateSerialNumber, viewModel: viewModel)
             }
-            .background(Color(uiColor: .secondarySystemGroupedBackground))
+            .background(Color.white.opacity(0.15))
         } else {
             let certName = cert.name
             let machineName = cert.machineName ?? "N/A"
@@ -217,9 +215,9 @@ final class SignableCertificatesListViewController: UITableViewController {
             Requester: \(cert.requesterEmail ?? "N/A")
             Keys: public + private
             """
-            cell.textLabel?.textColor = .label
+            cell.textLabel?.textColor = .white
             cell.textLabel?.font = .systemFont(ofSize: 12, weight: .regular)
-            cell.backgroundColor = .secondarySystemGroupedBackground
+            cell.backgroundColor = UIColor.white.withAlphaComponent(0.15)
             cell.accessoryType = isCurrent ? .checkmark : .none
             cell.tintColor = .green
         }

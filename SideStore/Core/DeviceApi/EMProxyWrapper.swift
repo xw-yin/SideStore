@@ -22,14 +22,17 @@ func startEMProxy(bind_addr: String = AppConstants.Proxy.serverURL) async throws
         throw EMProxyError.invalidSocketAddress(bind_addr)
     }
 
+    await bindConnectionConfig()
+
     let host = ConnectionConfig.shared.wireguardServerHost
     let port = ConnectionConfig.shared.wireguardServerPort
-    let vpnPeer = ConnectionConfig.shared.overrideTunnelPeerIp
+    let overrideIp = ConnectionConfig.shared.overrideTunnelPeerIp.trimmingCharacters(in: .whitespacesAndNewlines)
+    let initialHandshakePeer = !overrideIp.isEmpty ? overrideIp : (ConnectionConfig.shared.tunnelPeerIp ?? "")
     let lockdowndPort = MinimuxerConstants.lockdowndPort
-
-    Minimuxer.emproxy.setHandshakeClient(host: vpnPeer, port: lockdowndPort)
-
-    do {
+    
+    Minimuxer.emproxy.setHandshakeClient(host: initialHandshakePeer, port: lockdowndPort, enabled: !initialHandshakePeer.isEmpty)
+    
+    do {        
         try await Minimuxer.emproxy.start(host: host, port: port)
     } catch {
         debugLog("[SideStore] startEMProxy() failed with error: \(error)")

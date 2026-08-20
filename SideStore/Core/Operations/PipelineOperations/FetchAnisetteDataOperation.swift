@@ -78,6 +78,15 @@ final class FetchAnisetteDataOperation: BaseStandaloneOperation<AuthenticatedOpe
         }
         
         self.setProgress(20)
+        /*
+        if UserDefaults.standard.useOnDeviceAnisette {
+            self.debugLog("[FetchAnisetteDataOperation] Fetching anisette via On-Device Anisette (ODA)...")
+            let result = try await OnDeviceAnisetteManager.shared.fetchAnisetteData()
+            self.setProgress(100)
+            return result
+        }
+        */
+
         let result = try await self.startProvisioningFlow()
         self.setProgress(100)
         return result
@@ -336,7 +345,7 @@ final class FetchAnisetteDataOperation: BaseStandaloneOperation<AuthenticatedOpe
         let shouldContinue = try await handler.warnOutdatedAnisetteServer()
         if shouldContinue {
             self.verboseLog("[FetchAnisetteDataOperation] Fetching anisette via V1")
-            UserDefaults.shared.defaultServerURL = AnisetteManager.currentURLString
+            UserDefaults.standard.defaultServerURL = AnisetteManager.currentURLString
             return try await self.fetchAnisetteV1()
         } else {
             self.debugLog("[FetchAnisetteDataOperation] Cancelled anisette operation")
