@@ -9,7 +9,6 @@
 
 import Foundation
 import CoreData
-@preconcurrency import AltStoreCore
 
 enum AppOperation
 {
@@ -22,6 +21,7 @@ enum AppOperation
     case backup(InstalledApp)
     case restore(InstalledApp)
     case resign(InstalledApp, alternateIconMode: AlternateIconMode = .preserve)
+    case removeApp(InstalledApp)
     case removeDeactivatedApp(InstalledApp)
     case enableJIT(InstalledApp)
     
@@ -32,7 +32,7 @@ enum AppOperation
             return app
         case .refresh(let app), .activate(let app), .deactivate(let app), .deleteApp(let app),
              .backup(let app),  .restore(let app),  .resign(let app, _),
-             .removeDeactivatedApp(let app),  .enableJIT(let app):
+             .removeApp(let app), .removeDeactivatedApp(let app),  .enableJIT(let app):
             return app
         }
     }
@@ -64,7 +64,7 @@ enum AppOperation
         case .backup: return .backup
         case .restore: return .restore
         case .resign: return .resign
-        case .removeDeactivatedApp: return .remove
+        case .removeApp, .removeDeactivatedApp: return .remove
         case .enableJIT: return .enableJIT
         }
     }

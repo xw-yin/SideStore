@@ -8,7 +8,6 @@
 
 
 import Foundation
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 final class RemoveAppExtensionsOperation: BasePipelineOperation<InstallAppOperationContext, ALTApplication>, @unchecked Sendable {

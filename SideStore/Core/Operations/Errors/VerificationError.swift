@@ -5,7 +5,6 @@
 //  Created by Riley Testut on 5/11/23.
 //  Copyright © 2023 Riley Testut. All rights reserved.
 //
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 extension VerificationError
@@ -13,9 +12,6 @@ extension VerificationError
     enum Code: Int, ALTErrorCode, CaseIterable
     {
         typealias Error = VerificationError
-        
-        // Legacy
-//        case privateEntitlements = 0
         
         case mismatchedBundleIdentifiers = 1
         case iOSVersionNotSupported = 2
@@ -26,11 +22,8 @@ extension VerificationError
         
         case undeclaredPermissions = 6
         case addedPermissions = 7
+        case mismatchedSize = 8
     }
-
-//    static func privateEntitlements(_ entitlements: [String: Any], appBundle: ALTApplication) -> VerificationError {
-//        VerificationError(code: .privateEntitlements, app: appBundle, entitlements: entitlements)
-//    }
 
     static func mismatchedBundleIdentifiers(sourceBundleID: String, appBundle: ALTApplication) -> VerificationError {
         VerificationError(code: .mismatchedBundleIdentifiers, app: appBundle, sourceBundleID: sourceBundleID)
@@ -65,6 +58,10 @@ extension VerificationError
     static func addedPermissions(_ permissions: [any ALTAppPermission], appVersion: AppVersion) -> VerificationError {
         VerificationError(code: .addedPermissions, app: appVersion, permissions: permissions)
     }
+    
+    static func mismatchedSize(_ size: Int64, expectedSize: Int64, app: AppProtocol) -> VerificationError {
+        VerificationError(code: .mismatchedSize, app: app, size: size, expectedSize: expectedSize)
+    }
 }
 
 struct VerificationError: ALTLocalizedError
@@ -84,6 +81,9 @@ struct VerificationError: ALTLocalizedError
     
     @UserInfoValue var version: String?
     @UserInfoValue var expectedVersion: String?
+    
+    @UserInfoValue var size: Int64?
+    @UserInfoValue var expectedSize: Int64?
     
     @UserInfoValue
     var permissions: [any ALTAppPermission]?
@@ -165,6 +165,12 @@ struct VerificationError: ALTLocalizedError
         case .mismatchedBuildVersion:
             let appName = self.$app.name ?? NSLocalizedString("the app", comment: "")
             return String(format: NSLocalizedString("The downloaded version of %@ does not match the build number specified by the source.\nExpected version: %@\nFound version: %@", comment: ""), appName, expectedVersion ?? "nil", version ?? "nil")
+            
+        case .mismatchedSize:
+            let appName = self.$app.name ?? NSLocalizedString("the downloaded app", comment: "")
+            let sizeString = ByteCountFormatter.string(fromByteCount: self.size ?? 0, countStyle: .file)
+            let expectedSizeString = ByteCountFormatter.string(fromByteCount: self.expectedSize ?? 0, countStyle: .file)
+            return String(format: NSLocalizedString("The file size of %@ (%@) does not match the size specified by the source (%@).", comment: ""), appName, sizeString, expectedSizeString)
             
         case .undeclaredPermissions:
             let appName = self.$app.name ?? NSLocalizedString("The app", comment: "")

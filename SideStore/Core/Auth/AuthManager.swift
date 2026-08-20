@@ -9,10 +9,13 @@
 @preconcurrency import UIKit
 import Foundation
 @preconcurrency import AltSign
-@preconcurrency import AltStoreCore
 
 public final class AuthManager: @unchecked Sendable {
     public static let shared = AuthManager()
+    
+    private var portalService: DeveloperPortalAuthService {
+        DeveloperPortalService.shared as! DeveloperPortalAuthService
+    }
     
     private init() {}
     
@@ -91,55 +94,18 @@ public final class AuthManager: @unchecked Sendable {
     }
     
     
-    // Developer Portal API Operations
-    
-    public func fetchCertificates(team: ALTTeam, session: ALTAppleAPISession) async throws -> [ALTX509Certificate] {
-        return try await DeveloperPortalService.shared.fetchCertificates(team: team, session: session)
-    }
-    
-    public func createCertificate(machineName: String, team: ALTTeam, session: ALTAppleAPISession) async throws -> ALTCertificate {
-        return try await DeveloperPortalService.shared.createCertificate(machineName: machineName, team: team, session: session)
-    }
-    
-    public func revokeCertificate(_ certificate: ALTX509Certificate, team: ALTTeam, session: ALTAppleAPISession) async throws -> Bool {
-        return try await DeveloperPortalService.shared.revokeCertificate(certificate, team: team, session: session)
+    // Developer Portal Operations
+    @discardableResult
+    public func fetchAccount(session: ALTAppleAPISession) async throws -> ALTAccount {
+        return try await self.portalService.fetchAccount(session: session)
     }
     
     public func authenticate(appleID: String, password: String, anisetteData: ALTAnisetteData, xcodeVersion: String, verificationHandler: ((@escaping (String?) -> Void) -> Void)?) async throws -> (ALTAccount, ALTAppleAPISession) {
-        return try await DeveloperPortalService.shared.authenticate(appleID: appleID, password: password, anisetteData: anisetteData, xcodeVersion: xcodeVersion, verificationHandler: verificationHandler)
+        return try await self.portalService.authenticate(appleID: appleID, password: password, anisetteData: anisetteData, xcodeVersion: xcodeVersion, verificationHandler: verificationHandler)
     }
     
     public func authenticateWithToken(adsid: String, xcodeToken: String, anisetteData: ALTAnisetteData, xcodeVersion: String) async throws -> (ALTAccount, ALTAppleAPISession) {
-        return try await DeveloperPortalService.shared.authenticateWithToken(adsid: adsid, xcodeToken: xcodeToken, anisetteData: anisetteData, xcodeVersion: xcodeVersion)
-    }
-    
-    @discardableResult
-    public func fetchAccount(session: ALTAppleAPISession) async throws -> ALTAccount {
-        return try await DeveloperPortalService.shared.fetchAccount(session: session)
-    }
-    
-    public func fetchTeams(for account: ALTAccount, session: ALTAppleAPISession) async throws -> [ALTTeam] {
-        return try await DeveloperPortalService.shared.fetchTeams(for: account, session: session)
-    }
-    
-    public func fetchCertificates(for team: ALTTeam, session: ALTAppleAPISession) async throws -> [ALTX509Certificate] {
-        return try await DeveloperPortalService.shared.fetchCertificates(team: team, session: session)
-    }
-    
-    public func addCertificate(machineName: String, to team: ALTTeam, session: ALTAppleAPISession) async throws -> ALTCertificate {
-        return try await DeveloperPortalService.shared.createCertificate(machineName: machineName, team: team, session: session)
-    }
-    
-    public func revokeCertificate(_ certificate: ALTX509Certificate, for team: ALTTeam, session: ALTAppleAPISession) async throws {
-        _ = try await DeveloperPortalService.shared.revokeCertificate(certificate, team: team, session: session)
-    }
-    
-    public func fetchDevices(for team: ALTTeam, types: ALTDeviceType, session: ALTAppleAPISession) async throws -> [ALTDevice] {
-        return try await DeveloperPortalService.shared.fetchDevices(for: team, types: types, session: session)
-    }
-    
-    public func registerDevice(name: String, identifier: String, type: ALTDeviceType, team: ALTTeam, session: ALTAppleAPISession) async throws -> ALTDevice {
-        return try await DeveloperPortalService.shared.registerDevice(name: name, identifier: identifier, type: type, team: team, session: session)
+        return try await self.portalService.authenticateWithToken(adsid: adsid, xcodeToken: xcodeToken, anisetteData: anisetteData, xcodeVersion: xcodeVersion)
     }
 }
 

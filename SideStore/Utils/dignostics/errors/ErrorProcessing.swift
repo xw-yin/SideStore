@@ -6,7 +6,6 @@
 //  Copyright © 2025 SideStore. All rights reserved.
 //
 
-@preconcurrency import AltStoreCore
 
 class ErrorProcessing {
     

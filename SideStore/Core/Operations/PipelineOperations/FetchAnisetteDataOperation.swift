@@ -10,7 +10,6 @@
 import Foundation
 import CommonCrypto
 import Starscream
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 final class FetchAnisetteDataOperation: BaseStandaloneOperation<AuthenticatedOperationContext, ALTAnisetteData>, @unchecked Sendable {
@@ -70,7 +69,7 @@ final class FetchAnisetteDataOperation: BaseStandaloneOperation<AuthenticatedOpe
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         self.setProgress(10)
         
-        if let authContext = self.context as? AuthenticatedOperationContext,
+        if let authContext = self.context,
            let session = authContext.session,
            session.anisetteData.date.timeIntervalSinceNow > -30.0 {
             self.debugLog("[FetchAnisetteDataOperation] Skipping anisette fetch: Anisette data is still fresh (\(-session.anisetteData.date.timeIntervalSinceNow)s old).")
@@ -79,6 +78,15 @@ final class FetchAnisetteDataOperation: BaseStandaloneOperation<AuthenticatedOpe
         }
         
         self.setProgress(20)
+        /*
+        if UserDefaults.standard.useOnDeviceAnisette {
+            self.debugLog("[FetchAnisetteDataOperation] Fetching anisette via On-Device Anisette (ODA)...")
+            let result = try await OnDeviceAnisetteManager.shared.fetchAnisetteData()
+            self.setProgress(100)
+            return result
+        }
+        */
+
         let result = try await self.startProvisioningFlow()
         self.setProgress(100)
         return result
@@ -337,7 +345,7 @@ final class FetchAnisetteDataOperation: BaseStandaloneOperation<AuthenticatedOpe
         let shouldContinue = try await handler.warnOutdatedAnisetteServer()
         if shouldContinue {
             self.verboseLog("[FetchAnisetteDataOperation] Fetching anisette via V1")
-            UserDefaults.shared.defaultServerURL = AnisetteManager.currentURLString
+            UserDefaults.standard.defaultServerURL = AnisetteManager.currentURLString
             return try await self.fetchAnisetteV1()
         } else {
             self.debugLog("[FetchAnisetteDataOperation] Cancelled anisette operation")
@@ -745,7 +753,7 @@ final class SafeContinuation<T, E: Error>: @unchecked Sendable {
     }
 }
 
-extension HTTPUpgradeError: LocalizedError {
+extension HTTPUpgradeError: @retroactive LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .notAnUpgrade(let statusCode, _):
@@ -756,7 +764,7 @@ extension HTTPUpgradeError: LocalizedError {
     }
 }
 
-extension WSError: LocalizedError {
+extension WSError: @retroactive LocalizedError {
     public var errorDescription: String? {
         return "\(self.message) (code: \(self.code))"
     }

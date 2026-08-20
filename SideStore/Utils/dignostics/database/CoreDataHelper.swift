@@ -10,7 +10,6 @@
 import Foundation
 import CoreData
 import System
-@preconcurrency import AltStoreCore
 
 class CoreDataHelper{
     

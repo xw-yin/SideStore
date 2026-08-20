@@ -1742,7 +1742,7 @@ Settings by i cons from the Noun Project</string>
                                 </connections>
                             </barButtonItem>
                             <barButtonItem title="console" id="1cD-4y-vTJ" userLabel="Console Log Button">
-                                <imageReference key="image" image="terminal" catalog="system" symbolScale="large"/>
+                                <imageReference key="image" image="apple.terminal" catalog="system" symbolScale="large"/>
                                 <connections>
                                     <action selector="showConsoleLogs:" destination="g8a-Rf-zWa" id="V0f-0y-C6C"/>
                                 </connections>

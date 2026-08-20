@@ -172,7 +172,7 @@ public struct StorageExplorerView: View {
                 if !seenPaths.contains(containerURL.path) {
                     seenPaths.insert(containerURL.path)
                     let start = Date()
-                    let size = StorageExplorerViewModel.calculateDirectorySize(url: containerURL)
+                    let size = await StorageExplorerViewModel.calculateDirectorySize(url: containerURL)
                     let duration = Date().timeIntervalSince(start)
                     verboseLog("[StorageExplorerView] Scanned container: \(containerURL.path) -> Size: \(size) bytes (\(String(format: "%.3f", duration))s)")
                     totalAppSize += size

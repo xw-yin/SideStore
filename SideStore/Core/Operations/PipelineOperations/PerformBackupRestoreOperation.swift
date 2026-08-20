@@ -8,7 +8,6 @@
 
 @preconcurrency import UIKit
 import Foundation
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 extension PerformBackupRestoreOperation {
@@ -131,78 +130,74 @@ final class PerformBackupRestoreOperation: BasePipelineOperation<InstallAppOpera
         self.debugLog("[BackupRestoreAppOperation] Starting observation...")
         
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            var timeoutTimer: Timer?
+            let lock = NSLock()
             var applicationWillReturnObserver: NSObjectProtocol?
             var backupResponseObserver: NSObjectProtocol?
             var hasResumed = false
 
-            let removeObservers = {
-                timeoutTimer?.invalidate()
+            let removeObserversAndResume = { (result: Result<Void, Error>) -> Bool in
+                lock.lock()
+                defer { lock.unlock() }
+                guard !hasResumed else { return false }
+                hasResumed = true
+                
                 if let observer = applicationWillReturnObserver {
                     NotificationCenter.default.removeObserver(observer)
+                    applicationWillReturnObserver = nil
                 }
                 if let observer = backupResponseObserver {
                     NotificationCenter.default.removeObserver(observer)
+                    backupResponseObserver = nil
                 }
+                
+                continuation.resume(with: result)
+                return true
             }
 
-            applicationWillReturnObserver = NotificationCenter.default.addObserver(
+            let appWillReturnObs = NotificationCenter.default.addObserver(
                 forName: UIApplication.willEnterForegroundNotification,
                 object: nil,
                 queue: .main
             ) { _ in
                 self.debugLog("[BackupRestoreAppOperation] willEnterForegroundNotification received. Starting 5-second grace period timer...")
-                timeoutTimer?.invalidate()
-                if let observer = applicationWillReturnObserver { NotificationCenter.default.removeObserver(observer) }
-                
-                timeoutTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { _ in
-                    Task { @MainActor in
-                        try? await Task.sleep(nanoseconds: 1_000_000_000)
-                        guard !hasResumed else { return }
-                        self.debugLog("[BackupRestoreAppOperation] 5-second timer expired without receiving backup completion response. Timing out.")
-                        hasResumed = true
-                        removeObservers()
-                        await AppDelegate.dumpSideBackupLogsIfNeeded()
-                        continuation.resume(throwing: OperationError.timedOut)
-                    }
+                Task {
+                    try? await Task.sleep(nanoseconds: 6_000_000_000)
+                    self.debugLog("[BackupRestoreAppOperation] 5-second timer expired without receiving backup completion response. Timing out.")
+                    await AppDelegate.dumpSideBackupLogsIfNeeded()
+                    _ = removeObserversAndResume(.failure(OperationError.timedOut))
                 }
             }
             
-            backupResponseObserver = NotificationCenter.default.addObserver(
+            let backupRespObs = NotificationCenter.default.addObserver(
                 forName: AppDelegate.appBackupDidFinish,
                 object: nil,
                 queue: nil
             ) { notification in
                 self.debugLog("[BackupRestoreAppOperation] appBackupDidFinish notification received. UserInfo: \(String(describing: notification.userInfo))")
-                guard !hasResumed else {
-                    self.debugLog("[BackupRestoreAppOperation] Warning: already resumed. Ignoring notification.")
-                    return
-                }
-                hasResumed = true
-                removeObservers()
-
-                Task {
+                Task.detached {
                     await AppDelegate.dumpSideBackupLogsIfNeeded()
                     
-                    let result = await notification.userInfo?[AppDelegate.appBackupResultKey] as? Result<Void, Error> ?? .failure(OperationError.unknownResult)
+                    let result = notification.userInfo?[AppDelegate.appBackupResultKey] as? Result<Void, Error> ?? .failure(OperationError.unknownResult)
                     let mappedResult = result.mapError { self.mapBackupError($0) }
                     self.debugLog("[BackupRestoreAppOperation] Resuming continuation with mapped result: \(mappedResult)")
-                    if case .success = mappedResult {
+                    
+                    let didResume = removeObserversAndResume(mappedResult)
+                    if didResume, case .success = mappedResult {
                         self.setProgress(self.progress.completedUnitCount + 1)
                     }
-                    continuation.resume(with: mappedResult)
                 }
             }
 
-            Task { @MainActor in
+            lock.withLock {
+                applicationWillReturnObserver = appWillReturnObs
+                backupResponseObserver = backupRespObs
+            }
+            Task.detached {
                 try? await Task.sleep(nanoseconds: 500_000_000)
                 let openedSuccessfully = await self.openApp(url: openURL)
                 if !openedSuccessfully {
-                    guard !hasResumed else { return }
                     self.debugLog("[BackupRestoreAppOperation] Failed to open target application. Resuming with error.")
-                    hasResumed = true
-                    removeObservers()
-                    continuation.resume(throwing: OperationError.openAppFailed(name: installedApp.name))
+                    _ = removeObserversAndResume(.failure(OperationError.openAppFailed(name: name)))
                 }
             }
         }

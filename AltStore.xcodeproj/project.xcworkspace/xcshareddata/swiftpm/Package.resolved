@@ -1,6 +1,15 @@
 {
-  "originHash" : "eb6eb40dbf18de84c9e89370316f8b21281d8619c73de87ff822208d9f434002",
+  "originHash" : "b80bb65ed727f3de62e81e661277f54d2e66467f0ef891002f438aaab59cd518",
   "pins" : [
+    {
+      "identity" : "anisettekit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mahee96/AnisetteKit",
+      "state" : {
+        "branch" : "main",
+        "revision" : "ec7c0b84499f107d3864637297b28a5c4ad13150"
+      }
+    },
     {
       "identity" : "keychainaccess",
       "kind" : "remoteSourceControl",

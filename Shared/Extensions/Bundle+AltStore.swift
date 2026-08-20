@@ -8,11 +8,18 @@
 
 import Foundation
 
+// @livecontainer
+private extension Bundle {
+    @objc dynamic static let activeBundle: Bundle = Bundle.main
+    @objc dynamic static let storeAppBundleIdentifier = "com.SideStore.SideStore"
+    @objc dynamic static let appbundleIdentifier = "com.SideStore.SideStore"
+}
+
 public extension Bundle
 {
     struct Info
     {
-        public static let activeBundle: Bundle = Bundle.main
+        public static let activeBundle: Bundle = Bundle.activeBundle
         public static let activeBundleURL: URL = activeBundle.bundleURL
         public static let activeBundleVersion: String = {
             let info = activeBundle.infoDictionary
@@ -69,6 +76,7 @@ public extension Bundle
 
 public extension Bundle
 {
+    // @livecontainer
     static let baseAltStoreAppGroupID = "group.com.SideStore.SideStore"
     static let isBundledWithLiveContainer = Bundle.main.bundleURL.lastPathComponent == "SideStoreApp.framework" || Bundle.main.bundleURL.lastPathComponent == "LiveWidgetExtension.appex"
 
@@ -76,6 +84,7 @@ public extension Bundle
         return self.infoDictionary?[Bundle.Info.appGroups] as? [String] ?? []
     }
     
+    // @livecontainer
     static var lcBundle: Bundle? {
         Bundle(url: Bundle.main.bundleURL.deletingLastPathComponent().deletingLastPathComponent())
     }

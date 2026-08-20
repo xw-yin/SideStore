@@ -7,9 +7,7 @@
 //
 
 @preconcurrency import UIKit
-@preconcurrency import AltStoreCore
-
-import Nuke
+@preconcurrency import Nuke
 
 class PreviewAppScreenshotsViewController: UICollectionViewController
 {
@@ -114,8 +112,32 @@ private extension PreviewAppScreenshotsViewController
         let dataSource = RSTArrayCollectionViewPrefetchingDataSource<AppScreenshot, UIImage>(items: screenshots)
         dataSource.cellConfigurationHandler = { [weak self] (cell, screenshot, indexPath) in
             let cell = cell as! AppScreenshotCollectionViewCell
+            cell.imageView.image = nil
             cell.imageView.isIndicatingActivity = true
-            cell.setImage(nil)
+            cell.reloadImageView.isHidden = true
+            
+            cell.onRetry = { [weak cell] in
+                guard let cell = cell else { return }
+                cell.imageView.isIndicatingActivity = true
+                cell.reloadImageView.isHidden = true
+                
+                let imageURL = screenshot.imageURL
+                let request = ImageRequest(
+                    url: imageURL,
+                    processors: [ImageProcessors.Resize(size: CGSize(width: 250, height: 500))]
+                )
+                ImagePipeline.shared.loadImage(with: request, progress: nil) { [weak cell] result in
+                    cell?.imageView.isIndicatingActivity = false
+                    switch result
+                    {
+                    case .success(let response):
+                        cell?.setImage(response.image)
+                    case .failure:
+                        cell?.setImage(nil)
+                        cell?.reloadImageView.isHidden = false
+                    }
+                }
+            }
             
             var aspectRatio = screenshot.size ?? AppScreenshot.defaultAspectRatio
             if aspectRatio.width > aspectRatio.height
@@ -138,17 +160,26 @@ private extension PreviewAppScreenshotsViewController
         }
         dataSource.prefetchHandler = { (screenshot, indexPath, completionHandler) in
             let imageURL = screenshot.imageURL
-            Task.detached(priority: .background) {
-                let request = ImageRequest(url: imageURL)
-                ImagePipeline.shared.loadImage(with: request, progress: nil) { result in
-                    switch result
-                    {
-                    case .success(let response): completionHandler(response.image, nil)
-                    case .failure(let error): completionHandler(nil, error)
-                    }
+            let request = ImageRequest(
+                url: imageURL,
+                processors: [ImageProcessors.Resize(size: CGSize(width: 250, height: 500))]
+            )
+            let imageTask = ImagePipeline.shared.loadImage(with: request, progress: nil) { result in
+                switch result
+                {
+                case .success(let response): completionHandler(response.image, nil)
+                case .failure(let error): completionHandler(nil, error)
                 }
             }
-            return nil
+            return Task {
+                await withTaskCancellationHandler {
+                    if Task.isCancelled {
+                        imageTask.cancel()
+                    }
+                } onCancel: {
+                    imageTask.cancel()
+                }
+            }
         }
         dataSource.prefetchCompletionHandler = { (cell, image, indexPath, error) in
             let cell = cell as! AppScreenshotCollectionViewCell
@@ -157,7 +188,18 @@ private extension PreviewAppScreenshotsViewController
             
             if let error = error
             {
-                debugLog("Error loading image: \(error)")
+                debugLog("Error loading image at index \(indexPath.item): \(error.localizedDescription)")
+                cell.reloadImageView.isHidden = false
+            }
+            else if image == nil
+            {
+                debugLog("Loaded image is nil at index \(indexPath.item)")
+                cell.reloadImageView.isHidden = false
+            }
+            else
+            {
+                debugLog("Successfully loaded image at index \(indexPath.item) with size: \(image?.size ?? .zero)")
+                cell.reloadImageView.isHidden = true
             }
         }
         

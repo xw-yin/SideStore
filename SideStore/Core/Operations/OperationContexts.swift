@@ -10,7 +10,6 @@
 import Foundation
 import CoreData
 import Network
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 

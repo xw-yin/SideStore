@@ -8,7 +8,6 @@
 
 import SwiftUI
 import Minimuxer
-import Darwin
 import Combine
 
 /*
@@ -97,9 +96,9 @@ final class HealthCheckViewModel: ObservableObject {
         let utun = Minimuxer.network.isUTunAvailable
         let ipsec = Minimuxer.network.isIKEv2IPSecAvailable
         
-        let tunnelIfaceIp = ConnectionConfig.shared.tunnelIfaceIp
+        let tunnelIfaceIp = ConnectionConfig.shared.formattedTunnelIface
         let tunnelIfaceSubnetMask = ConnectionConfig.shared.tunnelIfaceSubnetMask
-        let tunnelPeerIp = ConnectionConfig.shared.tunnelPeerIp
+        let tunnelPeerIp = ConnectionConfig.shared.formattedTunnelPeer
         let overrideTunnelPeerIp = ConnectionConfig.shared.overrideTunnelPeerIp
         let overrideTunnelPeerEffective = ConnectionConfig.shared.overrideTunnelPeerReachable
         let remoteServerIp = ConnectionConfig.shared.remoteServerIp
@@ -124,8 +123,8 @@ final class HealthCheckViewModel: ObservableObject {
         let pairingVerified = (try? await Minimuxer.shared.fetchUDID() != nil) ?? false
         let isRpPairing = Minimuxer.shared.isrppairing
         let isPairingLoaded = Minimuxer.shared.isPairingFileLoaded
-        let readyResult = await Minimuxer.shared.isReady()
-        let scanned = self.scanLocalInterfaces()
+        let readyResult = await Minimuxer.shared.isReady(withDDIMountCheck: true)
+        let scanned = Minimuxer.network.activeInterfaces
         
         return HealthCheckMetrics(
             connectionMode: mode,
@@ -145,12 +144,42 @@ final class HealthCheckViewModel: ObservableObject {
         let initialStatus = self.computeStatuses(initialMetrics)
         self.updateUI(metrics: initialMetrics, status: initialStatus)
         
-        // Listen to subsequent updates reactively
-        for await _ in minimuxerStatusPublisher.values {
-            guard !Task.isCancelled else { break }
-            let metrics = await self.fetchMetrics()
-            let status = self.computeStatuses(metrics)
-            self.updateUI(metrics: metrics, status: status)
+        await withTaskGroup(of: Void.self) { group in
+            // Immediate Network & Interface Updates (Wi-Fi, interfaces, VPN tunnel presence)
+            group.addTask {
+                for await _ in Minimuxer.network.pathPublisher.values {
+                    guard !Task.isCancelled else { break }
+                    await self.updateNetworkState()
+                }
+            }
+
+            // Minimuxer Readiness Updates (Ping, DDI mount, Pairing verification, Muxer status)
+            group.addTask {
+                for await _ in minimuxerStatusPublisher.values {
+                    guard !Task.isCancelled else { break }
+                    let metrics = await self.fetchMetrics()
+                    let status = self.computeStatuses(metrics)
+                    await self.updateUI(metrics: metrics, status: status)
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private func updateNetworkState() {
+        self.isWifiSatisfied = Minimuxer.network.isWifiSatisfied
+        self.isWiredSatisfied = Minimuxer.network.isWiredSatisfied
+        self.isUsbSatisfied = Minimuxer.network.isUsbSatisfied
+        self.isBridgeSatisfied = Minimuxer.network.isBridgeSatisfied
+        self.isUTunAvailable = Minimuxer.network.isUTunAvailable
+        self.isIKEv2IPSecAvailable = Minimuxer.network.isIKEv2IPSecAvailable
+        self.availableInterfaces = Minimuxer.network.activeInterfaces
+        self.networkSatisfied = Minimuxer.network.isWifiSatisfied
+        if self.connectionMode == .localVPN {
+            self.vpnSatisfied = Minimuxer.network.isUTunAvailable
+            if !self.isRPPairing {
+                self.ipsecSatisfied = Minimuxer.network.isIKEv2IPSecAvailable
+            }
         }
     }
     
@@ -247,61 +276,5 @@ final class HealthCheckViewModel: ObservableObject {
         
         self.minimuxerReadyResult = metrics.readyResult
         self.availableInterfaces = metrics.scanned
-    }
-
-    
-    nonisolated private func scanLocalInterfaces() -> [LocalInterfaceInfo] {
-        var interfaces = [LocalInterfaceInfo]()
-        var head: UnsafeMutablePointer<ifaddrs>? = nil
-        guard getifaddrs(&head) == 0, let first = head else { return [] }
-        defer { freeifaddrs(head) }
-        
-        var cur: UnsafeMutablePointer<ifaddrs>? = first
-        while let p = cur {
-            let e = p.pointee
-            let flags = Int32(e.ifa_flags)
-            
-            let ipv4 = e.ifa_addr?.pointee.sa_family == UInt8(AF_INET)
-            let active = (flags & (IFF_UP | IFF_RUNNING | IFF_LOOPBACK)) == (IFF_UP | IFF_RUNNING)
-            
-            if ipv4 && active {
-                if let name = String(utf8String: e.ifa_name),
-                   let addr = e.ifa_addr,
-                   let mask = e.ifa_netmask {
-                    
-                    var hostBuf = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                    var maskBuf = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                    
-                    if getnameinfo(addr, socklen_t(addr.pointee.sa_len), &hostBuf, socklen_t(hostBuf.count), nil, 0, NI_NUMERICHOST) == 0,
-                       getnameinfo(mask, socklen_t(mask.pointee.sa_len), &maskBuf, socklen_t(maskBuf.count), nil, 0, NI_NUMERICHOST) == 0 {
-                        
-                        let ipStr = String(cString: hostBuf)
-                        let maskStr = String(cString: maskBuf)
-                        
-                        let type: String
-                        if name.hasPrefix("utun") {
-                            type = "VPN (uTun)"
-                        } else if name.hasPrefix("ipsec") {
-                            type = "VPN (IPSec)"
-                        } else if name.hasPrefix("en") {
-                            type = "Wi-Fi / Ethernet"
-                        } else if name.hasPrefix("pdp") {
-                            type = "Cellular"
-                        } else if name.hasPrefix("lo") {
-                            type = "Loopback"
-                        } else if name.hasPrefix("bridge") || name.hasPrefix("ap") {
-                            type = "Bridge"
-                        } else {
-                            type = "Other"
-                        }
-                        
-                        interfaces.append(LocalInterfaceInfo(name: name, ip: ipStr, subnet: maskStr, type: type))
-                    }
-                }
-            }
-            cur = e.ifa_next
-        }
-        
-        return interfaces.sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
     }
 }

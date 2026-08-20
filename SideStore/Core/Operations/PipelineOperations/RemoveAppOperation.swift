@@ -8,7 +8,6 @@
 
 import Foundation
 import CoreData
-@preconcurrency import AltStoreCore
 
 final class RemoveAppOperation: BasePipelineOperation<InstallAppOperationContext, InstalledApp>, @unchecked Sendable {
     
@@ -24,7 +23,7 @@ final class RemoveAppOperation: BasePipelineOperation<InstallAppOperationContext
             throw OperationError.invalidParameters("RemoveAppOperation: context.dbBackgroundContext is nil")
         }
         
-        try await backgroundContext.perform {
+        await backgroundContext.perform {
             let installedAppInContext = backgroundContext.object(with: installedApp.objectID) as! InstalledApp
             backgroundContext.delete(installedAppInContext)
         }

@@ -8,7 +8,6 @@
 
 import SwiftUI
 @preconcurrency import AltSign
-@preconcurrency import AltStoreCore
 
 struct CertificateRowView: View {
     let cert: ALTX509Certificate

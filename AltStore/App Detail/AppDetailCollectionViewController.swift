@@ -9,7 +9,6 @@
 @preconcurrency import UIKit
 import SwiftUI
 import CoreData
-@preconcurrency import AltStoreCore
 
 extension AppDetailCollectionViewController
 {

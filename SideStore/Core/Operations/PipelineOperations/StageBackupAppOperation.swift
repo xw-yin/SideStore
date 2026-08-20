@@ -7,7 +7,6 @@
 //
 
 import Foundation
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 final class StageBackupAppOperation: BasePipelineOperation<InstallAppOperationContext, InstalledApp>, @unchecked Sendable {

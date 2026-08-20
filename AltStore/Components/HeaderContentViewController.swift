@@ -7,7 +7,6 @@
 //
 
 @preconcurrency import UIKit
-@preconcurrency import AltStoreCore
 
 import Nuke
 
@@ -198,9 +197,8 @@ class HeaderContentViewController<Header: UIView, Content: ScrollableContentView
         self.navigationBarTitleView.spacing = 8
         
         self.navigationBarButton = PillButton(type: .system)
-        // Set compression resistance to 999 instead of 9000 since Auto Layout priorities requires it to be <= 1000. 
-        // values > 1000 causes internal constraint engine corruption and crashes!
-        self.navigationBarButton.setContentCompressionResistancePriority(UILayoutPriority(rawValue: 999), for: .horizontal) // Prioritize over title length.
+        self.navigationBarButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        self.navigationBarButton.setContentHuggingPriority(.required, for: .horizontal)
         
         if #available(iOS 16.0, *) {
             self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: self.navigationBarButton)

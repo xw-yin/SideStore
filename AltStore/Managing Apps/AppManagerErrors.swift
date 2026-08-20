@@ -8,11 +8,10 @@
 
 import Foundation
 import CoreData
-@preconcurrency import AltStoreCore
 
 extension AppManager
 {
-    struct FetchSourcesError: LocalizedError, CustomNSError
+    struct FetchSourcesError: LocalizedError, CustomNSError, @unchecked Sendable
     {
         var primaryError: Error?
         

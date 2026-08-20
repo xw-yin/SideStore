@@ -8,7 +8,6 @@
 
 import Foundation
 @preconcurrency import AltSign
-@preconcurrency import AltStoreCore
 
 extension OperationError
 {
@@ -81,15 +80,16 @@ extension OperationError
     static let noSources: OperationError = .init(code: .noSources)
     static let missingAppGroup: OperationError = .init(code: .missingAppGroup)
     
-    static let noConnection: OperationError = .init(code: .noConnection)
-    static let noVPN: OperationError = .init(code: .noVPN)
-    static let noDevice: OperationError = .init(code: .noDevice)
+    static func noConnection(reason: String? = nil) -> OperationError { OperationError(code: .noConnection, failureReason: reason) }
+    static func noVPN(reason: String? = nil) -> OperationError { OperationError(code: .noVPN, failureReason: reason) }
+    static func invalidVPN(reason: String? = nil) -> OperationError { OperationError(code: .noVPN, failureReason: reason) }
+    static func noDevice(reason: String? = nil) -> OperationError { OperationError(code: .noDevice, failureReason: reason) }
     static func notReachable(reason: String) -> OperationError {
         OperationError(code: .notReachable, failureReason: reason)
     }
-    static let invalidPairingFile: OperationError = .init(code: .invalidPairingFile)
-    static let minimuxerNotStarted: OperationError = .init(code: .minimuxerNotStarted)
-    static let pairingNotComplete: OperationError = .init(code: .pairingNotComplete)
+    static func invalidPairingFile(reason: String? = nil) -> OperationError { OperationError(code: .invalidPairingFile, failureReason: reason) }
+    static func minimuxerNotStarted(reason: String? = nil) -> OperationError { OperationError(code: .minimuxerNotStarted, failureReason: reason) }
+    static func pairingNotComplete(reason: String? = nil) -> OperationError { OperationError(code: .pairingNotComplete, failureReason: reason) }
     static let tooNewError: OperationError = .init(code: .tooNewError)
     static let provisioningError: OperationError = .init(code: .provisioningError)
     static let anisetteV1Error: OperationError = .init(code: .anisetteV1Error)
@@ -262,10 +262,21 @@ struct OperationError: ALTLocalizedError {
         case .openAppFailed:
             let appName = self.appName ?? NSLocalizedString("The app", comment: "")
             return String(format: NSLocalizedString("SideStore was denied permission to launch %@.", comment: ""), appName)
-        // case .noConnection: return NSLocalizedString("You do not appear to be connected to Wi-Fi, Bridge or a Wired network connection!\n\nPlease connect to a Wi-Fi, Bridge or Wired connection before attempting futher operations", comment: "")
-        case .noConnection: return NSLocalizedString("You do not appear to be connected to Wi-Fi!\n\nPlease connect to a Wi-Fi before attempting futher operations", comment: "")
-        case .noVPN: return NSLocalizedString("You do not appear to be connected to VPN.\n\nPlease make sure LocalDevVPN is connected and running! If the issue persists, replace your pairing with iloader or try restarting the device.", comment: "")
-        case .noDevice: return NSLocalizedString("SideStore is unable to reach the device endpoint.\n\nPlease check your Connection Configuration in Settings to ensure the IP and endpoint are correct.", comment: "")
+        case .noConnection:
+            if let reason = self._failureReason, !reason.isEmpty {
+                return String(format: NSLocalizedString("Network Connection Error:\n%@\n\nPlease connect to Wi-Fi before attempting further operations.", comment: ""), reason)
+            }
+            return NSLocalizedString("You do not appear to be connected to Wi-Fi!\n\nPlease connect to a Wi-Fi before attempting futher operations", comment: "")
+        case .noVPN:
+            if let reason = self._failureReason, !reason.isEmpty {
+                return String(format: NSLocalizedString("VPN Connection Error:\n%@\n\nPlease make sure LocalDevVPN is connected and running properly.", comment: ""), reason)
+            }
+            return NSLocalizedString("You do not appear to be connected to VPN.\n\nPlease make sure LocalDevVPN is connected and running! If the issue persists, replace your pairing with iloader or try restarting the device.", comment: "")
+        case .noDevice:
+            if let reason = self._failureReason, !reason.isEmpty {
+                return String(format: NSLocalizedString("SideStore is unable to reach the device endpoint:\n%@\n\nPlease check your Connection Configuration in Settings.", comment: ""), reason)
+            }
+            return NSLocalizedString("SideStore is unable to reach the device endpoint.\n\nPlease check your Connection Configuration in Settings to ensure the IP and endpoint are correct.", comment: "")
         case .notReachable: return self._failureReason ?? NSLocalizedString("Device is not locatable at the specified IP/Endpoint.", comment: "")
         case .invalidPairingFile: return NSLocalizedString("The current pairing file is invalid or missing.\n\nPlease make sure to input a valid pairing file! If the issue persists, replace your pairing with iloader.", comment: "")
         case .minimuxerNotStarted: return NSLocalizedString("Minimuxer has not been started yet.\n\nPlease complete pairing or start minimuxer before performing operations.", comment: "")

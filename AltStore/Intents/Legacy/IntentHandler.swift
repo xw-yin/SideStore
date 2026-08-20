@@ -8,7 +8,6 @@
 
 @preconcurrency import UIKit
 import Foundation
-@preconcurrency import AltStoreCore
 
 @available(iOS 14, *)
 final class IntentHandler: NSObject, RefreshAllIntentHandling

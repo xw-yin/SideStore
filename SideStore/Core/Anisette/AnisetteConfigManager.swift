@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import AltStoreCore
 
 public struct AnisetteConfig: Codable, Equatable {
     public var clientInfo: String
@@ -91,7 +90,7 @@ public actor AnisetteConfigManager {
     }
 
     public func resolvedXcodeVersion() async -> String {
-        return await loadConfig().customXcodeVersion ?? "26.0 (26A242)"
+        return loadConfig().customXcodeVersion ?? "26.0 (26A242)"
     }
     
     public func saveConfig(_ config: AnisetteConfig) {

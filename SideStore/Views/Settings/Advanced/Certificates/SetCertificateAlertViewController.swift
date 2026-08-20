@@ -8,7 +8,6 @@
 
 @preconcurrency import UIKit
 import Foundation
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 final class SetCertificateAlertViewController: UIViewController {

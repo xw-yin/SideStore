@@ -8,7 +8,6 @@
 
 @preconcurrency import UIKit
 import CoreData
-@preconcurrency import AltStoreCore
 import SwiftUI
 @preconcurrency import AltSign
 
@@ -223,8 +222,8 @@ private extension AppIDsViewController
             self.activityIndicatorBarButtonItem.isIndicatingActivity = false
             
             let activeTeamType = DatabaseManager.shared.activeTeam()?.type
-            let allowsEditMode = (activeTeamType == .individual || activeTeamType == .organization) &&
-                                 (activeTeamType != .free || UserDefaults.standard.freeAcctAppIdDeletion)
+            let allowsEditMode = (activeTeamType == .individual || activeTeamType == .organization) ||
+                                 (activeTeamType == .free && UserDefaults.standard.freeAcctAppIdDeletion)
             
             if allowsEditMode
             {
@@ -234,23 +233,25 @@ private extension AppIDsViewController
                     let title = selectedCount > 0 ? NSLocalizedString("Delete", comment: "") : NSLocalizedString("Cancel", comment: "")
                     let style: UIBarButtonItem.Style = selectedCount > 0 ? .done : .plain
                     self.navigationItem.leftBarButtonItem = UIBarButtonItem(title: title, style: style, target: self, action: #selector(self.editButtonTapped))
+                    
+                    if selectedCount > 0
+                    {
+                        self.navigationItem.rightBarButtonItem = UIBarButtonItem(title: NSLocalizedString("Cancel", comment: ""), style: .plain, target: self, action: #selector(self.cancelButtonTapped))
+                    }
+                    else
+                    {
+                        self.navigationItem.rightBarButtonItem = nil
+                    }
                 }
                 else
                 {
                     self.navigationItem.leftBarButtonItem = UIBarButtonItem(title: NSLocalizedString("Edit", comment: ""), style: .plain, target: self, action: #selector(self.editButtonTapped))
+                    self.navigationItem.rightBarButtonItem = self.doneBarButtonItem
                 }
             }
             else
             {
                 self.navigationItem.leftBarButtonItem = nil
-            }
-            
-            if self.isEditingMode
-            {
-                self.navigationItem.rightBarButtonItem = nil
-            }
-            else
-            {
                 self.navigationItem.rightBarButtonItem = self.doneBarButtonItem
             }
             
@@ -414,11 +415,31 @@ private extension AppIDsViewController
     
     func updateLeftBarButtonItem()
     {
+        self.updateBarButtonItems()
+    }
+    
+    func updateBarButtonItems()
+    {
+        guard self.isEditingMode else { return }
         let selectedCount = self.collectionView.indexPathsForSelectedItems?.count ?? 0
         let title = selectedCount > 0 ? NSLocalizedString("Delete", comment: "") : NSLocalizedString("Cancel", comment: "")
         let style: UIBarButtonItem.Style = selectedCount > 0 ? .done : .plain
         self.navigationItem.leftBarButtonItem?.title = title
         self.navigationItem.leftBarButtonItem?.style = style
+        
+        if selectedCount > 0
+        {
+            self.navigationItem.rightBarButtonItem = UIBarButtonItem(title: NSLocalizedString("Cancel", comment: ""), style: .plain, target: self, action: #selector(self.cancelButtonTapped))
+        }
+        else
+        {
+            self.navigationItem.rightBarButtonItem = nil
+        }
+    }
+    
+    @objc func cancelButtonTapped()
+    {
+        self.exitEditMode()
     }
     
     @objc func editButtonTapped()
@@ -625,7 +646,7 @@ extension AppIDsViewController
     {
         if self.isEditingMode
         {
-            self.updateLeftBarButtonItem()
+            self.updateBarButtonItems()
             if let cell = collectionView.cellForItem(at: indexPath) as? AppBannerCollectionViewCell {
                 cell.setEditing(true, isSelected: true, animated: true)
             }
@@ -636,7 +657,7 @@ extension AppIDsViewController
     {
         if self.isEditingMode
         {
-            self.updateLeftBarButtonItem()
+            self.updateBarButtonItems()
             if let cell = collectionView.cellForItem(at: indexPath) as? AppBannerCollectionViewCell {
                 cell.setEditing(true, isSelected: false, animated: true)
             }

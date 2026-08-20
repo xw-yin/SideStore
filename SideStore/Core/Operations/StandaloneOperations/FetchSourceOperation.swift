@@ -8,7 +8,6 @@
 
 import Foundation
 import CoreData
-@preconcurrency import AltStoreCore
 import SemanticVersion
 
 final class FetchSourceOperation: BaseStandaloneOperation<StandaloneOperationContext, Source>, @unchecked Sendable {
@@ -61,8 +60,9 @@ final class FetchSourceOperation: BaseStandaloneOperation<StandaloneOperationCon
         
         if let source = self.source {
             // Check if source is blocked before fetching it.
+            let sourceObjectID = source.objectID
             try dbContext.performAndWait {
-                try self.verifyExistingSource(source)
+                try self.verifyExistingSource(sourceObjectID)
             }
         }
         
@@ -107,16 +107,16 @@ final class FetchSourceOperation: BaseStandaloneOperation<StandaloneOperationCon
         }
     }
     
-    private func verifyExistingSource(_ source: Source) throws {
+    private func verifyExistingSource(_ sourceObjectID: NSManagedObjectID) throws {
         guard let dbContext = self.context.dbBackgroundContext else {
             throw OperationError.invalidParameters("FetchSourceOperation: context.dbBackgroundContext is nil")
         }
-        let source = dbContext.object(with: source.objectID) as! Source
+        let source = dbContext.object(with: sourceObjectID) as! Source
         try self.verifySourceNotBlocked(source, response: nil)
     }
     
     private func performDecodeAndSave(data: Data, response: URLResponse, childContext: NSManagedObjectContext) throws -> String {
-        let decoder = AltStoreCore.JSONDecoder()
+        let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .custom({ (decoder) -> Date in
             let container = try decoder.singleValueContainer()
             let text = try container.decode(String.self)
@@ -251,7 +251,7 @@ final class FetchSourceOperation: BaseStandaloneOperation<StandaloneOperationCon
     }
     
     private func verifySourceNotBlocked(_ source: Source, response: URLResponse?) throws {
-        guard let blockedSources = UserDefaults.shared.blockedSources else { return }
+        guard let blockedSources = UserDefaults.standard.blockedSources else { return }
         
         for blockedSource in blockedSources {
             guard

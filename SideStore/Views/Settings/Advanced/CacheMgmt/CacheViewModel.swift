@@ -8,7 +8,6 @@
 
 import SwiftUI
 import CoreData
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 struct CacheItem: Identifiable, Equatable {
@@ -44,13 +43,14 @@ class CacheViewModel: ObservableObject {
     
     // Export/Share states
     @Published var activeExportURL: URL? = nil
-    
-    private let byteFormatter: ByteCountFormatter = {
-        let formatter = ByteCountFormatter()
+
+    let formatter = ByteCountFormatter()
+
+    private func formatBytes(_ size: Int64) -> String {
         formatter.allowedUnits = [.useAll]
         formatter.countStyle = .file
-        return formatter
-    }()
+        return formatter.string(fromByteCount: size)
+    }
     
     func loadCacheItems() {
         self.isLoading = true
@@ -75,7 +75,7 @@ class CacheViewModel: ObservableObject {
         }
         
         // Process on background queue
-        DispatchQueue.global(qos: .userInitiated).async {
+        Task.detached {
             var internalItems: [CacheItem] = []
             var resignedItems: [CacheItem] = []
             
@@ -83,7 +83,7 @@ class CacheViewModel: ObservableObject {
             for url in internalAppURLs {
                 let bundleID = url.lastPathComponent
                 let size = CacheManager.shared.calculateSize(of: url)
-                let sizeStr = self.byteFormatter.string(fromByteCount: size)
+                let sizeStr = await self.formatBytes(size)
                 
                 var displayName = bundleID
                 var iconImage: UIImage? = nil
@@ -116,7 +116,7 @@ class CacheViewModel: ObservableObject {
             for url in resignedAppURLs {
                 let filename = url.lastPathComponent
                 let size = CacheManager.shared.calculateSize(of: url)
-                let sizeStr = self.byteFormatter.string(fromByteCount: size)
+                let sizeStr = await self.formatBytes(size)
                 
                 let displayName = filename.replacingOccurrences(of: ".app", with: "")
                                           .replacingOccurrences(of: ".ipa", with: "")

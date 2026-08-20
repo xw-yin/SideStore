@@ -222,13 +222,16 @@ struct PipelineStepDefinition {
         PipelineExecutionStep(.cleanStagedApp,                    2)
     ]
 
-    static let removeDeactivatedApp: [PipelineExecutionStep] = [
+    static let removeApp: [PipelineExecutionStep] = [
         PipelineExecutionStep(.removeBackupData,                 98),
         PipelineExecutionStep(.removeApp,                         2)
     ]
 
+    static let removeDeactivatedApp = removeApp
+
     static let deleteApp: [PipelineExecutionStep] = [
-        PipelineExecutionStep(.uninstallApp,                     98),
+        PipelineExecutionStep(.uninstallApp,                     96),
+        PipelineExecutionStep(.removeBackupData,                  2),
         PipelineExecutionStep(.removeApp,                         2)
     ]
 
@@ -252,8 +255,8 @@ struct PipelineStepDefinition {
             return backup
         case .restore:
             return UserDefaults.standard.isLegacyDeactivationSupported ? restoreLegacy : restore
-        case .removeDeactivatedApp:
-            return removeDeactivatedApp
+        case .removeApp, .removeDeactivatedApp:
+            return removeApp
         case .deleteApp:
             return deleteApp
         case .enableJIT:
@@ -292,6 +295,7 @@ extension Array where Element == PipelineExecutionStep {
     static var deactivate:           [PipelineExecutionStep] { PipelineStepDefinition.deactivate           }
     static var backup:               [PipelineExecutionStep] { PipelineStepDefinition.backup               }
     static var restore:              [PipelineExecutionStep] { PipelineStepDefinition.restore              }
+    static var removeApp:            [PipelineExecutionStep] { PipelineStepDefinition.removeApp            }
     static var removeDeactivatedApp: [PipelineExecutionStep] { PipelineStepDefinition.removeDeactivatedApp }
     static var deleteApp:            [PipelineExecutionStep] { PipelineStepDefinition.deleteApp            }
     static var enableJIT:            [PipelineExecutionStep] { PipelineStepDefinition.enableJIT            }

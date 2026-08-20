@@ -9,7 +9,6 @@
 @preconcurrency import UIKit
 import CoreData
 import Combine
-@preconcurrency import AltStoreCore
 
 import Nuke
 
@@ -594,7 +593,7 @@ private extension AddSourceViewController
         cell.bannerView.button.imageView?.contentMode = .scaleAspectFit
         cell.bannerView.button.contentHorizontalAlignment = .fill // Fill entire button with imageView
         cell.bannerView.button.contentVerticalAlignment = .fill
-        cell.bannerView.button.contentEdgeInsets = .zero
+        cell.bannerView.button.configuration = nil
         cell.bannerView.button.tintColor = .clear
         cell.bannerView.button.isHidden = false
         
@@ -609,7 +608,7 @@ private extension AddSourceViewController
                 var isSourceAlreadyPersisted = false
                 do
                 {
-                    isSourceAlreadyPersisted = try await source.isAdded
+                    isSourceAlreadyPersisted = try await source.isAdded()
                 }
                 catch
                 {

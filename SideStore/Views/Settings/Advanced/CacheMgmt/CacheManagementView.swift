@@ -7,7 +7,6 @@
 //
 
 import SwiftUI
-@preconcurrency import AltStoreCore
 
 struct CacheManagementView: View {
     @StateObject private var viewModel = CacheViewModel()

@@ -14,7 +14,6 @@ import Intents
 import IntentsUI
 
 import SemanticVersion
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 import UniformTypeIdentifiers
 
@@ -214,7 +213,7 @@ final class SettingsViewController: UITableViewController
         self.tableView.addGestureRecognizer(debugModeGestureRecognizer)
         
         // set the version label to show in settings screen
-        self.versionLabel.text = getVersionLabel()
+        self.versionLabel.attributedText = getVersionAttributedString()
         self.versionLabel.isUserInteractionEnabled = true
         self.versionLabel.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(copyVersionLabelTapped)))
         
@@ -294,66 +293,63 @@ final class SettingsViewController: UITableViewController
 
 private extension SettingsViewController
 {
-    private func getVersionLabel() -> String {
-        let buildInfo = BuildInfo()
+    
+    private func getVersionAttributedString() -> NSAttributedString {
+        let appVersion = Bundle.Info.activeBundleVersion
+        let iosVersion = "iOS \(UIDevice.current.systemVersion) (\(ProcessInfo.processInfo.operatingSystemBuild))"
         
-        func getXcodeVersion() -> String {
-            var xcodeVersion =  buildInfo.xcode.map { version in
-                "Xcode \(version)" + (buildInfo.xcode_revision.map { revision in " - \(revision)" } ?? "")       // Ex: "0.6.0 - Xcode 16.2 - 21ac1ef"
-            } ?? ""
-
-            if let pairing = Bundle.main.object(forInfoDictionaryKey: "ALTPairingFile") as? String,
-                pairing != "<insert pairing file here>"{
-                xcodeVersion += " - true"
-            }
-            return xcodeVersion
-        }
-
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        paragraphStyle.lineSpacing = 4
         
-        var versionLabel: String = ""
-        let installedApp: InstalledApp? = nil
-        // first check if there is installed app entity, if so, get version info from that
-        if let installedApp
-        {
-            var localizedVersion = installedApp.version
-            // Only show build version for non stable builds.
-            localizedVersion += buildInfo.project_version.map{ version in
-                version.isEmpty  ? "" : " (\(version))"
-            } ?? installedApp.localizedVersion
+        let fullString = NSMutableAttributedString()
         
-            versionLabel = NSLocalizedString(String(format: "Version %@", localizedVersion), comment: "SideStore Version")
-        }
-        else if let version = buildInfo.marketing_version
-        {
-            versionLabel = NSLocalizedString(String(format: "Version %@", version), comment: "SideStore Version")
-        }
-        else
-        {
-            var version = "SideStore\t"
-            version += "\n\(Bundle.Info.appbundleIdentifier)"
-            versionLabel = NSLocalizedString(version, comment: "SideStore Version")
-        }
+        let appVersionAttr = NSAttributedString(
+            string: appVersion,
+            attributes: [
+                .font: UIFont.systemFont(ofSize: 14),
+                .foregroundColor: UIColor.white.withAlphaComponent(0.7),
+                .paragraphStyle: paragraphStyle
+            ]
+        )
         
-        // add xcode build version for local builds
-        if let installedApp,
-           SemanticVersion(installedApp.version)?.preRelease == "local"
-        {
-            versionLabel += "\n\(getXcodeVersion())"
-        }
+        let iosVersionAttr = NSAttributedString(
+            string: "\n" + iosVersion,
+            attributes: [
+                .font: UIFont.systemFont(ofSize: 12),
+                .foregroundColor: UIColor.white.withAlphaComponent(0.5),
+                .paragraphStyle: paragraphStyle
+            ]
+        )
         
-        return versionLabel
+        fullString.append(appVersionAttr)
+        fullString.append(iosVersionAttr)
+        return fullString
     }
     
     @objc private func copyVersionLabelTapped() {
-        let text = self.versionLabel.text ?? ""
-        UIPasteboard.general.string = text.hasPrefix("Version ") ? String(text.dropFirst("Version ".count)) : text
-        let original = self.versionLabel.text
-        let attributed = NSMutableAttributedString(string: "Copied! ")
-        attributed.append(NSAttributedString(string: "✓", attributes: [.foregroundColor: UIColor.systemGreen]))
+        let appVersion = Bundle.Info.activeBundleVersion
+        let iosVersion = "iOS \(UIDevice.current.systemVersion) (\(ProcessInfo.processInfo.operatingSystemBuild))"
+        let fullText = "\(appVersion)\n\(iosVersion)"
+        UIPasteboard.general.string = fullText.hasPrefix("Version ") ? String(fullText.dropFirst("Version ".count)) : fullText
+        
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        let attributed = NSMutableAttributedString(
+            string: "Copied! ",
+            attributes: [
+                .font: UIFont.systemFont(ofSize: 14),
+                .foregroundColor: UIColor.white.withAlphaComponent(0.7),
+                .paragraphStyle: paragraphStyle
+            ]
+        )
+        attributed.append(NSAttributedString(string: "✓", attributes: [
+            .font: UIFont.systemFont(ofSize: 14),
+            .foregroundColor: UIColor.systemGreen
+        ]))
         self.versionLabel.attributedText = attributed
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            self?.versionLabel.attributedText = nil
-            self?.versionLabel.text = original
+            self?.versionLabel.attributedText = self?.getVersionAttributedString()
         }
     }
     
@@ -361,7 +357,7 @@ private extension SettingsViewController
     func update()
     {
         let currentActiveTeam = DatabaseManager.shared.activeTeam()
-        debugLog("[SettingsVC] update() called. activeTeam: \(currentActiveTeam?.identifier ?? "nil"), account: \(currentActiveTeam?.account.appleID ?? "nil")")
+        verboseLog("[SettingsVC] update() called. activeTeam: \(currentActiveTeam?.identifier ?? "nil"), account: \(currentActiveTeam?.account.appleID ?? "nil")")
         
         if let team = currentActiveTeam
         {
@@ -991,7 +987,7 @@ extension SettingsViewController
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
     {
         let section = Section.allCases[indexPath.section]
-        debugLog("[SettingsVC] didSelectRowAt: section \(section) (index \(indexPath.section)), row \(indexPath.row)")
+        verboseLog("[SettingsVC] didSelectRowAt: section \(section) (index \(indexPath.section)), row \(indexPath.row)")
         switch section
         {
         case .signIn: self.signIn()

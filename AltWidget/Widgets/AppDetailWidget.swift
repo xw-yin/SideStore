@@ -8,11 +8,14 @@
 
 import WidgetKit
 import SwiftUI
-@preconcurrency import AltStoreCore
 
 struct AppDetailWidget: Widget
 {
     private let kind: String = "AppDetail"
+    
+    init() {
+        debugLog("[AppDetailWidget] Initialized widget kind: AppDetail")
+    }
     
     public var body: some WidgetConfiguration {
         // On iOS 16+ use AppIntentConfiguration — it correctly supports
@@ -130,14 +133,17 @@ private struct AppDetailWidgetView: View
             else
             {
                 VStack(spacing: 4) {
-                    if !isPlaceholder
-                    {
-                        Text("Open SideStore")
-                            .font(.system(.subheadline, design: .rounded))
-                            .fontWeight(.semibold)
-                            .foregroundColor(Color.white.opacity(0.8))
-                    }
+                    Text("Open SideStore")
+                        .font(.system(.subheadline, design: .rounded))
+                        .fontWeight(.semibold)
+                        .foregroundColor(Color.white.opacity(0.8))
+                    Text("Launch app to update widget")
+                        .font(.system(.caption2, design: .rounded))
+                        .foregroundColor(Color.white.opacity(0.5))
+                        .multilineTextAlignment(.center)
                 }
+                .padding()
+                .unredacted()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -147,6 +153,9 @@ private struct AppDetailWidgetView: View
                 tintColor: apps.first?.tintColor
             )
         )
+        .onAppear {
+            debugLog("[AppDetailWidgetView] onAppear: isPlaceholder=\(isPlaceholder), appsCount=\(apps.count), firstApp=\(apps.first?.name ?? "none"), date=\(date)")
+        }
     }
 
     func backgroundView(icon: UIImage? = nil, tintColor: UIColor? = nil) -> some View

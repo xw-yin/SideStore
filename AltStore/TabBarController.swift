@@ -7,7 +7,6 @@
 //
 
 @preconcurrency import UIKit
-@preconcurrency import AltStoreCore
 
 extension TabBarController
 {
@@ -41,6 +40,7 @@ final class TabBarController: UITabBarController
     override func viewDidLoad() 
     {
         super.viewDidLoad()
+        debugLog("[TabBarController] viewDidLoad()")
         
         let browseNavigationController = self.viewControllers![Tab.browse.rawValue] as! UINavigationController
         browseNavigationController.tabBarItem.image = UIImage(systemName: "bag")
@@ -63,6 +63,7 @@ final class TabBarController: UITabBarController
     override func viewDidAppear(_ animated: Bool)
     {
         super.viewDidAppear(animated)
+        debugLog("[TabBarController] viewDidAppear() — TabBarController is now visible")
         
         _viewDidAppear = true
         

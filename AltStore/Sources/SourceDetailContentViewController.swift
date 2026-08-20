@@ -9,7 +9,6 @@
 @preconcurrency import UIKit
 import CoreData
 import SafariServices
-import AltStoreCore
 
 import Nuke
 
@@ -101,8 +100,8 @@ private extension SourceDetailContentViewController
             case .news:
                 guard !source.newsItems.isEmpty else { return nil }
                 
-                // Underestimate height to prevent jumping size abruptly.
-                let heightDimension: NSCollectionLayoutDimension = if #available(iOS 17, *) { .uniformAcrossSiblings(estimate: 50) } else { .estimated(50) }
+                // Estimate height closer to actual NewsCollectionViewCell height to prevent collapsed cards.
+                let heightDimension: NSCollectionLayoutDimension = if #available(iOS 17, *) { .uniformAcrossSiblings(estimate: 160) } else { .estimated(160) }
                 let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: heightDimension)
                 let item = NSCollectionLayoutItem(layoutSize: itemSize)
                 

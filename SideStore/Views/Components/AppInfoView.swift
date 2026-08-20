@@ -7,7 +7,6 @@
 //
 
 import SwiftUI
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 struct AppInfoView: View {

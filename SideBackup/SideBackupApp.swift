@@ -140,19 +140,23 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                 debugLog(logger, "[SideBackup]: Attempting to open target SideStore app '\(targetSideStoreBundleID)' via LSApplicationWorkspace with return URL: \(responseURL.absoluteString)")
             }
             
-            SideBackupAppLauncher.openApplication(withBundleIdentifier: targetSideStoreBundleID, url: responseURL) { success, error in
-                if let logger = logger {
-                    debugLog(logger, "[SideBackup]: LSApplicationWorkspace launch completed with success: \(success)")
+            let success = await withCheckedContinuation { continuation in
+                SideBackupAppLauncher.openApplication(withBundleIdentifier: targetSideStoreBundleID, url: responseURL) { success, error in
+                    continuation.resume(returning: success)
                 }
-                if !success {
-                    if let logger = logger {
-                        debugLog(logger, "[SideBackup]: LSApplicationWorkspace launch failed. Falling back to UIApplication.shared.open...")
-                    }
-                    UIApplication.shared.open(responseURL, options: [:]) { fallbackSuccess in
-                        if let logger = logger {
-                            debugLog(logger, "[SideBackup]: Fallback UIApplication.shared.open success: \(fallbackSuccess)")
-                        }
-                    }
+            }
+            
+            if let logger = logger {
+                debugLog(logger, "[SideBackup]: LSApplicationWorkspace launch completed with success: \(success)")
+            }
+            
+            if !success {
+                if let logger = logger {
+                    debugLog(logger, "[SideBackup]: LSApplicationWorkspace launch failed. Falling back to UIApplication.shared.open...")
+                }
+                let fallbackSuccess = await UIApplication.shared.open(responseURL, options: [:])
+                if let logger = logger {
+                    debugLog(logger, "[SideBackup]: Fallback UIApplication.shared.open success: \(fallbackSuccess)")
                 }
             }
         }

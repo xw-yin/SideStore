@@ -8,13 +8,29 @@
 
 @preconcurrency import UIKit
 import SwiftUI
-@preconcurrency import AltStoreCore
 
 typealias SUIButton = SwiftUI.Button
 
 // MARK: - AnisetteServerData
 struct AnisetteServerData: Codable {
     let servers: [Server]
+    let oda: ODAValue?
+
+    enum CodingKeys: String, CodingKey {
+        case servers
+        case oda
+    }
+
+    init(servers: [Server], oda: ODAValue? = nil) {
+        self.servers = servers
+        self.oda = oda
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.servers = (try? container.decode([Server].self, forKey: .servers)) ?? []
+        self.oda = try? container.decodeIfPresent(ODAValue.self, forKey: .oda)
+    }
 }
 
 // MARK: - Server
@@ -114,17 +130,17 @@ final class AnisetteViewModel: ObservableObject {
     }
 
     @MainActor
-    func importFile(url: URL) async {
+    func importData(_ data: Data, filename: String) async {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
 
         do {
-            let imported = try await AnisetteServersManager.shared.importFromFile(url: url)
+            let imported = try await AnisetteServersManager.shared.importFromData(data: data, filename: filename)
             self.items = imported
             self.isOfflineMode = true
-            self.importedFileName = url.lastPathComponent
-            debugLog("AnisetteViewModel: Imported servers from file: \(url.lastPathComponent)")
+            self.importedFileName = filename
+            debugLog("AnisetteViewModel: Imported servers from data: \(filename)")
         } catch {
             self.errorMessage = "Failed to import file: \(error.localizedDescription)"
             debugLog("AnisetteViewModel: Import error: \(error)")
@@ -229,7 +245,8 @@ struct AnisetteServersView: View {
     @State private var editingURLText: String = ""
     @State private var showingClearAlert = false
     @State private var showingImportAlert = false
-    @State private var pendingImportURL: URL? = nil
+    @State private var pendingImportData: Data? = nil
+    @State private var pendingImportName: String? = nil
 
     var selected: String?
     var onResetAdiPb: (() -> Void)?
@@ -654,8 +671,16 @@ struct AnisetteServersView: View {
             switch result {
             case .success(let urls):
                 if let url = urls.first {
-                    pendingImportURL = url
-                    showingImportAlert = true
+                    let isAccessing = url.startAccessingSecurityScopedResource()
+                    defer { if isAccessing { url.stopAccessingSecurityScopedResource() } }
+                    do {
+                        let data = try Data(contentsOf: url)
+                        pendingImportData = data
+                        pendingImportName = url.lastPathComponent
+                        showingImportAlert = true
+                    } catch {
+                        debugLog("File import failed to read data: \(error.localizedDescription)")
+                    }
                 }
             case .failure(let error):
                 debugLog("File import failed: \(error.localizedDescription)")
@@ -673,15 +698,15 @@ struct AnisetteServersView: View {
         }
         .alert("Import Server Catalog?", isPresented: $showingImportAlert) {
             SwiftUI.Button("Import") {
-                if let url = pendingImportURL {
+                if let data = pendingImportData, let name = pendingImportName {
                     Task {
-                        await viewModel.importFile(url: url)
+                        await viewModel.importData(data, filename: name)
                     }
                 }
             }
             SwiftUI.Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This will replace your current server catalog with the servers from '\(pendingImportURL?.lastPathComponent ?? "selected file")'. Do you want to proceed?")
+            Text("This will replace your current server catalog with the servers from '\(pendingImportName ?? "selected file")'. Do you want to proceed?")
         }
         .sheet(isPresented: $showingShareSheet) {
             if let fileURL = exportFileURL {

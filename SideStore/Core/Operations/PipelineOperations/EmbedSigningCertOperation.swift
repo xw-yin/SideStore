@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import AltStoreCore
 import AltSign
 
 final class EmbedSigningCertOperation: BasePipelineOperation<AppOperationContext, Void>, @unchecked Sendable {
@@ -15,8 +14,6 @@ final class EmbedSigningCertOperation: BasePipelineOperation<AppOperationContext
         debugLog("[EmbedSigningCertOperation] execute() started")
         defer { debugLog("[EmbedSigningCertOperation] execute() completed") }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
-        
-        let bundleID = self.context.targetBundleIdentifier
         
         // 1. Resolve the certificate used for signing this app
         guard let cert = self.context.overrideCertificate ?? self.context.authenticatedContext.signingCertificate else

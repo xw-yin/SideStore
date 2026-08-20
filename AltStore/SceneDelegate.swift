@@ -7,7 +7,6 @@
 //
 
 @preconcurrency import UIKit
-@preconcurrency import AltStoreCore
 
 
 @available(iOS 13, *)
@@ -46,6 +45,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate
         
         Task {
             await AppManager.shared.reconcileInstalledApps()
+            await WidgetDataManager.publishCurrentInstalledAppsIfNeeded(in: DatabaseManager.shared.viewContext)
         }
     }
 
@@ -56,6 +56,13 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate
             // dump sidebackup logs if any
             Task.detached { await AppDelegate.dumpSideBackupLogsIfNeeded() }
         }
+        
+        if DatabaseManager.shared.isStarted {
+            Task {
+                await WidgetDataManager.publishCurrentInstalledAppsIfNeeded(in: DatabaseManager.shared.viewContext)
+            }
+        }
+        
         // Flush any .ipa import that arrived before the scene was active (cold launch).
         guard let url = self.pendingImportIPAURL else { return }
         self.pendingImportIPAURL = nil

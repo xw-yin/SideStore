@@ -9,7 +9,6 @@
 @preconcurrency import UIKit
 import Foundation
 import Network
-@preconcurrency import AltStoreCore
 @preconcurrency import AltSign
 
 final class SendAppOperation: BasePipelineOperation<InstallAppOperationContext, ALTApplication>, @unchecked Sendable {
@@ -37,13 +36,9 @@ final class SendAppOperation: BasePipelineOperation<InstallAppOperationContext, 
         
         if self.context.shouldTurnOffData {
             // Wait for Shortcut to Finish Before Proceeding
-            await withCheckedContinuation { continuation in
-                let shortcutURLoff = URL(string: "shortcuts://run-shortcut?name=TurnOffData")!
-                UIApplication.shared.open(shortcutURLoff, options: [:]) { _ in
-                    self.debugLog("[SendAppOperation] Shortcut finished execution. Proceeding with file transfer.")
-                    continuation.resume()
-                }
-            }
+            let shortcutURLoff = URL(string: "shortcuts://run-shortcut?name=TurnOffData")!
+            await UIApplication.shared.open(shortcutURLoff)
+            self.debugLog("[SendAppOperation] Shortcut finished execution. Proceeding with file transfer.")
         }
         
         try await self.processFile(at: fileURL, for: app.bundleIdentifier)

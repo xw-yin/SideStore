@@ -8,8 +8,6 @@
 
 import SwiftUI
 @preconcurrency import AltSign
-import KeychainAccess
-@preconcurrency import AltStoreCore
 
 struct PendingImport {
     let url: URL
@@ -102,9 +100,6 @@ class CertificatesViewModel: ObservableObject {
         return !subjectContainsTeam && !issuerContainsTeam
     }
     
-    private let certificateKeychain = KeychainAccess.Keychain(service: Bundle.Info.appbundleIdentifier)
-        .accessibility(.afterFirstUnlock)
-    
     private var activeLocalCert: ALTCertificate? {
         CertificateManager.shared.activeCertificate?.certificate
     }
@@ -150,7 +145,11 @@ class CertificatesViewModel: ObservableObject {
                 return
             }
             do {
-                let authResult = try await AuthManager.shared.authenticate(presentingViewController: presentingViewController)
+                let authResult = try await AuthManager.shared.authenticate(
+                    presentingViewController: presentingViewController,
+                    skipDeviceRegistration: true,
+                    skipCertificateProvisioning: true
+                )
                 self.team    = authResult.team
                 self.session = authResult.session
                 
@@ -338,7 +337,11 @@ class CertificatesViewModel: ObservableObject {
         Task { @MainActor in
             defer { self.isLoading = false }
             do {
-                let authResult = try await AuthManager.shared.authenticate(presentingViewController: presentingViewController)
+                let authResult = try await AuthManager.shared.authenticate(
+                    presentingViewController: presentingViewController,
+                    skipDeviceRegistration: true,
+                    skipCertificateProvisioning: true
+                )
                 self.team    = authResult.team
                 self.session = authResult.session
                 
@@ -363,7 +366,11 @@ class CertificatesViewModel: ObservableObject {
         Task { @MainActor in
             defer { self.isLoading = false }
             do {
-                let authResult = try await AuthManager.shared.authenticate(presentingViewController: presentingViewController)
+                let authResult = try await AuthManager.shared.authenticate(
+                    presentingViewController: presentingViewController,
+                    skipDeviceRegistration: true,
+                    skipCertificateProvisioning: true
+                )
                 self.team    = authResult.team
                 self.session = authResult.session
                 

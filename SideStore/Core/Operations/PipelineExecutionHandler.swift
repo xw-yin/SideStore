@@ -8,7 +8,6 @@
 
 import Foundation
 @preconcurrency import AltSign
-@preconcurrency import AltStoreCore
 
 protocol PipelineExecutionHandler: AnyObject {
     var preflightChecksHandler: PreflightChecksHandler { get }
@@ -55,6 +54,12 @@ protocol InstallAppHandler: AnyObject {
     var isAppInForeground: Bool { get }
 }
 
+enum AppGroupResolution: Sendable {
+    case correctAndProceed(String)
+    case keepOriginal(String)
+}
+
 protocol UserCustomizationHandler: AnyObject {
     func resolveBundleIDOverride(initialBundleID: String) async throws -> String?
+    func resolveAppGroupMismatch(originalGroup: String, correctedGroup: String) async throws -> AppGroupResolution
 }

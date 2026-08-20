@@ -10,7 +10,6 @@
 import SafariServices
 import QuickLook
 import CoreData
-@preconcurrency import AltStoreCore
 
 import Nuke
 
@@ -235,61 +234,18 @@ private extension ErrorLogViewController
     
     enum LogView: String {
         case consoleLog = "console-log"
-        // case minimuxerLog = "minimuxer-log"
-
-        // This class will manage the QLPreviewController and the timer.
-        private class LogViewManager {
-            var previewController: QLPreviewController
-            var refreshTimer: Timer?
-            var logView: LogView
-
-            init(previewController: QLPreviewController, logView: LogView) {
-                self.previewController = previewController
-                self.logView = logView
-            }
-
-            // Start refreshing the preview controller every second
-            func startRefreshing() {
-                refreshTimer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(refreshPreview), userInfo: nil, repeats: true)
-            }
-
-            @objc private func refreshPreview() {
-                previewController.reloadData()
-            }
-
-            // Stop the timer to prevent leaks
-            func stopRefreshing() {
-                refreshTimer?.invalidate()
-                refreshTimer = nil
-            }
-
-            func updateLogPath() {
-                // Force the QLPreviewController to reload by changing the file path
-                previewController.reloadData()
-            }
-        }
 
         // Method to get the QLPreviewController for this log type
         func getViewController(_ dataSource: QLPreviewControllerDataSource) -> QLPreviewController {
             let previewController = QLPreviewController()
             previewController.restorationIdentifier = self.rawValue
             previewController.dataSource = dataSource
-
-            // Create LogViewManager and start refreshing
-            let manager = LogViewManager(previewController: previewController, logView: self)
-//            manager.startRefreshing()     // DO NOT REFRESH the full view contents causing flickering
-
             return previewController
         }
         
         func getLogPath() -> URL {
-            switch self {
-                case .consoleLog:
-                    let appDelegate = UIApplication.shared.delegate as! AppDelegate
-                    return appDelegate.consoleLog.logFileURL
-                // case .minimuxerLog:
-                //     return FileManager.default.documentsDirectory.appendingPathComponent("minimuxer.log")
-            }
+            let appDelegate = UIApplication.shared.delegate as! AppDelegate
+            return appDelegate.consoleLog.logFileURL
         }
     }
     
@@ -456,8 +412,12 @@ extension ErrorLogViewController: QLPreviewControllerDataSource {
     func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem
     {
         guard let identifier = controller.restorationIdentifier,
-              let logView = LogView(rawValue: identifier) else {
-            fatalError("Invalid restorationIdentifier")
+              let logView = LogView(rawValue: identifier) else
+        {
+            let errorURL = FileManager.default.temporaryDirectory.appendingPathComponent("LogPreviewError.txt")
+            let errorMessage = "Error: Failed to load log for '\(controller.restorationIdentifier ?? "unknown")'."
+            try? errorMessage.write(to: errorURL, atomically: true, encoding: .utf8)
+            return errorURL as QLPreviewItem
         }
         return logView.getLogPath() as QLPreviewItem
     }

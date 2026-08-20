@@ -7,7 +7,6 @@
 //
 
 @preconcurrency import UIKit
-@preconcurrency import AltStoreCore
 
 import Nuke
 
@@ -65,6 +64,8 @@ final class AppViewController: UIViewController
         super.viewDidLoad()
         
         self.navigationBarDownloadButton = PillButton(type: .system)
+        self.navigationBarDownloadButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        self.navigationBarDownloadButton.setContentHuggingPriority(.required, for: .horizontal)
         self.navigationBarDownloadButton.addTarget(self, action: #selector(AppViewController.performAppAction(_:)), for: .primaryActionTriggered)
                         
         self.navigationBarTitleView.sizeToFit()
@@ -416,7 +417,7 @@ private extension AppViewController
         self.navigationBarDownloadButton.progress = self.bannerView.button.progress
         self.navigationBarDownloadButton.countdownDate = self.bannerView.button.countdownDate
         
-        let currentSizeWidth = max(77, self.navigationBarDownloadButton.intrinsicContentSize.width)
+        let currentSizeWidth = max(PillButton.minimumSize.width, self.navigationBarDownloadButton.intrinsicContentSize.width)
         let targetWidth = currentSizeWidth + 2
         if let existingConstraint = self.downloadButtonWidthConstraint
         {
@@ -424,7 +425,8 @@ private extension AppViewController
         }
         else
         {
-            let constraint = self.navigationBarDownloadButton.widthAnchor.constraint(equalToConstant: targetWidth)
+            let constraint = self.navigationBarDownloadButton.widthAnchor.constraint(greaterThanOrEqualToConstant: targetWidth)
+            constraint.priority = .required
             constraint.isActive = true
             self.downloadButtonWidthConstraint = constraint
         }

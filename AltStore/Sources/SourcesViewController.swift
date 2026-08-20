@@ -8,7 +8,6 @@
 
 @preconcurrency import UIKit
 import CoreData
-@preconcurrency import AltStoreCore
 import Nuke
 
 @objc(SourcesFooterView)
@@ -238,13 +237,16 @@ private extension SourcesViewController
             let numberOfApps = source.apps.filter { StoreApp.visibleAppsPredicate.evaluate(with: $0) }.count
             
             UIView.performWithoutAnimation {
+                cell.bannerView.button.style = .custom
+                
+                let contentWidth: CGFloat
                 if let error = source.error
                 {
                     let image = UIImage(systemName: "exclamationmark")?.withTintColor(.white, renderingMode: .alwaysOriginal)
-                    
                     cell.bannerView.button.setImage(image, for: .normal)
                     cell.bannerView.button.setTitle(nil, for: .normal)
                     cell.bannerView.button.tintColor = .systemYellow.withAlphaComponent(0.75)
+                    contentWidth = image?.size.width ?? 7.0
                     
                     let action = UIAction(identifier: .showError) { _ in
                         self.present(error)
@@ -254,9 +256,13 @@ private extension SourcesViewController
                 }
                 else
                 {
+                    let text = numberOfApps.description
                     cell.bannerView.button.setImage(nil, for: .normal)
-                    cell.bannerView.button.setTitle(numberOfApps.description, for: .normal)
+                    cell.bannerView.button.setTitle(text, for: .normal)
                     cell.bannerView.button.tintColor = .white.withAlphaComponent(0.2)
+                    
+                    let font = UIFont.boldSystemFont(ofSize: 14)
+                    contentWidth = (text as NSString).size(withAttributes: [.font: font]).width
                     
                     let action = UIAction(identifier: .showDetails) { _ in
                         self.showSourceDetails(for: source)
@@ -264,6 +270,12 @@ private extension SourcesViewController
                     cell.bannerView.button.addAction(action, for: .primaryActionTriggered)
                     cell.bannerView.button.removeAction(identifiedBy: .showError, for: .primaryActionTriggered)
                 }
+                
+                var config = cell.bannerView.button.configuration ?? UIButton.Configuration.plain()
+                config.cornerStyle = .capsule
+                let horizontalPadding = max(0, (31.0 - contentWidth) / 2.0)
+                config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: horizontalPadding, bottom: 0, trailing: horizontalPadding)
+                cell.bannerView.button.configuration = config
             }
             
             let dateText: String
@@ -385,16 +397,10 @@ private extension SourcesViewController
             
             let backgroundContext = DatabaseManager.shared.persistentContainer.newBackgroundContext()
             let source = try await AppManager.shared.fetchSource(sourceURL: url, managedObjectContext: backgroundContext)
-            do
-            {
-                await MainActor.run {
-                    showSourceDetails(for: source)
-                }
-                
-                finish(.success(()))
-            } catch {
-                finish(.failure(error))
+            await MainActor.run {
+                showSourceDetails(for: source)
             }
+            finish(.success(()))
         }
     }
 

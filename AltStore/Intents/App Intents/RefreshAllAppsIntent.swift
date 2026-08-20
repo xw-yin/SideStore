@@ -8,7 +8,6 @@
 
 import AppIntents
 import WidgetKit
-@preconcurrency import AltStoreCore
 
 // Shouldn't conform types we don't own to protocols we don't own, so make custom
 // NSError subclass that conforms to CustomLocalizedStringResourceConvertible instead.
@@ -16,7 +15,7 @@ import WidgetKit
 // Would prefer to just conform ALTLocalizedError to CustomLocalizedStringResourceConvertible,
 // but that can't be done without raising minimum version for ALTLocalizedError to iOS 16 :/
 @available(iOS 16, *)
-class IntentError: NSError, CustomLocalizedStringResourceConvertible
+class IntentError: NSError, CustomLocalizedStringResourceConvertible, @unchecked Sendable
 {
     var localizedStringResource: LocalizedStringResource {
         return "\(self.localizedDescription)"
