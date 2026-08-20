@@ -239,129 +239,127 @@ public struct ConsoleLogView: View {
        VStack {
            
            // Custom Header Bar (similar to QuickLook's preview screen)
-           HStack(spacing: 12) {
-               Text(viewModel.activeHeaderTitle)
-                   .font(.system(size: 22, weight: .semibold))
-                   .foregroundColor(.white)
-                   .lineLimit(1)
-               Spacer()
-               
-               if(!searchBarState){
-                   SwiftUI.Button(action: {
-                       searchBarState.toggle()
-                   }) {
-                       Image(systemName: "magnifyingglass")
-                           .foregroundColor(.white)
-                           .imageScale(.large)
-                   }
-               }
-
-                SwiftUI.Button(action: {
-                    fontSize = max(6, fontSize - 1)
-                }) {
-                    Image(systemName: "minus")
-                        .foregroundColor(.white)
-                        .imageScale(.medium)
-                }
+            HStack(spacing: 12) {
+                Text(LocalizedStringKey(viewModel.activeHeaderTitle))
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                Spacer()
                 
-                SwiftUI.Button(action: {
-                    fontSize = min(30, fontSize + 1)
-                }) {
-                    Image(systemName: "plus")
-                        .foregroundColor(.white)
-                        .imageScale(.medium)
-                }
-                
-                SwiftUI.Button(action: {
-                    showTimestamp.toggle()
-                }) {
-                    Image(systemName: showTimestamp ? "clock.fill" : "clock")
-                        .foregroundColor(.white)
-                        .font(.system(size: 19))
+                if(!searchBarState){
+                    SwiftUI.Button(action: {
+                        searchBarState.toggle()
+                    }) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.primary)
+                            .imageScale(.large)
+                    }
                 }
 
-                SwiftUI.Button(action: {
-                    showShareSheet = true
-                }) {
-                    Image(systemName: "square.and.arrow.up")
-                        .foregroundColor(.white)
-                        .font(.system(size: 19))
-                }
-                
-                Menu {
-                    SwiftUI.Button(action: {
-                        viewModel.setSource(.console)
-                    }) {
-                        HStack {
-                            Text("Console Log")
-                            if viewModel.activeSource == .console {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-                    
-                    SwiftUI.Button(action: {
-                        viewModel.setSource(.widget)
-                    }) {
-                        HStack {
-                            Text("Widget Log")
-                            if viewModel.activeSource == .widget {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-                    
-                    if let importedURL = viewModel.importedURL {
-                        SwiftUI.Button(action: {
-                            viewModel.setSource(.imported(url: importedURL))
-                        }) {
-                            HStack {
-                                Text("Imported Log\n(\(importedURL.lastPathComponent))")
-                                if case .imported = viewModel.activeSource {
-                                    Image(systemName: "checkmark")
-                                }
-                            }
-                        }
-                    }
-                    
-                    Divider()
-                    
-                    if viewModel.importedURL == nil {
-                        SwiftUI.Button(action: {
-                            showFileImporter = true
-                        }) {
-                            Label("Import Log...", systemImage: "square.and.arrow.down")
-                        }
-                    } else {
-                        SwiftUI.Button(role: .destructive, action: {
-                            viewModel.clearImportedLog()
-                        }) {
-                            Label("Remove Imported", systemImage: "xmark.circle")
-                        }
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .foregroundColor(.white)
-                        .imageScale(.large)
-                } primaryAction: {
-                    scrollToBottom.toggle()
-                }
-           }
-           .padding(15)
-           .padding(.top, 5)
-           .padding(.bottom, 2.5)
-           .background(Color.black.opacity(0.9))
-           .overlay(
-               Rectangle()
-                   .frame(height: 1)
-                   .foregroundColor(Color.gray.opacity(0.2)), alignment: .bottom
-           )
+                 SwiftUI.Button(action: {
+                     fontSize = max(6, fontSize - 1)
+                 }) {
+                     Image(systemName: "minus")
+                         .foregroundColor(.primary)
+                         .imageScale(.medium)
+                 }
+                 
+                 SwiftUI.Button(action: {
+                     fontSize = min(30, fontSize + 1)
+                 }) {
+                     Image(systemName: "plus")
+                         .foregroundColor(.primary)
+                         .imageScale(.medium)
+                 }
+                 
+                 SwiftUI.Button(action: {
+                     showTimestamp.toggle()
+                 }) {
+                     Image(systemName: showTimestamp ? "clock.fill" : "clock")
+                         .foregroundColor(.primary)
+                         .font(.system(size: 19))
+                 }
+
+                 SwiftUI.Button(action: {
+                     showShareSheet = true
+                 }) {
+                     Image(systemName: "square.and.arrow.up")
+                         .foregroundColor(.primary)
+                         .font(.system(size: 19))
+                 }
+                 
+                 Menu {
+                     SwiftUI.Button(action: {
+                         viewModel.setSource(.console)
+                     }) {
+                         HStack {
+                             Text("Console Log")
+                             if viewModel.activeSource == .console {
+                                 Image(systemName: "checkmark")
+                             }
+                         }
+                     }
+                     
+                     SwiftUI.Button(action: {
+                         viewModel.setSource(.widget)
+                     }) {
+                         HStack {
+                             Text("Widget Log")
+                             if viewModel.activeSource == .widget {
+                                 Image(systemName: "checkmark")
+                             }
+                         }
+                     }
+                     
+                     SwiftUI.Button(action: {
+                         showFileImporter = true
+                     }) {
+                         HStack {
+                             Text("Import Log File...")
+                             Image(systemName: "square.and.arrow.down")
+                         }
+                     }
+                     
+                     SwiftUI.Button(action: {
+                         copyVisibleLogs()
+                     }) {
+                         HStack {
+                             Text("Copy Visible Logs")
+                             Image(systemName: "doc.on.doc")
+                         }
+                     }
+                     
+                     SwiftUI.Button(role: .destructive, action: {
+                         viewModel.clearImportedLog()
+                     }) {
+                         HStack {
+                             Text("Clear Log")
+                             Image(systemName: "trash")
+                         }
+                     }
+                 } label: {
+                     Image(systemName: "ellipsis")
+                         .foregroundColor(.primary)
+                         .imageScale(.large)
+                 } primaryAction: {
+                     scrollToBottom.toggle()
+                 }
+            }
+            .padding(15)
+            .padding(.top, 5)
+            .padding(.bottom, 2.5)
+            .background(Color(uiColor: .secondarySystemBackground))
+            .overlay(
+                Rectangle()
+                    .frame(height: 1)
+                    .foregroundColor(Color(uiColor: .separator)), alignment: .bottom
+            )
 
            if(searchBarState){
                // Search bar
               HStack {
                   Image(systemName: "magnifyingglass")
-                      .foregroundColor(.gray)
+                      .foregroundColor(.secondary)
                       .padding(.trailing, 4)
 
                   TextField("Search", text: $searchText)
@@ -418,7 +416,7 @@ public struct ConsoleLogView: View {
                             let displayLine = showTimestamp ? line : stripTimestamp(from: line)
                             Text(displayLine)
                                 .font(.system(size: fontSize, design: .monospaced))
-                                .foregroundColor(.white)
+                                .foregroundColor(.primary)
                                 .textSelection(.enabled)
                                 .background(
                                     viewModel.searchResults.contains(index) ?
@@ -451,7 +449,7 @@ public struct ConsoleLogView: View {
                 }
             }
         }
-        .background(Color.black)  // Set background color to mimic QL's dark theme
+        .background(Color(uiColor: .systemBackground))
         .edgesIgnoringSafeArea(.all)
         .sheet(isPresented: $showShareSheet) {
             ActivityViewController(activityItems: [viewModel.activeLogURL])

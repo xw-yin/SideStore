@@ -23,16 +23,12 @@ extension SettingsViewController
     {
         case signIn
         case account
-        case patreon
-        case display
         case appRefresh
-        case instructions
         case techyThings
         case credits
         case betaTesting
         case advancedSettings
         case diagnostics    // diagnostics section, will be enabled on release builds only on swipe down with 3 fingers 3 times
-        // case macDirtyCow
     }
     
     private enum AppRefreshRow: Int, CaseIterable
@@ -143,13 +139,10 @@ final class SettingsViewController: UITableViewController
     {
         super.init(coder: aDecoder)
         
-        NotificationCenter.default.addObserver(self, selector: #selector(SettingsViewController.openPatreonSettings(_:)), name: AppDelegate.openPatreonSettingsDeepLinkNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(SettingsViewController.openErrorLog(_:)), name: ToastView.openErrorLogNotification, object: nil)
     }
     
-    
     private func handleReleaseChannelSelection(_ channel: String) {
-        // Update your model/preferences
         UserDefaults.standard.betaUdpatesTrack = channel
         updateReleaseChannelButtonTitle()
     }
@@ -161,47 +154,38 @@ final class SettingsViewController: UITableViewController
     
     private func configureReleaseChannelButton() {
         let currentTrack = UserDefaults.standard.betaUdpatesTrack
-        
-        // get all tracks as string available except .stable and .unknown
         var trackOptions: [String] = ReleaseTrackType.betaTracks.map {$0.rawValue}
 
-        if let currentTrack{
-            // prepend currently selected beta track from the user defaults
+        if let currentTrack {
             trackOptions = [currentTrack] + trackOptions.filter { $0 != currentTrack }
         }
     
-        // Create menu items with proper styling
-        let items = trackOptions.map{ channel in
+        let items = trackOptions.map { channel in
             UIAction(title: channel, handler: { [weak self] _ in
                 self?.handleReleaseChannelSelection(channel)
             })
         }
         
-        // Create menu with proper styling
         let menu = UIMenu(title: "",
-                         options: [.singleSelection, .displayInline], // Add displayInline
+                         options: [.singleSelection, .displayInline],
                          children: items
         )
         betaTrackPopupButton.menu = menu
 
-        // Set initial state
         updateReleaseChannelButtonTitle()
     }
-
 
     override func viewDidLoad()
     {
         super.viewDidLoad()
-        self.tableView.backgroundColor = .systemGroupedBackground
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithDefaultBackground()
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
+        navigationController?.navigationBar.standardAppearance = appearance
+        navigationController?.navigationBar.scrollEdgeAppearance = appearance
         
-        // --- iOS 26 fix ---
-        if #available(iOS 26.0, *) {
-            let appearance = UINavigationBarAppearance()
-            appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
-            appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
-            navigationController?.navigationBar.standardAppearance = appearance
-            navigationController?.navigationBar.scrollEdgeAppearance = appearance       // required for iOS 26, maybe enforce it in storyboard?
-        } 
+        self.tableView.backgroundColor = .systemGroupedBackground
         let nib = UINib(nibName: "SettingsHeaderFooterView", bundle: nil)
         self.prototypeHeaderFooterView = nib.instantiate(withOwner: nil, options: nil)[0] as? SettingsHeaderFooterView
         
@@ -301,7 +285,7 @@ private extension SettingsViewController
             string: appVersion,
             attributes: [
                 .font: UIFont.systemFont(ofSize: 14),
-                .foregroundColor: UIColor.white.withAlphaComponent(0.7),
+                .foregroundColor: UIColor.secondaryLabel,
                 .paragraphStyle: paragraphStyle
             ]
         )
@@ -310,7 +294,7 @@ private extension SettingsViewController
             string: "\n" + iosVersion,
             attributes: [
                 .font: UIFont.systemFont(ofSize: 12),
-                .foregroundColor: UIColor.white.withAlphaComponent(0.5),
+                .foregroundColor: UIColor.secondaryLabel,
                 .paragraphStyle: paragraphStyle
             ]
         )
@@ -332,7 +316,7 @@ private extension SettingsViewController
             string: "Copied! ",
             attributes: [
                 .font: UIFont.systemFont(ofSize: 14),
-                .foregroundColor: UIColor.white.withAlphaComponent(0.7),
+                .foregroundColor: UIColor.secondaryLabel,
                 .paragraphStyle: paragraphStyle
             ]
         )
@@ -409,20 +393,11 @@ private extension SettingsViewController
                 settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Sign in with your Apple ID to download apps from SideStore.", comment: "")
             }
             
-        case .patreon:
-            if isHeader
-            {
-                settingsHeaderFooterView.primaryLabel.text = NSLocalizedString("SUPPORT US", comment: "")
-            }
-            else
-            {
-                settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Support the SideStore Team by following our socials or becoming a patron!", comment: "")
-            }
-
         case .account:
             settingsHeaderFooterView.primaryLabel.text = NSLocalizedString("ACCOUNT", comment: "")
             
             settingsHeaderFooterView.button.setTitle(NSLocalizedString("SIGN OUT", comment: ""), for: .normal)
+            settingsHeaderFooterView.button.setTitleColor(.label, for: .normal)
             settingsHeaderFooterView.button.addTarget(self, action: #selector(SettingsViewController.signOut(_:)), for: .primaryActionTriggered)
             settingsHeaderFooterView.button.isHidden = false
             
@@ -435,20 +410,6 @@ private extension SettingsViewController
             {
                 settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Enable Background Refresh to automatically refresh apps in the background when connected to Wi-Fi. \n\nEnable Disable Idle Timeout to allow SideStore to keep your device awake during a refresh or install of any apps.", comment: "")
             }
-            
-        case .display:
-            if isHeader
-            {
-                settingsHeaderFooterView.primaryLabel.text = NSLocalizedString("DISPLAY", comment: "")
-            }
-            else
-            {
-                settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Personalize your SideStore experience by choosing an alternate app icon.", comment: "")
-            }
-            
-            
-        case .instructions:
-            break
             
         case .techyThings:
             if isHeader
@@ -815,16 +776,6 @@ private extension SettingsViewController
 
 private extension SettingsViewController
 {
-    @objc func openPatreonSettings(_ notification: Notification)
-    {
-        guard self.presentedViewController == nil else { return }
-                
-        UIView.performWithoutAnimation {
-            self.navigationController?.popViewController(animated: false)
-            self.performSegue(withIdentifier: "showPatreon", sender: nil)
-        }
-    }
-
     @objc func openErrorLog(_: Notification) {
         guard self.presentedViewController == nil else { return }
 
@@ -915,12 +866,10 @@ extension SettingsViewController
         case _ where isSectionHidden(section): return nil
         case .signIn where self.activeTeam != nil: return nil
         case .account where self.activeTeam == nil: return nil
-        case .signIn, .account, .patreon, .display, .appRefresh, .techyThings, .credits, .advancedSettings, .betaTesting, .diagnostics /* ,.macDirtyCow */:
+        case .signIn, .account, .appRefresh, .techyThings, .credits, .advancedSettings, .betaTesting, .diagnostics:
             let headerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: "HeaderFooterView") as! SettingsHeaderFooterView
             self.prepare(headerView, for: section, isHeader: true)
             return headerView
-            
-        case .instructions: return nil
         }
     }
     
@@ -931,13 +880,12 @@ extension SettingsViewController
         {
         case _ where isSectionHidden(section): return nil
         case .signIn where self.activeTeam != nil: return nil
-        // case .signIn, .patreon, .display, .appRefresh, .techyThings, .macDirtyCow:
-        case .signIn, .patreon, .display, .appRefresh, .techyThings, .betaTesting:
+        case .signIn, .appRefresh, .techyThings, .betaTesting:
             let footerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: "HeaderFooterView") as! SettingsHeaderFooterView
             self.prepare(footerView, for: section, isHeader: false)
             return footerView
             
-        case .account, .credits, .advancedSettings, .instructions, .diagnostics: return nil
+        case .account, .credits, .advancedSettings, .diagnostics: return nil
         }
     }
 
@@ -949,11 +897,9 @@ extension SettingsViewController
         case _ where isSectionHidden(section): return 1.0
         case .signIn where self.activeTeam != nil: return 1.0
         case .account where self.activeTeam == nil: return 1.0
-        case .signIn, .account, .patreon, .display, .appRefresh, .techyThings, .credits, .advancedSettings, .betaTesting, .diagnostics:
+        case .signIn, .account, .appRefresh, .techyThings, .credits, .advancedSettings, .betaTesting, .diagnostics:
             let height = self.preferredHeight(for: self.prototypeHeaderFooterView, in: section, isHeader: true)
             return height
-            
-        case .instructions: return 0.0
         }
     }
     
@@ -965,12 +911,11 @@ extension SettingsViewController
         case _ where isSectionHidden(section): return 1.0
         case .signIn where self.activeTeam != nil: return 1.0
         case .account where self.activeTeam == nil: return 1.0            
-        // case .signIn, .patreon, .display, .appRefresh, .techyThings, .macDirtyCow:
-        case .signIn, .patreon, .display, .appRefresh, .techyThings, .betaTesting:
+        case .signIn, .appRefresh, .techyThings, .betaTesting:
             let height = self.preferredHeight(for: self.prototypeHeaderFooterView, in: section, isHeader: false)
             return height
             
-        case .account, .credits, .advancedSettings, .instructions, .diagnostics: return 0.0
+        case .account, .credits, .advancedSettings, .diagnostics: return 0.0
         }
     }
 }
@@ -1303,7 +1248,7 @@ extension SettingsViewController
             }
             
             
-        case .display, .account, .patreon, .instructions, .betaTesting: break
+        case .account, .betaTesting: break
         }
         
         

@@ -1,13 +1,10 @@
-/* Localizable.strings (zh-Hans) */
 
 "Language" = "语言";
 "Choose your preferred language:" = "选择您偏好的语言：";
 "System Default" = "系统默认";
 "Cancel" = "取消";
-
 "DISPLAY" = "外观";
 "Personalize your SideStore experience by choosing an alternate app icon." = "选择您喜欢的图标来自定义 SideStore。";
-
 "Installed" = "已安装";
 "Active" = "活动";
 "Refresh All" = "全部刷新";
@@ -29,7 +26,6 @@
 "Info" = "信息";
 "Change Icon" = "更换图标";
 "Photos" = "照片";
-
 "Unable to Check for Updates" = "无法检查更新";
 "Start Backup?" = "开始备份吗？";
 "This will replace any previous backups. Please leave SideStore open until the backup is complete." = "这将替换之前的备份。请保持 SideStore 开启，直到备份完成。";
@@ -39,11 +35,9 @@
 "Remove “%@” from SideStore?" = "从 SideStore 中移除“%@”吗？";
 "You must also delete it from the home screen to fully uninstall the app." = "你还需要从主屏幕删除它，才能完全卸载该 App。";
 "This will also erase all backup data for this app." = "这还会清除该 App 的全部备份数据。";
-
 "Failed to find Pairing File!" = "未找到配对文件！";
 "Failed to encode pairingFile!" = "配对文件编码失败！";
 "Failed to initialize callback URL!" = "初始化回调 URL 失败！";
-
 "Pairing File" = "配对文件";
 "The selected pairing file is invalid or not usable. Please select a valid pairing file." = "所选配对文件无效或不可用。请选择有效的配对文件。";
 "Select the pairing file or select \"Help\" for help." = "请选择配对文件，或选择“帮助”获取协助。";
@@ -51,7 +45,6 @@
 "Select File" = "选择文件";
 "Invalid Pairing File" = "无效的配对文件";
 "Skip" = "跳过";
-
 "“%@” Blocked" = "“%@”已被阻止";
 "“%@” could not be added to SideStore." = "无法将“%@”添加到 SideStore。";
 "%@ %@ is now available for download." = "%@ %@ 现已可供下载。";
@@ -461,9 +454,7 @@
 "Error Description" = "错误说明";
 "Error Log" = "错误日志";
 "Sources" = "来源";
-
 "News" = "新闻";
-
 "My Apps" = "我的应用";
 "SIGN OUT" = "注销";
 "Connection Config" = "连接配置";
@@ -471,19 +462,7 @@
 "Experimental Features" = "实验性功能";
 "Backup & Restore" = "备份与恢复";
 "User Customizations" = "用户自定义";
-
 "Opt in for beta testing to receive regular updates and early previews of upcoming releases.\n\nPlease note that these builds are experimental and may be unstable or break unexpectedly." = "选择加入测试版测试，以获取定期更新与早期预览。\n\n请注意，这些版本是实验性的，可能会不稳定或意外崩溃。";
-
-/* Settings & Navigation Headers */
-"ADVANCED SETTINGS" = "高级设置";
-"BETA TESTING" = "测试版测试";
-"DIAGNOSTICS" = "诊断与开发";
-"TECHY THINGS" = "技术工具";
-"REFRESHING APPS" = "应用刷新";
-"SUPPORT US" = "支持我们";
-"ACCOUNT" = "账户";
-"DISPLAY" = "显示";
-"SideJITServer" = "SideJIT 服务器";
 "Storage Explorer" = "存储管理器";
 "Prompt AppExtns Customization" = "提示 App 扩展自定义";
 "Prompt App ID Customization" = "提示 App ID 自定义";
@@ -496,8 +475,6 @@
 "PRESET THEMES" = "预设主题";
 "PRECISE COLOR METRICS" = "精确颜色数值";
 "LIVE INTERFACE PREVIEW" = "界面实时预览";
-
-/* Backup & Restore */
 "ACCOUNT, CERTIFICATE, & PAIRING DATA" = "账户、证书与配对数据";
 "Import Account" = "导入账户";
 "Export Account" = "导出账户";
@@ -507,8 +484,6 @@
 "Enter the password used to encrypt this backup file." = "请输入用于加密此备份文件的密码。";
 "Please enter Apple ID password for %@ to complete sign-in." = "请输入 %@ 的 Apple ID 密码以完成登录。";
 "Please enter your Apple ID password to complete sign-in." = "请输入你的 Apple ID 密码以完成登录。";
-
-/* User Customizations */
 "ANISETTE" = "ANISETTE 认证";
 "GENERAL" = "通用";
 "APP VERIFICATION" = "应用验证";
@@ -526,7 +501,6 @@
 "Auto-Fix AppGroup IDs" = "自动修复 App Group ID";
 "Required for free developer accounts" = "免费开发者账户必须启用";
 "Automatically fix App Group casing mismatches" = "自动修复 App Group 大小写不匹配";
-"Export Resigned Apps" = "导出已重签应用";
 "Skip Uncopyable Backup Files" = "跳过无法复制的备份文件";
 "Disable All Verifications" = "停用所有应用验证";
 "Bundle Identifier Check" = "Bundle ID 检查";
@@ -541,8 +515,6 @@
 "Restart Now" = "立即重启";
 "SideStore.conf missing!" = "缺少 SideStore.conf！";
 "Unable to locate SideStore.conf in bundle resources." = "无法在应用包资源中找到 SideStore.conf。";
-
-/* Developer Options */
 "LOGGING & DIAGNOSTICS" = "日志与诊断";
 "WIDGET OPTIONS" = "小组件选项";
 "Reload All Widgets" = "重新加载所有小组件";
@@ -561,8 +533,6 @@
 "Deleting the database will remove all app entries and sources from SideStore." = "删除数据库将从 SideStore 移除所有应用条目和软件源。";
 "Are you sure you want to clear all existing refresh attempt entries?" = "确定要清除所有已记录的刷新尝试吗？";
 "Do you want to clear all keychain items related to this SideStore instance?" = "确定要清除与此 SideStore 实例相关的所有钥匙串条目吗？";
-
-/* Connection Config */
 "Auto Discovered from network" = "网络自动发现";
 "User Configuration" = "用户自定义配置";
 "Remote Endpoint" = "远程端点";
@@ -572,13 +542,9 @@
 "Device IP" = "设备 IP";
 "Port" = "端口";
 "Subnet Mask" = "子网掩码";
-
-/* Operations Logging */
 "STANDALONE STEPS" = "独立操作步骤";
 "PIPELINE STEPS" = "流水线操作步骤";
 "Operations Logging" = "操作日志控制";
-
-/* Health Check */
 "SideStore Ready" = "SideStore 就绪";
 "Action Required" = "需要操作";
 "Core Requirements" = "核心依赖项";
@@ -589,8 +555,6 @@
 "Connection Mode" = "连接模式";
 "Override Status" = "覆盖状态";
 "Active Protocol" = "活跃协议";
-
-/* Certificates */
 "Developer Portal Info" = "开发者中心信息";
 "X.509 Fields" = "X.509 字段";
 "Validity Progress" = "有效进度";
@@ -608,8 +572,6 @@
 "Set a password to encrypt the exported .p12 certificate file." = "设置密码以加密导出的 .p12 证书文件。";
 "Are you sure you want to deactivate the active signing certificate locally?" = "确定要停用本地当前活跃的签名证书吗？";
 "Are you sure you want to delete this certificate locally? This will remove it from the cached local store." = "确定要在本地删除此证书吗？这将从本地缓存中移除它。";
-
-/* Anisette */
 "Interactive" = "交互式";
 "Raw JSON" = "原始 JSON";
 "Use Offline Config File" = "使用离线配置文件";
@@ -632,18 +594,131 @@
 "Displays raw headers cached from successful anisette server handshakes. Use this to copy exact parameters sent by client/server." = "显示成功握手的 Anisette 服务器缓存的原始请求头。可用于复制客户端与服务端交互的具体参数。";
 "This will restore the client headers to the default recommended macOS values." = "这会将客户端请求头恢复为推荐的 macOS 默认值。";
 "Actions" = "操作";
-
-/* Storage Explorer & Cache */
 "Internal App Cache" = "内部应用缓存";
 "Cached unzipped app bundles stored in SideStore's private container. These are used during automatic background refreshes and resigns." = "存储在 SideStore 私有容器中的解压应用包。用于后台自动刷新和重签。";
 "No cached internal apps." = "没有缓存的内部应用。";
 "Exported Resigned Apps" = "已导出的重签应用";
 "Copies of signed app bundles exported to your Documents folder. These can be shared or retrieved via the Files app." = "导出到 Documents 文件夹的已签名应用副本。可以通过“文件”App 共享或提取。";
 "No exported resigned apps." = "没有已导出的重签应用。";
-
-/* Console & Logs */
 "Console Log" = "控制台日志";
 "Widget Log" = "小组件日志";
 "Copied Visible Logs to Clipboard" = "已将可见日志复制到剪贴板";
-
-
+"REMOVE" = "移除";
+"Updating sources…" = "正在更新来源…";
+"All Apps" = "所有应用";
+"All News" = "所有动态";
+"Yesterday" = "昨天";
+"The cached permissions for %@ do not match the source." = "%@ 的缓存权限与来源不匹配。";
+"The cached versions for %@ do not match the source." = "%@ 的缓存版本与来源不匹配。";
+"the app" = "该 App";
+"You do not appear to be connected to Wi-Fi or a wired network connection! Please connect to a Wi-Fi or wired connection." = "您似乎未连接到 Wi-Fi 或有线网络！请连接网络后重试。";
+"Device is not locatable at the specified IP/Endpoint." = "在指定的 IP/端口未找到设备。";
+"Minimuxer has not been started: %@" = "Minimuxer 尚未启动：%@";
+"No pairing file loaded: %@" = "未加载配对文件：%@";
+"An error occurred while provisioning: %@. Please try again. If the issue persists, report it on GitHub Issues!" = "置备签名时出错：%@。请重试。如果问题仍然存在，请在 GitHub Issues 提交反馈！";
+"Bundle ID Mismatch: %@" = "Bundle ID 不匹配：%@";
+"this app" = "此 App";
+"The file size of %@ (%@) does not match the size specified by the source (%@)." = "%@ 的文件大小（%@）与来源指定的（%@）不匹配。";
+"No Signing Certificates" = "无签名证书";
+"No valid signing certificates with private keys were found locally. Please import or create a certificate in Settings -> Certificates first." = "本地未找到包含私钥的有效签名证书。请先在“设置 -> 证书”中导入或创建证书。";
+"Reset Certificate" = "重置证书";
+"Set Certificate" = "设置证书";
+"Set Certificate Confirmation" = "设置证书确认";
+"Revoke Certificate" = "吊销证书";
+"Revoke Certificates" = "吊销证书";
+"Revoke and Resign Now" = "立即吊销并重签";
+"Select iOS Development certificate(s) to revoke:" = "选择要吊销的 iOS 开发证书：";
+"Set & Resign" = "设置并重签";
+"Resign Now" = "立即重签";
+"Resign Later" = "稍后重签";
+"Same Certificate" = "相同证书";
+"The selected certificate is already being used for this app. Please use the Resign option instead." = "所选证书已用于此 App。请改用“重签”选项。";
+"The signing certificate could not be extracted from SideStore's binary." = "无法从 SideStore 二进制文件中提取签名证书。";
+"The signing certificate used to install “%@” differs from your active signing certificate. Please re-sign or reinstall the app." = "安装“%@”所使用的签名证书与当前活跃证书不一致。请重新签名或重新安装该 App。";
+"The signing certificate used to install “%@” has expired. Please re-sign or reinstall the app." = "安装“%@”所使用的签名证书已过期。请重新签名或重新安装该 App。";
+"The signing certificate used to install “%@” was revoked on the Apple Developer portal. Please re-sign or reinstall the app." = "安装“%@”所使用的签名证书已在 Apple 开发者后台被吊销。请重新签名或重新安装该 App。";
+"The provisioning profile for SideStore is missing or invalid." = "SideStore 的描述文件丢失或无效。";
+"Keychain item not found." = "找不到钥匙串项目。";
+"Keychain item already exists." = "钥匙串项目已存在。";
+"Keychain authentication failed." = "钥匙串身份验证失败。";
+"Keychain security error." = "钥匙串安全错误。";
+"Make sure the app is running in the foreground on %@ then try again." = "请确保该 App 在 %@ 前台运行，然后再试。";
+"Make sure you have trusted this device with your computer and Wi-Fi sync is enabled." = "请确保您已在此设备上信任电脑，并开启了 Wi-Fi 同步。";
+"Please unlock the device with your passcode and try again." = "请使用密码解锁设备后再试。";
+"SideStore could not establish a secure connection to %@." = "SideStore 无法与 %@ 建立安全连接。";
+"SideStore could not find this device." = "SideStore 找不到此设备。";
+"SideStore could not write data to this device." = "SideStore 无法向此设备写入数据。";
+"SideStore does not support this request." = "SideStore 不支持此请求。";
+"SideStore received an invalid request." = "SideStore 收到了无效请求。";
+"SideStore received an invalid response from %@." = "SideStore 从 %@ 收到了无效响应。";
+"SideStore received an unknown response from SideStore." = "SideStore 收到了未知响应。";
+"SideStore sent an invalid response." = "SideStore 发送了无效响应。";
+"SideStore's connection to %@ timed out." = "SideStore 与 %@ 的连接超时。";
+"SideStore's database could not be saved." = "无法保存 SideStore 数据库。";
+"There was an error connecting to the device." = "连接到设备时发生错误。";
+"There was an issue communicating with the usbmuxd daemon." = "与 usbmuxd 守护进程通信时发生异常。";
+"Usbmuxd server is not listening on the device" = "设备上的 Usbmuxd 服务未在监听";
+"Your device must be running iOS 15.0 or later to install SideStore." = "您的设备必须运行 iOS 15.0 或更高版本才能安装 SideStore。";
+"The AltStore app group could not be found." = "找不到 AltStore 的 App Group。";
+"The Developer disk located at %@ is incompatible with %@." = "位于 %@ 的开发者磁盘与 %@ 不兼容。";
+"The app group '%@' does not match the app's bundle ID casing. Would you like to correct it to '%@'?" = "App Group“%@”与 App 的 Bundle ID 大小写不匹配。是否更正为“%@”？";
+"The app group “%@” could not be found." = "找不到 App Group“%@”。";
+"The app you are installing has a bundle ID (%@) that does not match the active app (%@). Would you like to proceed?" = "正在安装的 App Bundle ID（%@）与当前 App（%@）不匹配。是否继续？";
+"The bundle identifier is invalid." = "Bundle ID 无效。";
+"The device" = "该设备";
+"the device" = "该设备";
+"The disk is incompatible with %@." = "磁盘与 %@ 不兼容。";
+"this device's OS version" = "此设备的系统版本";
+"your device" = "您的设备";
+"The main SideStore interface could not be loaded." = "无法加载 SideStore 主界面。";
+"The process" = "该进程";
+"The process '%@'" = "进程“%@”";
+"The requested app" = "请求的 App";
+"Refresh %@ Failed" = "刷新 %@ 失败";
+"Refresh %@ in SideStore to continue using it." = "请在 SideStore 中刷新 %@ 以继续使用。";
+"Remove %@ Failed" = "移除 %@ 失败";
+"Resign %@ Failed" = "重签 %@ 失败";
+"Restore %@ Failed" = "恢复 %@ 失败";
+"Update %@ Failed" = "更新 %@ 失败";
+"This will also erase any backup data for this app." = "这也将清除该 App 的所有备份数据。";
+"This will remove “%@” from SideStore and erase any backup data for this app." = "这会从 SideStore 中移除“%@”并抹掉该 App 的所有备份数据。";
+"SideBackup could not start" = "SideBackup 无法启动";
+"Unable to access backup." = "无法访问备份。";
+"Unable to attach to the app's process" = "无法附加到 App 的进程";
+"Unable to detach from the app's process" = "无法脱离 App 的进程";
+"Unable to close TCP port" = "无法关闭 TCP 端口";
+"Unable to connect to TCP port" = "无法连接到 TCP 端口";
+"Unable to connect to core device proxy" = "无法连接到核心设备代理";
+"Unable to connect to lockdown" = "无法连接到 lockdown 服务";
+"Unable to connect to process control" = "无法连接到进程控制";
+"Unable to connect to remote server" = "无法连接到远程服务器";
+"Unable to connect to the device via %@ VPN. Please make sure LocalDevVPN is enabled and running! Reason: %@" = "无法通过 %@ VPN 连接到设备。请确保 LocalDevVPN 已启用并运行！原因：%@";
+"Unable to create DDI folder" = "无法创建 DDI 目录";
+"Unable to create app group backup directory." = "无法创建 App Group 备份目录。";
+"Unable to create backup directory." = "无法创建备份目录。";
+"Unable to create software tunnel" = "无法创建软件隧道";
+"Unable to download DDI" = "无法下载 DDI";
+"Unable to get services from XPC" = "无法从 XPC 获取服务";
+"Unable to get value from lockdown" = "无法从 lockdown 获取值";
+"Unable to lookup DDI images" = "无法查找 DDI 镜像";
+"Unable to manage profiles on the device" = "无法在设备上管理描述文件";
+"Unable to read app group backup." = "无法读取 App Group 备份。";
+"Unable to read images to memory" = "无法读取镜像到内存";
+"Unable to uninstall the app" = "无法卸载 App";
+"Uninstall from device" = "从设备上卸载";
+"Underlying Error" = "底层错误";
+"Underlying Errors" = "底层错误列表";
+"Source File" = "源文件";
+"Source Line" = "源文件行号";
+"Recovery Suggestion" = "恢复建议";
+"Started EMProxy" = "已启动 EMProxy";
+"Stopped EMProxy" = "已停止 EMProxy";
+"Reloaded All Widgets" = "已重新加载所有小组件";
+"Rotated Widget Log" = "已轮转小组件日志";
+"Widget Log Empty" = "小组件日志为空";
+"You cannot activate more than 3 apps with a non-developer Apple ID." = "使用非开发者 Apple ID 最多只能激活 3 个 App。";
+"Would you like to install \"%@\"?" = "是否要安装“%@”？";
+"Proceed" = "继续";
+"Notice" = "提示";
+"Title" = "标题";
+"Undefined" = "未定义";

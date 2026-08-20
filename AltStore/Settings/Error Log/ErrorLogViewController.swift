@@ -41,18 +41,26 @@ final class ErrorLogViewController: UITableViewController, QLPreviewControllerDe
     private var _exportedLogURL: URL?
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
-        return .lightContent
+        return .default
     }
     
     override func viewDidLoad()
     {
         super.viewDidLoad()
         
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithDefaultBackground()
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
+        self.navigationItem.standardAppearance = appearance
+        self.navigationItem.scrollEdgeAppearance = appearance
+        self.tableView.backgroundColor = .systemGroupedBackground
+        
         self.tableView.dataSource = self.dataSource
         self.dataSource.contentView = self.tableView
         self.tableView.prefetchDataSource = self.dataSource
         
-        self.exportLogButton?.activityIndicatorView.color = .white
+        self.exportLogButton?.activityIndicatorView.color = .label
         
         if #unavailable(iOS 15)
         {
