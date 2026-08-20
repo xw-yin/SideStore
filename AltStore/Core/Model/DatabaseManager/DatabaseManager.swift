@@ -316,9 +316,6 @@ public class DatabaseManager
         let activeTeam = Team.first(satisfying: predicate, in: context)
         return activeTeam
     }
-
-private extension DatabaseManager
-{
     func embeddedLiveContainerApplication(from hostBundle: Bundle) -> (application: ALTApplication, temporaryBundleURL: URL)?
     {
         guard Bundle.isBundledWithLiveContainer,

@@ -107,7 +107,7 @@ public final class AppBootManager {
             let task = Task {
                 guard let pf = self.getSavedPairingFile() else {
                     self.needsPairingPrompt = true
-                    throw OperationError.invalidPairingFile
+                    throw OperationError.invalidPairingFile()
                 }
                 try await self.startMinimuxer(pairingFile: pf)
             }
