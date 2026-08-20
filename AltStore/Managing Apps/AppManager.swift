@@ -101,6 +101,12 @@ final class AppManager: ObservableObject, @unchecked Sendable
                     
                         guard !self.isActivelyManagingApp(withBundleID: app.bundleIdentifier) else { continue }
                     
+                        if Bundle.isBundledWithLiveContainer {
+                            // In LiveContainer, signed apps are managed in guest containers without system-level UTI declarations.
+                            // Do not reconcile or delete them.
+                            continue
+                        }
+                    
                         if !UserDefaults.standard.isLegacyDeactivationSupported
                         {
                             // We can't (ab)use provisioning profiles to deactivate apps,
@@ -161,8 +167,10 @@ final class AppManager: ObservableObject, @unchecked Sendable
                     
                         if isDirectory && !installedAppBundleIDs.contains(bundleID) && !self.isActivelyManagingApp(withBundleID: bundleID)
                         {
-                            debugLog("DELETING CACHED APP: \(bundleID)")
-                            try FileManager.default.removeItem(at: appDirectory)
+                            if !Bundle.isBundledWithLiveContainer {
+                                debugLog("DELETING CACHED APP: \(bundleID)")
+                                try FileManager.default.removeItem(at: appDirectory)
+                            }
                         }
                     } catch {
                         debugLog("Failed to remove cached app directory. \(error)")
