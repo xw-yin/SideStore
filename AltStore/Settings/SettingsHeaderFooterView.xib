@@ -31,7 +31,7 @@
                                     <rect key="frame" x="68.5" y="0.0" width="69" height="29"/>
                                     <fontDescription key="fontDescription" type="boldSystem" pointSize="14"/>
                                     <state key="normal" title="SIGN OUT">
-                                        <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <color key="titleColor" systemColor="labelColor"/>
                                     </state>
                                 </button>
                             </subviews>

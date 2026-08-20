@@ -15,7 +15,23 @@ final class LicensesViewController: UIViewController
     @IBOutlet private var textView: UITextView!
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
-        return .lightContent
+        return .default
+    }
+    
+    override func viewDidLoad()
+    {
+        super.viewDidLoad()
+        
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithDefaultBackground()
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
+        self.navigationItem.standardAppearance = appearance
+        self.navigationItem.scrollEdgeAppearance = appearance
+        
+        self.view.backgroundColor = .systemGroupedBackground
+        self.textView.backgroundColor = .systemGroupedBackground
+        self.textView.textColor = .label
     }
     
     override func viewWillAppear(_ animated: Bool)

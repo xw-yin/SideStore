@@ -23,7 +23,6 @@ extension SettingsViewController
     {
         case signIn
         case account
-        case patreon
         case appRefresh
         case techyThings
         case credits
@@ -140,7 +139,6 @@ final class SettingsViewController: UITableViewController
     {
         super.init(coder: aDecoder)
         
-        NotificationCenter.default.addObserver(self, selector: #selector(SettingsViewController.openPatreonSettings(_:)), name: AppDelegate.openPatreonSettingsDeepLinkNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(SettingsViewController.openErrorLog(_:)), name: ToastView.openErrorLogNotification, object: nil)
     }
     
@@ -396,20 +394,11 @@ private extension SettingsViewController
                 settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Sign in with your Apple ID to download apps from SideStore.", comment: "")
             }
             
-        case .patreon:
-            if isHeader
-            {
-                settingsHeaderFooterView.primaryLabel.text = NSLocalizedString("SUPPORT US", comment: "")
-            }
-            else
-            {
-                settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Support the SideStore Team by following our socials or becoming a patron!", comment: "")
-            }
-
         case .account:
             settingsHeaderFooterView.primaryLabel.text = NSLocalizedString("ACCOUNT", comment: "")
             
             settingsHeaderFooterView.button.setTitle(NSLocalizedString("SIGN OUT", comment: ""), for: .normal)
+            settingsHeaderFooterView.button.setTitleColor(.label, for: .normal)
             settingsHeaderFooterView.button.addTarget(self, action: #selector(SettingsViewController.signOut(_:)), for: .primaryActionTriggered)
             settingsHeaderFooterView.button.isHidden = false
             
@@ -788,16 +777,6 @@ private extension SettingsViewController
 
 private extension SettingsViewController
 {
-    @objc func openPatreonSettings(_ notification: Notification)
-    {
-        guard self.presentedViewController == nil else { return }
-                
-        UIView.performWithoutAnimation {
-            self.navigationController?.popViewController(animated: false)
-            self.performSegue(withIdentifier: "showPatreon", sender: nil)
-        }
-    }
-
     @objc func openErrorLog(_: Notification) {
         guard self.presentedViewController == nil else { return }
 
@@ -888,7 +867,7 @@ extension SettingsViewController
         case _ where isSectionHidden(section): return nil
         case .signIn where self.activeTeam != nil: return nil
         case .account where self.activeTeam == nil: return nil
-        case .signIn, .account, .patreon, .appRefresh, .techyThings, .credits, .advancedSettings, .betaTesting, .diagnostics:
+        case .signIn, .account, .appRefresh, .techyThings, .credits, .advancedSettings, .betaTesting, .diagnostics:
             let headerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: "HeaderFooterView") as! SettingsHeaderFooterView
             self.prepare(headerView, for: section, isHeader: true)
             return headerView
@@ -902,7 +881,7 @@ extension SettingsViewController
         {
         case _ where isSectionHidden(section): return nil
         case .signIn where self.activeTeam != nil: return nil
-        case .signIn, .patreon, .appRefresh, .techyThings, .betaTesting:
+        case .signIn, .appRefresh, .techyThings, .betaTesting:
             let footerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: "HeaderFooterView") as! SettingsHeaderFooterView
             self.prepare(footerView, for: section, isHeader: false)
             return footerView
@@ -919,7 +898,7 @@ extension SettingsViewController
         case _ where isSectionHidden(section): return 1.0
         case .signIn where self.activeTeam != nil: return 1.0
         case .account where self.activeTeam == nil: return 1.0
-        case .signIn, .account, .patreon, .appRefresh, .techyThings, .credits, .advancedSettings, .betaTesting, .diagnostics:
+        case .signIn, .account, .appRefresh, .techyThings, .credits, .advancedSettings, .betaTesting, .diagnostics:
             let height = self.preferredHeight(for: self.prototypeHeaderFooterView, in: section, isHeader: true)
             return height
         }
@@ -933,7 +912,7 @@ extension SettingsViewController
         case _ where isSectionHidden(section): return 1.0
         case .signIn where self.activeTeam != nil: return 1.0
         case .account where self.activeTeam == nil: return 1.0            
-        case .signIn, .patreon, .appRefresh, .techyThings, .betaTesting:
+        case .signIn, .appRefresh, .techyThings, .betaTesting:
             let height = self.preferredHeight(for: self.prototypeHeaderFooterView, in: section, isHeader: false)
             return height
             
@@ -1270,7 +1249,7 @@ extension SettingsViewController
             }
             
             
-        case .account, .patreon, .betaTesting: break
+        case .account, .betaTesting: break
         }
         
         
