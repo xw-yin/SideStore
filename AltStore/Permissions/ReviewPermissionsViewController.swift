@@ -68,33 +68,16 @@ class ReviewPermissionsViewController: UICollectionViewController
     {
         super.viewDidLoad()
         
-        let buttonAppearance = UIBarButtonItemAppearance(style: .plain)
-        buttonAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.white]
-        
         let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = .settingsBackground
-        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
-        appearance.buttonAppearance = buttonAppearance
+        appearance.configureWithDefaultBackground()
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
         self.navigationItem.standardAppearance = appearance
         
         self.title = NSLocalizedString("Review Permissions", comment: "")
         
         let collectionViewLayout = self.makeLayout()
         self.collectionView.collectionViewLayout = collectionViewLayout
-        
-        if #available(iOS 16, *)
-        {
-            self.collectionView.backgroundView = UIHostingConfiguration {
-                Color(.settingsBackground)
-            }
-            .margins(.all, 0)
-            .makeContentView()
-        }
-        else
-        {
-            self.collectionView.backgroundColor = .settingsBackground
-        }
+        self.collectionView.backgroundColor = .systemGroupedBackground
         
         self.dataSource.proxy = self
         self.collectionView.dataSource = self.dataSource

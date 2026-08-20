@@ -140,18 +140,16 @@ final class SignableCertificatesListViewController: UITableViewController {
         self.title = NSLocalizedString("Set Certificate", comment: "")
         self.certificates = viewModel.loadAllSignableLocalCertificates()
         
-        self.view.backgroundColor = .settingsBackground
-        self.tableView.backgroundColor = .settingsBackground
+        self.view.backgroundColor = .systemGroupedBackground
+        self.tableView.backgroundColor = .systemGroupedBackground
         
         let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = .settingsBackground
-        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        appearance.configureWithDefaultBackground()
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
         self.navigationItem.standardAppearance = appearance
         self.navigationItem.scrollEdgeAppearance = appearance
         
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancelTapped))
-        self.navigationItem.leftBarButtonItem?.tintColor = .white
         
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "CertCell")
     }

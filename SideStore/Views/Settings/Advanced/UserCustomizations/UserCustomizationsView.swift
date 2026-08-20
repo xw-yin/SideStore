@@ -42,14 +42,14 @@ struct UserCustomizationsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("APPEARANCE & THEMES")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     NavigationLink(destination: ThemePickerView()) {
                         HStack {
                             Text("Theme Manager")
                                 .font(.system(size: 17, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(.primary)
                             Spacer()
                             HStack(spacing: 6) {
                                 Circle()
@@ -57,7 +57,7 @@ struct UserCustomizationsView: View {
                                     .frame(width: 14, height: 14)
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color.white.opacity(0.4))
+                                    .foregroundColor(.secondary)
                             }
                         }
                         .padding(.horizontal, 16)
@@ -71,7 +71,7 @@ struct UserCustomizationsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("ANISETTE")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -95,7 +95,7 @@ struct UserCustomizationsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("GENERAL")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -161,7 +161,7 @@ struct UserCustomizationsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("APP VERIFICATION")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -245,7 +245,7 @@ struct UserCustomizationsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("EMPROXY & WIREGUARD")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -253,12 +253,12 @@ struct UserCustomizationsView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Export WireGuard Config")
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                     .multilineTextAlignment(.leading)
                                     .fixedSize(horizontal: false, vertical: true)
                                 Text("Exports SideStore.conf to import into WireGuard VPN app")
                                     .font(.system(size: 12, weight: .regular))
-                                    .foregroundColor(Color.white.opacity(0.6))
+                                    .foregroundColor(.secondary)
                                     .multilineTextAlignment(.leading)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
@@ -266,7 +266,7 @@ struct UserCustomizationsView: View {
                             SwiftUI.Button(action: { exportWireGuardConfig() }) {
                                 Image(systemName: "square.and.arrow.up")
                                     .font(.system(size: 22, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                     .frame(width: 55, alignment: .center)
                             }
                         }
@@ -296,7 +296,7 @@ struct UserCustomizationsView: View {
             .padding(.top, 16)
             .padding(.bottom, 32)
         }
-        .background(Color(uiColor: .settingsBackground).ignoresSafeArea())
+        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
         .navigationTitle("User Customizations")
         .navigationBarTitleDisplayMode(.large)
         .alert("Restart Required", isPresented: $showEMPRestartConfirmation) {
@@ -316,12 +316,12 @@ struct UserCustomizationsView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(LocalizedStringKey(title))
                     .font(.system(size: 17, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .fixedSize(horizontal: false, vertical: true)
                 if let subtitle = subtitle {
                     Text(LocalizedStringKey(subtitle))
                         .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }

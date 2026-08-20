@@ -80,7 +80,7 @@ class AltAppIconsViewController: UICollectionViewController
         let collectionViewLayout = self.makeLayout()
         self.collectionView.collectionViewLayout = collectionViewLayout
         
-        self.collectionView.backgroundColor = UIColor(resource: .settingsBackground)
+        self.collectionView.backgroundColor = .systemGroupedBackground
         
         do
         {

@@ -42,7 +42,7 @@ struct DeveloperOptionsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("LOGGING & DIAGNOSTICS")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -131,7 +131,7 @@ struct DeveloperOptionsView: View {
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color.white.opacity(0.4))
+                                    .foregroundColor(.secondary)
                             }
                             .padding(.horizontal, 16)
                             .frame(height: 50)
@@ -147,7 +147,7 @@ struct DeveloperOptionsView: View {
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color.white.opacity(0.4))
+                                    .foregroundColor(.secondary)
                             }
                             .padding(.horizontal, 16)
                             .frame(height: 50)
@@ -161,7 +161,7 @@ struct DeveloperOptionsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("WIDGET OPTIONS")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -203,7 +203,7 @@ struct DeveloperOptionsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("DATABASE OPTIONS")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -292,7 +292,7 @@ struct DeveloperOptionsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("WIREGUARD CONFIGURATION")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -345,7 +345,7 @@ struct DeveloperOptionsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("ACCOUNT MANAGEMENT")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -400,7 +400,7 @@ struct DeveloperOptionsView: View {
             .padding(.top, 16)
             .padding(.bottom, 32)
         }
-        .background(Color(uiColor: .settingsBackground).ignoresSafeArea())
+        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
         .navigationTitle("Developer Options")
         .navigationBarTitleDisplayMode(.large)
         .alert("Delete Database", isPresented: $showDeleteConfirmation) {
@@ -513,7 +513,7 @@ struct DeveloperOptionsView: View {
         HStack {
             Text(LocalizedStringKey(title))
                 .font(.system(size: 17, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
             Toggle("", isOn: isOn)

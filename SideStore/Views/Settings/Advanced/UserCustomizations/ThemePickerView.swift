@@ -39,7 +39,7 @@ struct ThemePickerView: View {
             .padding(.top, 16)
             .padding(.bottom, 32)
         }
-        .background(Color(uiColor: .settingsBackground).ignoresSafeArea())
+        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
         .navigationTitle("Theme Manager")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -51,7 +51,7 @@ struct ThemePickerView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("LIVE INTERFACE PREVIEW")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(Color.white.opacity(0.6))
+                .foregroundColor(.secondary)
                 .padding(.horizontal, 16)
             
             VStack(spacing: 16) {
@@ -108,14 +108,14 @@ struct ThemePickerView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("COLOR SELECTION & WHEEL")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(Color.white.opacity(0.6))
+                .foregroundColor(.secondary)
                 .padding(.horizontal, 16)
 
             VStack(spacing: 0) {
                 HStack {
                     Text("Full Spectrum Color Wheel")
                         .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     Spacer()
                     ColorPicker("", selection: $selectedColor, supportsOpacity: false)
                         .labelsHidden()
@@ -136,7 +136,7 @@ struct ThemePickerView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("PRESET THEMES")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(Color.white.opacity(0.6))
+                .foregroundColor(.secondary)
                 .padding(.horizontal, 16)
 
             VStack(spacing: 0) {
@@ -164,19 +164,19 @@ struct ThemePickerView: View {
                         .frame(width: 24, height: 24)
                         .overlay(
                             Circle()
-                                .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                                .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
                         )
 
                     Text(preset.name)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                         .padding(.leading, 8)
 
                     Spacer()
 
                     Text(preset.hex)
                         .font(.system(size: 14, design: .monospaced))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
 
                     if isPresetSelected(preset) {
                         Image(systemName: "checkmark")
@@ -206,7 +206,7 @@ struct ThemePickerView: View {
         return VStack(alignment: .leading, spacing: 8) {
             Text("PRECISE COLOR METRICS")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(Color.white.opacity(0.6))
+                .foregroundColor(.secondary)
                 .padding(.horizontal, 16)
 
             VStack(spacing: 0) {
@@ -247,11 +247,11 @@ struct ThemePickerView: View {
         HStack {
             Text(label)
                 .font(.system(size: 15, weight: .medium))
-                .foregroundColor(Color.white.opacity(0.8))
+                .foregroundColor(.secondary)
             Spacer()
             Text(value)
                 .font(.system(size: 15, weight: .semibold, design: .monospaced))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)

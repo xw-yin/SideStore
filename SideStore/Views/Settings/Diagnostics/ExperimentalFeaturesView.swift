@@ -24,7 +24,7 @@ struct ExperimentalFeaturesView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("STANDALONE FEATURES")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -68,7 +68,7 @@ struct ExperimentalFeaturesView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("FEATURE FLAGS")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -98,7 +98,7 @@ struct ExperimentalFeaturesView: View {
             .padding(.top, 16)
             .padding(.bottom, 32)
         }
-        .background(Color(uiColor: .settingsBackground).ignoresSafeArea())
+        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
         .navigationTitle("Experimental Features")
         .navigationBarTitleDisplayMode(.large)
     }
@@ -112,9 +112,9 @@ struct ExperimentalFeaturesView: View {
 
     private func toggleRow(title: String, isOn: Binding<Bool>) -> some View {
         HStack {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 17, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
             Toggle("", isOn: isOn)

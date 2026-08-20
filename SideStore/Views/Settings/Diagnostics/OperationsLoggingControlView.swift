@@ -62,7 +62,7 @@ struct OperationsLoggingControlView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("STANDALONE STEPS")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -81,7 +81,7 @@ struct OperationsLoggingControlView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("PIPELINE STEPS")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -100,7 +100,7 @@ struct OperationsLoggingControlView: View {
             .padding(.top, 16)
             .padding(.bottom, 32)
         }
-        .background(Color(uiColor: .settingsBackground).ignoresSafeArea())
+        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
         .navigationTitle("Operations Logging")
         .navigationBarTitleDisplayMode(.large)
     }
@@ -109,7 +109,7 @@ struct OperationsLoggingControlView: View {
         HStack {
             Text(LocalizedStringKey(title))
                 .font(.system(size: 17, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
             Toggle("", isOn: Binding(
