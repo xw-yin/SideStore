@@ -345,22 +345,8 @@ public extension UserDefaults
         let preferredAppSorting: AppSorting = if #available(iOS 15, *) { .default } else { .name }
         
         let defaults = [
-            #keyPath(UserDefaults._preferredAppSorting): preferredAppSorting.rawValue,
-            #keyPath(UserDefaults.useLocalVPN): true,
-            #keyPath(UserDefaults.isCellularRefreshEnabled): false,
-            #keyPath(UserDefaults.isAppLimitDisabled): false,
-            #keyPath(UserDefaults.isBetaUpdatesEnabled): false,
-            #keyPath(UserDefaults.customizeAppId): false,
-            #keyPath(UserDefaults.isExportResignedAppEnabled): false,
-            #keyPath(UserDefaults.isDebugModeEnabled): false,
-            #keyPath(UserDefaults.isVerboseOperationsLoggingEnabled): false,
             #keyPath(UserDefaults.isMinimuxerConsoleLoggingEnabled): true, // minimuxer logging is disabled by default for console loggin
             #keyPath(UserDefaults.isMinimuxerStatusCheckEnabled): true, // minimuxer status check is disabled by default to support LocalDevVPN based cellular refresh
-            #keyPath(UserDefaults.recreateDatabaseOnNextStart): false,
-            #keyPath(UserDefaults.isBackgroundRefreshEnabled): true,
-            #keyPath(UserDefaults.enableEMPforWireguard): false,
-            #keyPath(UserDefaults.isIdleTimeoutDisableEnabled): true,
-            #keyPath(UserDefaults.isPairingReset): true,
             // TODO: @mahee96: need to retire since irrelevant in ios 15+
             #keyPath(UserDefaults.isLegacyDeactivationSupported): isLegacyDeactivationSupported,
             #keyPath(UserDefaults.activeAppLimitIncludesExtensions): activeAppLimitIncludesExtensions,

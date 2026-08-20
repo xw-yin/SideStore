@@ -23,6 +23,7 @@ extension TabBarController
 final class TabBarController: UITabBarController
 {
     private var initialSegue: (identifier: String, sender: Any?)?
+    private var embeddedVersionLabel: UILabel?
     
     private var _viewDidAppear = false
     
@@ -42,11 +43,19 @@ final class TabBarController: UITabBarController
         super.viewDidLoad()
         debugLog("[TabBarController] viewDidLoad()")
         
-        let browseNavigationController = self.viewControllers![Tab.browse.rawValue] as! UINavigationController
-        browseNavigationController.tabBarItem.image = UIImage(systemName: "bag")
-        
-        let sourcesNavigationController = self.viewControllers![Tab.sources.rawValue] as! UINavigationController
-        self.sourcesViewController = sourcesNavigationController.viewControllers.first as? SourcesViewController
+        guard let viewControllers = self.viewControllers else {
+            debugLog("[TabBarController] No child view controllers were loaded from Main.storyboard")
+            return
+        }
+
+        if viewControllers.indices.contains(Tab.browse.rawValue) {
+            viewControllers[Tab.browse.rawValue].tabBarItem.image = UIImage(systemName: "bag")
+        }
+
+        if viewControllers.indices.contains(Tab.sources.rawValue),
+           let sourcesNavigationController = viewControllers[Tab.sources.rawValue] as? UINavigationController {
+            self.sourcesViewController = sourcesNavigationController.viewControllers.first as? SourcesViewController
+        }
         
         let titles: [Tab: String] = [
             .news: NSLocalizedString("News", comment: ""),
@@ -56,8 +65,14 @@ final class TabBarController: UITabBarController
             .settings: NSLocalizedString("Settings", comment: "")
         ]
         for (tab, title) in titles {
-            self.viewControllers?[tab.rawValue].tabBarItem.title = title
+            guard viewControllers.indices.contains(tab.rawValue) else {
+                debugLog("[TabBarController] Missing storyboard tab at index \(tab.rawValue)")
+                continue
+            }
+            viewControllers[tab.rawValue].tabBarItem.title = title
         }
+
+        self.configureEmbeddedVersionLabel()
     }
     
     override func viewDidAppear(_ animated: Bool)
@@ -103,7 +118,7 @@ extension TabBarController
             self.sourcesViewController?.deepLinkSourceURL = sourceURL
         }
         
-        self.selectedIndex = Tab.sources.rawValue
+        selectTab(.sources)
     }
 }
 
@@ -111,11 +126,51 @@ private extension TabBarController
 {
     @objc func importApp(_ notification: Notification)
     {
-        self.selectedIndex = Tab.myApps.rawValue
+        selectTab(.myApps)
     }
 
     @objc func openErrorLog(_ notification: Notification)
     {
-        self.selectedIndex = Tab.settings.rawValue
+        selectTab(.settings)
+    }
+}
+
+private extension TabBarController
+{
+    func configureEmbeddedVersionLabel()
+    {
+        guard Bundle.isBundledWithLiveContainer, self.embeddedVersionLabel == nil else { return }
+
+        let liveContainerInfo = Bundle.realMainBundle.infoDictionary
+        let liveContainerVersion = liveContainerInfo?["CFBundleShortVersionString"] as? String ?? "?"
+        let liveContainerBuild = liveContainerInfo?["LCVersionInfo"] as? String ?? "?"
+        let sideStoreVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+
+        let versionLabel = UILabel()
+        versionLabel.translatesAutoresizingMaskIntoConstraints = false
+        versionLabel.font = .systemFont(ofSize: 9, weight: .regular)
+        versionLabel.textColor = .secondaryLabel
+        versionLabel.textAlignment = .center
+        versionLabel.isUserInteractionEnabled = false
+        versionLabel.text = "LC \(liveContainerVersion)-\(liveContainerBuild), SS \(sideStoreVersion)"
+
+        self.view.addSubview(versionLabel)
+        NSLayoutConstraint.activate([
+            versionLabel.centerXAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerXAnchor),
+            versionLabel.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor, constant: 13)
+        ])
+        self.embeddedVersionLabel = versionLabel
+    }
+}
+
+private extension TabBarController
+{
+    private func selectTab(_ tab: Tab)
+    {
+        guard let viewControllers, viewControllers.indices.contains(tab.rawValue) else {
+            debugLog("[TabBarController] Cannot select missing tab at index \(tab.rawValue)")
+            return
+        }
+        self.selectedIndex = tab.rawValue
     }
 }

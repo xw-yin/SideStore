@@ -26,7 +26,7 @@ final class LaunchViewController: UIViewController {
         super.viewDidLoad()
         debugLog("[LaunchViewController] viewDidLoad()")
         splashView = SplashView(frame: view.bounds, appName: "SideStore")
-        destinationViewController = storyboard!.instantiateViewController(withIdentifier: "tabBarController") as? TabBarController
+        destinationViewController = storyboard?.instantiateViewController(withIdentifier: "tabBarController") as? TabBarController
         view.addSubview(splashView)
     }
 
@@ -116,6 +116,10 @@ final class LaunchViewController: UIViewController {
     @MainActor
     func finishLaunching() async {
         guard !didFinishLaunching else { return }
+        guard let destinationVC = destinationViewController else {
+            displayError(NSLocalizedString("The main SideStore interface could not be loaded.", comment: ""))
+            return
+        }
         didFinishLaunching = true
         
         splashView.updateStatus(NSLocalizedString("Loading apps…", comment: ""))
@@ -129,15 +133,17 @@ final class LaunchViewController: UIViewController {
             let errorDesc = ErrorProcessing(.fullError).getDescription(error: error as NSError)
             debugLog("Failed to update sources on launch. \(errorDesc)")
             
-            let toastView = ToastView(text: NSLocalizedString("Some sources were unable to load", comment: ""), detailText: nil)
-            toastView.addTarget(self.destinationViewController, action: #selector(TabBarController.presentSources), for: .touchUpInside)
-            toastView.show(in: self.destinationViewController!.selectedViewController ?? self.destinationViewController!)
+            var mode: ToastView.InfoMode = .fullError
+            if String(describing: error).contains("The Internet connection appears to be offline"){
+                mode = .localizedDescription    // dont make noise!
+            }
+            let toastView = ToastView(error: error, mode: mode)
+            toastView.addTarget(destinationVC, action: #selector(TabBarController.presentSources), for: .touchUpInside)
+            toastView.show(in: destinationVC.selectedViewController ?? destinationVC)
         }
         updateKnownSources()
         splashView.updateStatus(NSLocalizedString("Almost there…", comment: ""))
         didFinishLaunching = true
-        
-        let destinationVC = destinationViewController!
         
         let elapsed = abs(startTime.timeIntervalSinceNow)
         let remaining = elapsed >= 1 ? 0 : 1 - elapsed
