@@ -472,6 +472,156 @@
 "Backup & Restore" = "备份与恢复";
 "User Customizations" = "用户自定义";
 
-"Opt in for beta testing to receive regular updates and early previews of upcoming releases.\n\nPlease note that these builds are experimental and may be unstable or break unexpectedly." = "选择加入测试版测试，以获取定期更新 and 早期预览。\n\n请注意，这些版本是实验性的，可能会不稳定或意外崩溃。";
+"Opt in for beta testing to receive regular updates and early previews of upcoming releases.\n\nPlease note that these builds are experimental and may be unstable or break unexpectedly." = "选择加入测试版测试，以获取定期更新与早期预览。\n\n请注意，这些版本是实验性的，可能会不稳定或意外崩溃。";
+
+/* Settings & Navigation Headers */
+"ADVANCED SETTINGS" = "高级设置";
+"BETA TESTING" = "测试版测试";
+"DIAGNOSTICS" = "诊断与开发";
+"TECHY THINGS" = "技术工具";
+"REFRESHING APPS" = "应用刷新";
+"SUPPORT US" = "支持我们";
+"ACCOUNT" = "账户";
+"DISPLAY" = "显示";
+"SideJITServer" = "SideJIT 服务器";
+"Storage Explorer" = "存储管理器";
+"Prompt AppExtns Customization" = "提示 App 扩展自定义";
+"Prompt App ID Customization" = "提示 App ID 自定义";
+"Theme Manager" = "主题管理";
+"APPEARANCE & THEMES" = "外观与主题";
+"Reset to SideStore Classic" = "重置为 SideStore 经典主题";
+"Active Theme Accent" = "当前主题强调色";
+"COLOR SELECTION & WHEEL" = "颜色选择与色轮";
+"Full Spectrum Color Wheel" = "全光谱色轮";
+"PRESET THEMES" = "预设主题";
+"PRECISE COLOR METRICS" = "精确颜色数值";
+"LIVE INTERFACE PREVIEW" = "界面实时预览";
+
+/* Backup & Restore */
+"ACCOUNT, CERTIFICATE, & PAIRING DATA" = "账户、证书与配对数据";
+"Import Account" = "导入账户";
+"Export Account" = "导出账户";
+"SOURCES DATA" = "软件源数据";
+"Import Sources" = "导入软件源";
+"Export Sources" = "导出软件源";
+"Enter the password used to encrypt this backup file." = "请输入用于加密此备份文件的密码。";
+"Please enter Apple ID password for %@ to complete sign-in." = "请输入 %@ 的 Apple ID 密码以完成登录。";
+"Please enter your Apple ID password to complete sign-in." = "请输入你的 Apple ID 密码以完成登录。";
+
+/* User Customizations */
+"ANISETTE" = "ANISETTE 认证";
+"GENERAL" = "通用";
+"APP VERIFICATION" = "应用验证";
+"EMPROXY & WIREGUARD" = "EMPROXY 与 WIREGUARD";
+"Export WireGuard Config" = "导出 WireGuard 配置";
+"Exports SideStore.conf to import into WireGuard VPN app" = "导出 SideStore.conf 以便导入 WireGuard VPN 应用";
+"Changing the EMProxy setting requires restarting SideStore. If canceled, changes will not be saved." = "修改 EMProxy 设置需要重启 SideStore。如果取消，更改将不会保存。";
+"App Verification" = "应用验证";
+"Check for App Updates" = "检查应用更新";
+"Automatically check for updates to sideloaded apps" = "自动检查侧载应用的更新";
+
+/* Developer Options */
+"LOGGING & DIAGNOSTICS" = "日志与诊断";
+"WIDGET OPTIONS" = "小组件选项";
+"Reload All Widgets" = "重新加载所有小组件";
+"Rotate Widget Log" = "滚动小组件日志";
+"DATABASE OPTIONS" = "数据库选项";
+"Export Database" = "导出数据库";
+"Clear Refresh Attempts" = "清除刷新记录";
+"Delete Database" = "删除数据库";
+"Clear Keychain Items" = "清除钥匙串条目";
+"WIREGUARD CONFIGURATION" = "WIREGUARD 配置";
+"Start EMProxy" = "启动 EMProxy";
+"Stop EMProxy" = "停止 EMProxy";
+"ACCOUNT MANAGEMENT" = "账户管理";
+"Import Account JSON" = "导入账户 JSON";
+"Export Account JSON" = "导出账户 JSON";
+"Deleting the database will remove all app entries and sources from SideStore." = "删除数据库将从 SideStore 移除所有应用条目和软件源。";
+"Are you sure you want to clear all existing refresh attempt entries?" = "确定要清除所有已记录的刷新尝试吗？";
+"Do you want to clear all keychain items related to this SideStore instance?" = "确定要清除与此 SideStore 实例相关的所有钥匙串条目吗？";
+
+/* Connection Config */
+"Auto Discovered from network" = "网络自动发现";
+"User Configuration" = "用户自定义配置";
+"Remote Endpoint" = "远程端点";
+"WireGuard Server Parameters" = "WireGuard 服务端参数";
+"Configures the local UDP loopback host and port bound by EMProxy." = "配置 EMProxy 绑定的本地 UDP 回环主机与端口。";
+"Changes saved" = "更改已保存";
+"Device IP" = "设备 IP";
+"Port" = "端口";
+"Subnet Mask" = "子网掩码";
+
+/* Operations Logging */
+"STANDALONE STEPS" = "独立操作步骤";
+"PIPELINE STEPS" = "流水线操作步骤";
+"Operations Logging" = "操作日志控制";
+
+/* Health Check */
+"SideStore Ready" = "SideStore 就绪";
+"Action Required" = "需要操作";
+"Core Requirements" = "核心依赖项";
+"JIT Requirements" = "JIT 依赖项";
+"Connection Configuration" = "连接配置";
+"Active Network Interfaces" = "活跃网络接口";
+"No active interfaces scanned." = "未扫描到活跃的网络接口。";
+"Connection Mode" = "连接模式";
+"Override Status" = "覆盖状态";
+"Active Protocol" = "活跃协议";
+
+/* Certificates */
+"Developer Portal Info" = "开发者中心信息";
+"X.509 Fields" = "X.509 字段";
+"Validity Progress" = "有效进度";
+"Validity Period" = "有效期";
+"SHA-1 Fingerprint" = "SHA-1 指纹";
+"SHA-256 Fingerprint" = "SHA-256 指纹";
+"Signature & Public Key Details" = "签名与公钥详情";
+"Private Key Data" = "私钥数据";
+"Certificate PEM Data" = "证书 PEM 数据";
+"Cryptographic Keys" = "加密密钥";
+"Certificate Details" = "证书详情";
+"Add Private Key" = "添加私钥";
+"Paste your PEM-formatted private key below, or import it from a text file." = "在下方粘贴 PEM 格式的私钥，或从文本文件导入。";
+"Add PEM Key" = "添加 PEM 密钥";
+"Set a password to encrypt the exported .p12 certificate file." = "设置密码以加密导出的 .p12 证书文件。";
+"Are you sure you want to deactivate the active signing certificate locally?" = "确定要停用本地当前活跃的签名证书吗？";
+"Are you sure you want to delete this certificate locally? This will remove it from the cached local store." = "确定要在本地删除此证书吗？这将从本地缓存中移除它。";
+
+/* Anisette */
+"Interactive" = "交互式";
+"Raw JSON" = "原始 JSON";
+"Use Offline Config File" = "使用离线配置文件";
+"Bypasses fetching client info from servers" = "跳过从服务器获取客户端信息";
+"Operational Mode" = "运行模式";
+"When enabled, SideStore uses the locally saved JSON configuration parameters for all authentication headers without making client_info requests to servers." = "启用后，SideStore 将使用本地保存的 JSON 配置参数作为所有认证请求头，不再向服务器请求 client_info。";
+"Client Info (X-Mme-Client-Info)" = "客户端信息 (X-Mme-Client-Info)";
+"User Agent" = "用户代理 (User Agent)";
+"Device ID Override (Optional)" = "设备 ID 覆盖 (可选)";
+"Local User ID Override (Optional)" = "本地用户 ID 覆盖 (可选)";
+"Locale Override (Optional)" = "语言区域覆盖 (可选)";
+"Time Zone Override (Optional)" = "时区覆盖 (可选)";
+"Save Overrides" = "保存覆盖配置";
+"Custom Parameters" = "自定义参数";
+"Configuration JSON (Editable)" = "配置 JSON (可编辑)";
+"Save Raw JSON" = "保存原始 JSON";
+"Raw Configuration JSON" = "原始配置 JSON";
+"Last Server Response JSON" = "最近一次服务器响应 JSON";
+"Server Returned Headers (Read-Only)" = "服务器返回的响应头 (只读)";
+"Displays raw headers cached from successful anisette server handshakes. Use this to copy exact parameters sent by client/server." = "显示成功握手的 Anisette 服务器缓存的原始请求头。可用于复制客户端与服务端交互的具体参数。";
+"This will restore the client headers to the default recommended macOS values." = "这会将客户端请求头恢复为推荐的 macOS 默认值。";
+"Actions" = "操作";
+
+/* Storage Explorer & Cache */
+"Internal App Cache" = "内部应用缓存";
+"Cached unzipped app bundles stored in SideStore's private container. These are used during automatic background refreshes and resigns." = "存储在 SideStore 私有容器中的解压应用包。用于后台自动刷新和重签。";
+"No cached internal apps." = "没有缓存的内部应用。";
+"Exported Resigned Apps" = "已导出的重签应用";
+"Copies of signed app bundles exported to your Documents folder. These can be shared or retrieved via the Files app." = "导出到 Documents 文件夹的已签名应用副本。可以通过“文件”App 共享或提取。";
+"No exported resigned apps." = "没有已导出的重签应用。";
+
+/* Console & Logs */
+"Console Log" = "控制台日志";
+"Widget Log" = "小组件日志";
+"Copied Visible Logs to Clipboard" = "已将可见日志复制到剪贴板";
 
 

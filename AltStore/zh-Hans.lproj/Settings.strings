@@ -40,7 +40,8 @@
 "uHg-iq-d36.text" = "导出账户…";
 "rv6-S1-2gw.text" = "导入签名证书…";
 "WPe-mj-W7t.text" = "导出签名证书…";
-"jFh-36-AP2.text" = "停用响应缓存";
+"jFh-36-AP2.text" = "开发者选项";
+"exp-feat-label.text" = "实验性功能";
 "7bz-tI-tLY.text" = "启用详细操作日志";
 "Ho1-To-wve.text" = "导出数据库…";
 "CcF-9x-Eu8.text" = "删除数据库…";
@@ -61,6 +62,10 @@
 "R5a-wv-xHd.text" = "错误代码";
 "1df-ri-hKN.text" = "错误说明";
 "a1p-3W-bSi.title" = "错误日志";
-"Fq5-2u-Lge.text" = "启用 App 扩展自定义";
+"Fq5-2u-Lge.text" = "提示 App 扩展自定义";
 "iie-Nj-lki.text" = "连接配置";
+"bkp-Rst-lbl.text" = "备份与恢复";
+"usr-Cst-lbl.text" = "用户自定义";
+"stg-Ex-lbl.text" = "存储管理器";
+"1cD-4y-vTJ.title" = "控制台";
 
