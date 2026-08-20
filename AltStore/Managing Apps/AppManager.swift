@@ -317,7 +317,7 @@ final class AppManager: ObservableObject, @unchecked Sendable
              message: String? = NSLocalizedString("Make sure to only add sources that you trust.", comment: ""),
              presentingViewController: UIViewController) async throws
     {
-        let (sourceName, sourceURL) = await $source.perform { ($0.name, $0.sourceURL) }
+        let (sourceName, sourceID, sourceURL) = await $source.perform { ($0.name, $0.identifier, $0.sourceURL) }
         
         let context = DatabaseManager.shared.persistentContainer.newBackgroundContext()
         async let fetchedSource = try await self.fetchSource(sourceURL: sourceURL, managedObjectContext: context) // Fetch source async while showing alert.
@@ -336,6 +336,10 @@ final class AppManager: ObservableObject, @unchecked Sendable
         try await context.performAsync {
             try context.save()
         }
+
+        if sourceID == Source.altStoreIdentifier {
+            UserDefaults.standard.isDefaultSourceRemoved = false
+        }
         
         NotificationCenter.default.post(name: AppManager.didAddSourceNotification, object: source)
     }
@@ -343,10 +347,6 @@ final class AppManager: ObservableObject, @unchecked Sendable
     func remove(@AsyncManaged _ source: Source, presentingViewController: UIViewController) async throws
     {
         let (sourceName, sourceID) = await $source.perform { ($0.name, $0.identifier) }
-        guard sourceID != Source.altStoreIdentifier else {
-            throw OperationError.forbidden(failureReason: NSLocalizedString("The default SideStore source cannot be removed.", comment: ""))
-        }
-        
         let title = String(format: NSLocalizedString("Are you sure you want to remove the source “%@”?", comment: ""), sourceName)
         let message = NSLocalizedString("Any apps you've installed from this source will remain, but they'll no longer receive any app updates.", comment: "")
         let action = await UIAlertAction(title: NSLocalizedString("Remove Source", comment: ""), style: .destructive)
@@ -359,6 +359,10 @@ final class AppManager: ObservableObject, @unchecked Sendable
             
             context.delete(source)
             try context.save()
+        }
+
+        if sourceID == Source.altStoreIdentifier {
+            UserDefaults.standard.isDefaultSourceRemoved = true
         }
         
         NotificationCenter.default.post(name: AppManager.didRemoveSourceNotification, object: source)

@@ -158,18 +158,13 @@ private extension SourcesViewController
             let source = self.dataSource.item(at: indexPath)
             var actions: [UIContextualAction] = []
             
-            if source.identifier != Source.altStoreIdentifier
-            {
-                // Prevent users from removing AltStore source.
-                
-                let removeAction = UIContextualAction(style: .destructive,
-                                                      title: NSLocalizedString("Remove", comment: "")) { _, _, completion in
-                    self.remove(source, completionHandler: completion)
-                }
-                removeAction.image = UIImage(systemName: "trash.fill")
-                
-                actions.append(removeAction)
+            let removeAction = UIContextualAction(style: .destructive,
+                                                  title: NSLocalizedString("Remove", comment: "")) { _, _, completion in
+                self.remove(source, completionHandler: completion)
             }
+            removeAction.image = UIImage(systemName: "trash.fill")
+
+            actions.append(removeAction)
             
             if let error = source.error
             {
@@ -306,14 +301,7 @@ private extension SourcesViewController
             let accessibilityLabel = source.name + "\n" + text + ".\n" + numberOfAppsText
             cell.bannerView.accessibilityLabel = accessibilityLabel
                         
-            if source.identifier != Source.altStoreIdentifier
-            {
-                cell.accessories = [.delete(displayed: .whenEditing)]
-            }
-            else
-            {
-                cell.accessories = []
-            }
+            cell.accessories = [.delete(displayed: .whenEditing)]
             
             cell.bannerView.accessibilityTraits.remove(.button)
             
@@ -453,9 +441,8 @@ private extension SourcesViewController
     func update()
     {
         let sources = self.dataSource.fetchedResultsController.fetchedObjects ?? []
-        let hasOtherSources = sources.contains { $0.identifier != Source.altStoreIdentifier }
-        
-        if !hasOtherSources
+
+        if sources.isEmpty
         {
             // Show placeholder view
             

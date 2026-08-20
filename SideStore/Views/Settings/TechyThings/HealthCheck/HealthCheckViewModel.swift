@@ -88,6 +88,8 @@ final class HealthCheckViewModel: ObservableObject {
     }
 
     nonisolated private func fetchMetrics() async -> HealthCheckMetrics {
+        try? await AppBootManager.shared.ensureMinimuxerStarted()
+
         let mode = await Minimuxer.shared.getConnectionMode()
         let wifi = Minimuxer.network.isWifiSatisfied
         let wired = Minimuxer.network.isWiredSatisfied

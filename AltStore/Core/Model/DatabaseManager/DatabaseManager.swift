@@ -7,7 +7,6 @@
 //
 
 import CoreData
-
 @preconcurrency import AltSign
 
 extension CFNotificationName
@@ -375,7 +374,15 @@ public class DatabaseManager
                 }
                 #endif
                 
-                let altStoreSource: Source
+                let liveContainerSource: Source? = {
+                    guard Bundle.isBundledWithLiveContainer else { return nil }
+                    let sourceURL = URL(string: "https://github.com/LiveContainer/LiveContainer/releases/download/1.0/apps_ss_lc.json")!
+                    guard let sourceID = try? Source.sourceID(from: sourceURL) else { return nil }
+                    return Source.first(satisfying: NSPredicate(format: "%K == %@", #keyPath(Source.identifier), sourceID), in: context)
+                        ?? Source.make(name: "LiveContainer", groupID: Source.altStoreGroupIdentifier, sourceURL: sourceURL, context: context)
+                }()
+
+                let altStoreSource: Source?
                 
                 if let source = Source.first(satisfying: NSPredicate(format: "%K == %@", #keyPath(Source.identifier), Source.altStoreIdentifier), in: context)
                 {
@@ -383,11 +390,13 @@ public class DatabaseManager
                 }
                 else
                 {
-                    altStoreSource = Source.makeAltStoreSource(in: context)
+                    altStoreSource = UserDefaults.standard.isDefaultSourceRemoved ? nil : Source.makeAltStoreSource(in: context)
                 }
-                
+
                 // Make sure to always update source URL to be current.
-                try! altStoreSource.setSourceURL(Source.altStoreSourceURL)
+                if let altStoreSource {
+                    try! altStoreSource.setSourceURL(Source.altStoreSourceURL)
+                }
                 
                 let storeApp: StoreApp
                 
@@ -398,17 +407,13 @@ public class DatabaseManager
                 else
                 {
                     storeApp = StoreApp.makeAltStoreApp(version: localAppBundle.version, buildVersion: nil, in: context)
-                    storeApp.source = altStoreSource
+                    storeApp.source = altStoreSource ?? liveContainerSource
                 }
 
                 if Bundle.isBundledWithLiveContainer {
-                    let liveContainerSourceURL = URL(string: "https://github.com/LiveContainer/LiveContainer/releases/download/1.0/apps_ss_lc.json")!
-                    if let lcSourceID = try? Source.sourceID(from: liveContainerSourceURL) {
-                        let lcSource = Source.first(satisfying: NSPredicate(format: "%K == %@", #keyPath(Source.identifier), lcSourceID), in: context) ?? {
-                            return Source.make(name: "LiveContainer", groupID: Source.altStoreGroupIdentifier, sourceURL: liveContainerSourceURL, context: context)
-                        }()
+                    if let liveContainerSource {
                         storeApp.configureForEmbeddedLiveContainer()
-                        storeApp.source = lcSource
+                        storeApp.source = liveContainerSource
                     } else {
                         storeApp.configureForEmbeddedLiveContainer()
                         storeApp.source = altStoreSource
@@ -575,7 +580,9 @@ public class DatabaseManager
                     installedApp.refreshedDate = cachedRefreshedDate
                     installedApp.expirationDate = cachedExpirationDate
                 }
-                
+
+                self.recoverEmbeddedInstalledAppsFromCache(in: context)
+
                 try context.save()
                 
                 Task(priority: .high) {
@@ -586,6 +593,64 @@ public class DatabaseManager
             catch
             {
                 completionHandler(.failure(error))
+            }
+        }
+    }
+
+    private func recoverEmbeddedInstalledAppsFromCache(in context: NSManagedObjectContext)
+    {
+        guard Bundle.isBundledWithLiveContainer else { return }
+
+        let directories = [InstalledApp.appsDirectoryURL, InstalledApp.legacyAppsDirectoryURL]
+        var scannedPaths = Set<String>()
+
+        for directory in directories where scannedPaths.insert(directory.standardizedFileURL.path).inserted
+        {
+            guard let cachedDirectories = try? FileManager.default.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
+            ) else { continue }
+
+            for cachedDirectory in cachedDirectories
+            {
+                let appURL = cachedDirectory.appendingPathComponent("App.app")
+                guard let appBundle = ALTApplication(fileURL: appURL),
+                      appBundle.bundleIdentifier != Bundle.Info.activeBundleIdentifier,
+                      appBundle.provisioningProfile != nil
+                else { continue }
+
+                let bundle = Bundle(url: appURL)
+                let originalBundleIdentifier = (bundle?.object(forInfoDictionaryKey: Bundle.Info.altBundleID) as? String)
+                    ?? cachedDirectory.lastPathComponent
+                let predicate = NSPredicate(format: "%K == %@", #keyPath(InstalledApp.bundleIdentifier), originalBundleIdentifier)
+                guard InstalledApp.first(satisfying: predicate, in: context) == nil else { continue }
+
+                do
+                {
+                    let certificate = CertificateManager.shared.getSigningCertificate(at: appURL)
+                    let installedApp = try InstalledApp(
+                        resignedAppBundle: appBundle,
+                        originalBundleIdentifier: originalBundleIdentifier,
+                        certificateSerialNumber: certificate?.serialNumber,
+                        storeBuildVersion: nil,
+                        context: context
+                    )
+                    installedApp.isActive = true
+
+                    if let storeApp = StoreApp.first(
+                        satisfying: NSPredicate(format: "%K == %@", #keyPath(StoreApp.bundleIdentifier), originalBundleIdentifier),
+                        in: context
+                    ) {
+                        installedApp.storeApp = storeApp
+                    }
+
+                    debugLog("[DatabaseManager] Recovered installed app from cache: \(originalBundleIdentifier)")
+                }
+                catch
+                {
+                    debugLog("[DatabaseManager] Failed to recover cached app at \(appURL.path): \(error)")
+                }
             }
         }
     }
@@ -679,14 +744,10 @@ public class DatabaseManager
                 
                 let persistentStoreCoordinator = NSPersistentStoreCoordinator(managedObjectModel: self.persistentContainer.managedObjectModel)
                 
-                // Migrate database
-                if FileManager.default.fileExists(atPath: previousDatabaseURL.path)
+                // Never replace an existing App Group database with a stale legacy database.
+                if FileManager.default.fileExists(atPath: previousDatabaseURL.path),
+                   !FileManager.default.fileExists(atPath: databaseURL.path)
                 {
-                    if FileManager.default.fileExists(atPath: databaseURL.path, isDirectory: nil)
-                    {
-                        try FileManager.default.removeItem(at: databaseURL)
-                    }
-                    
                     let previousDatabase = try persistentStoreCoordinator.addPersistentStore(ofType: description.type, configurationName: description.configuration, at: description.url, options: description.options)
                     
                     // Pass nil options to prevent later error due to self.persistentContainer using WAL.
@@ -695,12 +756,18 @@ public class DatabaseManager
                     try FileManager.default.removeItem(at: previousDatabaseURL)
                 }
                 
-                // Migrate apps
+                // Only migrate cached apps when the destination has no cached entries.
                 if FileManager.default.fileExists(atPath: previousAppsDirectoryURL.path, isDirectory: nil)
                 {
-                    if(previousAppsDirectoryURL.path != appsDirectoryURL.path)
+                    let destinationContents = (try? FileManager.default.contentsOfDirectory(atPath: appsDirectoryURL.path)) ?? []
+                    if previousAppsDirectoryURL.path != appsDirectoryURL.path && destinationContents.isEmpty
                     {
-                        _ = try FileManager.default.replaceItemAt(appsDirectoryURL, withItemAt: previousAppsDirectoryURL)
+                        for item in try FileManager.default.contentsOfDirectory(at: previousAppsDirectoryURL, includingPropertiesForKeys: nil)
+                        {
+                            let destination = appsDirectoryURL.appendingPathComponent(item.lastPathComponent)
+                            guard !FileManager.default.fileExists(atPath: destination.path) else { continue }
+                            try FileManager.default.copyItem(at: item, to: destination)
+                        }
                     }
                 }
                 

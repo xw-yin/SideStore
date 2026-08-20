@@ -39,38 +39,63 @@ public final class AppBootManager: @unchecked Sendable {
     public nonisolated func getSavedPairingFile() -> String? {
         let fm = FileManager.default
         let pairingFileName = "ALTPairingFile.mobiledevicepairing"
-        let documentsPath = fm.documentsDirectory.appendingPathComponent(pairingFileName)
-        if fm.fileExists(atPath: documentsPath.path),
-           let contents = try? String(contentsOf: documentsPath), !contents.isEmpty {
-            return contents
+        var fileURLs = [fm.documentsDirectory.appendingPathComponent(pairingFileName)]
+        if let groupURL = fm.altstoreSharedDirectory {
+            fileURLs.append(groupURL.appendingPathComponent(pairingFileName))
+            fileURLs.append(groupURL.appendingPathComponent("Documents").appendingPathComponent(pairingFileName))
         }
-        if let groupURL = fm.containerURL(forSecurityApplicationGroupIdentifier: "group.com.rileytestut.AltStore") {
-            let groupPath = groupURL.appendingPathComponent(pairingFileName)
-            if fm.fileExists(atPath: groupPath.path),
-               let contents = try? String(contentsOf: groupPath), !contents.isEmpty {
+
+        for fileURL in fileURLs {
+            if fm.fileExists(atPath: fileURL.path),
+               let contents = try? String(contentsOf: fileURL), !contents.isEmpty {
                 return contents
             }
         }
-        if let url = Bundle.main.url(forResource: "ALTPairingFile", withExtension: "mobiledevicepairing"),
-           fm.fileExists(atPath: url.path),
-           let data = fm.contents(atPath: url.path),
-           let contents = String(data: data, encoding: .utf8),
-           !contents.isEmpty, !UserDefaults.standard.isPairingReset { return contents }
-        if let plistString = Bundle.main.object(forInfoDictionaryKey: "ALTPairingFile") as? String,
-           !plistString.isEmpty, !plistString.contains("insert pairing file here"), !UserDefaults.standard.isPairingReset { return plistString }
+
+        guard !UserDefaults.standard.isPairingReset else { return nil }
+        for bundle in [Bundle.main, Bundle.realMainBundle] {
+            if let url = bundle.url(forResource: "ALTPairingFile", withExtension: "mobiledevicepairing"),
+               fm.fileExists(atPath: url.path),
+               let data = fm.contents(atPath: url.path),
+               let contents = String(data: data, encoding: .utf8),
+               !contents.isEmpty {
+                return contents
+            }
+            if let plistString = bundle.object(forInfoDictionaryKey: "ALTPairingFile") as? String,
+               !plistString.isEmpty,
+               !plistString.contains("insert pairing file here") {
+                return plistString
+            }
+        }
         return nil
     }
     
-    private nonisolated func runMinimuxerStartup(pairingFile: String) async throws {
+    private nonisolated func runMinimuxerStartup(pairingFile: String, generation: UInt) async throws {
         debugLog("[AppBootManager] Minimuxer startup task entered")
-        defer { debugLog("[AppBootManager] Minimuxer startup task exited") }
+        do {
+            if UserDefaults.standard.enableEMPforWireguard {
+                debugLog("[AppBootManager] Starting EMProxy before minimuxer...")
+                try await startEMProxy()
+            }
 
-        if UserDefaults.standard.enableEMPforWireguard {
-            debugLog("[AppBootManager] Starting EMProxy before minimuxer...")
-            try await startEMProxy()
+            try await minimuxerStart(pairingFile, mountPath: FileManager.default.documentsDirectory.absoluteString)
+            lock.withLock {
+                if minimuxerStartup?.generation == generation {
+                    _needsPairingPrompt = false
+                }
+            }
+            debugLog("[AppBootManager] Minimuxer startup task completed")
+
+            Task.detached { [weak self] in
+                await self?.validateMinimuxerConnection()
+            }
+        } catch {
+            if error.isMinimuxerPairingFile {
+                needsPairingPrompt = true
+            }
+            debugLog("[AppBootManager] Minimuxer startup task failed: \(error)")
+            throw error
         }
-
-        try await minimuxerStart(pairingFile, mountPath: FileManager.default.documentsDirectory.absoluteString)
     }
 
     private nonisolated func makeMinimuxerStartup(pairingFile: String) -> MinimuxerStartup {
@@ -83,7 +108,7 @@ public final class AppBootManager: @unchecked Sendable {
             let generation = minimuxerStartupGeneration
             let task = Task.detached(priority: .userInitiated) { [weak self] in
                 guard let self else { throw CancellationError() }
-                try await self.runMinimuxerStartup(pairingFile: pairingFile)
+                try await self.runMinimuxerStartup(pairingFile: pairingFile, generation: generation)
             }
             let startup = MinimuxerStartup(generation: generation, task: task)
             minimuxerStartup = startup
@@ -104,22 +129,6 @@ public final class AppBootManager: @unchecked Sendable {
     public nonisolated func startMinimuxer(pairingFile: String) async throws {
         let startup = makeMinimuxerStartup(pairingFile: pairingFile)
         try await waitForMinimuxerStartup(startup)
-
-        // Validate the pairing by trying to fetch the UDID
-        do {
-            debugLog("[AppBootManager] startMinimuxer(): Minimuxer fetchUDID() based connection starting...")
-            let deviceUDID = try await fetchUDID()
-            debugLog("[AppBootManager] startMinimuxer(): Minimuxer fetchUDID() based connection test SUCCEEDED. UDID: \(deviceUDID ?? "nil")")
-            self.needsPairingPrompt = false
-        } catch {
-            if error.isMinimuxerPairingFile {
-                debugLog("[AppBootManager] startMinimuxer(): Minimuxer fetchUDID() based connection test FAILED. \(error)")
-                self.needsPairingPrompt = true
-                throw error
-            } else {
-                debugLog("[AppBootManager] startMinimuxer(): Minimuxer fetchUDID() based connection test FAILED but PAIRING FILE IS VALID. \(error)")
-            }
-        }
     }
 
     public nonisolated func ensureMinimuxerStarted() async throws {
@@ -153,56 +162,51 @@ public final class AppBootManager: @unchecked Sendable {
     }
     
     public nonisolated func performBootSequence() async {
-        Task.detached {
-            debugLog("[AppBootManager] performBootSequence() entered")
-            defer {
-                debugLog("[AppBootManager] performBootSequence() exited")
-            }
-            
-            // 1. Structured concurrent child task A
-            async let jitCheck: Void = {
-                debugLog("[AppBootManager] performBootSequence(): JIT check starting")
-                defer {
-                    debugLog("[AppBootManager] performBootSequence(): JIT check completed")
-                }
-                if #available(iOS 17, *), !UserDefaults.standard.sidejitenable {
-                    do {
-                        try await SideJITManager.shared.isSideJITServerDetected()
-                        self.needsSideJITPrompt = true
-                    } catch {
-                        debugLog("[AppBootManager] Cannot find sideJITServer")
-                    }
-                }
-                
-                if #available(iOS 17, *), UserDefaults.standard.sidejitenable {
-                    await SideJITManager.shared.askForNetwork()
-                    debugLog("[AppBootManager] SideJITServer Enabled")
-                }
-            }()
-            
-            // 2. Structured concurrent child task B
-            async let minimuxerCheck: Void = {
-                debugLog("[AppBootManager] performBootSequence(): Minimuxer check starting")
-                defer {
-                    debugLog("[AppBootManager] performBootSequence(): Minimuxer check completed")
-                }
-                #if targetEnvironment(simulator)
-                do {
-                    try await self.startMinimuxer(pairingFile: "ignored-for-sim")
-                } catch {
-                    debugLog("[AppBootManager] Failed to start minimuxer: \(error)")
-                }
-                #else
-                do {
-                    try await self.ensureMinimuxerStarted()
-                    await self.validateMinimuxerConnection()
-                } catch {
-                    debugLog("[AppBootManager] Failed to ensure minimuxer: \(error)")
-                }
-                #endif
-            }()
-            
-            _ = await (jitCheck, minimuxerCheck)
+        debugLog("[AppBootManager] performBootSequence() entered")
+        defer {
+            debugLog("[AppBootManager] performBootSequence() exited")
         }
+
+        async let jitCheck: Void = {
+            debugLog("[AppBootManager] performBootSequence(): JIT check starting")
+            defer {
+                debugLog("[AppBootManager] performBootSequence(): JIT check completed")
+            }
+            if #available(iOS 17, *), !UserDefaults.standard.sidejitenable {
+                do {
+                    try await SideJITManager.shared.isSideJITServerDetected()
+                    self.needsSideJITPrompt = true
+                } catch {
+                    debugLog("[AppBootManager] Cannot find sideJITServer")
+                }
+            }
+
+            if #available(iOS 17, *), UserDefaults.standard.sidejitenable {
+                await SideJITManager.shared.askForNetwork()
+                debugLog("[AppBootManager] SideJITServer Enabled")
+            }
+        }()
+
+        async let minimuxerCheck: Void = {
+            debugLog("[AppBootManager] performBootSequence(): Minimuxer check starting")
+            defer {
+                debugLog("[AppBootManager] performBootSequence(): Minimuxer check completed")
+            }
+            #if targetEnvironment(simulator)
+            do {
+                try await self.startMinimuxer(pairingFile: "ignored-for-sim")
+            } catch {
+                debugLog("[AppBootManager] Failed to start minimuxer: \(error)")
+            }
+            #else
+            do {
+                try await self.ensureMinimuxerStarted()
+            } catch {
+                debugLog("[AppBootManager] Failed to ensure minimuxer: \(error)")
+            }
+            #endif
+        }()
+
+        _ = await (jitCheck, minimuxerCheck)
     }
 }

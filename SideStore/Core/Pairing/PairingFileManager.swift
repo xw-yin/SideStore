@@ -23,20 +23,7 @@ final class PairingFileManager: NSObject {
     }
 
     nonisolated func fetchPairingFile() -> String? {
-        let fm = FileManager.default
-        let documentsPath = fm.documentsDirectory.appendingPathComponent("/\(Self.pairingFileName)")
-        if fm.fileExists(atPath: documentsPath.path),
-           let contents = try? String(contentsOf: documentsPath), !contents.isEmpty {
-            return contents
-        }
-        if let url = Bundle.main.url(forResource: "ALTPairingFile", withExtension: "mobiledevicepairing"),
-           fm.fileExists(atPath: url.path),
-           let data = fm.contents(atPath: url.path),
-           let contents = String(data: data, encoding: .utf8),
-           !contents.isEmpty, !UserDefaults.standard.isPairingReset { return contents }
-        if let plistString = Bundle.main.object(forInfoDictionaryKey: "ALTPairingFile") as? String,
-           !plistString.isEmpty, !plistString.contains("insert pairing file here"), !UserDefaults.standard.isPairingReset { return plistString }
-        return nil
+        AppBootManager.shared.getSavedPairingFile()
     }
 
     func savePairingFile(contents: String) throws {
@@ -47,6 +34,16 @@ final class PairingFileManager: NSObject {
         }
         try contents.write(to: documentsPath, atomically: true, encoding: .utf8)
         debugLog("[PairingFile] Successfully copied and saved pairing file to: \(documentsPath.path)")
+
+        if let sharedDirectory = fm.altstoreSharedDirectory {
+            let sharedPath = sharedDirectory.appendingPathComponent(Self.pairingFileName)
+            do {
+                try contents.write(to: sharedPath, atomically: true, encoding: .utf8)
+                debugLog("[PairingFile] Successfully copied pairing file to shared container: \(sharedPath.path)")
+            } catch {
+                debugLog("[PairingFile] Unable to copy pairing file to shared container: \(error)")
+            }
+        }
         UserDefaults.standard.isPairingReset = false
     }
 }
