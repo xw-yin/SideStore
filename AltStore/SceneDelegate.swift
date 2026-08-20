@@ -14,10 +14,6 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate
 {
     var window: UIWindow?
 
-    // Holds an imported .ipa URL when the scene isn't active yet (cold launch),
-    // so the import notification can be posted once the scene becomes active.
-    private var pendingImportIPAURL: URL?
-
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions)
     {
         debugLog("[SceneDelegate] scene(willConnectTo:) invoked")
@@ -62,11 +58,6 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate
                 await WidgetDataManager.publishCurrentInstalledAppsIfNeeded(in: DatabaseManager.shared.viewContext)
             }
         }
-        
-        // Flush any .ipa import that arrived before the scene was active (cold launch).
-        guard let url = self.pendingImportIPAURL else { return }
-        self.pendingImportIPAURL = nil
-        NotificationCenter.default.post(name: AppDelegate.importAppDeepLinkNotification, object: nil, userInfo: [AppDelegate.importAppDeepLinkURLKey: url])
     }
 
     func sceneDidEnterBackground(_ scene: UIScene)
@@ -134,12 +125,7 @@ private extension SceneDelegate
                 return
             }
 
-            if UIApplication.shared.applicationState == .active {
-                NotificationCenter.default.post(name: AppDelegate.importAppDeepLinkNotification, object: nil, userInfo: [AppDelegate.importAppDeepLinkURLKey: ipa])
-            } else {
-                // Defer until the scene is active (cold launch) — see sceneDidBecomeActive.
-                self.pendingImportIPAURL = ipa
-            }
+            AppDelegate.enqueueAppImport(ipa)
         }
         else
         {

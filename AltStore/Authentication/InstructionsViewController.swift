@@ -16,14 +16,30 @@ final class InstructionsViewController: UIViewController
     
     @IBOutlet private var contentStackView: UIStackView!
     @IBOutlet private var dismissButton: UIButton!
+    @IBOutlet private var scrollView: UIScrollView!
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
-        return .lightContent
+        return .default
     }
     
     override func viewDidLoad()
     {
         super.viewDidLoad()
+        
+        let safeArea = self.view.safeAreaLayoutGuide
+        if let scrollView = self.scrollView {
+            NSLayoutConstraint.activate([
+                self.scrollView.topAnchor.constraint(equalTo: safeArea.topAnchor),
+                self.scrollView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor),
+                self.contentStackView.widthAnchor.constraint(equalTo: self.scrollView.frameLayoutGuide.widthAnchor)
+            ])
+        }
+        
+        for view in self.contentStackView.arrangedSubviews {
+            if let label = view as? UILabel {
+                label.textColor = .secondaryLabel
+            }
+        }
         
         if UIScreen.main.isExtraCompactHeight
         {
@@ -41,11 +57,6 @@ final class InstructionsViewController: UIViewController
         else
         {
             self.dismissButton.isHidden = true
-        }
-        
-        if let scrollView = self.view.subviews.first(where: { $0 is UIScrollView }) as? UIScrollView,
-           let containerView = scrollView.subviews.first {
-            containerView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor).isActive = true
         }
     }
 }

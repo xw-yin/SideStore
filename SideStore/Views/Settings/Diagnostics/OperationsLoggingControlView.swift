@@ -9,8 +9,8 @@
 import SwiftUI
 
 private extension Color {
-    static let settingsRowBackground = Color.white.opacity(0.15)
-    static let settingsDivider = Color.white.opacity(0.15)
+    static let settingsRowBackground = Color(uiColor: .secondarySystemGroupedBackground)
+    static let settingsDivider = Color(uiColor: .separator)
 }
 
 private let pipelineStepToggles: [(name: String, step: PipelineStep)] = [
@@ -107,7 +107,7 @@ struct OperationsLoggingControlView: View {
 
     private func stepToggle(_ title: String, step: some OperationStep) -> some View {
         HStack {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 17, weight: .bold))
                 .foregroundColor(.white)
                 .fixedSize(horizontal: false, vertical: true)

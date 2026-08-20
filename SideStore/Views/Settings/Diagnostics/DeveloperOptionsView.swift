@@ -13,8 +13,8 @@ import WidgetKit
 @preconcurrency import AltSign
 
 private extension Color {
-    static let settingsRowBackground = Color.white.opacity(0.15)
-    static let settingsDivider = Color.white.opacity(0.15)
+    static let settingsRowBackground = Color(uiColor: .secondarySystemGroupedBackground)
+    static let settingsDivider = Color(uiColor: .separator)
 }
 
 struct DeveloperOptionsView: View {
@@ -511,7 +511,7 @@ struct DeveloperOptionsView: View {
     
     private func toggleRow(title: String, isOn: Binding<Bool>) -> some View {
         HStack {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 17, weight: .bold))
                 .foregroundColor(.white)
                 .fixedSize(horizontal: false, vertical: true)

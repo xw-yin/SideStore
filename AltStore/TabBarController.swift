@@ -23,7 +23,6 @@ extension TabBarController
 final class TabBarController: UITabBarController
 {
     private var initialSegue: (identifier: String, sender: Any?)?
-    private var embeddedVersionLabel: UILabel?
     
     private var _viewDidAppear = false
     
@@ -71,8 +70,6 @@ final class TabBarController: UITabBarController
             }
             viewControllers[tab.rawValue].tabBarItem.title = title
         }
-
-        self.configureEmbeddedVersionLabel()
     }
     
     override func viewDidAppear(_ animated: Bool)
@@ -81,6 +78,10 @@ final class TabBarController: UITabBarController
         debugLog("[TabBarController] viewDidAppear() — TabBarController is now visible")
         
         _viewDidAppear = true
+        
+        if AppDelegate.hasPendingAppImports {
+            self.selectTab(.myApps)
+        }
         
         if let (identifier, sender) = self.initialSegue
         {
@@ -132,34 +133,6 @@ private extension TabBarController
     @objc func openErrorLog(_ notification: Notification)
     {
         selectTab(.settings)
-    }
-}
-
-private extension TabBarController
-{
-    func configureEmbeddedVersionLabel()
-    {
-        guard Bundle.isBundledWithLiveContainer, self.embeddedVersionLabel == nil else { return }
-
-        let liveContainerInfo = Bundle.realMainBundle.infoDictionary
-        let liveContainerVersion = liveContainerInfo?["CFBundleShortVersionString"] as? String ?? "?"
-        let liveContainerBuild = liveContainerInfo?["LCVersionInfo"] as? String ?? "?"
-        let sideStoreVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
-
-        let versionLabel = UILabel()
-        versionLabel.translatesAutoresizingMaskIntoConstraints = false
-        versionLabel.font = .systemFont(ofSize: 9, weight: .regular)
-        versionLabel.textColor = .secondaryLabel
-        versionLabel.textAlignment = .center
-        versionLabel.isUserInteractionEnabled = false
-        versionLabel.text = "LC \(liveContainerVersion)-\(liveContainerBuild), SS \(sideStoreVersion)"
-
-        self.view.addSubview(versionLabel)
-        NSLayoutConstraint.activate([
-            versionLabel.centerXAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerXAnchor),
-            versionLabel.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor, constant: 13)
-        ])
-        self.embeddedVersionLabel = versionLabel
     }
 }
 

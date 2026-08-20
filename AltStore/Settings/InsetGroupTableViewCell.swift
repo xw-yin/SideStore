@@ -57,7 +57,7 @@ final class InsetGroupTableViewCell: UITableViewCell
         self.insetView.layer.borderColor = UIColor.white.withAlphaComponent(0.10).cgColor
         
         // Get the preferred background color from Interface Builder.
-        self.insetView.backgroundColor = self.backgroundColor
+        self.insetView.backgroundColor = .secondarySystemGroupedBackground
         self.backgroundColor = nil
         
         self.insetView.translatesAutoresizingMaskIntoConstraints = false

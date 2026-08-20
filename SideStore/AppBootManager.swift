@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Minimuxer
 
 public final class AppBootManager {
     public static let shared = AppBootManager()
@@ -88,10 +89,18 @@ public final class AppBootManager {
     private static var currentStartup: MinimuxerStartup?
     private static let startupLock = NSLock()
 
-    public nonisolated func ensureMinimuxerStarted() async throws {
-        if !UserDefaults.standard.isMinimuxerStatusCheckEnabled {
-            return
+    private nonisolated func makeMinimuxerStartup() -> MinimuxerStartup {
+        let task = Task {
+            guard let pf = self.getSavedPairingFile() else {
+                self.needsPairingPrompt = true
+                throw OperationError.invalidPairingFile()
+            }
+            try await self.startMinimuxer(pairingFile: pf)
         }
+        return MinimuxerStartup(task: task)
+    }
+
+    public nonisolated func ensureMinimuxerStarted() async throws {
         #if targetEnvironment(simulator)
         return
         #else
@@ -104,14 +113,7 @@ public final class AppBootManager {
             if let existing = Self.currentStartup {
                 return existing
             }
-            let task = Task {
-                guard let pf = self.getSavedPairingFile() else {
-                    self.needsPairingPrompt = true
-                    throw OperationError.invalidPairingFile()
-                }
-                try await self.startMinimuxer(pairingFile: pf)
-            }
-            let newStartup = MinimuxerStartup(task: task)
+            let newStartup = self.makeMinimuxerStartup()
             Self.currentStartup = newStartup
             return newStartup
         }
@@ -124,6 +126,17 @@ public final class AppBootManager {
             throw error
         }
         #endif
+    }
+
+    private nonisolated func validateMinimuxerConnection() async {
+        do {
+            _ = try await fetchUDID()
+            self.needsPairingPrompt = false
+        } catch {
+            if error.isMinimuxerPairingFile {
+                self.needsPairingPrompt = true
+            }
+        }
     }
     
     public nonisolated func performBootSequence() async {
@@ -167,15 +180,11 @@ public final class AppBootManager {
                     debugLog("[AppBootManager] Failed to start minimuxer: \(error)")
                 }
                 #else
-                // @livecontainer: use getSavedPairingFile for App Group / embedded pairing file scan
-                if let pf = self.getSavedPairingFile() {
-                    do {
-                        try await self.startMinimuxer(pairingFile: pf)
-                    } catch {
-                        debugLog("[AppBootManager] Failed to start minimuxer: \(error)")
-                    }
-                } else {
-                    debugLog("[AppBootManager] No pairing file found, proceeding for LiveContainer UI")
+                do {
+                    try await self.ensureMinimuxerStarted()
+                    await self.validateMinimuxerConnection()
+                } catch {
+                    debugLog("[AppBootManager] Failed to ensure minimuxer: \(error)")
                 }
                 #endif
             }()

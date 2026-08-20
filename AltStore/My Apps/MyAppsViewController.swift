@@ -85,8 +85,6 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
     override func viewDidLoad()
     {
         super.viewDidLoad()
-
-        self.configureEmbeddedLiveContainerButton()
         
         // Allows us to intercept delegate callbacks.
         self.updatesDataSource.fetchedResultsController.delegate = self
@@ -181,6 +179,13 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
         super.viewDidAppear(animated)
         
         _viewDidAppear = true
+        self.presentNextAppImportIfNeeded()
+    }
+
+    func presentNextAppImportIfNeeded()
+    {
+        guard let url = AppDelegate.dequeueAppImport() else { return }
+        NotificationCenter.default.post(name: AppDelegate.importAppDeepLinkNotification, object: nil, userInfo: [AppDelegate.importAppDeepLinkURLKey: url])
     }
     
     override func viewWillDisappear(_ animated: Bool)
@@ -230,53 +235,10 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
     @IBAction func unwindToMyAppsViewController(_ segue: UIStoryboardSegue)
     {
     }
-
-    @IBAction func openLC(_ sender: Any)
-    {
-        guard Bundle.isBundledWithLiveContainer,
-              let url = URL(string: "livecontainer://livecontainer-launch?bundle-name=ui")
-        else { return }
-
-        UIApplication.shared.open(url)
-    }
-
-    var isMinimuxerReady: Bool {
-        get async {
-            // added isMinimuxerStatusCheckEnabled to forcefully ignore minimuxer status if status check is disabled in settings
-            if UserDefaults.standard.isMinimuxerStatusCheckEnabled {
-                if let error = await getMinimuxerStatus().operationError {
-                    ToastView(error: error).show(in: self)
-                    return false
-                }
-            }
-            return true
-        }
-    }
-
 }
 
 private extension MyAppsViewController
 {
-    func configureEmbeddedLiveContainerButton()
-    {
-        guard Bundle.isBundledWithLiveContainer,
-              let items = self.navigationItem.leftBarButtonItems,
-              items.count == 2
-        else { return }
-
-        let liveContainerButton = UIButton(type: .system)
-        liveContainerButton.translatesAutoresizingMaskIntoConstraints = false
-        liveContainerButton.setImage(UIImage(systemName: "escape"), for: .normal)
-        liveContainerButton.addTarget(self, action: #selector(openLC(_:)), for: .touchUpInside)
-        liveContainerButton.accessibilityLabel = "LiveContainer"
-        liveContainerButton.transform = CGAffineTransform(rotationAngle: .pi)
-        NSLayoutConstraint.activate([
-            liveContainerButton.widthAnchor.constraint(equalToConstant: 30),
-            liveContainerButton.heightAnchor.constraint(equalToConstant: 30)
-        ])
-        items[1].customView = liveContainerButton
-    }
-
     func makeDataSource() -> RSTCompositeCollectionViewPrefetchingDataSource<InstalledApp, UIImage>
     {
         let dataSource = RSTCompositeCollectionViewPrefetchingDataSource<InstalledApp, UIImage>(dataSources: [self.noUpdatesDataSource, self.updatesDataSource, self.activeAppsDataSource, self.inactiveAppsDataSource])

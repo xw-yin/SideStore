@@ -160,10 +160,6 @@ public extension UserDefaults
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
-    @objc var isMinimuxerStatusCheckEnabled: Bool {
-        get { self.bool(forKey: #function) }
-        set { self.set(newValue, forKey: #function) }
-    }
     @objc var keepSigningCertsAfterLogout: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
@@ -346,7 +342,6 @@ public extension UserDefaults
         
         let defaults = [
             #keyPath(UserDefaults.isMinimuxerConsoleLoggingEnabled): true, // minimuxer logging is disabled by default for console loggin
-            #keyPath(UserDefaults.isMinimuxerStatusCheckEnabled): true, // minimuxer status check is disabled by default to support LocalDevVPN based cellular refresh
             // TODO: @mahee96: need to retire since irrelevant in ios 15+
             #keyPath(UserDefaults.isLegacyDeactivationSupported): isLegacyDeactivationSupported,
             #keyPath(UserDefaults.activeAppLimitIncludesExtensions): activeAppLimitIncludesExtensions,

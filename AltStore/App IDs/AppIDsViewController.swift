@@ -58,31 +58,7 @@ final class AppIDsViewController: UICollectionViewController
         
         if !self.didInitialFetch
         {
-            Task { @MainActor in
-                if UserDefaults.standard.isMinimuxerStatusCheckEnabled, await getMinimuxerStatus().operationError != nil
-                {
-                    // Silently skip initial network fetch
-                    self.didInitialFetch = true
-                    self.isLoading = false
-                    self.update()
-                }
-                else
-                {
-                    self.fetchAppIDs()
-                }
-            }
-        }
-    }
-
-    var isMinimuxerReady: Bool {
-        get async {
-            if UserDefaults.standard.isMinimuxerStatusCheckEnabled {
-                if let error = await getMinimuxerStatus().operationError {
-                    ToastView(error: error).show(in: self)
-                    return false
-                }
-            }
-            return true
+            self.fetchAppIDs()
         }
     }
 }

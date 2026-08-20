@@ -32,6 +32,23 @@ extension AppDelegate
     nonisolated static let appBackupResultKey = "result"
     nonisolated static let addSourceDeepLinkURLKey = "sourceURL"
     
+    private static var pendingImportIPAURLs = [URL]()
+
+    @MainActor static func enqueueAppImport(_ url: URL) {
+        self.pendingImportIPAURLs.append(url)
+        NotificationCenter.default.post(name: AppDelegate.importAppDeepLinkNotification, object: nil, userInfo: [AppDelegate.importAppDeepLinkURLKey: url])
+    }
+
+    @MainActor static func dequeueAppImport() -> URL? {
+        guard !self.pendingImportIPAURLs.isEmpty else { return nil }
+        return self.pendingImportIPAURLs.removeFirst()
+    }
+
+    @MainActor
+    static var hasPendingAppImports: Bool {
+        return !self.pendingImportIPAURLs.isEmpty
+    }
+    
     static func dumpSideBackupLogsIfNeeded() async {
         await Task.detached {
             for appGroup in Bundle.main.appGroups {
