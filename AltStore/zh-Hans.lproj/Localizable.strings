@@ -519,6 +519,28 @@
 "App Verification" = "应用验证";
 "Check for App Updates" = "检查应用更新";
 "Automatically check for updates to sideloaded apps" = "自动检查侧载应用的更新";
+"On-Device Anisette" = "设备端本地 Anisette";
+"Run ADI emulation directly on device instead of remote servers" = "直接在设备上模拟 ADI 认证，无需远程服务器";
+"Customize AppID" = "自定义 App ID";
+"Customize App Extensions" = "自定义 App 扩展";
+"Auto-Fix AppGroup IDs" = "自动修复 App Group ID";
+"Required for free developer accounts" = "免费开发者账户必须启用";
+"Automatically fix App Group casing mismatches" = "自动修复 App Group 大小写不匹配";
+"Export Resigned Apps" = "导出已重签应用";
+"Skip Uncopyable Backup Files" = "跳过无法复制的备份文件";
+"Disable All Verifications" = "停用所有应用验证";
+"Bundle Identifier Check" = "Bundle ID 检查";
+"iOS Version Check" = "iOS 系统版本检查";
+"App Version Check" = "App 版本检查";
+"Checksum (SHA-256) Check" = "SHA-256 校验和检查";
+"App File Size Check" = "App 文件大小检查";
+"Permission Checks" = "权限检查";
+"EMProxy (WireGuard) Server" = "EMProxy (WireGuard) 服务";
+"Restart required to apply changes" = "需重启应用以生效更改";
+"Restart Required" = "需要重启";
+"Restart Now" = "立即重启";
+"SideStore.conf missing!" = "缺少 SideStore.conf！";
+"Unable to locate SideStore.conf in bundle resources." = "无法在应用包资源中找到 SideStore.conf。";
 
 /* Developer Options */
 "LOGGING & DIAGNOSTICS" = "日志与诊断";
