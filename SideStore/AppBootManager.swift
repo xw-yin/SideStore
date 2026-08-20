@@ -9,10 +9,17 @@
 import Foundation
 import Minimuxer
 
-public final class AppBootManager {
+public final class AppBootManager: @unchecked Sendable {
     public static let shared = AppBootManager()
+
+    private struct MinimuxerStartup {
+        let generation: UInt
+        let task: Task<Void, Error>
+    }
     
     private let lock = NSLock()
+    private var minimuxerStartup: MinimuxerStartup?
+    private var minimuxerStartupGeneration: UInt = 0
     
     private var _needsPairingPrompt = false
     public var needsPairingPrompt: Bool {
@@ -54,17 +61,50 @@ public final class AppBootManager {
         return nil
     }
     
-    public nonisolated func startMinimuxer(pairingFile: String) async throws {
-        debugLog("[AppBootManager] startMinimuxer() entered")
-        defer { debugLog("[AppBootManager] startMinimuxer() exited") }
-        
+    private nonisolated func runMinimuxerStartup(pairingFile: String) async throws {
+        debugLog("[AppBootManager] Minimuxer startup task entered")
+        defer { debugLog("[AppBootManager] Minimuxer startup task exited") }
+
         if UserDefaults.standard.enableEMPforWireguard {
             debugLog("[AppBootManager] Starting EMProxy before minimuxer...")
             try await startEMProxy()
         }
 
         try await minimuxerStart(pairingFile, mountPath: FileManager.default.documentsDirectory.absoluteString)
-        
+    }
+
+    private nonisolated func makeMinimuxerStartup(pairingFile: String) -> MinimuxerStartup {
+        lock.withLock {
+            if let startup = minimuxerStartup {
+                return startup
+            }
+
+            minimuxerStartupGeneration &+= 1
+            let generation = minimuxerStartupGeneration
+            let task = Task.detached(priority: .userInitiated) { [weak self] in
+                guard let self else { throw CancellationError() }
+                try await self.runMinimuxerStartup(pairingFile: pairingFile)
+            }
+            let startup = MinimuxerStartup(generation: generation, task: task)
+            minimuxerStartup = startup
+            return startup
+        }
+    }
+
+    private nonisolated func waitForMinimuxerStartup(_ startup: MinimuxerStartup) async throws {
+        defer {
+            lock.withLock {
+                guard minimuxerStartup?.generation == startup.generation else { return }
+                minimuxerStartup = nil
+            }
+        }
+        try await startup.task.value
+    }
+
+    public nonisolated func startMinimuxer(pairingFile: String) async throws {
+        let startup = makeMinimuxerStartup(pairingFile: pairingFile)
+        try await waitForMinimuxerStartup(startup)
+
         // Validate the pairing by trying to fetch the UDID
         do {
             debugLog("[AppBootManager] startMinimuxer(): Minimuxer fetchUDID() based connection starting...")
@@ -81,24 +121,6 @@ public final class AppBootManager {
             }
         }
     }
-    
-    // @livecontainer: MinimuxerStartup task deduplication
-    private struct MinimuxerStartup {
-        let task: Task<Void, Error>
-    }
-    private static var currentStartup: MinimuxerStartup?
-    private static let startupLock = NSLock()
-
-    private nonisolated func makeMinimuxerStartup() -> MinimuxerStartup {
-        let task = Task {
-            guard let pf = self.getSavedPairingFile() else {
-                self.needsPairingPrompt = true
-                throw OperationError.invalidPairingFile()
-            }
-            try await self.startMinimuxer(pairingFile: pf)
-        }
-        return MinimuxerStartup(task: task)
-    }
 
     public nonisolated func ensureMinimuxerStarted() async throws {
         #if targetEnvironment(simulator)
@@ -108,23 +130,14 @@ public final class AppBootManager {
         if status == .ready {
             return
         }
-        
-        let startup: MinimuxerStartup = Self.startupLock.withLock {
-            if let existing = Self.currentStartup {
-                return existing
-            }
-            let newStartup = self.makeMinimuxerStartup()
-            Self.currentStartup = newStartup
-            return newStartup
+
+        guard let pairingFile = getSavedPairingFile() else {
+            needsPairingPrompt = true
+            throw OperationError.invalidPairingFile()
         }
-        
-        do {
-            try await startup.task.value
-            Self.startupLock.withLock { Self.currentStartup = nil }
-        } catch {
-            Self.startupLock.withLock { Self.currentStartup = nil }
-            throw error
-        }
+
+        let startup = makeMinimuxerStartup(pairingFile: pairingFile)
+        try await waitForMinimuxerStartup(startup)
         #endif
     }
 
@@ -193,4 +206,3 @@ public final class AppBootManager {
         }
     }
 }
-
