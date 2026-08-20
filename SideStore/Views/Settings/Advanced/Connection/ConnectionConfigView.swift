@@ -190,17 +190,17 @@ struct ConnectionConfigView: View {
                     
                     Text("Changes saved")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     
                     SwiftUI.Button(action: {
                         showConfirmDialog = false
                     }) {
                         Text("OK")
                             .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(Color.white.opacity(0.12))
+                            .background(Color(uiColor: .secondarySystemFill))
                             .clipShape(Capsule())
                     }
                     .buttonStyle(PlainButtonStyle())

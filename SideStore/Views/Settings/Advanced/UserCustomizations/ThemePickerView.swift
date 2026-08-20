@@ -59,10 +59,10 @@ struct ThemePickerView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("SideStore")
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                         Text("v0.6.0 • Installed")
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(Color.white.opacity(0.6))
+                            .foregroundColor(.secondary)
                     }
                     Spacer()
                     
@@ -80,7 +80,7 @@ struct ThemePickerView: View {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.white.opacity(0.2))
+                            .fill(Color.secondary.opacity(0.2))
                         RoundedRectangle(cornerRadius: 4)
                             .fill(selectedColor)
                             .frame(width: geo.size.width * 0.7)
@@ -91,7 +91,7 @@ struct ThemePickerView: View {
                 HStack {
                     Text("Active Theme Accent")
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(Color.white.opacity(0.7))
+                        .foregroundColor(.secondary)
                     Spacer()
                     Circle()
                         .fill(selectedColor)
