@@ -32,21 +32,7 @@ extension AppDelegate
     nonisolated static let appBackupResultKey = "result"
     nonisolated static let addSourceDeepLinkURLKey = "sourceURL"
 
-    @MainActor static var hasPendingAppImports: Bool {
-        !pendingImportIPAURLs.isEmpty
-    }
-
-    @MainActor static func enqueueAppImport(_ url: URL) {
-        pendingImportIPAURLs.append(url)
-        NotificationCenter.default.post(name: importAppDeepLinkNotification, object: nil)
-    }
-
-    @MainActor static func dequeueAppImport() -> URL? {
-        guard !pendingImportIPAURLs.isEmpty else { return nil }
-        return pendingImportIPAURLs.removeFirst()
-    }
-    
-    private static var pendingImportIPAURLs = [URL]()
+    @MainActor private static var pendingImportIPAURLs = [URL]()
 
     @MainActor static func enqueueAppImport(_ url: URL) {
         self.pendingImportIPAURLs.append(url)
@@ -58,8 +44,7 @@ extension AppDelegate
         return self.pendingImportIPAURLs.removeFirst()
     }
 
-    @MainActor
-    static var hasPendingAppImports: Bool {
+    @MainActor static var hasPendingAppImports: Bool {
         return !self.pendingImportIPAURLs.isEmpty
     }
     
@@ -97,8 +82,6 @@ extension AppDelegate
 
 @UIApplicationMain
 final class AppDelegate: UIResponder, UIApplicationDelegate {
-
-    @MainActor private static var pendingImportIPAURLs = [URL]()
 
     var window: UIWindow?
     
