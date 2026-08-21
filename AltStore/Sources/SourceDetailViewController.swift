@@ -137,78 +137,65 @@ class SourceDetailViewController: HeaderContentViewController<SourceHeaderView, 
     {
         super.update()
         
-        if self.source.identifier == Source.altStoreIdentifier
-        {
-            // Users can't remove default AltStore source, so hide buttons.
-            self.navigationBarButton.isHidden = true
+        // Update isIndicatingActivity first to ensure later updates are applied correctly.
+        self.navigationBarButton.isIndicatingActivity = self.viewModel.isAddingSource
             
+        let title: String
+
+        switch self.viewModel.isSourceAdded
+        {
+        case true?:
+            title = NSLocalizedString("REMOVE", comment: "")
+            self.navigationBarButton.tintColor = self.source.effectiveTintColor?.adjustedForDisplay ?? .altPrimary
+            self.navigationBarButton.isHidden = false
+
             if #available(iOS 16, *)
             {
-                self.navigationItem.rightBarButtonItem?.isHidden = true
+                self.navigationItem.rightBarButtonItem?.isHidden = false
             }
+
+        case false?:
+            title = NSLocalizedString("ADD", comment: "")
+            self.navigationBarButton.tintColor = self.source.effectiveTintColor?.adjustedForDisplay ?? .altPrimary
+            self.navigationBarButton.isHidden = false
+
+            if #available(iOS 16, *)
+            {
+                self.navigationItem.rightBarButtonItem?.isHidden = false
+            }
+
+        case nil:
+            title = ""
+            self.navigationBarButton.isHidden = true
+        }
+
+        if title != self.navigationBarButton.title(for: .normal) && !self.navigationBarButton.isIndicatingActivity
+        {
+            self.navigationBarButton.setTitle(title, for: .normal)
+            self.navigationBarButton.sizeToFit()
+            self.navigationBarButton.invalidateIntrinsicContentSize()
+            self.navigationBarButton.superview?.invalidateIntrinsicContentSize()
+
+            let barButtonItem = self.navigationItem.rightBarButtonItem
+            self.navigationItem.rightBarButtonItem = nil
+            self.navigationItem.rightBarButtonItem = barButtonItem
+        }
+
+        let currentSizeWidth = max(PillButton.minimumSize.width, self.navigationBarButton.intrinsicContentSize.width)
+        let targetWidth = currentSizeWidth + 2
+        if let existingConstraint = self.widthConstraint
+        {
+            existingConstraint.constant = targetWidth
         }
         else
         {
-            // Update isIndicatingActivity first to ensure later updates are applied correctly.
-            self.navigationBarButton.isIndicatingActivity = self.viewModel.isAddingSource
-            
-            let title: String
-            
-            switch self.viewModel.isSourceAdded
-            {
-            case true?:
-                title = NSLocalizedString("REMOVE", comment: "")
-                self.navigationBarButton.tintColor = self.source.effectiveTintColor?.adjustedForDisplay ?? .altPrimary
-                self.navigationBarButton.isHidden = false
-                
-                if #available(iOS 16, *)
-                {
-                    self.navigationItem.rightBarButtonItem?.isHidden = false
-                }
-                
-            case false?:
-                title = NSLocalizedString("ADD", comment: "")
-                self.navigationBarButton.tintColor = self.source.effectiveTintColor?.adjustedForDisplay ?? .altPrimary
-                self.navigationBarButton.isHidden = false
-                
-                if #available(iOS 16, *)
-                {
-                    self.navigationItem.rightBarButtonItem?.isHidden = false
-                }
-                
-            case nil:
-                title = ""
-                self.navigationBarButton.isHidden = true
-            }
-            
-            if title != self.navigationBarButton.title(for: .normal) && !self.navigationBarButton.isIndicatingActivity
-            {
-                self.navigationBarButton.setTitle(title, for: .normal)
-                self.navigationBarButton.sizeToFit()
-                self.navigationBarButton.invalidateIntrinsicContentSize()
-                self.navigationBarButton.superview?.invalidateIntrinsicContentSize()
-                
-                let barButtonItem = self.navigationItem.rightBarButtonItem
-                self.navigationItem.rightBarButtonItem = nil
-                self.navigationItem.rightBarButtonItem = barButtonItem
-            }
-            
-            let currentSizeWidth = max(PillButton.minimumSize.width, self.navigationBarButton.intrinsicContentSize.width)
-            let targetWidth = currentSizeWidth + 2
-            if let existingConstraint = self.widthConstraint
-            {
-                existingConstraint.constant = targetWidth
-            }
-            else
-            {
-                let constraint = self.navigationBarButton.widthAnchor.constraint(greaterThanOrEqualToConstant: targetWidth)
-                constraint.priority = .required
-                constraint.isActive = true
-                self.widthConstraint = constraint
-            }
-            
-            self.view.setNeedsLayout()
+            let constraint = self.navigationBarButton.widthAnchor.constraint(greaterThanOrEqualToConstant: targetWidth)
+            constraint.priority = .required
+            constraint.isActive = true
+            self.widthConstraint = constraint
         }
+
+        self.view.setNeedsLayout()
     }
     
     //MARK: Actions
