@@ -85,6 +85,7 @@ public final class SideStoreClient: NSObject, RefreshClient, @unchecked Sendable
                 }
             }
         }
+        try await AppBootManager.shared.ensureMinimuxerStarted()
 
         let context = DatabaseManager.shared.persistentContainer.newBackgroundContext()
         let installedApps = await context.perform { InstalledApp.fetchAppsForRefreshingAll(in: context) }
