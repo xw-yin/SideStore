@@ -88,6 +88,12 @@ class URLHandler {
             }
             return true
             
+        case "refresh-all", "refresh":
+            Task {
+                NotificationCenter.default.post(name: AppDelegate.refreshAllAppsDeepLinkNotification, object: nil)
+            }
+            return true
+            
         default:
             return false
         }

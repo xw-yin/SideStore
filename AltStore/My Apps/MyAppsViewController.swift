@@ -74,6 +74,7 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
         NotificationCenter.default.addObserver(self, selector: #selector(MyAppsViewController.didFetchSource(_:)), name: AppManager.didFetchSourceNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(MyAppsViewController.importApp(_:)), name: AppDelegate.importAppDeepLinkNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(MyAppsViewController.appIDsViewControllerDidDismiss(_:)), name: AppIDsViewController.didDismissNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(MyAppsViewController.handleRefreshAllDeepLink(_:)), name: AppDelegate.refreshAllAppsDeepLinkNotification, object: nil)
     }
     
     deinit {
@@ -839,6 +840,14 @@ private extension MyAppsViewController
             } catch {
                 debugLog("Donate intent failed \(interaction.intent). \(error)")
             }
+        }
+    }
+    
+    @objc func handleRefreshAllDeepLink(_: Notification)
+    {
+        DispatchQueue.main.async {
+            guard !self.isRefreshingAllApps else { return }
+            self.refreshAllApps(UIBarButtonItem())
         }
     }
     

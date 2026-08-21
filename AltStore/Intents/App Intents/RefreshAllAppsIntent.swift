@@ -58,6 +58,7 @@ struct InstallIPAIntent: AppIntent, ProgressReportingIntent
         do
         {
             try await Self.startDatabaseIfNeeded()
+            try await AppBootManager.shared.ensureMinimuxerStarted()
 
             let temporaryDirectory = FileManager.default.uniqueTemporaryURL()
             defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
@@ -210,45 +211,48 @@ private extension RefreshAllAppsIntent
     func refreshAllApps() async throws
     {
         try await InstallIPAIntent.startDatabaseIfNeeded()
+        try await AppBootManager.shared.ensureMinimuxerStarted()
         
         let context = DatabaseManager.shared.persistentContainer.newBackgroundContext()
         let installedApps = await context.perform { InstalledApp.fetchAppsForRefreshingAll(in: context) }
         
-        try await withCheckedThrowingContinuation { continuation in
-            let operation = try? AppManager.shared.backgroundRefresh(installedApps, presentsNotifications: self.presentsNotifications) { (result) in
-                do
-                {
-                    let results = try result.get()
-                    
-                    for (_, result) in results
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            do
+            {
+                let operation = try AppManager.shared.backgroundRefresh(installedApps, presentsNotifications: self.presentsNotifications, completionHandler: { (result) in
+                    do
                     {
-                        guard case let .failure(error) = result else { continue }
-                        throw error
+                        let results = try result.get()
+                        
+                        for (_, result) in results
+                        {
+                            guard case let .failure(error) = result else { continue }
+                            throw error
+                        }
+                        
+                        continuation.resume()
                     }
-                    
-                    continuation.resume()
-                }
-                catch ~RefreshErrorCode.noInstalledApps
-                {
-                    continuation.resume()
-                }
-                catch
-                {
-                    continuation.resume(throwing: error)
+                    catch ~RefreshErrorCode.noInstalledApps
+                    {
+                        continuation.resume()
+                    }
+                    catch
+                    {
+                        continuation.resume(throwing: error)
+                    }
+                })
+                
+                operation.ignoresServerNotFoundError = false
+                
+                self.progress.addChild(operation.progress, withPendingUnitCount: 1)
+                
+                Task {
+                    await self.operationActor.set(operation)
                 }
             }
-            
-            guard let operation else {
-                debugLog("[RefreshAllAppsIntent] backgroundRefresh instance is nil")
-                return 
-            }
-            
-            operation.ignoresServerNotFoundError = false
-            
-            self.progress.addChild(operation.progress, withPendingUnitCount: 1)
-            
-            Task {
-                await self.operationActor.set(operation)
+            catch
+            {
+                continuation.resume(throwing: error)
             }
         }
     }

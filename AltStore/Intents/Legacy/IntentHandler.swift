@@ -128,37 +128,40 @@ private extension IntentHandler
     
     func refreshApps(intent: RefreshAllIntent)
     {
-        
-        let context = DatabaseManager.shared.persistentContainer.newBackgroundContext()
-        let installedApps = InstalledApp.fetchAppsForRefreshingAll(in: context)
-        let operation = try? AppManager.shared.backgroundRefresh(installedApps, presentsNotifications: false) { (result) in
-            do
-            {
-                let results = try result.get()
-                
-                for (_, result) in results
+        Task {
+            try? await AppBootManager.shared.ensureMinimuxerStarted()
+            
+            let context = DatabaseManager.shared.persistentContainer.newBackgroundContext()
+            let installedApps = InstalledApp.fetchAppsForRefreshingAll(in: context)
+            let operation = try? AppManager.shared.backgroundRefresh(installedApps, presentsNotifications: false) { (result) in
+                do
                 {
-                    guard case let .failure(error) = result else { continue }
-                    throw error
+                    let results = try result.get()
+                    
+                    for (_, result) in results
+                    {
+                        guard case let .failure(error) = result else { continue }
+                        throw error
+                    }
+                    
+                    self.finish(intent, response: RefreshAllIntentResponse(code: .success, userActivity: nil))
+                    UIApplication.shared.perform(#selector(NSXPCConnection.suspend))
+                }
+                catch ~RefreshErrorCode.noInstalledApps
+                {
+                    self.finish(intent, response: RefreshAllIntentResponse(code: .success, userActivity: nil))
+                    UIApplication.shared.perform(#selector(NSXPCConnection.suspend))
+                }
+                catch let error as NSError
+                {
+                    debugLog("Failed to refresh apps in background. \(error)")
+                    self.finish(intent, response: RefreshAllIntentResponse.failure(localizedDescription: error.localizedFailureReason ?? error.localizedDescription))
                 }
                 
-                self.finish(intent, response: RefreshAllIntentResponse(code: .success, userActivity: nil))
-                UIApplication.shared.perform(#selector(NSXPCConnection.suspend))
-            }
-            catch ~RefreshErrorCode.noInstalledApps
-            {
-                self.finish(intent, response: RefreshAllIntentResponse(code: .success, userActivity: nil))
-                UIApplication.shared.perform(#selector(NSXPCConnection.suspend))
-            }
-            catch let error as NSError
-            {
-                debugLog("Failed to refresh apps in background. \(error)")
-                self.finish(intent, response: RefreshAllIntentResponse.failure(localizedDescription: error.localizedFailureReason ?? error.localizedDescription))
+                self.operations[intent] = nil
             }
             
-            self.operations[intent] = nil
+            self.operations[intent] = operation
         }
-        
-        self.operations[intent] = operation
     }
 }

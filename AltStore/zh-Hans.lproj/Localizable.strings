@@ -722,3 +722,20 @@
 "Notice" = "提示";
 "Title" = "标题";
 "Undefined" = "未定义";
+
+/* Shortcuts & App Intents */
+"Refresh All Apps" = "刷新所有应用";
+"Refreshes your sideloaded apps to prevent them from expiring." = "刷新已侧载的应用以防止证书过期。";
+"Install IPA" = "安装 IPA";
+"Installs an IPA file with SideStore." = "使用 SideStore 安装 IPA 文件。";
+"IPA File" = "IPA 文件";
+"Refresh Apps via Widget" = "通过小组件刷新应用";
+"Refresh my apps" = "刷新我的应用";
+"Add to Siri" = "添加到 Siri";
+"Add to Shortcuts" = "添加到快捷指令";
+"View App" = "查看应用";
+"Views an app in SideStore." = "在 SideStore 中查看应用。";
+"App" = "应用";
+"Refresh all apps" = "刷新所有应用";
+"Refreshes all sideloaded apps" = "刷新所有已侧载的应用";
+"Allow Siri to Refresh Apps…" = "允许 Siri 刷新应用…";
