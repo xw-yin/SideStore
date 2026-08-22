@@ -30,10 +30,6 @@ public final class SideStoreClient: NSObject, RefreshClient, @unchecked Sendable
               let handler = handlerClass.value(forKey: "shared") as? NSObject else {
             return
         }
-        if let connection = handler.value(forKey: "connection") as? NSXPCConnection {
-            connection.exportedInterface = NSXPCInterface(with: RefreshClient.self)
-            connection.exportedObject = self
-        }
         if let server = handler.value(forKey: "server") as? NSObject {
             _ = server.perform(NSSelectorFromString("finishedLaunching"))
         }
