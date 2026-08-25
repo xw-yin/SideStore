@@ -22,7 +22,7 @@ final class SelectTeamViewController: UITableViewController
     private var prototypeHeaderFooterView: SettingsHeaderFooterView!
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
-        return .lightContent
+        return .default
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {

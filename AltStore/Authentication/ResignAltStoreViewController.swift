@@ -26,7 +26,7 @@ final class ResignAltStoreViewController: UIViewController
         self.placeholderView.textLabel.isHidden = true
         
         self.placeholderView.detailTextLabel.textAlignment = .left
-        self.placeholderView.detailTextLabel.textColor = UIColor.white.withAlphaComponent(0.6)
+        self.placeholderView.detailTextLabel.textColor = .secondaryLabel
         
         let reason = self.mismatchReason ?? (self.context?.team?.type == .free ? .freeAccountLimitRevoked : .revoked)
         debugLog("[ResignAltStoreViewController] Displaying Resign SideStore Now screen (mismatchReason: \(reason)).")
@@ -66,31 +66,32 @@ final class ResignAltStoreViewController: UIViewController
         
         let fullText = "\(header)\n\n\(paragraph1)\n\n\(paragraph2)"
         let attributedString = NSMutableAttributedString(string: fullText)
+        attributedString.addAttribute(.foregroundColor, value: UIColor.secondaryLabel, range: NSRange(location: 0, length: attributedString.length))
         
         if let headerRange = fullText.range(of: header) {
             let nsRange = NSRange(headerRange, in: fullText)
-            attributedString.addAttribute(.foregroundColor, value: UIColor.white, range: nsRange)
+            attributedString.addAttribute(.foregroundColor, value: UIColor.label, range: nsRange)
         }
         
         self.placeholderView.detailTextLabel.attributedText = attributedString
         
         // Separator Line
         let separator = UIView()
-        separator.backgroundColor = UIColor.white.withAlphaComponent(0.2)
+        separator.backgroundColor = .separator
         separator.translatesAutoresizingMaskIntoConstraints = false
         separator.heightAnchor.constraint(equalToConstant: 1).isActive = true
         
         // Reason Bold Prefix
         let reasonLabel = UILabel()
         reasonLabel.text = NSLocalizedString("Reason:", comment: "")
-        reasonLabel.textColor = .white
+        reasonLabel.textColor = .label
         reasonLabel.font = UIFont.boldSystemFont(ofSize: 14)
         reasonLabel.setContentHuggingPriority(.required, for: .horizontal)
         
         // Reason Description
         let reasonTextLabel = UILabel()
         reasonTextLabel.text = reasonText
-        reasonTextLabel.textColor = UIColor.white.withAlphaComponent(0.6)
+        reasonTextLabel.textColor = .secondaryLabel
         reasonTextLabel.font = UIFont.systemFont(ofSize: 14)
         reasonTextLabel.numberOfLines = 0
         
