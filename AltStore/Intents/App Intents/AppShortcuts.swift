@@ -18,6 +18,10 @@ public struct ShortcutsProvider: AppShortcutsProvider
                         "Refresh \(.applicationName) apps",
                         "Refresh my \(.applicationName) apps",
                         "Refresh apps with \(.applicationName)",
+                        "刷新 \(.applicationName)",
+                        "刷新 \(.applicationName) 应用",
+                        "刷新我的 \(.applicationName) 应用",
+                        "使用 \(.applicationName) 刷新应用",
                     ],
                     shortTitle: "Refresh All Apps",
                     systemImageName: "arrow.triangle.2.circlepath")
@@ -26,6 +30,8 @@ public struct ShortcutsProvider: AppShortcutsProvider
                     phrases: [
                         "Install IPA with \(.applicationName)",
                         "Install an IPA with \(.applicationName)",
+                        "使用 \(.applicationName) 安装 IPA",
+                        "用 \(.applicationName) 安装应用",
                     ],
                     shortTitle: "Install IPA",
                     systemImageName: "square.and.arrow.down")

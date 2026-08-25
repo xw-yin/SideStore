@@ -20,13 +20,13 @@ class IntentError: NSError, CustomLocalizedStringResourceConvertible, @unchecked
     var localizedStringResource: LocalizedStringResource {
         return "\(self.localizedDescription)"
     }
-    
+
     init(_ error: some Error)
     {
         let serializedError = (error as NSError).sanitizedForSerialization()
         super.init(domain: serializedError.domain, code: serializedError.code, userInfo: serializedError.userInfo)
     }
-    
+
     required init?(coder: NSCoder)
     {
         super.init(coder: coder)
@@ -36,8 +36,8 @@ class IntentError: NSError, CustomLocalizedStringResourceConvertible, @unchecked
 @available(iOS 17.0, *)
 struct InstallIPAIntent: AppIntent, ProgressReportingIntent
 {
-    static var title: LocalizedStringResource = "Install IPA"
-    static var description = IntentDescription("Installs an IPA file with SideStore.")
+    static var title: LocalizedStringResource = LocalizedStringResource("Install IPA", defaultValue: "安装 IPA")
+    static var description = IntentDescription(LocalizedStringResource("Installs an IPA file with SideStore.", defaultValue: "使用 SideStore 安装 IPA 文件。"))
     static var openAppWhenRun = false
 
     @Parameter(title: "IPA File")
@@ -58,6 +58,7 @@ struct InstallIPAIntent: AppIntent, ProgressReportingIntent
         do
         {
             try await Self.startDatabaseIfNeeded()
+            try await AppBootManager.shared.ensureMinimuxerStarted()
 
             let temporaryDirectory = FileManager.default.uniqueTemporaryURL()
             defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
@@ -111,7 +112,7 @@ extension RefreshAllAppsIntent
     private actor OperationActor
     {
         private(set) var operation: BackgroundRefreshAppsOperation?
-        
+
         func set(_ operation: BackgroundRefreshAppsOperation?)
         {
             self.operation = operation
@@ -123,57 +124,57 @@ extension RefreshAllAppsIntent
 struct RefreshAllAppsIntent: AppIntent, CustomIntentMigratedAppIntent, PredictableIntent, ProgressReportingIntent, ForegroundContinuableIntent
 {
     static let intentClassName = "RefreshAllIntent"
-    
-    static var title: LocalizedStringResource = "Refresh All Apps"
-    static var description = IntentDescription("Refreshes your sideloaded apps to prevent them from expiring.")
-    
+
+    static var title: LocalizedStringResource = LocalizedStringResource("Refresh All Apps", defaultValue: "刷新所有应用")
+    static var description = IntentDescription(LocalizedStringResource("Refreshes your sideloaded apps to prevent them from expiring.", defaultValue: "刷新已侧载的应用以防止证书过期。"))
+
     static var parameterSummary: some ParameterSummary {
         Summary("Refresh All Apps")
     }
-    
+
     static var predictionConfiguration: some IntentPredictionConfiguration {
         IntentPrediction {
             DisplayRepresentation(
-                title: "Refresh All Apps",
+                title: LocalizedStringResource("Refresh All Apps", defaultValue: "刷新所有应用"),
                 subtitle: ""
             )
         }
     }
-    
+
     let presentsNotifications: Bool
-    
+
     private let operationActor = OperationActor()
-    
+
     init(presentsNotifications: Bool)
     {
         self.presentsNotifications = presentsNotifications
-        
+
         self.progress.completedUnitCount = 0
         self.progress.totalUnitCount = 1
     }
-    
+
     init()
     {
         self.init(presentsNotifications: false)
     }
-    
+
     func perform() async throws -> some IntentResult & ProvidesDialog
     {
         do
         {
             // Request foreground execution at ~27 seconds to gracefully handle timeout.
             let deadline: ContinuousClock.Instant = .now + .seconds(27)
-            
+
             try await withThrowingTaskGroup(of: Void.self) { taskGroup in
                 taskGroup.addTask {
                     try await self.refreshAllApps()
                 }
-                
+
                 taskGroup.addTask {
                     try await Task.sleep(until: deadline)
                     throw OperationError.timedOut
                 }
-                
+
                 do
                 {
                     for try await _ in taskGroup.prefix(1)
@@ -189,12 +190,12 @@ struct RefreshAllAppsIntent: AppIntent, CustomIntentMigratedAppIntent, Predictab
                     // so we'll now present a normal notification when finished.
                     let operation = await self.operationActor.operation
                     operation?.presentsFinishedNotification = true
-                    
+
                     try await self.requestToContinueInForeground()
                 }
             }
-            
-            return .result(dialog: "All apps have been refreshed.")
+
+            return .result(dialog: IntentDialog(LocalizedStringResource("All apps have been refreshed.", defaultValue: "所有应用已成功刷新。")))
         }
         catch
         {
@@ -210,45 +211,48 @@ private extension RefreshAllAppsIntent
     func refreshAllApps() async throws
     {
         try await InstallIPAIntent.startDatabaseIfNeeded()
-        
+        try await AppBootManager.shared.ensureMinimuxerStarted()
+
         let context = DatabaseManager.shared.persistentContainer.newBackgroundContext()
         let installedApps = await context.perform { InstalledApp.fetchAppsForRefreshingAll(in: context) }
-        
-        try await withCheckedThrowingContinuation { continuation in
-            let operation = try? AppManager.shared.backgroundRefresh(installedApps, presentsNotifications: self.presentsNotifications) { (result) in
-                do
-                {
-                    let results = try result.get()
-                    
-                    for (_, result) in results
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            do
+            {
+                let operation = try AppManager.shared.backgroundRefresh(installedApps, presentsNotifications: self.presentsNotifications, completionHandler: { (result) in
+                    do
                     {
-                        guard case let .failure(error) = result else { continue }
-                        throw error
+                        let results = try result.get()
+
+                        for (_, result) in results
+                        {
+                            guard case let .failure(error) = result else { continue }
+                            throw error
+                        }
+
+                        continuation.resume()
                     }
-                    
-                    continuation.resume()
-                }
-                catch ~RefreshErrorCode.noInstalledApps
-                {
-                    continuation.resume()
-                }
-                catch
-                {
-                    continuation.resume(throwing: error)
+                    catch ~RefreshErrorCode.noInstalledApps
+                    {
+                        continuation.resume()
+                    }
+                    catch
+                    {
+                        continuation.resume(throwing: error)
+                    }
+                })
+
+                operation.ignoresServerNotFoundError = false
+
+                self.progress.addChild(operation.progress, withPendingUnitCount: 1)
+
+                Task {
+                    await self.operationActor.set(operation)
                 }
             }
-            
-            guard let operation else {
-                debugLog("[RefreshAllAppsIntent] backgroundRefresh instance is nil")
-                return 
-            }
-            
-            operation.ignoresServerNotFoundError = false
-            
-            self.progress.addChild(operation.progress, withPendingUnitCount: 1)
-            
-            Task {
-                await self.operationActor.set(operation)
+            catch
+            {
+                continuation.resume(throwing: error)
             }
         }
     }
