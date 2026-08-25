@@ -24,10 +24,14 @@ enum SideJITConnectionStatus: Equatable {
     
     var title: String {
         switch self {
-        case .ready(let latency, _): return "Ready (\(latency) ms)"
-        case .discovering: return "Discovering Bonjour…"
-        case .checking: return "Checking Connection…"
-        case .disconnected: return "Unreachable"
+        case .ready(let latency, _):
+            return String(format: NSLocalizedString("Ready (%d ms)", comment: "SideJIT connection latency"), latency)
+        case .discovering:
+            return NSLocalizedString("Discovering Bonjour…", comment: "SideJIT discovery status")
+        case .checking:
+            return NSLocalizedString("Checking Connection…", comment: "SideJIT connection status")
+        case .disconnected:
+            return NSLocalizedString("Unreachable", comment: "SideJIT connection status")
         }
     }
 }
@@ -137,7 +141,7 @@ struct SideJITServerConfigView: View {
                 Text("Resolved Address")
                     .layoutPriority(1)
                 Spacer()
-                Text(resolvedAddress.isEmpty ? "Resolving…" : resolvedAddress)
+                Text(resolvedAddress.isEmpty ? NSLocalizedString("Resolving…", comment: "SideJIT address status") : resolvedAddress)
                     .font(.system(size: 13, design: .monospaced))
                     .foregroundColor(resolvedAddress.isEmpty ? .secondary : .primary)
                     .lineLimit(1)
@@ -157,7 +161,9 @@ struct SideJITServerConfigView: View {
             HStack {
                 Text("Resolution Mode")
                 Spacer()
-                Text(customAddress.isEmpty ? "Auto (Bonjour mDNS)" : "Manual Override")
+                Text(customAddress.isEmpty
+                     ? NSLocalizedString("Auto (Bonjour mDNS)", comment: "SideJIT address mode")
+                     : NSLocalizedString("Manual Override", comment: "SideJIT address mode"))
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }

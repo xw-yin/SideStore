@@ -296,11 +296,11 @@ struct UserCustomizationsView: View {
                     .cornerRadius(14)
                 }
 
-                // Section 5: MINIMUXER BACKEND
+                // Section 4: MINIMUXER BACKEND
                 VStack(alignment: .leading, spacing: 8) {
                     Text("MINIMUXER BACKEND")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -314,7 +314,7 @@ struct UserCustomizationsView: View {
                                 HStack {
                                     Text(backend.rawValue)
                                         .font(.system(size: 17, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(.primary)
                                     Spacer()
                                     if selectedBackend == backend {
                                         Image(systemName: "checkmark")

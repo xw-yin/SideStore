@@ -739,3 +739,34 @@
 "Refresh all apps" = "刷新所有应用";
 "Refreshes all sideloaded apps" = "刷新所有已侧载的应用";
 "Allow Siri to Refresh Apps…" = "允许 Siri 刷新应用…";
+
+/* SideJITServer */
+"Enable SideJITServer" = "启用 SideJITServer";
+"Required for JIT on iOS 17+" = "在 iOS 17 及以上版本启用 JIT 时需要";
+"Connection Status" = "连接状态";
+"Status" = "状态";
+"Resolved Address" = "解析后的地址";
+"Resolving…" = "正在解析…";
+"Copy Address" = "复制地址";
+"Resolution Mode" = "解析模式";
+"Auto (Bonjour mDNS)" = "自动（Bonjour mDNS）";
+"Manual Override" = "手动指定";
+"Leave empty to automatically discover SideJITServer on your local network via Bonjour." = "留空即可通过 Bonjour 自动发现局域网中的 SideJITServer。";
+"Diagnostics & Tools" = "诊断与工具";
+"Test Connection (Ping)" = "测试连接（Ping）";
+"Refresh Device Cache (/re/)" = "刷新设备缓存（/re/）";
+"Check Version Info (/ver/)" = "检查版本信息（/ver/）";
+"Latest Server Response" = "最近的服务器响应";
+"Copy Response" = "复制响应";
+"About" = "关于";
+"SideJITServer attaches Apple's debugserver service on macOS to running apps on iOS 17+ over local Wi-Fi or USB." = "SideJITServer 可通过局域网 Wi-Fi 或 USB，将 macOS 上的 Apple debugserver 服务附加到 iOS 17 及以上版本中正在运行的应用。";
+"When SideStore triggers JIT, SideJITServer sends the debug attach signal and enables Just-In-Time execution instantly." = "SideStore 触发 JIT 时，SideJITServer 会发送调试附加信号并立即启用即时编译。";
+"Copied to Clipboard" = "已复制到剪贴板";
+"Ready (%d ms)" = "就绪（%d 毫秒）";
+"Discovering Bonjour…" = "正在通过 Bonjour 发现…";
+"Checking Connection…" = "正在检查连接…";
+"Unreachable" = "无法连接";
+
+/* Minimuxer backend */
+"MINIMUXER BACKEND" = "MINIMUXER 后端";
+"Changing the Minimuxer backend requires restarting SideStore. If canceled, changes will not be saved." = "更改 Minimuxer 后端需要重启 SideStore。取消后将不会保存更改。";
