@@ -20,6 +20,14 @@ class AuthFlowHandler: AnyObject, AuthenticationHandler, AnisetteServerHandler {
     private lazy var navigationController: UINavigationController = {
         let storyboard = UIStoryboard(name: "Authentication", bundle: nil)
         let navigationController = storyboard.instantiateViewController(withIdentifier: "navigationController") as! UINavigationController
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithDefaultBackground()
+        appearance.backgroundColor = UIColor(named: "SettingsBackground") ?? .systemBackground
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
+        navigationController.navigationBar.standardAppearance = appearance
+        navigationController.navigationBar.scrollEdgeAppearance = appearance
+        navigationController.navigationBar.tintColor = .altPrimary
         navigationController.isModalInPresentation = true
         return navigationController
     }()
@@ -75,7 +83,7 @@ class AuthFlowHandler: AnyObject, AuthenticationHandler, AnisetteServerHandler {
                 }
             }
             
-            self.navigationController.view.tintColor = .altInvertedPrimary
+            self.navigationController.view.tintColor = .altPrimary
             self.navigationController.setViewControllers([authVC], animated: false)
             presentingViewController.present(self.navigationController, animated: true)
         }
