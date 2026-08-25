@@ -172,7 +172,7 @@ public final class AppBootManager: @unchecked Sendable {
             defer {
                 debugLog("[AppBootManager] performBootSequence(): JIT check completed")
             }
-            if #available(iOS 17, *), !UserDefaults.standard.sidejitenable {
+            if #available(iOS 17, *), !UserDefaults.standard.isSideJITServerEnabled {
                 do {
                     try await SideJITManager.shared.isSideJITServerDetected()
                     self.needsSideJITPrompt = true
@@ -180,8 +180,7 @@ public final class AppBootManager: @unchecked Sendable {
                     debugLog("[AppBootManager] Cannot find sideJITServer")
                 }
             }
-
-            if #available(iOS 17, *), UserDefaults.standard.sidejitenable {
+            if #available(iOS 17, *), UserDefaults.standard.isSideJITServerEnabled {
                 await SideJITManager.shared.askForNetwork()
                 debugLog("[AppBootManager] SideJITServer Enabled")
             }

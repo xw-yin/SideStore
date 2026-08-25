@@ -110,6 +110,8 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         // register crash handler
         setupCrashHandler()
         
+        UNUserNotificationCenter.current().delegate = self
+        
         debugLog("===================================================")
         debugLog("|               App is Starting up                |")
         debugLog("===================================================")
@@ -129,19 +131,22 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         AltSign.setLogging(UserDefaults.standard.isAltSignVerboseLoggingEnabled)
         minimuxerSetLogging(UserDefaults.standard.isMinimuxerVerboseLoggingEnabled)
 
-        // Trigger daily boot sync for Anisette servers if needed
-        Task.detached {
-            await AnisetteServersManager.shared.performDailySyncIfNeeded()
-        }
-
         // Override point for customization after application launch.
 //        UserDefaults.standard.setValue(true, forKey: "com.apple.CoreData.MigrationDebug")
 //        UserDefaults.standard.setValue(true, forKey: "com.apple.CoreData.SQLDebug")
 
         // Register default settings before doing anything else.
         UserDefaults.registerDefaults()
+        syncMinimuxerBackendFromUserDefaults()
         
-        
+        // Perform one-time maintenance tasks (e.g. Keychain clearance for 0.6.4*) before initializing services
+        MaintenanceManager.shared.performMaintenanceIfNeeded()
+
+        // Trigger daily boot sync for Anisette servers if needed
+        Task.detached {
+            await AnisetteServersManager.shared.performDailySyncIfNeeded()
+        }
+
         // Recreate Database if requested
         // NOTE: Userdefaults are local to the SideStore.app sandbox and are not shared
         if UserDefaults.standard.recreateDatabaseOnNextStart{
@@ -681,6 +686,16 @@ private extension AppDelegate {
             }
         } else {
             debugLog("[AppDelegate] reconcileSelfReinstallation: BundlePath matched pre-installation path. Reinstallation was not completed or failed.")
+        }
+    }
+}
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        if #available(iOS 14.0, *) {
+            completionHandler([.banner, .sound])
+        } else {
+            completionHandler([.alert, .sound])
         }
     }
 }

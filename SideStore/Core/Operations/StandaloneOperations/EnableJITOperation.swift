@@ -1,38 +1,44 @@
 //
 //  EnableJITOperation.swift
-//  EnableJITOperation
+//  SideStore
 //
-//  Created by Riley Testut on 9/1/21.
-//  Copyright © 2021 Riley Testut. All rights reserved.
+//  Created by Magesh K on 23/8/26.
+//  Copyright © 2026 SideStore. All rights reserved.
 //
 
 @preconcurrency import UIKit
 import Combine
 import UniformTypeIdentifiers
+import CoreData
 
 enum SideJITServerErrorType: Error {
-     case invalidURL
-     case errorConnecting
-     case deviceNotFound
-     case other(String)
- }
+    case invalidURL
+    case errorConnecting
+    case deviceNotFound
+    case other(String)
+}
 
 @available(iOS 14, *)
-final class EnableJITOperation: BasePipelineOperation<InstallAppOperationContext, Bool>, @unchecked Sendable
+final class EnableJITOperation: BaseStandaloneOperation<StandaloneOperationContext, Bool>, @unchecked Sendable
 {
-    private var cancellable: AnyCancellable?
-    
+    let installedApp: InstalledApp
+
+    init(installedApp: InstalledApp, context: StandaloneOperationContext) throws {
+        self.installedApp = installedApp
+        try super.init(context: context)
+    }
+
     override func execute(parentProgress: Progress?) async throws -> Bool {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[EnableJITOperation] execute() started")
-        defer { debugLog("[EnableJITOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[EnableJITOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         self.setProgress(10)
-        
-        guard let installedApp = self.context.installedApp else {
-            throw OperationError.invalidParameters("EnableJITOperation.main: self.context.installedApp is nil")
-        }
-        
-        try await self.enableJIT(for: installedApp)
+
+        try await self.enableJIT(for: self.installedApp)
         self.setProgress(100)
         return true
     }
@@ -40,15 +46,20 @@ final class EnableJITOperation: BasePipelineOperation<InstallAppOperationContext
     private func enableJIT(for installedApp: InstalledApp) async throws
     {
         let userdefaults = UserDefaults.standard
-        
-        if #available(iOS 17, *), userdefaults.sidejitenable {
-            let sideJITIP = userdefaults.textInputSideJITServerurl ?? "http://sidejitserver._http._tcp.local:8080"
-            guard let serverURL = URL(string: sideJITIP) else {
+        let dbContext = self.context.dbBackgroundContext ?? installedApp.managedObjectContext
+
+        let (targetBundleId, appName) = await dbContext?.perform {
+            (installedApp.resignedBundleIdentifier, installedApp.name)
+        } ?? (installedApp.resignedBundleIdentifier, installedApp.name)
+
+        if #available(iOS 17, *), userdefaults.isSideJITServerEnabled {
+            let sideJITURLString = await SideJITManager.shared.resolveServerURL()
+            guard let serverURL = URL(string: sideJITURLString) else {
                 throw OperationError.unableToConnectSideJIT
             }
             self.setProgress(30)
             do {
-                try await enableJITSideJITServer(serverURL: serverURL, installedApp: installedApp)
+                try await enableJITSideJITServer(serverURL: serverURL, bundleIdentifier: targetBundleId, appName: appName)
                 self.setProgress(90)
                 self.debugLog("JIT Enabled Successfully :3 (code made by Stossy11!)")
             } catch {
@@ -74,10 +85,6 @@ final class EnableJITOperation: BasePipelineOperation<InstallAppOperationContext
                 }
             }
         } else {
-            guard let ctx = installedApp.managedObjectContext else {
-                throw OperationError.invalidParameters("EnableJITOperation: installedApp.managedObjectContext is nil")
-            }
-            let targetBundleId = await ctx.perform { installedApp.resignedBundleIdentifier }
             self.setProgress(30)
 
             var lastError: Error?
@@ -98,32 +105,38 @@ final class EnableJITOperation: BasePipelineOperation<InstallAppOperationContext
 }
 
 @available(iOS 17, *)
-func enableJITSideJITServer(serverURL: URL, installedApp: InstalledApp) async throws {
-    guard let udid = try await fetchUDID() else {
+func enableJITSideJITServer(serverURL: URL, bundleIdentifier: String, appName: String) async throws {
+    guard let udid = try await fetchUDID(useStatic: true) else {
         throw SideJITServerErrorType.other("Unable to get UDID")
     }
-    
+
     let serverURLWithUDID = serverURL.appendingPathComponent(udid)
-    let fullURL = serverURLWithUDID.appendingPathComponent(installedApp.resignedBundleIdentifier)
-    
+    let fullURL = serverURLWithUDID.appendingPathComponent(bundleIdentifier)
+
+    debugLog("[EnableJITOperation] Requesting JIT from SideJITServer at: \(fullURL)")
     let (data, _) = try await URLSession.shared.data(from: fullURL)
-    
+
     guard let dataString = String(data: data, encoding: .utf8) else {
+        debugLog("[EnableJITOperation] SideJITServer returned non-UTF8 response data (size: \(data.count) bytes)")
         throw SideJITServerErrorType.other("Invalid response data")
     }
-    
-    if dataString == "Enabled JIT for '\(installedApp.name)'!" {
+
+    debugLog("[EnableJITOperation] SideJITServer response: '\(dataString)'")
+
+    let cleanString = dataString.trimmingCharacters(in: CharacterSet(charactersIn: "\"'\n\r\t "))
+
+    if cleanString.contains("Enabled JIT for") {
         let content = UNMutableNotificationContent()
         content.title = "JIT Successfully Enabled"
-        content.subtitle = "JIT Enabled For \(installedApp.name)"
+        content.subtitle = "JIT Enabled For \(appName)"
         content.sound = .default
-        
+
         let request = UNNotificationRequest(identifier: "EnabledJIT", content: content, trigger: nil)
         try? await UNUserNotificationCenter.current().add(request)
     } else {
-        let errorType: SideJITServerErrorType = dataString == "Could not find device!"
+        let errorType: SideJITServerErrorType = cleanString.contains("Could not find device")
             ? .deviceNotFound
-            : .other(dataString)
+            : .other(cleanString)
         throw errorType
     }
 }

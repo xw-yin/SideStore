@@ -34,9 +34,15 @@ final class DownloadAppOperation: BasePipelineOperation<InstallAppOperationConte
     }
 
     override func execute(parentProgress: Progress?) async throws -> ALTApplication {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[DownloadAppOperation] execute() started")
         defer {
-            debugLog("[DownloadAppOperation] execute() completed")
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[DownloadAppOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
+        try await super.executePreconditionCheck(parentProgress: parentProgress)
+        
+        defer {
             if FileManager.default.fileExists(atPath: self.temporaryDirectory.path) {
                 do {
                     try FileManager.default.removeItem(at: self.temporaryDirectory)
@@ -45,7 +51,6 @@ final class DownloadAppOperation: BasePipelineOperation<InstallAppOperationConte
                 }
             }
         }
-        try await super.executePreconditionCheck(parentProgress: parentProgress)
         
         if self.isCancelled { throw OperationError.cancelled }
         if let error = self.context.error { throw error }

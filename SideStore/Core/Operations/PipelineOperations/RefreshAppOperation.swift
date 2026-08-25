@@ -13,8 +13,12 @@ import CoreData
 final class RefreshAppOperation: BasePipelineOperation<InstallAppOperationContext, InstalledApp>, @unchecked Sendable {
     
     override func execute(parentProgress: Progress?) async throws -> InstalledApp {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[RefreshAppOperation] execute() started")
-        defer { debugLog("[RefreshAppOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[RefreshAppOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         
         guard let profiles = self.context.provisioningProfiles else {

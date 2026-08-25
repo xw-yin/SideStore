@@ -34,8 +34,12 @@ final class VerifyAppOperation: BasePipelineOperation<InstallAppOperationContext
     }
     
     override func execute(parentProgress: Progress?) async throws -> Bool {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[VerifyAppOperation] execute() started")
-        defer { debugLog("[VerifyAppOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[VerifyAppOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         guard let appBundle = self.context.targetAppBundle else {
             throw OperationError.invalidParameters("VerifyAppOperation: context.appBundle is nil")
@@ -116,7 +120,7 @@ final class VerifyAppOperation: BasePipelineOperation<InstallAppOperationContext
         // Do nothing if source doesn't provide hash.
         guard let expectedHash = await $appVersion.sha256 else { return }
 
-        let data = try Data(contentsOf: ipaURL)
+        let data = try Data(contentsOf: ipaURL, options: .alwaysMapped)
         let sha256Hash = SHA256.hash(data: data)
         let hashString = sha256Hash.compactMap { String(format: "%02x", $0) }.joined()
         

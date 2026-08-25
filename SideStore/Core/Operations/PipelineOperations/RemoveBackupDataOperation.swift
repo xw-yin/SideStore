@@ -14,8 +14,12 @@ final class RemoveBackupDataOperation: BasePipelineOperation<InstallAppOperation
     private let coordinatorQueue = OperationQueue()
     
     override func execute(parentProgress: Progress?) async throws -> Bool {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[RemoveBackupDataOperation] execute() started")
-        defer { debugLog("[RemoveBackupDataOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[RemoveBackupDataOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         self.setProgress(10)
         

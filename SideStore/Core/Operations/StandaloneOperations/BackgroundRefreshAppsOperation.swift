@@ -57,8 +57,12 @@ final class BackgroundRefreshAppsOperation: BaseStandaloneOperation<OperationCon
     }
     
     override func execute(parentProgress: Progress?) async throws -> [String: Result<InstalledApp, Error>] {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[BackgroundRefreshAppsOperation] execute() started")
-        defer { debugLog("[BackgroundRefreshAppsOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[BackgroundRefreshAppsOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         self.setProgress(10)
         

@@ -91,7 +91,7 @@ final class BonjourDiscoveryManager: NSObject, ObservableObject {
     private var discoveredDomains = Set<String>()
     private var discoveredTypes = Set<String>()
     private var discoveredInstances: [String: DiscoveredService] = [:]
-    private var currentDomain: String = "local."
+    private var currentDomain: String = AppConstants.Bonjour.defaultDomain
     
     override init() {
         super.init()
@@ -299,12 +299,101 @@ final class BonjourDiscoveryManager: NSObject, ObservableObject {
     }
     
     /// Parse TXT record data into key-value pairs
-    private static func parseTXTRecord(_ data: Data) -> [(key: String, value: String)] {
+    static func parseTXTRecord(_ data: Data) -> [(key: String, value: String)] {
         let dict = NetService.dictionary(fromTXTRecord: data)
         return dict.map { key, value in
             let valueStr = String(data: value, encoding: .utf8) ?? value.map { String(format: "%02x", $0) }.joined()
             return (key: key, value: valueStr)
         }.sorted { $0.key.localizedCaseInsensitiveCompare($1.key) == .orderedAscending }
+    }
+    
+    private final class OneShotNetServiceResolver: NSObject, NetServiceBrowserDelegate, NetServiceDelegate, @unchecked Sendable {
+        private let lock = NSLock()
+        private var isResumed = false
+        private var browser: NetServiceBrowser?
+        private var resolvingService: NetService?
+        private var continuation: CheckedContinuation<(host: String, port: UInt16)?, Never>?
+        private let namePrefix: String
+        
+        init(namePrefix: String, continuation: CheckedContinuation<(host: String, port: UInt16)?, Never>) {
+            self.namePrefix = namePrefix
+            self.continuation = continuation
+            super.init()
+        }
+        
+        func start(type: String, domain: String) {
+            let browser = NetServiceBrowser()
+            self.browser = browser
+            browser.delegate = self
+            browser.searchForServices(ofType: type, inDomain: domain)
+        }
+        
+        func resumeOnce(_ result: (host: String, port: UInt16)?) {
+            lock.lock()
+            guard !isResumed else {
+                lock.unlock()
+                return
+            }
+            isResumed = true
+            let continuation = self.continuation
+            self.continuation = nil
+            let browser = self.browser
+            self.browser = nil
+            let service = self.resolvingService
+            self.resolvingService = nil
+            lock.unlock()
+            
+            browser?.stop()
+            service?.stop()
+            continuation?.resume(returning: result)
+        }
+        
+        func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
+            if namePrefix.isEmpty || service.name.localizedCaseInsensitiveContains(namePrefix) {
+                lock.lock()
+                self.resolvingService = service
+                lock.unlock()
+                service.delegate = self
+                service.resolve(withTimeout: 3.0)
+            }
+        }
+        
+        func netServiceDidResolveAddress(_ sender: NetService) {
+            var resolvedHost = sender.hostName ?? ""
+            if let addressData = sender.addresses {
+                for data in addressData {
+                    if let addr = BonjourDiscoveryManager.formatAddress(data) {
+                        resolvedHost = addr
+                        break
+                    }
+                }
+            }
+            if !resolvedHost.isEmpty {
+                resumeOnce((host: resolvedHost, port: UInt16(sender.port)))
+            } else {
+                resumeOnce(nil)
+            }
+        }
+        
+        func netService(_ sender: NetService, didNotResolve errorDict: [String : NSNumber]) {
+            resumeOnce(nil)
+        }
+    }
+    
+    public static func resolveFirstService(
+        ofType rawType: String,
+        namePrefix: String = "",
+        timeout: TimeInterval = AppConstants.Bonjour.defaultDiscoveryTimeout
+    ) async -> (host: String, port: UInt16)? {
+        let typeWithDot = rawType.hasSuffix(".") ? rawType : rawType + "."
+        return await withCheckedContinuation { continuation in
+            let resolver = OneShotNetServiceResolver(namePrefix: namePrefix, continuation: continuation)
+            resolver.start(type: typeWithDot, domain: AppConstants.Bonjour.defaultDomain)
+            Task {
+                try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                resolver.resumeOnce(nil)
+            }
+        }
     }
 }
 

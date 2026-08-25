@@ -693,6 +693,7 @@ private extension AddSourceViewController
     
     func fetchRecommendedSources()
     {
+        debugLog("[AddSourceViewController] Fetching recommended sources started (spinner shown)...")
         // Closure instead of local function so we can capture `self` weakly.
         let finish: (Result<[Source], Error>) -> Void = { [weak self] result in
             self?.fetchRecommendedSourcesResult = result.map { _ in () }
@@ -701,14 +702,14 @@ private extension AddSourceViewController
                 do
                 {
                     let sources = try result.get()
-                    debugLog("Fetched recommended sources: \(sources.map { $0.identifier })")
+                    debugLog("[AddSourceViewController] Recommended sources spinner stopped. Loaded \(sources.count) source(s) into list: \(sources.map { $0.name })")
                     
                     let sectionUpdate = RSTCellContentChange(type: .update, sectionIndex: 0)
                     self?.recommendedSourcesDataSource.setItems(sources, with: [sectionUpdate])
                 }
                 catch
                 {
-                    debugLog("Error fetching recommended sources: \(error)")
+                    debugLog("[AddSourceViewController] Recommended sources spinner stopped (failed: \(error.localizedDescription))")
                     
                     let sectionUpdate = RSTCellContentChange(type: .update, sectionIndex: 0)
                     self?.recommendedSourcesDataSource.setItems([], with: [sectionUpdate])
@@ -738,20 +739,28 @@ private extension AddSourceViewController
                 {
                     dispatchGroup.enter()
                     
-                    _ = try? AppManager.shared.fetchSource(sourceURL: sourceURL, managedObjectContext: context) { result in
-                        // Serialize access to sourcesByURL.
-                        context.performAndWait {
-                            switch result
-                            {
-                            case .failure(let error):
-                                debugLog("Failed to load recommended source \(sourceURL.absoluteString): \(error.localizedDescription) \(error)")
-                                fetchError = error
+                    do
+                    {
+                        _ = try AppManager.shared.fetchSource(sourceURL: sourceURL, managedObjectContext: context) { result in
+                            // Serialize access to sourcesByURL.
+                            context.performAndWait {
+                                switch result
+                                {
+                                case .failure(let error):
+                                    debugLog("Failed to load recommended source \(sourceURL.absoluteString): \(error.localizedDescription) \(error)")
+                                    
+                                case .success(let source):
+                                    sourcesByURL[source.sourceURL] = source
+                                }
                                 
-                            case .success(let source): sourcesByURL[source.sourceURL] = source
+                                dispatchGroup.leave()
                             }
-                            
-                            dispatchGroup.leave()
                         }
+                    }
+                    catch
+                    {
+                        debugLog("Failed to start loading recommended source \(sourceURL.absoluteString): \(error.localizedDescription)")
+                        dispatchGroup.leave()
                     }
                 }
                 

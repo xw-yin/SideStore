@@ -19,8 +19,12 @@ final class RemoveAppExtensionsOperation: BasePipelineOperation<InstallAppOperat
     }
     
     override func execute(parentProgress: Progress?) async throws -> ALTApplication {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[RemoveAppExtensionsOperation] execute() started")
-        defer { debugLog("[RemoveAppExtensionsOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[RemoveAppExtensionsOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         self.setProgress(10)
         

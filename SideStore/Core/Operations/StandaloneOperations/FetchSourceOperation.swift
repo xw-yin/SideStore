@@ -50,8 +50,12 @@ final class FetchSourceOperation: BaseStandaloneOperation<StandaloneOperationCon
     }
     
     override func execute(parentProgress: Progress?) async throws -> Source {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[FetchSourceOperation] execute() started")
-        defer { debugLog("[FetchSourceOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[FetchSourceOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         
         guard let dbContext = self.context.dbBackgroundContext else {
@@ -68,6 +72,7 @@ final class FetchSourceOperation: BaseStandaloneOperation<StandaloneOperationCon
         
         var request = URLRequest(url: self.sourceURL)
         request.cachePolicy = .reloadIgnoringLocalCacheData     // don't use local caching
+        request.timeoutInterval = AppConstants.Sources.fetchTimeout
 
         let (data, response) = try await self.fetchSourceData(with: request)
         

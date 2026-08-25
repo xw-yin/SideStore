@@ -12,8 +12,12 @@ import CoreData
 final class UninstallAppOperation: BasePipelineOperation<InstallAppOperationContext, InstalledApp>, @unchecked Sendable {
     
     override func execute(parentProgress: Progress?) async throws -> InstalledApp {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[UninstallAppOperation] execute() started")
-        defer { debugLog("[UninstallAppOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[UninstallAppOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         guard let installedApp = self.context.installedApp else {
             throw OperationError.invalidParameters("UninstallAppOperation.main: self.context.installedApp is nil")

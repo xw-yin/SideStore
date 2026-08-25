@@ -29,13 +29,18 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
     }
     
     override func execute(parentProgress: Progress?) async throws -> InstalledApp {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[InstallAppOperation] execute() started")
         defer {
-            debugLog("[InstallAppOperation] execute() completed")
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[InstallAppOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
+        try await super.executePreconditionCheck(parentProgress: parentProgress)
+        
+        defer{
             self.cleanUp()
             self.removeRefreshedIPA()
         }
-        try await super.executePreconditionCheck(parentProgress: parentProgress)
         
         guard
             let certificate = context.overrideCertificate ?? context.authenticatedContext.signingCertificate,

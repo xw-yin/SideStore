@@ -64,8 +64,12 @@ final class FetchAnisetteDataOperation: BaseStandaloneOperation<AuthenticatedOpe
     }
     
     override func execute(parentProgress: Progress?) async throws -> ALTAnisetteData {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[FetchAnisetteDataOperation] execute() started")
-        defer { debugLog("[FetchAnisetteDataOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[FetchAnisetteDataOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         self.setProgress(10)
         
@@ -78,14 +82,12 @@ final class FetchAnisetteDataOperation: BaseStandaloneOperation<AuthenticatedOpe
         }
         
         self.setProgress(20)
-        /*
         if UserDefaults.standard.useOnDeviceAnisette {
             self.debugLog("[FetchAnisetteDataOperation] Fetching anisette via On-Device Anisette (ODA)...")
             let result = try await OnDeviceAnisetteManager.shared.fetchAnisetteData()
             self.setProgress(100)
             return result
         }
-        */
 
         let result = try await self.startProvisioningFlow()
         self.setProgress(100)

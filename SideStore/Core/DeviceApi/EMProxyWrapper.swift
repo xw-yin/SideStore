@@ -30,10 +30,10 @@ func startEMProxy(bind_addr: String = AppConstants.Proxy.serverURL) async throws
     let initialHandshakePeer = !overrideIp.isEmpty ? overrideIp : (ConnectionConfig.shared.tunnelPeerIp ?? "")
     let lockdowndPort = MinimuxerConstants.lockdowndPort
     
-    Minimuxer.emproxy.setHandshakeClient(host: initialHandshakePeer, port: lockdowndPort, enabled: !initialHandshakePeer.isEmpty)
+    minimuxer.emproxy.setHandshakeClient(host: initialHandshakePeer, port: lockdowndPort, enabled: !initialHandshakePeer.isEmpty)
     
     do {        
-        try await Minimuxer.emproxy.start(host: host, port: port)
+        try await minimuxer.emproxy.start(host: host, port: port)
     } catch {
         debugLog("[SideStore] startEMProxy() failed with error: \(error)")
         throw error
@@ -49,7 +49,7 @@ func stopEMProxy() async throws {
     debugLog("[SideStore] stopEMProxy() is no-op on simulator")
     #else
     do {
-        try await Minimuxer.emproxy.stop()
+        try await minimuxer.emproxy.stop()
     } catch {
         debugLog("[SideStore] stopEMProxy() failed with error: \(error)")
         throw error

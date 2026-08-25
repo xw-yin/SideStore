@@ -14,8 +14,12 @@ class FetchProvisioningProfilesOperation: BasePipelineOperation<InstallAppOperat
     // this class is abstract or shouldn't be extended outside, use the subclasses
     
     override func execute(parentProgress: Progress?) async throws -> [String: ALTProvisioningProfile] {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[FetchProvisioningProfilesOperation] execute() started")
-        defer { debugLog("[FetchProvisioningProfilesOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[FetchProvisioningProfilesOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         if let error = self.context.error {
             self.debugLog("[FetchProvisioningProfiles] Context has pre-existing error: \(error.localizedDescription)")

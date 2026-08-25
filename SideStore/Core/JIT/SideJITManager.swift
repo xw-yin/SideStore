@@ -13,44 +13,64 @@ public final class SideJITManager {
     
     private init() {}
     
+    public func resolveServerURL() async -> String {
+        if let address = UserDefaults.standard.textInputSideJITServerurl, !address.isEmpty {
+            return address
+        }
+        
+        if let resolved = await BonjourDiscoveryManagerV2.resolveFirstService(
+            ofType: AppConstants.SideJIT.bonjourServiceType,
+            namePrefix: AppConstants.SideJIT.bonjourServiceName,
+            timeout: AppConstants.SideJIT.timeout
+        ) {
+            let cleanHost = resolved.host.strippingInterfaceScope
+            let url = "http://\(cleanHost):\(resolved.port)"
+            debugLog("[SideJITManager] Discovered SideJITServer via Bonjour at: \(url)")
+            return url
+        }
+        
+        return AppConstants.SideJIT.defaultServerURL
+    }
+    
     public func askForNetwork() async {
-        let address = UserDefaults.standard.textInputSideJITServerurl ?? ""
-        let SJSURL = address.isEmpty ? "http://sidejitserver._http._tcp.local:8080" : address
+        let SJSURL = await resolveServerURL()
         guard let url = URL(string: "\(SJSURL)/re/") else { return }
         do {
             var request = URLRequest(url: url)
-            request.timeoutInterval = 2.0
+            request.timeoutInterval = AppConstants.SideJIT.timeout
             
             try await withThrowingTaskGroup(of: Void.self) { group in
                 group.addTask {
                     let (data, response) = try await URLSession.shared.data(for: request)
-                    debugLog("data: \(data), response: \(response)")
+                    let status = (response as? HTTPURLResponse)?.statusCode ?? 200
+                    debugLog("[SideJITManager] askForNetwork: received response from \(url) (status: \(status))")
                 }
                 group.addTask {
-                    try await Task.sleep(nanoseconds: 2_000_000_000) // 2.0 seconds
+                    try await Task.sleep(nanoseconds: UInt64(AppConstants.SideJIT.timeout * 1_000_000_000))
                     throw URLError(.timedOut)
                 }
                 try await group.next()
                 group.cancelAll()
             }
         } catch {
-            debugLog("error: \(error)")
+            debugLog("[SideJITManager] askForNetwork error: \(error)")
         }
     }
 
     public func isSideJITServerDetected() async throws {
-        let address = UserDefaults.standard.textInputSideJITServerurl ?? ""
-        let SJSURL = address.isEmpty ? "http://sidejitserver._http._tcp.local:8080" : address
+        let SJSURL = await resolveServerURL()
         guard let url = URL(string: SJSURL) else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
-        request.timeoutInterval = 2.0
+        request.timeoutInterval = AppConstants.SideJIT.timeout
         
         try await withThrowingTaskGroup(of: Void.self) { group in
             group.addTask {
-                _ = try await URLSession.shared.data(for: request)
+                let (_, response) = try await URLSession.shared.data(for: request)
+                let status = (response as? HTTPURLResponse)?.statusCode ?? 200
+                debugLog("[SideJITManager] SideJITServer detected at \(url) (status: \(status))")
             }
             group.addTask {
-                try await Task.sleep(nanoseconds: 2_000_000_000) // 2.0 seconds
+                try await Task.sleep(nanoseconds: UInt64(AppConstants.SideJIT.timeout * 1_000_000_000))
                 throw URLError(.timedOut)
             }
             try await group.next()
@@ -68,7 +88,7 @@ extension SideJITManager {
             message: "Would you like to enable SideJITServer",
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in UserDefaults.standard.sidejitenable = true })
+        alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in UserDefaults.standard.isSideJITServerEnabled = true })
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         presentingVC.present(alert, animated: true)
     }

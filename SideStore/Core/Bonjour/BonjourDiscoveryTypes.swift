@@ -129,3 +129,14 @@ public let commonKnownServiceTypes: [String: String] = [
     "_ws._tcp.":            "WebSocket Connection",
     "_wss._tcp.":           "Secure WebSocket Connection",
 ]
+
+public extension String {
+    // Strips the network interface scope suffix (e.g. "%en0", "%pdp_ip0") from an IP address or hostname.
+    var strippingInterfaceScope: String {
+        if let percentIndex = self.firstIndex(of: "%") {
+            return String(self[..<percentIndex])
+        }
+        return self
+    }
+}
+

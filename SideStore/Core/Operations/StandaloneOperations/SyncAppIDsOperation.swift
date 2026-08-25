@@ -13,8 +13,12 @@ import CoreData
 final class SyncAppIDsOperation: BaseStandaloneOperation<AuthenticatedOperationContext, Void>, @unchecked Sendable {
     
     override func execute(parentProgress: Progress?) async throws -> Void {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[SyncAppIDsOperation] execute() started")
-        defer { debugLog("[SyncAppIDsOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[SyncAppIDsOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         guard
             let team = self.context.team,

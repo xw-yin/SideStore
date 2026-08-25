@@ -112,6 +112,10 @@ public final class AuthManager: @unchecked Sendable {
 fileprivate extension DatabaseManager {
     //TODO: this is not clean, but for now this should be fine, ie we should later make this proper async instead of blocking
     func deactivateActiveAccountAndTeam() {
+        guard self.isStarted else {
+            debugLog("[AuthManager] DatabaseManager is not started. Skipping CoreData active account/team deactivation.")
+            return
+        }
         let bgContext = self.persistentContainer.newBackgroundContext()
         bgContext.performAndWait {
             if let account = self.activeAccount(in: bgContext) {

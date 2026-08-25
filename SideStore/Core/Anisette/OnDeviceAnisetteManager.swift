@@ -382,21 +382,29 @@ public actor OnDeviceAnisetteManager {
         return loaded
     }
 
+    private func resolveDeviceIdentifier() -> UUID {
+        if let storedId = AnisetteDataManager.shared.anisetteIdentifier {
+            if let parsed = UUID(uuidString: storedId) {
+                debugLog("[OnDeviceAnisetteManager] [Fetch] Using existing device UUID: \(parsed.uuidString)")
+                return parsed
+            }
+            if let data = Data(base64Encoded: storedId), data.count == 16 {
+                let uuid = data.withUnsafeBytes { UUID(uuid: $0.load(as: uuid_t.self)) }
+                debugLog("[OnDeviceAnisetteManager] [Fetch] Using existing base64-encoded device UUID: \(uuid.uuidString)")
+                return uuid
+            }
+        }
+        let generated = UUID()
+        AnisetteDataManager.shared.anisetteIdentifier = generated.uuidString
+        debugLog("[OnDeviceAnisetteManager] [Fetch] Generated new device UUID: \(generated.uuidString)")
+        return generated
+    }
+
     public func fetchAnisetteData() async throws -> ALTAnisetteData {
         debugLog("[OnDeviceAnisetteManager] [Fetch] Fetching on-device Anisette headers...")
         let provider = try await ensureProviderLoaded()
 
-        let identifierUUID: UUID
-        if let storedId = AnisetteDataManager.shared.anisetteIdentifier,
-           let parsed = UUID(uuidString: storedId) {
-            identifierUUID = parsed
-            debugLog("[OnDeviceAnisetteManager] [Fetch] Using existing device UUID: \(identifierUUID.uuidString)")
-        } else {
-            let generated = UUID()
-            AnisetteDataManager.shared.anisetteIdentifier = generated.uuidString
-            identifierUUID = generated
-            debugLog("[OnDeviceAnisetteManager] [Fetch] Generated new device UUID: \(identifierUUID.uuidString)")
-        }
+        let identifierUUID = resolveDeviceIdentifier()
 
         var existingAdiPbData: Data? = nil
         if let base64Blob = AnisetteDataManager.shared.anisetteAdiBlob,
@@ -462,15 +470,7 @@ public actor OnDeviceAnisetteManager {
         debugLog("[OnDeviceAnisetteManager] [Disk Fetch] Fetching disk-backed Anisette headers...")
         let provider = try await ensureProviderLoaded()
 
-        let identifierUUID: UUID
-        if let storedId = AnisetteDataManager.shared.anisetteIdentifier,
-           let parsed = UUID(uuidString: storedId) {
-            identifierUUID = parsed
-        } else {
-            let generated = UUID()
-            AnisetteDataManager.shared.anisetteIdentifier = generated.uuidString
-            identifierUUID = generated
-        }
+        let identifierUUID = resolveDeviceIdentifier()
 
         let headers = try await provider.getHeaders(identifier: identifierUUID, storage: .disk).headers
         let config = await AnisetteConfigManager.shared.loadConfig()

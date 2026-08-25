@@ -61,7 +61,6 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
 
     private var _imagePickerInstalledApp: InstalledApp?
     private var _viewDidAppear = false
-
     private var minimuxerStatusCheckTask: Task<Void, Never>?
 
     // Cache
@@ -1597,10 +1596,6 @@ private extension MyAppsViewController
     }
 
     func enableJIT(for installedApp: InstalledApp) {
-        guard UserDefaults.standard.sidejitenable else {
-            debugLog("MyAppsViewController: userdefaults for 'sidejitenable' was not enabled")
-            return
-        }
         AppManager.shared.enableJIT(for: installedApp) { result in
             DispatchQueue.main.async {
                 switch result {
@@ -1630,7 +1625,6 @@ private extension MyAppsViewController
         self.loadViewIfNeeded()
 
         guard let url = notification.userInfo?[AppDelegate.importAppDeepLinkURLKey] as? URL else { return }
-
         let cleanup = {
             guard url.isFileURL else { return }
             do

@@ -9,14 +9,13 @@
 /* Begin PBXBuildFile section */
 		A809CCB53033E85E005DF922 /* AnisetteKit in Frameworks */ = {isa = PBXBuildFile; productRef = A809CCB43033E85E005DF922 /* AnisetteKit */; };
 		A84596F62F7DC4C90000B8CD /* SideStore.conf in Resources */ = {isa = PBXBuildFile; fileRef = A84596F52F7DC4C90000B8CD /* SideStore.conf */; };
-		A8C37026302DA7BA0010213A /* Minimuxer in Frameworks */ = {isa = PBXBuildFile; productRef = A8C37025302DA7BA0010213A /* Minimuxer */; };
+		A87939D3303A89CA004D9227 /* Minimuxer in Frameworks */ = {isa = PBXBuildFile; productRef = A87939D2303A89CA004D9227 /* Minimuxer */; };
+		A87939D6303A89EB004D9227 /* AltSign-Static in Frameworks */ = {isa = PBXBuildFile; productRef = A87939D5303A89EB004D9227 /* AltSign-Static */; };
 		A8C37029302DA7F30010213A /* MarkdownKit in Frameworks */ = {isa = PBXBuildFile; productRef = A8C37028302DA7F30010213A /* MarkdownKit */; };
 		A8C3702C302DA80D0010213A /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = A8C3702B302DA80D0010213A /* KeychainAccess */; };
 		A8C3702F302DA82A0010213A /* Nuke in Frameworks */ = {isa = PBXBuildFile; productRef = A8C3702E302DA82A0010213A /* Nuke */; };
 		A8C37035302DA84D0010213A /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = A8C37034302DA84D0010213A /* Starscream */; };
 		A8C37039302DA8D90010213A /* SemanticVersion in Frameworks */ = {isa = PBXBuildFile; productRef = A8C37038302DA8D90010213A /* SemanticVersion */; };
-		A8C38DEC302DB4E40010213A /* AltSign-Dynamic in Frameworks */ = {isa = PBXBuildFile; productRef = A8C38DEB302DB4E40010213A /* AltSign-Dynamic */; };
-		A8C38DED302DB4E40010213A /* AltSign-Dynamic in Embed Frameworks */ = {isa = PBXBuildFile; productRef = A8C38DEB302DB4E40010213A /* AltSign-Dynamic */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		BF989177250AABF4002ACF50 /* AltWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BF989167250AABF3002ACF50 /* AltWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -44,7 +43,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				A8C38DED302DB4E40010213A /* AltSign-Dynamic in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -167,13 +165,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A809CCB53033E85E005DF922 /* AnisetteKit in Frameworks */,
-				A8C37026302DA7BA0010213A /* Minimuxer in Frameworks */,
 				A8C37029302DA7F30010213A /* MarkdownKit in Frameworks */,
 				A8C3702C302DA80D0010213A /* KeychainAccess in Frameworks */,
 				A8C3702F302DA82A0010213A /* Nuke in Frameworks */,
 				A8C37035302DA84D0010213A /* Starscream in Frameworks */,
-				A8C38DEC302DB4E40010213A /* AltSign-Dynamic in Frameworks */,
+				A87939D6303A89EB004D9227 /* AltSign-Static in Frameworks */,
 				A8C37039302DA8D90010213A /* SemanticVersion in Frameworks */,
+				A87939D3303A89CA004D9227 /* Minimuxer in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -279,14 +277,14 @@
 			);
 			name = SideStore;
 			packageProductDependencies = (
-				A8C37025302DA7BA0010213A /* Minimuxer */,
 				A8C37028302DA7F30010213A /* MarkdownKit */,
 				A8C3702B302DA80D0010213A /* KeychainAccess */,
 				A8C3702E302DA82A0010213A /* Nuke */,
 				A8C37034302DA84D0010213A /* Starscream */,
 				A8C37038302DA8D90010213A /* SemanticVersion */,
-				A8C38DEB302DB4E40010213A /* AltSign-Dynamic */,
 				A809CCB43033E85E005DF922 /* AnisetteKit */,
+				A87939D2303A89CA004D9227 /* Minimuxer */,
+				A87939D5303A89EB004D9227 /* AltSign-Static */,
 			);
 			productName = AltStore;
 			productReference = BFD2476A2284B9A500981D42 /* SideStore.app */;
@@ -335,13 +333,13 @@
 			mainGroup = BFD247612284B9A500981D42;
 			packageReferences = (
 				A8C37021302DA7A70010213A /* XCLocalSwiftPackageReference "Dependencies/AltSign" */,
-				A8C37024302DA7BA0010213A /* XCLocalSwiftPackageReference "Dependencies/minimuxer" */,
 				A8C37027302DA7F30010213A /* XCRemoteSwiftPackageReference "MarkdownKit" */,
 				A8C3702A302DA80D0010213A /* XCRemoteSwiftPackageReference "KeychainAccess" */,
 				A8C3702D302DA82A0010213A /* XCRemoteSwiftPackageReference "Nuke" */,
 				A8C37033302DA84D0010213A /* XCRemoteSwiftPackageReference "Starscream" */,
 				A8C37037302DA8D90010213A /* XCRemoteSwiftPackageReference "SemanticVersion" */,
 				A809CCB33033E85E005DF922 /* XCRemoteSwiftPackageReference "AnisetteKit" */,
+				A87939D1303A89C9004D9227 /* XCLocalSwiftPackageReference "Dependencies/minimuxer" */,
 			);
 			productRefGroup = BFD2476B2284B9A500981D42 /* Products */;
 			projectDirPath = "";
@@ -850,13 +848,13 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		A87939D1303A89C9004D9227 /* XCLocalSwiftPackageReference "Dependencies/minimuxer" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Dependencies/minimuxer;
+		};
 		A8C37021302DA7A70010213A /* XCLocalSwiftPackageReference "Dependencies/AltSign" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Dependencies/AltSign;
-		};
-		A8C37024302DA7BA0010213A /* XCLocalSwiftPackageReference "Dependencies/minimuxer" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Dependencies/minimuxer;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -917,9 +915,14 @@
 			package = A809CCB33033E85E005DF922 /* XCRemoteSwiftPackageReference "AnisetteKit" */;
 			productName = AnisetteKit;
 		};
-		A8C37025302DA7BA0010213A /* Minimuxer */ = {
+		A87939D2303A89CA004D9227 /* Minimuxer */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Minimuxer;
+		};
+		A87939D5303A89EB004D9227 /* AltSign-Static */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A8C37021302DA7A70010213A /* XCLocalSwiftPackageReference "Dependencies/AltSign" */;
+			productName = "AltSign-Static";
 		};
 		A8C37028302DA7F30010213A /* MarkdownKit */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -945,11 +948,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A8C37037302DA8D90010213A /* XCRemoteSwiftPackageReference "SemanticVersion" */;
 			productName = SemanticVersion;
-		};
-		A8C38DEB302DB4E40010213A /* AltSign-Dynamic */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A8C37021302DA7A70010213A /* XCLocalSwiftPackageReference "Dependencies/AltSign" */;
-			productName = "AltSign-Dynamic";
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
