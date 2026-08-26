@@ -85,10 +85,6 @@ public final class AppBootManager: @unchecked Sendable {
                 }
             }
             debugLog("[AppBootManager] Minimuxer startup task completed")
-
-            Task.detached { [weak self] in
-                await self?.validateMinimuxerConnection()
-            }
         } catch {
             if error.isMinimuxerPairingFile {
                 needsPairingPrompt = true
@@ -150,17 +146,6 @@ public final class AppBootManager: @unchecked Sendable {
         #endif
     }
 
-    private nonisolated func validateMinimuxerConnection() async {
-        do {
-            _ = try await fetchUDID()
-            self.needsPairingPrompt = false
-        } catch {
-            if error.isMinimuxerPairingFile {
-                self.needsPairingPrompt = true
-            }
-        }
-    }
-    
     public nonisolated func performBootSequence() async {
         debugLog("[AppBootManager] performBootSequence() entered")
         defer {
