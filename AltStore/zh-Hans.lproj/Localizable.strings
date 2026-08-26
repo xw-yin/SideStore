@@ -3,6 +3,7 @@
 "Choose your preferred language:" = "选择您偏好的语言：";
 "System Default" = "系统默认";
 "Cancel" = "取消";
+"Authenticated" = "登录成功";
 "DISPLAY" = "外观";
 "Personalize your SideStore experience by choosing an alternate app icon." = "选择您喜欢的图标来自定义 SideStore。";
 "Installed" = "已安装";
@@ -124,6 +125,7 @@
 "Confirm" = "确认";
 "Connect to a Wi-Fi network, Bridge or a Wired network connection!" = "请连接 Wi-Fi、网桥或有线网络！";
 "Continue" = "继续";
+"Developer Portal Error" = "开发者门户错误";
 "Copy Error Code" = "复制错误代码";
 "Copy Error Message" = "复制错误信息";
 "Could not back up “%@”." = "无法备份“%@”。";
@@ -160,6 +162,7 @@
 "Errors that occur when sideloading or refreshing apps will appear here." = "侧载或刷新 App 时发生的错误会显示在这里。";
 "Expires in" = "到期时间";
 "Expires in %@" = "%@ 后到期";
+"Expires: %@" = "到期时间：%@";
 "Export" = "导出";
 "Export Certificate" = "导出证书";
 "Failed to Activate %@" = "无法启用 %@";
@@ -185,6 +188,8 @@
 "Failed to refresh Source '%@'" = "刷新来源“%@”失败";
 "Failed to refresh Store" = "刷新商店失败";
 "Failed to Resign %@" = "无法重签 %@";
+"Failed to Resign SideStore" = "重签 SideStore 失败";
+"Failed to Sign In" = "登录失败";
 "Failed to Restore %@ Backup" = "无法还原 %@ 的备份";
 "Failed to Update %@" = "无法更新 %@";
 "Failure" = "失败";
@@ -289,6 +294,7 @@
 "Sign Out" = "退出登录";
 "SIGNING" = "签名";
 "Signing certificate mismatch detected." = "检测到签名证书不匹配。";
+"Serial: %@" = "序列号：%@";
 "Sort by…" = "排序方式…";
 "Sources determine what apps are available in SideStore. The more sources you add, the better your SideStore experience will be.\n\nDon’t know where to start? Try adding one of our Recommended Sources!" = "来源决定 SideStore 中可用的 App。添加的来源越多，可发现的 App 就越丰富。\n\n不知道从哪里开始？试试添加推荐来源！";
 "Success" = "成功";
@@ -626,6 +632,9 @@
 "Set Certificate Confirmation" = "设置证书确认";
 "Revoke Certificate" = "吊销证书";
 "Revoke Certificates" = "吊销证书";
+"Revoke" = "吊销";
+"Revoke Selected" = "吊销所选证书";
+"Revoke Selected (%d)" = "吊销所选证书（%d）";
 "Revoke and Resign Now" = "立即吊销并重签";
 "Select iOS Development certificate(s) to revoke:" = "选择要吊销的 iOS 开发证书：";
 "Set & Resign" = "设置并重签";
@@ -638,6 +647,9 @@
 "The signing certificate used to install “%@” has expired. Please re-sign or reinstall the app." = "安装“%@”所使用的签名证书已过期。请重新签名或重新安装该 App。";
 "The signing certificate used to install “%@” was revoked on the Apple Developer portal. Please re-sign or reinstall the app." = "安装“%@”所使用的签名证书已在 Apple 开发者后台被吊销。请重新签名或重新安装该 App。";
 "The provisioning profile for SideStore is missing or invalid." = "SideStore 的描述文件丢失或无效。";
+"Teams" = "团队";
+"WARNING: Outdated anisette server" = "警告：Anisette 服务器版本过旧";
+"We've detected you are using an older anisette server. Using this server has a higher likelihood of locking your account and causing other issues. Are you sure you want to continue?" = "检测到你正在使用旧版 Anisette 服务器。继续使用可能增加账户被锁定或发生其他问题的风险。确定要继续吗？";
 "Keychain item not found." = "找不到钥匙串项目。";
 "Keychain item already exists." = "钥匙串项目已存在。";
 "Keychain authentication failed." = "钥匙串身份验证失败。";

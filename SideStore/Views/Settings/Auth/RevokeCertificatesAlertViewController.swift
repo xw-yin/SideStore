@@ -78,14 +78,19 @@ class RevokeCertificatesAlertViewController: UIViewController {
             titleLabel.numberOfLines = 1
 
             let serialLabel = UILabel()
-            serialLabel.text = "Serial: \(cert.serialNumber)"
+            serialLabel.text = String(
+                format: NSLocalizedString("Serial: %@", comment: ""),
+                cert.serialNumber
+            )
             serialLabel.font = .systemFont(ofSize: 11, weight: .regular)
             serialLabel.textColor = .secondaryLabel
             serialLabel.numberOfLines = 1
 
             let expLabel = UILabel()
-            let expDate = cert.expiryDate != Date.distantPast ? ISO8601DateFormatter().string(from: cert.expiryDate) : "Unknown"
-            expLabel.text = "Expires: \(expDate.prefix(10))"
+            let expDate = cert.expiryDate != Date.distantPast ?
+                DateFormatter.localizedString(from: cert.expiryDate, dateStyle: .medium, timeStyle: .none) :
+                NSLocalizedString("Unknown", comment: "")
+            expLabel.text = String(format: NSLocalizedString("Expires: %@", comment: ""), expDate)
             expLabel.font = .systemFont(ofSize: 11, weight: .regular)
             expLabel.textColor = .secondaryLabel
             expLabel.numberOfLines = 1

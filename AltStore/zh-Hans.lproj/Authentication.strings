@@ -3,7 +3,9 @@
 "59N-O1-6bM.text" = "APPLE ID";
 "DBu-vt-hlo.placeholder" = "name@email.com";
 "Ava-XY-7vs.text" = "密码";
+"2N5-zd-fUj.normalTitle" = "登录";
 "p9U-0q-Kn8.text" = "为什么需要这些信息？";
+"on2-62-waY.text" = "Apple ID 用于配置 App，以便将其安装到此设备。你的登录凭据将安全存储在设备钥匙串中，并且仅发送给 Apple 进行身份验证。";
 "nDc-Zs-wnK.title" = "关闭";
 "XKD-XH-eB0.text" = "启动 SideStore";
 "6HP-Xh-sAH.text" = "让 SideStore 在设备后台保持运行。";
@@ -13,8 +15,11 @@
 "M7T-9j-uyt.text" = "直接从 SideStore 浏览和下载 App。";
 "nvb-Aq-sYa.text" = "App 自动刷新";
 "HU5-Hv-E3d.text" = "连接 SideStore VPN 时，App 会在后台刷新。";
+"qZ9-AR-2zK.normalTitle" = "知道了";
 "bCq-Jq-gf1.title" = "工作原理";
-"5nk-NR-jtV.title" = "刷新 SideStore";
+"xcg-hT-tDe.normalTitle" = "立即重签";
+"qua-VA-asJ.normalTitle" = "稍后重签";
+"5nk-NR-jtV.title" = "重签 SideStore";
 "6ip-34-gmM.text" = "团队 1";
 "knk-Wf-PKf.text" = "说明";
 "qxJ-Go-OPq.title" = "选择团队";
