@@ -25,6 +25,7 @@ extension AppManager
     static let willInstallAppFromNewSourceNotification = Notification.Name("io.sidestore.AppManager.willInstallAppFromNewSource")
     
     static let expirationWarningNotificationID = "sidestore-expiration-warning"
+    static let expirationWarningDateKey = "sidestore-expiration-date"
     static let enableJITResultNotificationID = "sidestore-enable-jit"
 }
 
@@ -1024,5 +1025,4 @@ extension AppManager: PipelineProgress, PipelineExecutionContext, PipelineErrorL
     }
 
 }
-
 

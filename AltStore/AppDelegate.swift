@@ -692,6 +692,21 @@ private extension AppDelegate {
 
 extension AppDelegate: UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        if notification.request.identifier.hasPrefix(AppManager.expirationWarningNotificationID),
+           let scheduledTimestamp = notification.request.content.userInfo[AppManager.expirationWarningDateKey] as? TimeInterval
+        {
+            let runningBundleURL = Bundle.isBundledWithLiveContainer
+                ? Bundle.realMainBundle.bundleURL
+                : Bundle.Info.activeBundleURL
+            if let currentExpirationDate = ALTApplication(fileURL: runningBundleURL)?.provisioningProfile?.expirationDate,
+               abs(currentExpirationDate.timeIntervalSince1970 - scheduledTimestamp) > 60
+            {
+                debugLog("[AppDelegate] Suppressing stale expiration warning. Scheduled expiration: \(Date(timeIntervalSince1970: scheduledTimestamp)), current expiration: \(currentExpirationDate)")
+                completionHandler([])
+                return
+            }
+        }
+
         if #available(iOS 14.0, *) {
             completionHandler([.banner, .sound])
         } else {
