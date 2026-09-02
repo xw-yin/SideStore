@@ -9,7 +9,7 @@
 
 import Foundation
 import CryptoKit
-@preconcurrency import AltSign
+import SideSign
 
 import RegexBuilder
 
@@ -34,8 +34,12 @@ final class VerifyAppOperation: BasePipelineOperation<InstallAppOperationContext
     }
     
     override func execute(parentProgress: Progress?) async throws -> Bool {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[VerifyAppOperation] execute() started")
-        defer { debugLog("[VerifyAppOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[VerifyAppOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         guard let appBundle = self.context.targetAppBundle else {
             throw OperationError.invalidParameters("VerifyAppOperation: context.appBundle is nil")
@@ -116,7 +120,7 @@ final class VerifyAppOperation: BasePipelineOperation<InstallAppOperationContext
         // Do nothing if source doesn't provide hash.
         guard let expectedHash = await $appVersion.sha256 else { return }
 
-        let data = try Data(contentsOf: ipaURL)
+        let data = try Data(contentsOf: ipaURL, options: .alwaysMapped)
         let sha256Hash = SHA256.hash(data: data)
         let hashString = sha256Hash.compactMap { String(format: "%02x", $0) }.joined()
         
@@ -181,9 +185,9 @@ final class VerifyAppOperation: BasePipelineOperation<InstallAppOperationContext
             let installedAppURL = InstalledApp.fileURL(for: appBundle)
             guard let previousApp = ALTApplication(fileURL: installedAppURL) else { throw OperationError.appNotFound(name: appBundle.name) }
             
-            var previousEntitlements = Set(previousApp.entitlements.keys)
+            var previousEntitlements = Set(previousApp.entitlements.keys.map { ALTEntitlement(rawValue: $0) })
             for appExtension in previousApp.appExtensions {
-                previousEntitlements.formUnion(appExtension.entitlements.keys)
+                previousEntitlements.formUnion(appExtension.entitlements.keys.map { ALTEntitlement(rawValue: $0) })
             }
             
             // Make sure all entitlements already exist in previousApp.
@@ -206,14 +210,14 @@ final class VerifyAppOperation: BasePipelineOperation<InstallAppOperationContext
     }
 
     private func entitlements(for appBundle: ALTApplication) -> Set<ALTEntitlement> {
-        var allEntitlements = Set(appBundle.entitlements.keys)
+        var allEntitlements = Set(appBundle.entitlements.keys.map { ALTEntitlement(rawValue: $0) })
         for appExtension in appBundle.appExtensions {
-            allEntitlements.formUnion(appExtension.entitlements.keys)
+            allEntitlements.formUnion(appExtension.entitlements.keys.map { ALTEntitlement(rawValue: $0) })
         }
         
         allEntitlements = allEntitlements.filter { !ALTEntitlement.ignoredEntitlements.contains($0) }
         
-        if let isDebuggable = appBundle.entitlements[.getTaskAllow] as? Bool, !isDebuggable {
+        if let isDebuggable = appBundle.entitlements[ALTEntitlement.getTaskAllow.rawValue] as? Bool, !isDebuggable {
             allEntitlements.remove(.getTaskAllow)
         }
         
@@ -223,7 +227,7 @@ final class VerifyAppOperation: BasePipelineOperation<InstallAppOperationContext
     private func privacyPermissions(for appBundle: ALTApplication) -> [ALTAppPrivacyPermission] {
         return ([appBundle] + appBundle.appExtensions).flatMap { (app) in
             let permissions = app.bundle.infoDictionary?.keys.compactMap { key -> ALTAppPrivacyPermission? in
-                if #available(iOS 16, *) {
+                if #available(iOS 16, tvOS 16, *) {
                     guard key.wholeMatch(of: Regex.privacyPermission) != nil else { return nil }
                 } else {
                     guard key.contains("UsageDescription") else { return nil }
@@ -245,7 +249,7 @@ final class VerifyAppOperation: BasePipelineOperation<InstallAppOperationContext
             if sourcePermissions.contains(AnyHashable(permission)) {
                 return false
             } else if permission.type == .privacy {
-                guard #available(iOS 16, *) else {
+                guard #available(iOS 16, tvOS 16, *) else {
                     return false
                 }
                 

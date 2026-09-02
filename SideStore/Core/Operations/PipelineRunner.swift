@@ -8,7 +8,7 @@
 
 @preconcurrency import UIKit
 @preconcurrency import WidgetKit
-@preconcurrency import AltSign
+import SideSign
 
 
 protocol PipelineProgress: Sendable{

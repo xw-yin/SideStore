@@ -261,11 +261,7 @@ struct PipelineStepDefinition {
 
 struct StandaloneStepDefinition {
     static let authenticate: [StandaloneExecutionStep] = [
-        // we expect upto INF anisette fetch calls (coz user might keep retrying auth) and each can use 10% of child 
-        // so we say it is max reusable upto INF and also everytime this operation is rerun, reset progress by its budget and continue
-        // pipeline-op still requires explicit 1 time declaration in steps definition!...
-        StandaloneExecutionStep(.authentication,    90),
-        StandaloneExecutionStep(.fetchAnisetteData, 10, maxReuse: .max, resetProgress: true)
+        StandaloneExecutionStep(.authentication, 100)
     ]
 
     static let backgroundRefreshApps: [StandaloneExecutionStep] = [

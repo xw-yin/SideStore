@@ -7,7 +7,7 @@
 //
 
 import Foundation
-@preconcurrency import AltSign
+import SideSign
 
 extension OperationError
 {
@@ -65,6 +65,10 @@ extension OperationError
 
         case invalidOperationContext
         case sideStoreBundleIDMismatch
+        case missingAppBundle
+        case missingInfoPlist
+        case missingProvisioningProfile
+        case appIDUnavailable
     }
     
     static var cancelled: CancellationError { CancellationError() }
@@ -77,6 +81,10 @@ extension OperationError
     static let notAuthenticated: OperationError = .init(code: .notAuthenticated)
     static let unknownUDID: OperationError = .init(code: .unknownUDID)
     static let invalidApp: OperationError = .init(code: .invalidApp)
+    static let missingAppBundle: OperationError = .init(code: .missingAppBundle)
+    static let missingInfoPlist: OperationError = .init(code: .missingInfoPlist)
+    static let missingProvisioningProfile: OperationError = .init(code: .missingProvisioningProfile)
+    static let appIDUnavailable: OperationError = .init(code: .appIDUnavailable)
     static let noSources: OperationError = .init(code: .noSources)
     static let missingAppGroup: OperationError = .init(code: .missingAppGroup)
     
@@ -245,6 +253,10 @@ struct OperationError: ALTLocalizedError {
         case .notAuthenticated: return NSLocalizedString("You are not signed in.", comment: "")
         case .unknownUDID: return NSLocalizedString("SideStore could not determine this device's UDID. Please replace your pairing using iloader.", comment: "")
         case .invalidApp: return NSLocalizedString("The app is in an invalid format.", comment: "")
+        case .missingAppBundle: return NSLocalizedString("The app bundle could not be found.", comment: "")
+        case .missingInfoPlist: return NSLocalizedString("The app's Info.plist could not be found.", comment: "")
+        case .missingProvisioningProfile: return NSLocalizedString("A provisioning profile for the app could not be found.", comment: "")
+        case .appIDUnavailable: return NSLocalizedString("The App ID is unavailable on the developer portal.", comment: "")
         case .maximumAppIDLimitReached: return NSLocalizedString("Cannot register more than 10 App IDs within a 7 day period.", comment: "")
         case .noSources: return NSLocalizedString("There are no SideStore sources.", comment: "")
         case .missingAppGroup: return NSLocalizedString("SideStore's shared app group could not be accessed.", comment: "")

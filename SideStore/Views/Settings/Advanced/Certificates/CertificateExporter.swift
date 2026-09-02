@@ -7,7 +7,7 @@
 //
 
 @preconcurrency import UIKit
-@preconcurrency import AltSign
+import SideSign
 
 enum CertificateExporter {
     

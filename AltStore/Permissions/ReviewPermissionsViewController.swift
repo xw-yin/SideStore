@@ -9,7 +9,7 @@
 @preconcurrency import UIKit
 import SwiftUI
 
-@preconcurrency import AltSign
+import SideSign
 
 @available(iOS 15, *)
 extension ReviewPermissionsViewController

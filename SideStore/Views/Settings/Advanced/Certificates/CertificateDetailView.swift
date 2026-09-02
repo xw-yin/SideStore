@@ -7,7 +7,7 @@
 //
 
 import SwiftUI
-@preconcurrency import AltSign
+import SideSign
 
 struct DeveloperPortalMetadata {
     var identifier: String?

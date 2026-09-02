@@ -8,7 +8,7 @@
 
 import Foundation
 @preconcurrency import UIKit
-@preconcurrency import AltSign
+import SideSign
 
 class RevokeCertificatesAlertViewController: UIViewController {
     let certificates: [ALTX509Certificate]

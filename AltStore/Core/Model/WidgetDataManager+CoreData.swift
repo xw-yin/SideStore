@@ -8,7 +8,7 @@
 
 @preconcurrency import UIKit
 import CoreData
-@preconcurrency import AltSign
+import SideSign
 
 extension WidgetDataManager {
     public static func publishCurrentInstalledAppsIfNeeded(in context: NSManagedObjectContext) async {

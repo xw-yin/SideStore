@@ -9,7 +9,7 @@
 import Foundation
 import CoreData
 @preconcurrency import UIKit
-@preconcurrency import AltSign
+import SideSign
 import UserNotifications
 import MobileCoreServices
 import Intents

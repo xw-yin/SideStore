@@ -8,13 +8,17 @@
 
 @preconcurrency import UIKit
 import Foundation
-@preconcurrency import AltSign
+import SideSign
 
 final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext, ALTApplication>, @unchecked Sendable {
     
     override func execute(parentProgress: Progress?) async throws -> ALTApplication {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[ResignAppOperation] execute() started")
-        defer { debugLog("[ResignAppOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[ResignAppOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         
         guard
@@ -61,7 +65,9 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
         return resignedAppBundle
     }
 
+    
     private func prepareAppBundle(for targetAppBundle: ALTApplication, profiles: [String: ALTProvisioningProfile], appexBundleIds: [String: String]) async throws -> URL {
+
         let bundleIdentifier = context.targetBundleIdentifier
         let finalBundleIdentifier: String
         if let profile = context.useMainProfile ? profiles.values.first : profiles[bundleIdentifier] {
@@ -82,8 +88,8 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
             try FileManager.default.copyItem(at: fileURL, to: appBundleURL)
         }
         
-        guard let appBundle = Bundle(url: appBundleURL) else { throw ALTError(.missingAppBundle) }
-        guard let infoDictionary = appBundle.completeInfoDictionary else { throw ALTError(.missingInfoPlist) }
+        guard let appBundle = Bundle(url: appBundleURL) else { throw OperationError.missingAppBundle }
+        guard let infoDictionary = appBundle.completeInfoDictionary else { throw OperationError.missingInfoPlist }
         
         // replace scheme targets to match the bundle suffix so multiple instances can be correctly routed for helper apps like SideBackup
         var allURLSchemes = infoDictionary[Bundle.Info.urlTypes] as? [[String: Any]] ?? []
@@ -134,7 +140,7 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
                 }
                 #endif
                 
-                guard let appExtension = Bundle(url: fileURL) else { throw ALTError(.missingAppBundle) }
+                guard let appExtension = Bundle(url: fileURL) else { throw OperationError.missingAppBundle }
                 let updatedAppExBundleId = appExtension.bundleIdentifier?.replacingOccurrences(of: targetAppBundle.bundleIdentifier, with: bundleIdentifier)
                 try self.prepare(appExtension, bundleID: updatedAppExBundleId, profiles: profiles, appexBundleIds: appexBundleIds)
             }
@@ -145,13 +151,13 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
     
     private func prepare(_ bundle: Bundle, bundleID identifier: String?, additionalInfoDictionaryValues: [String: Any] = [:], profiles: [String: ALTProvisioningProfile], appexBundleIds: [String: String]) throws {
         guard let identifier else {
-            throw ALTError(.missingAppBundle)
+            throw OperationError.missingAppBundle
         }
         guard let profile = context.useMainProfile ? profiles.values.first : profiles[identifier] else {
-            throw ALTError(.missingProvisioningProfile)
+            throw OperationError.missingProvisioningProfile
         }
         guard var infoDictionary = bundle.completeInfoDictionary else {
-            throw ALTError(.missingInfoPlist)
+            throw OperationError.missingInfoPlist
         }
         
         if let forcedBundleIdentifier = appexBundleIds[identifier] {
@@ -205,7 +211,7 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
     
     private func resignAppBundle(at fileURL: URL, team: ALTTeam, certificate: ALTCertificate, profiles: [ALTProvisioningProfile]) async throws -> URL {
         let signer = ALTSigner(team: team, certificate: certificate)
-        try await signer.signApp(at: fileURL, provisioningProfiles: profiles, parentProgress: self.progress)
+        try await signer.signApp(at: fileURL, provisioningProfiles: profiles, progress: self.progress)
         return try FileManager.default.zipAppBundle(at: fileURL)
     }
     
@@ -230,20 +236,5 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
         
         // Save updated Manifest.plist to disk.
         try manifestPlist.write(to: manifestPlistURL)
-    }
-}
-
-extension ALTSigner {
-    func signApp(at fileURL: URL, provisioningProfiles: [ALTProvisioningProfile], parentProgress: Progress) async throws {
-        try await withCheckedThrowingContinuation { continuation in
-            let progress = self.signApp(at: fileURL, provisioningProfiles: provisioningProfiles) { (success, error) in
-                if success {
-                    continuation.resume(returning: ())
-                } else {
-                    continuation.resume(throwing: error ?? OperationError.unknown())
-                }
-            }
-            parentProgress.addChild(progress, withPendingUnitCount: 50)
-        }
     }
 }

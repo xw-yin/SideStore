@@ -1,13 +1,31 @@
 {
-  "originHash" : "732a7b8c180db86e8b578e60e078fd4d9899590102f45d1ff31d175394bf690e",
+  "originHash" : "69ef50e98469f665fd222dd23c3fdcdd9d71e0ff7e9c23097cb0742a7b0fc571",
   "pins" : [
     {
       "identity" : "anisettekit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mahee96/AnisetteKit",
+      "location" : "https://github.com/mahee96/AnisetteKit.git",
       "state" : {
         "branch" : "main",
-        "revision" : "57a20dcd95c2680865187a8e210bd2d4b2f58c58"
+        "revision" : "433084d91c1ddbca84f988f0e3b204eedc0fda27"
+      }
+    },
+    {
+      "identity" : "codesignkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mahee96/CodeSignKit.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "c242c59255bd4ef465b535da7cbd21f1cce2e51f"
+      }
+    },
+    {
+      "identity" : "gsacryptokit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mahee96/GSACryptoKit.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "e7dd1055d684a62456de8c382e14743f06e6ecba"
       }
     },
     {
@@ -29,6 +47,15 @@
       }
     },
     {
+      "identity" : "minizip-ng",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SideStore/minizip-ng",
+      "state" : {
+        "branch" : "develop",
+        "revision" : "12a8ab8ccac4a36d4a45340921c7de5f18b0efab"
+      }
+    },
+    {
       "identity" : "nuke",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/kean/Nuke",
@@ -43,7 +70,7 @@
       "location" : "https://github.com/mahee96/RemotePairingKit.git",
       "state" : {
         "branch" : "main",
-        "revision" : "e72cd0272ab7b4548b5cd22ed4a81008b2b52717"
+        "revision" : "7b9d269ec64027d73a50faa917cb18fa218c1fc9"
       }
     },
     {
@@ -62,6 +89,24 @@
       "state" : {
         "revision" : "c6bfd1af48efcc9a9ad203665db12375ba6b145a",
         "version" : "4.0.8"
+      }
+    },
+    {
+      "identity" : "swift-asn1",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-asn1.git",
+      "state" : {
+        "revision" : "9f542610331815e29cc3821d3b6f488db8715517",
+        "version" : "1.6.0"
+      }
+    },
+    {
+      "identity" : "swift-crypto",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-crypto.git",
+      "state" : {
+        "revision" : "bb4ba815dab96d4edc1e0b86d7b9acf9ff973a84",
+        "version" : "4.3.1"
       }
     },
     {

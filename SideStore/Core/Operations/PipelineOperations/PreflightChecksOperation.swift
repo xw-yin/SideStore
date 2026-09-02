@@ -8,7 +8,7 @@
 
 
 import Foundation
-@preconcurrency import AltSign
+import SideSign
 
 final class PreflightChecksOperation: BasePipelineOperation<AuthenticatedOperationContext, Bool>, @unchecked Sendable {
     let operations: [AppOperation]

@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import AnisetteKit
+import SideSign
 
 public struct AnisetteConfig: Codable, Equatable {
     public var clientInfo: String
@@ -84,8 +86,8 @@ public actor AnisetteConfigManager {
         }
         // Fallback to static defaults in FetchAnisetteDataOperation
         return AnisetteConfig(
-            clientInfo: FetchAnisetteDataOperation.defaultClientInfo,
-            userAgent: FetchAnisetteDataOperation.defaultUserAgent
+            clientInfo: AppConstants.Anisette.defaultClientInfo,
+            userAgent: AppConstants.Anisette.defaultUserAgent
         )
     }
 
@@ -150,8 +152,8 @@ public actor AnisetteConfigManager {
     
     public func resetToDefaults() -> AnisetteConfig {
         let config = AnisetteConfig(
-            clientInfo: FetchAnisetteDataOperation.defaultClientInfo,
-            userAgent: FetchAnisetteDataOperation.defaultUserAgent
+            clientInfo: AppConstants.Anisette.defaultClientInfo,
+            userAgent: AppConstants.Anisette.defaultUserAgent
         )
         saveConfig(config)
         return config

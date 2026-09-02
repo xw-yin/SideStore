@@ -10,7 +10,7 @@
 import Foundation
 import CoreData
 import Network
-@preconcurrency import AltSign
+import SideSign
 
 
 enum AlternateIconMode {
@@ -337,6 +337,7 @@ class InstallAppOperationContext: AppOperationContext
     var installedApp: InstalledApp?
     var releaseTrack: ReleaseTrack?
     var additionalEntitlements: [ALTEntitlement: any Sendable] = [:]
+    var appendTeamID: Bool = false
     
     var beginInstallationHandler: ((InstalledApp) -> Void)?
 

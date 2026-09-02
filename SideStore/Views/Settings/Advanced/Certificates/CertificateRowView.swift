@@ -7,7 +7,7 @@
 //
 
 import SwiftUI
-@preconcurrency import AltSign
+import SideSign
 
 struct CertificateRowView: View {
     let cert: ALTX509Certificate

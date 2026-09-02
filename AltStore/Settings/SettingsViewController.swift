@@ -14,7 +14,7 @@ import Intents
 import IntentsUI
 
 import SemanticVersion
-@preconcurrency import AltSign
+import SideSign
 import UniformTypeIdentifiers
 
 extension SettingsViewController

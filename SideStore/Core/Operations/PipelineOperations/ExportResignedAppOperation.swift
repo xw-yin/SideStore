@@ -7,7 +7,7 @@
 //
 
 import Foundation
-@preconcurrency import AltSign
+import SideSign
 
 final class ExportResignedAppOperation: BasePipelineOperation<InstallAppOperationContext, URL>, @unchecked Sendable {
 

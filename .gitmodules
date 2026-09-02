@@ -3,7 +3,7 @@
     path = Dependencies/minimuxer
     url = https://github.com/xw-yin/minimuxer
     branch = codex/minimuxer-startup
-[submodule "Dependencies/AltSign"]
-    path = Dependencies/AltSign
-    url = https://github.com/SideStore/AltSign
-    branch = master
+[submodule "Dependencies/SideSign"]
+	path = Dependencies/SideSign
+	url = https://github.com/SideStore/SideSign.git
+	branch = main

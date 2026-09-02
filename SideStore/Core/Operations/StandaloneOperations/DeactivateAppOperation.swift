@@ -7,7 +7,7 @@
 //
 
 import Foundation
-@preconcurrency import AltSign
+import SideSign
 import CoreData
 
 final class DeactivateAppOperation: BasePipelineOperation<PipelineOperationContext, InstalledApp>, @unchecked Sendable

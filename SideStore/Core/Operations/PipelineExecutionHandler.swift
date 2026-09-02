@@ -7,7 +7,7 @@
 //
 
 import Foundation
-@preconcurrency import AltSign
+import SideSign
 
 protocol PipelineExecutionHandler: AnyObject {
     var preflightChecksHandler: PreflightChecksHandler { get }

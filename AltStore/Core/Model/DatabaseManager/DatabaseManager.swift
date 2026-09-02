@@ -7,7 +7,7 @@
 //
 
 import CoreData
-@preconcurrency import AltSign
+import SideSign
 
 extension CFNotificationName
 {

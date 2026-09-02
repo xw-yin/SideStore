@@ -7,7 +7,7 @@
 //
 
 @preconcurrency import UIKit
-@preconcurrency import AltSign
+import SideSign
 
 final class ResignAltStoreViewController: UIViewController
 {

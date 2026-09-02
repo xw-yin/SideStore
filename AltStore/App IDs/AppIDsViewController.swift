@@ -9,7 +9,7 @@
 @preconcurrency import UIKit
 import CoreData
 import SwiftUI
-@preconcurrency import AltSign
+import SideSign
 
 extension AppIDsViewController {
     static let didDismissNotification = Notification.Name("AppIDsViewControllerDidDismissNotification")
@@ -194,7 +194,9 @@ private extension AppIDsViewController
         
         if !isInitialLoading
         {
+            #if !os(tvOS)
             self.collectionView.refreshControl?.endRefreshing()
+            #endif
             self.activityIndicatorBarButtonItem.isIndicatingActivity = false
             
             let activeTeamType = DatabaseManager.shared.activeTeam()?.type
@@ -231,6 +233,7 @@ private extension AppIDsViewController
                 self.navigationItem.rightBarButtonItem = self.doneBarButtonItem
             }
             
+            #if !os(tvOS)
             if self.isEditingMode
             {
                 self.collectionView.refreshControl = nil
@@ -244,6 +247,7 @@ private extension AppIDsViewController
                     self.collectionView.refreshControl = refreshControl
                 }
             }
+            #endif
         }
         else
         {
@@ -519,11 +523,11 @@ private extension AppIDsViewController
                         }
                         
                         let altAppID = ALTAppID(
-                            name: appID.name,
                             identifier: appID.identifier,
+                            name: appID.name,
                             bundleIdentifier: appID.bundleIdentifier,
                             expirationDate: appID.expirationDate,
-                            features: appID.features
+                            features: appID.features.compactMapValues { "\($0)" }
                         )
                         
                         let success = try await withCheckedThrowingContinuation { (c: CheckedContinuation<Bool, Error>) in
@@ -567,7 +571,7 @@ private extension AppIDsViewController
                 await MainActor.run {
                     if let finalError = finalError
                     {
-                        Logger.sideload.error("Failed to delete App ID: \(finalError.localizedDescription)")
+                        debugLog("[AppIDsViewController] Failed to delete App ID: \(finalError.localizedDescription)")
                         
                         hostingController.dismiss(animated: true) {
                             let alertTitle = NSLocalizedString("Delete Failed", comment: "")

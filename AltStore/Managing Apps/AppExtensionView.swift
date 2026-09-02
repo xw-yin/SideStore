@@ -7,7 +7,7 @@
 //
 
 import SwiftUI
-@preconcurrency import AltSign
+import SideSign
 
 struct AppExtensionView: View {
     var extensions: Set<ALTApplication>

@@ -9,8 +9,8 @@
 import SwiftUI
 
 private extension Color {
-    static let settingsRowBackground = Color(uiColor: .secondarySystemGroupedBackground)
-    static let settingsDivider = Color(uiColor: .separator)
+    static let settingsRowBackground = Color.white.opacity(0.15)
+    static let settingsDivider = Color.white.opacity(0.15)
 }
 
 private let pipelineStepToggles: [(name: String, step: PipelineStep)] = [
@@ -46,7 +46,6 @@ private let standaloneStepToggles: [(name: String, step: StandaloneStep)] = [
     ("Background Refresh Apps",                 .backgroundRefreshApps),
     ("Clear App Cache",                         .clearAppCache),
     ("Enable JIT",                              .enableJIT),
-    ("Fetch Anisette Data",                     .fetchAnisetteData),
     ("Fetch App IDs",                           .fetchAppIDs),
     ("Fetch Source",                            .fetchSource),
     ("Schedule Expiration Warning",             .scheduleExpirationWarningNotification),
@@ -62,7 +61,7 @@ struct OperationsLoggingControlView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("STANDALONE STEPS")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Color.white.opacity(0.6))
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -81,7 +80,7 @@ struct OperationsLoggingControlView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("PIPELINE STEPS")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Color.white.opacity(0.6))
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -100,16 +99,18 @@ struct OperationsLoggingControlView: View {
             .padding(.top, 16)
             .padding(.bottom, 32)
         }
-        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
+        .background(Color(uiColor: .settingsBackground).ignoresSafeArea())
         .navigationTitle("Operations Logging")
+        #if !os(tvOS)
         .navigationBarTitleDisplayMode(.large)
+        #endif
     }
 
     private func stepToggle(_ title: String, step: some OperationStep) -> some View {
         HStack {
             Text(LocalizedStringKey(title))
                 .font(.system(size: 17, weight: .bold))
-                .foregroundColor(.primary)
+                .foregroundColor(.white)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
             Toggle("", isOn: Binding(

@@ -12,7 +12,7 @@ import MessageUI
 import Intents
 import IntentsUI
 
-@preconcurrency import AltSign
+import SideSign
 
 final class SelectTeamViewController: UITableViewController
 {

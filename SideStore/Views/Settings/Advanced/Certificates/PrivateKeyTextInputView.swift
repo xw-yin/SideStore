@@ -8,7 +8,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
-@preconcurrency import AltSign
+import SideSign
 
 struct PrivateKeyTextInputView: View {
     @Binding var text: String

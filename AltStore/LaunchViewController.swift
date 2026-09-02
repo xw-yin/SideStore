@@ -10,7 +10,7 @@
 
 import WidgetKit
 
-@preconcurrency import AltSign
+import SideSign
 import UniformTypeIdentifiers
 import CryptoKit
 

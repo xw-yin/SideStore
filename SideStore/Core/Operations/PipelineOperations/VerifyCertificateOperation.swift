@@ -10,7 +10,7 @@
 import Foundation
 import CoreData
 import Security
-@preconcurrency import AltSign
+import SideSign
 
 final class VerifyCertificateOperation: BasePipelineOperation<AppOperationContext, Void>, @unchecked Sendable {
     private let willResign: Bool

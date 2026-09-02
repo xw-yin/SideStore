@@ -8,7 +8,7 @@
 
 import Foundation
 private import KeychainAccess
-@preconcurrency import AltSign
+import SideSign
 
 @propertyWrapper
 public struct KeychainItem<Value>

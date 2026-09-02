@@ -8,7 +8,7 @@
 
 
 @preconcurrency import UIKit
-@preconcurrency import AltSign
+import SideSign
 import CryptoKit
 import CommonCrypto
 

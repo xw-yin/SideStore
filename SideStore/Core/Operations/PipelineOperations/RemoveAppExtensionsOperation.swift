@@ -8,7 +8,7 @@
 
 
 import Foundation
-@preconcurrency import AltSign
+import SideSign
 
 final class RemoveAppExtensionsOperation: BasePipelineOperation<InstallAppOperationContext, ALTApplication>, @unchecked Sendable {
     let localAppExtensions: Set<ALTApplication>?

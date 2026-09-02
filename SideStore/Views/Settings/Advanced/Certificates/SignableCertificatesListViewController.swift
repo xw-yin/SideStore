@@ -9,7 +9,7 @@
 @preconcurrency import UIKit
 import Foundation
 import SwiftUI
-@preconcurrency import AltSign
+import SideSign
 
 struct SignableCertificateRowView: View {
     let cert: ALTCertificate

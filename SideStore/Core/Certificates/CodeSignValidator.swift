@@ -7,7 +7,7 @@
 //
 
 import Foundation
-@preconcurrency import AltSign
+import SideSign
 
 public enum CodeSignValidationReason: Error {
     /// The certificate used to sign the current installation has expired.
@@ -72,8 +72,10 @@ public struct CodeSignValidator {
         if runningTeamID != signerTeam.identifier {
             // Check if the Apple ID email matches.
             if let requesterEmail = runningCert.requesterEmail, !requesterEmail.isEmpty,
-               requesterEmail.lowercased() != signerTeam.account.appleID.lowercased() {
-                debugLog("[CodeSignValidator] Validation failed: differentAccount (running profile email '\(requesterEmail)' != active account Apple ID '\(signerTeam.account.appleID)')")
+                let activeAppleID = signerTeam.account?.appleID,
+                requesterEmail.lowercased() != activeAppleID.lowercased() 
+            {
+                debugLog("[CodeSignValidator] Validation failed: differentAccount (running profile email '\(requesterEmail)' != active account Apple ID '\(activeAppleID)')")
                 return .failure(.differentAccount)
             } else {
                 debugLog("[CodeSignValidator] Validation failed: differentTeam (running profile team '\(runningTeamID)' != active team '\(signerTeam.identifier)')")

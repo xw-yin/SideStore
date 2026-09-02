@@ -9,7 +9,7 @@
 @preconcurrency import UIKit
 import Foundation
 import CoreData
-@preconcurrency import AltSign
+import SideSign
 
 final class UpdateAppCertificateOperation: BasePipelineOperation<InstallAppOperationContext, Void>, @unchecked Sendable {
     

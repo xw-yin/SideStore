@@ -8,7 +8,7 @@
 
 @preconcurrency import UIKit
 import Foundation
-@preconcurrency import AltSign
+import SideSign
 
 extension PerformBackupRestoreOperation {
     enum Action: String {

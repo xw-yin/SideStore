@@ -89,7 +89,6 @@ enum StandaloneStep: OperationStep {
     case backgroundRefreshApps
     case clearAppCache
     case enableJIT
-    case fetchAnisetteData
     case fetchAppIDs
     case fetchSource
     case scheduleExpirationWarningNotification
@@ -100,7 +99,6 @@ enum StandaloneStep: OperationStep {
         ObjectIdentifier(BackgroundRefreshAppsOperation.self):                   .backgroundRefreshApps,
         ObjectIdentifier(ClearAppCacheOperation.self):                           .clearAppCache,
         ObjectIdentifier(EnableJITOperation.self):                               .enableJIT,
-        ObjectIdentifier(FetchAnisetteDataOperation.self):                       .fetchAnisetteData,
         ObjectIdentifier(SyncAppIDsOperation.self):                              .fetchAppIDs,
         ObjectIdentifier(FetchSourceOperation.self):                             .fetchSource,
         ObjectIdentifier(ScheduleExpirationWarningNotificationOperation.self):   .scheduleExpirationWarningNotification,

@@ -10,7 +10,7 @@ import SwiftUI
 import CoreData
 import UniformTypeIdentifiers
 import WidgetKit
-@preconcurrency import AltSign
+import SideSign
 
 private extension Color {
     static let settingsRowBackground = Color(uiColor: .secondarySystemGroupedBackground)

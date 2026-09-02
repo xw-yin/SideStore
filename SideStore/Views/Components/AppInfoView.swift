@@ -7,7 +7,7 @@
 //
 
 import SwiftUI
-@preconcurrency import AltSign
+import SideSign
 
 struct AppInfoView: View {
     let installedApp: InstalledApp
@@ -80,11 +80,11 @@ struct AppInfoView: View {
                 // Provisioning Profile Section
                 if let profile = provisioningProfile {
                     Section(header: Text("Provisioning Profile")) {
-                        NavigationLink(destination: ProvisioningProfileDetailView(profile: profile)) {
+                        NavigationLink(destination: ProvisioningProfileDetailView(profile: profile, certificatesViewModel: certificatesViewModel)) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(profile.name)
                                     .font(.subheadline)
-                                Text("UUID: \(profile.UUID.uuidString)")
+                                Text("UUID: \(profile.uuid.uuidString)")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -105,7 +105,7 @@ struct AppInfoView: View {
                 if !installedApp.appExtensions.isEmpty {
                     Section(header: Text("App Extensions")) {
                         ForEach(Array(installedApp.appExtensions), id: \.bundleIdentifier) { ext in
-                            NavigationLink(destination: ExtensionInfoView(appExtension: ext, parentAppURL: appBundleURL)) {
+                            NavigationLink(destination: ExtensionInfoView(appExtension: ext, parentAppURL: appBundleURL, certificatesViewModel: certificatesViewModel)) {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(ext.name)
                                         .font(.subheadline)
@@ -126,7 +126,11 @@ struct AppInfoView: View {
                     }
                 }
             }
+            #if !os(tvOS)
             .listStyle(InsetGroupedListStyle())
+            #else
+            .listStyle(GroupedListStyle())
+            #endif
             .navigationTitle("App Details")
             .navigationBarItems(trailing: SwiftUI.Button("Close") {
                 presentationMode.wrappedValue.dismiss()
@@ -149,15 +153,15 @@ struct AppInfoView: View {
 
 struct ProvisioningProfileDetailView: View {
     let profile: ALTProvisioningProfile
+    @ObservedObject var certificatesViewModel: CertificatesViewModel
     @State private var isShowingToast = false
     @State private var toastMessage = ""
-    @StateObject private var certificatesViewModel = CertificatesViewModel()
     
     var body: some View {
         List {
             Section(header: Text("Profile Metadata")) {
                 ProfileInfoRow(label: "Name", value: profile.name)
-                ProfileInfoRow(label: "UUID", value: profile.UUID.uuidString)
+                ProfileInfoRow(label: "UUID", value: profile.uuid.uuidString)
                 if let identifier = profile.identifier {
                     ProfileInfoRow(label: "Identifier", value: identifier)
                 }
@@ -194,13 +198,17 @@ struct ProvisioningProfileDetailView: View {
             }
             
             Section(header: Text("Entitlements (\(profile.entitlements.count))")) {
-                let sortedEntitlements = profile.entitlements.sorted { $0.key.rawValue < $1.key.rawValue }
-                ForEach(sortedEntitlements, id: \.key.rawValue) { entitlement, value in
-                    EntitlementRow(key: entitlement.rawValue, value: value)
+                let sortedEntitlements = profile.entitlements.sorted { $0.key < $1.key }
+                ForEach(sortedEntitlements, id: \.key) { entitlement, value in
+                    EntitlementRow(key: entitlement, value: value)
                 }
             }
         }
+        #if !os(tvOS)
         .listStyle(InsetGroupedListStyle())
+        #else
+        .listStyle(GroupedListStyle())
+        #endif
         .navigationTitle("Profile Details")
         .interactiveDismissDisabled(true)
     }
@@ -289,6 +297,7 @@ struct ProfileInfoRow: View {
                 .foregroundColor(valueColor)
                 .multilineTextAlignment(.trailing)
         }
+        #if !os(tvOS)
         .contextMenu {
             SwiftUI.Button {
                 UIPasteboard.general.string = value
@@ -296,6 +305,7 @@ struct ProfileInfoRow: View {
                 Label("Copy", systemImage: "doc.on.doc")
             }
         }
+        #endif
     }
 }
 
@@ -314,6 +324,7 @@ struct EntitlementRow: View {
                 .foregroundColor(.primary)
         }
         .padding(.vertical, 4)
+        #if !os(tvOS)
         .contextMenu {
             SwiftUI.Button {
                 UIPasteboard.general.string = formatValue(value)
@@ -326,6 +337,7 @@ struct EntitlementRow: View {
                 Label("Copy Key", systemImage: "doc.on.doc")
             }
         }
+        #endif
     }
     
     private func formatValue(_ val: Any) -> String {
@@ -349,6 +361,7 @@ struct DeviceIDsView: View {
             HStack {
                 Text(udid)
                     .font(.system(.body, design: .monospaced))
+                #if !os(tvOS)
                 Spacer()
                 SwiftUI.Button(action: {
                     UIPasteboard.general.string = udid
@@ -357,6 +370,7 @@ struct DeviceIDsView: View {
                         .foregroundColor(.blue)
                 }
                 .buttonStyle(BorderlessButtonStyle())
+                #endif
             }
         }
         .navigationTitle("Device IDs")
@@ -369,6 +383,7 @@ struct DeviceIDsView: View {
 struct ExtensionInfoView: View {
     let appExtension: InstalledExtension
     let parentAppURL: URL
+    @ObservedObject var certificatesViewModel: CertificatesViewModel
 
     // Resolve the .appex bundle URL by scanning PlugIns/ and matching bundle ID
     private var extensionURL: URL? {
@@ -452,11 +467,11 @@ struct ExtensionInfoView: View {
             // Provisioning Profile
             if let profile = provisioningProfile {
                 Section(header: Text("Provisioning Profile")) {
-                    NavigationLink(destination: ProvisioningProfileDetailView(profile: profile)) {
+                    NavigationLink(destination: ProvisioningProfileDetailView(profile: profile, certificatesViewModel: certificatesViewModel)) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(profile.name)
                                 .font(.subheadline)
-                            Text("UUID: \(profile.UUID.uuidString)")
+                            Text("UUID: \(profile.uuid.uuidString)")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Text("Expires: \(formatDate(profile.expirationDate))")
@@ -486,7 +501,7 @@ struct ExtensionInfoView: View {
                             ?? subPlist?["CFBundleName"] as? String
                             ?? subURL.deletingPathExtension().lastPathComponent
                         let subBundleID = subPlist?["CFBundleIdentifier"] as? String ?? "Unknown"
-                        NavigationLink(destination: BundleInspectorView(bundleURL: subURL)) {
+                        NavigationLink(destination: BundleInspectorView(bundleURL: subURL, certificatesViewModel: certificatesViewModel)) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(subName)
                                     .font(.subheadline)
@@ -499,7 +514,11 @@ struct ExtensionInfoView: View {
                 }
             }
         }
+        #if !os(tvOS)
         .listStyle(InsetGroupedListStyle())
+        #else
+        .listStyle(GroupedListStyle())
+        #endif
         .navigationTitle(appExtension.name)
         .interactiveDismissDisabled(true)
     }
@@ -516,6 +535,7 @@ struct ExtensionInfoView: View {
 
 struct BundleInspectorView: View {
     let bundleURL: URL
+    @ObservedObject var certificatesViewModel: CertificatesViewModel
 
     private var provisioningProfile: ALTProvisioningProfile? {
         ALTProvisioningProfile(url: bundleURL.appendingPathComponent("embedded.mobileprovision"))
@@ -567,11 +587,11 @@ struct BundleInspectorView: View {
 
             if let profile = provisioningProfile {
                 Section(header: Text("Provisioning Profile")) {
-                    NavigationLink(destination: ProvisioningProfileDetailView(profile: profile)) {
+                    NavigationLink(destination: ProvisioningProfileDetailView(profile: profile, certificatesViewModel: certificatesViewModel)) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(profile.name)
                                 .font(.subheadline)
-                            Text("UUID: \(profile.UUID.uuidString)")
+                            Text("UUID: \(profile.uuid.uuidString)")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Text("Expires: \(formatDate(profile.expirationDate))")
@@ -599,7 +619,7 @@ struct BundleInspectorView: View {
                             ?? subPlist?["CFBundleName"] as? String
                             ?? subURL.deletingPathExtension().lastPathComponent
                         let subBundleID = subPlist?["CFBundleIdentifier"] as? String ?? "Unknown"
-                        NavigationLink(destination: BundleInspectorView(bundleURL: subURL)) {
+                        NavigationLink(destination: BundleInspectorView(bundleURL: subURL, certificatesViewModel: certificatesViewModel)) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(subName)
                                     .font(.subheadline)
@@ -620,9 +640,13 @@ struct BundleInspectorView: View {
                 }
             }
         }
+        #if !os(tvOS)
         .listStyle(InsetGroupedListStyle())
-        .navigationTitle(displayName)
         .navigationBarTitleDisplayMode(.inline)
+        #else
+        .listStyle(GroupedListStyle())
+        #endif
+        .navigationTitle(displayName)
         .interactiveDismissDisabled(true)
     }
 

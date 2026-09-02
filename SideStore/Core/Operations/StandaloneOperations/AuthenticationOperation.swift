@@ -10,41 +10,11 @@
 import Foundation
 import Network
 import CoreData
-@preconcurrency import AltSign
+import SideSign
 
 enum RevokeDecision: Sendable {
     case revokeSelected([ALTX509Certificate])
     case keepExisting
-}
-
-private class AnisetteDataProvider {
-    private static let ANISETTE_VALID_DURATION: TimeInterval = 40.0
-
-    private let context: AuthenticatedOperationContext
-    private let progress: Progress?
-    
-    private var lastFetchedData: ALTAnisetteData?
-    
-    init(context: AuthenticatedOperationContext, progress: Progress?) {
-        self.context = context
-        self.progress = progress
-    }
-    
-    func getAnisetteData(for session: ALTAppleAPISession? = nil) async throws -> ALTAnisetteData {
-        let currentAnisette = session?.anisetteData ?? self.lastFetchedData
-        
-        if let currentAnisette = currentAnisette,
-           currentAnisette.date.timeIntervalSinceNow >= -Self.ANISETTE_VALID_DURATION 
-        {
-            return currentAnisette
-        }
-        
-        let anisetteData = try await FetchAnisetteDataOperation(context: self.context)
-                                        .execute(parentProgress: self.progress)
-
-        self.lastFetchedData = anisetteData
-        return anisetteData
-    }
 }
 
 typealias AuthenticationError = AuthenticationErrorCode.Error
@@ -88,13 +58,10 @@ final class AuthenticationOperation: BaseStandaloneOperation<AuthenticatedOperat
     
     private var appleIDEmailAddress: String?
     private var requiresPostAuthFlow = false
+    private var lastFetchedAnisetteData: ALTAnisetteData?
     
     let skipDeviceRegistration: Bool
     let skipCertificateProvisioning: Bool
-    
-    private lazy var anisetteDataProvider: AnisetteDataProvider = {
-        AnisetteDataProvider(context: context, progress: self.progress)
-    }()
 
     init(context: AuthenticatedOperationContext, skipDeviceRegistration: Bool = false, skipCertificateProvisioning: Bool = false) throws {
         self.skipDeviceRegistration = skipDeviceRegistration
@@ -107,11 +74,27 @@ final class AuthenticationOperation: BaseStandaloneOperation<AuthenticatedOperat
           • skipCertificateProvisioning: \(skipCertificateProvisioning)
         """)
     }
+
+    private func getAnisetteData(for session: ALTAppleAPISession? = nil) async throws -> ALTAnisetteData {
+        let currentAnisette = session?.anisetteData ?? self.lastFetchedAnisetteData
+        if let currentAnisette = currentAnisette,
+           currentAnisette.date.timeIntervalSinceNow >= -AnisetteProvider.validDuration {
+            return currentAnisette
+        }
+
+        let anisetteData = try await AnisetteProvider.fetch(handler: context.anisetteServerHandler)
+        self.lastFetchedAnisetteData = anisetteData
+        return anisetteData
+    }
     
     // Main Pipeline Execution
     override func execute(parentProgress: Progress?) async throws -> AuthenticationResult {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[AuthenticationOperation] execute() started")
-        defer { debugLog("[AuthenticationOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[AuthenticationOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
 
         let authResult = try await TaskChainCoalescerWithProgress.shared.coalesce(
@@ -125,11 +108,11 @@ final class AuthenticationOperation: BaseStandaloneOperation<AuthenticatedOperat
             do {
                 let result: AuthenticationResult
 
-                if let session = AuthManager.shared.session,
+                if var session = AuthManager.shared.session,
                    let team = AuthManager.shared.team,
                    (self.skipCertificateProvisioning || CertificateManager.shared.activeCertificate != nil)
                 {
-                    session.anisetteData = try await self.anisetteDataProvider.getAnisetteData(for: session)
+                    session.anisetteData = try await self.getAnisetteData(for: session)
                     let certToUse = CertificateManager.shared.activeCertificate?.certificate
                     
                     self.debugLog("[Authentication] Using cached session, team, certificate")
@@ -284,7 +267,7 @@ final class AuthenticationOperation: BaseStandaloneOperation<AuthenticatedOperat
             self.verboseLog("[AuthenticationOperation] Authenticating Apple ID with tokens...")
 
             do {
-                let anisetteData = try await self.anisetteDataProvider.getAnisetteData()
+                let anisetteData = try await self.getAnisetteData()
                 let xcodeVersion = await AnisetteConfigManager.shared.resolvedXcodeVersion()
 
                 return try await AuthManager.shared.authenticateWithToken(
@@ -339,7 +322,7 @@ final class AuthenticationOperation: BaseStandaloneOperation<AuthenticatedOperat
     private func authenticate(appleID: String, password: String) async throws -> (ALTAccount, ALTAppleAPISession) {
         self.appleIDEmailAddress = appleID
         
-        let anisetteData = try await self.anisetteDataProvider.getAnisetteData()
+        let anisetteData = try await self.getAnisetteData()
         let handler = self.context.authenticationHandler
         
         let xcodeVersion = await AnisetteConfigManager.shared.resolvedXcodeVersion()
@@ -349,14 +332,14 @@ final class AuthenticationOperation: BaseStandaloneOperation<AuthenticatedOperat
             password: password,
             anisetteData: anisetteData,
             xcodeVersion: xcodeVersion
-        ) { completionHandler in
+        ) { mode, completionHandler in
 
             Task.detached {
                 do {
-                    let code = try await handler.verificationCode()
-                    completionHandler(code)
+                    let action = try await handler.verificationCode(for: mode)
+                    completionHandler(action)
                 } catch {
-                    completionHandler(nil)
+                    completionHandler(.cancel)
                 }
             }
         }
@@ -421,10 +404,14 @@ private extension AuthenticationOperation {
             let account: Account
             let team: Team
             
-            if let tempAccount = Account.first(satisfying: NSPredicate(format: "%K == %@", #keyPath(Account.identifier), altTeam.account.identifier), in: context) {
+            let accountIdentifier = altTeam.account?.identifier ?? altTeam.identifier
+            if let tempAccount = Account.first(satisfying: NSPredicate(format: "%K == %@", #keyPath(Account.identifier), accountIdentifier), in: context) {
                 account = tempAccount
+            } else if let altAccount = altTeam.account {
+                account = Account(altAccount, context: context)
             } else {
-                account = Account(altTeam.account, context: context)
+                let altAccount = ALTAccount(appleID: self.appleIDEmailAddress ?? "", identifier: accountIdentifier)
+                account = Account(altAccount, context: context)
             }
             
             if let tempTeam = Team.first(satisfying: NSPredicate(format: "%K == %@", #keyPath(Team.identifier), altTeam.identifier), in: context) {
@@ -433,7 +420,9 @@ private extension AuthenticationOperation {
                 team = Team(altTeam, account: account, context: context)
             }
             
-            account.update(account: altTeam.account)
+            if let altAccount = altTeam.account {
+                account.update(account: altAccount)
+            }
 
             if let providedEmailAddress = self.appleIDEmailAddress {
                 account.appleID = providedEmailAddress
@@ -563,21 +552,22 @@ private extension AuthenticationOperation {
         if let activeCert = CertificateManager.shared.activeCertificate,
            let certificate = portalCertificates.first(where: { $0.serialNumber == activeCert.serialNumber }) 
         {
-            activeCert.certificate.machineIdentifier = certificate.machineIdentifier
+            var keyStoreCert = activeCert.certificate
+            keyStoreCert.machineIdentifier = certificate.machineIdentifier
 
             if let mainBundleCertSerial = mainBundleCertSerial, 
                 mainBundleCertSerial.lowercased() != activeCert.serialNumber.lowercased() 
             {
                 self.debugLog("[Authentication] Active certificate (\(activeCert.serialNumber)) and running bundle certificate (\(mainBundleCertSerial)) mismatch detected. Running Bundle Certificate is still active on the Paid account portal. Using active Keychain certificate.")
             }
-            return activeCert.certificate
+            return keyStoreCert
         }
         
         // TODO: @mahee96: we have moved away from machineID as password for certs, but external/thirdparty like iloader might not have, 
         //                 so we still support the machineId as fallback for now 
         if let mainBundleCertSerial = mainBundleCertSerial,
            let certificate = portalCertificates.first(where: { $0.serialNumber.lowercased() == mainBundleCertSerial.lowercased() }),
-           let cert = CertificateManager.shared.getSignableCertificate(for: mainBundleCertSerial, fallbackPassword: certificate.machineIdentifier) 
+           var cert = CertificateManager.shared.getSignableCertificate(for: mainBundleCertSerial, fallbackPassword: certificate.machineIdentifier) 
         {
             cert.machineIdentifier = certificate.machineIdentifier
             self.debugLog("[Authentication] Using running bundle certificate (\(cert.serialNumber)) with valid private key from signable cache.")
@@ -596,7 +586,8 @@ private extension AuthenticationOperation {
 
     private func requestCertificate(for team: ALTTeam, session: ALTAppleAPISession) async throws -> ALTCertificate {
         let deviceName = await UIDevice.current.name
-        let machineName: String = "SideStore - \(team.account.firstName)'s \(deviceName)"
+        let accountName = team.account?.firstName ?? team.name
+        let machineName: String = "SideStore - \(accountName)'s \(deviceName)"
         self.verboseLog("[Authentication] Requesting certificate for machineName '\(machineName)'...")
 
         do {
@@ -618,10 +609,7 @@ private extension AuthenticationOperation {
             return finalCert
         } catch {
             self.debugLog("[Authentication] requestCertificate: Failed with error: \(error)")
-            let underlying = error as NSError
-            if underlying.domain == ALTAppleAPIErrorDomain && 
-               underlying.code == ALTAppleAPIError.tooManyCertificates.rawValue 
-            {
+            if case .tooManyCertificates(_) = error as? DeveloperPortalError {
                 let friendlyError: AuthenticationError = (team.type == .free) 
                                         ? AuthenticationError(.certificateLimitReachedFree) 
                                         : AuthenticationError(.certificateLimitReachedPaid)
@@ -632,7 +620,7 @@ private extension AuthenticationOperation {
                     userInfo: [
                         NSLocalizedDescriptionKey: friendlyError.localizedDescription,
                         NSLocalizedFailureReasonErrorKey: friendlyError.failureReason ?? "",
-                        NSUnderlyingErrorKey: underlying
+                        NSUnderlyingErrorKey: error as NSError
                     ]
                 )
                 throw wrappedError
@@ -716,5 +704,63 @@ private extension AuthenticationOperation {
             self.debugLog("[Authentication] Device '\(device.name)' (UDID: \(udid)) successfully registered.")
             return device
         }
+    }
+}
+
+
+private enum AnisetteProvider {
+    static let validDuration: TimeInterval = 40.0
+
+    static func fetch(handler: AnisetteServerHandler) async throws -> ALTAnisetteData {
+        if UserDefaults.standard.useOnDeviceAnisette {
+            debugLog("[AuthenticationOperation] Fetching anisette via On-Device Anisette (ODA)...")
+            return try await OnDeviceAnisetteManager.shared.fetchAnisetteData()
+        } else {
+            debugLog("[AuthenticationOperation] Fetching anisette via remote server...")
+            return try await fetchRemote(handler: handler)
+        }
+    }
+
+    private static func fetchRemote(handler: AnisetteServerHandler) async throws -> ALTAnisetteData {
+        let serverUrls = await AnisetteServersManager.shared.getActiveServerURLs()
+        guard !serverUrls.isEmpty else {
+            throw NSError(domain: "AnisetteError", code: 0, userInfo: [NSLocalizedDescriptionKey: "No working anisette servers configured."])
+        }
+
+        let lastServer = UserDefaults.standard.menuAnisetteURL
+        if UserDefaults.standard.disableAnisetteRotation {
+            let activeServer = !lastServer.isEmpty ? lastServer : (serverUrls.first ?? "")
+            guard let serverURL = URL(string: activeServer) else {
+                throw NSError(domain: "AnisetteError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid server URL: \(activeServer)"])
+            }
+            let provider = SideSign.AnisetteDataProvider(mode: .remote(server: serverURL))
+            let (data, _) = try await provider.fetchAnisetteData()
+            return data
+        }
+
+        let startIndex = serverUrls.firstIndex(of: lastServer) ?? 0
+        var lastError: Error?
+
+        for triedCount in 0..<serverUrls.count {
+            let currentIndex = (startIndex + triedCount) % serverUrls.count
+            let currentServerUrlString = serverUrls[currentIndex]
+
+            guard let serverURL = URL(string: currentServerUrlString) else {
+                continue
+            }
+
+            do {
+                let provider = SideSign.AnisetteDataProvider(mode: .remote(server: serverURL))
+                let (anisetteData, _) = try await provider.fetchAnisetteData()
+                UserDefaults.standard.menuAnisetteURL = currentServerUrlString
+                debugLog("[AuthenticationOperation] Successfully fetched Anisette data from \(serverURL.absoluteString)")
+                return anisetteData
+            } catch {
+                lastError = error
+                debugLog("[AuthenticationOperation] Server failed: \(serverURL.absoluteString) with error: \(error.localizedDescription)")
+            }
+        }
+
+        throw lastError ?? NSError(domain: "AnisetteError", code: 0, userInfo: [NSLocalizedDescriptionKey: "All anisette servers failed."])
     }
 }

@@ -10,7 +10,7 @@
 import UserNotifications
 import AVFoundation
 import Intents
-@preconcurrency import AltSign
+import SideSign
 import CoreData
 
 import Nuke

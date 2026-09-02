@@ -7,8 +7,10 @@
 //
 
 import SwiftUI
+#if !os(tvOS)
 import QuickLook
-@preconcurrency import AltSign
+#endif
+import SideSign
 
 // MARK: - Bundle Item Model
 
@@ -62,11 +64,15 @@ struct BundleResourceBrowserView: View {
                 }
             }
         }
+        #if !os(tvOS)
         .listStyle(InsetGroupedListStyle())
+        .navigationBarTitleDisplayMode(.inline)
+        #else
+        .listStyle(GroupedListStyle())
+        #endif
         .navigationTitle(isSelecting
             ? (selectedURLs.isEmpty ? "Select Files" : "\(selectedURLs.count) selected")
             : title)
-        .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchQuery, prompt: "Search files")
         .toolbar {
             // Trailing: Select / Done
@@ -78,6 +84,7 @@ struct BundleResourceBrowserView: View {
                     }
                 }
             }
+            #if !os(tvOS)
             // Leading Share
             ToolbarItem(placement: .navigationBarLeading) {
                 if isSelecting && !selectedURLs.isEmpty {
@@ -88,10 +95,13 @@ struct BundleResourceBrowserView: View {
                     }
                 }
             }
+            #endif
         }
+        #if !os(tvOS)
         .sheet(isPresented: $showingShareSheet) {
             ActivityView(items: Array(selectedURLs))
         }
+        #endif
         .onAppear {
             guard !isLoaded else { return }
             isLoaded = true
@@ -154,7 +164,11 @@ struct BundleItemRow: View {
             if isSelecting {
                 Image(systemName: selected ? "checkmark.circle.fill" : (item.isDirectory ? "minus.circle" : "circle"))
                     .font(.system(size: 22))
+                    #if !os(tvOS)
                     .foregroundColor(selected ? .accentColor : (item.isDirectory ? Color(.systemGray3) : Color(.systemGray2)))
+                    #else
+                    .foregroundColor(selected ? .accentColor : (item.isDirectory ? Color.gray.opacity(0.6) : Color.gray))
+                    #endif
                     .frame(width: 28)
             } else {
                 Image(systemName: fileIcon)
@@ -199,7 +213,11 @@ struct BundleItemRow: View {
         } else if textExtensions.contains(ext) {
             ResourceTextViewer(url: item.url)
         } else {
+            #if !os(tvOS)
             QLPreviewControllerView(url: item.url)
+            #else
+            ResourceTextViewer(url: item.url)
+            #endif
         }
     }
 
@@ -260,7 +278,11 @@ struct BundleItemRow: View {
         case "appex": return .indigo
         case "mobileprovision": return .yellow
         case "dylib", "so", "a", "car": return .gray
+        #if !os(tvOS)
         default: return Color(.systemGray2)
+        #else
+        default: return Color.gray
+        #endif
         }
     }
 }
@@ -323,7 +345,9 @@ struct IPAContentsView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .navigationTitle(ipaURL.deletingPathExtension().lastPathComponent)
+                #if !os(tvOS)
                 .navigationBarTitleDisplayMode(.inline)
+                #endif
             } else if let error = extraction.error {
                 VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle")
@@ -339,7 +363,9 @@ struct IPAContentsView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .navigationTitle(ipaURL.deletingPathExtension().lastPathComponent)
+                #if !os(tvOS)
                 .navigationBarTitleDisplayMode(.inline)
+                #endif
             }
         }
         .task { await extraction.extract(from: ipaURL) }
@@ -351,6 +377,7 @@ struct IPAContentsView: View {
 
 struct FullAppBundleView: View {
     let bundleURL: URL
+    @StateObject private var certificatesViewModel = CertificatesViewModel()
 
     private var infoPlist: [String: Any]? {
         NSDictionary(contentsOf: bundleURL.appendingPathComponent("Info.plist")) as? [String: Any]
@@ -415,11 +442,11 @@ struct FullAppBundleView: View {
             // Provisioning Profile — from embedded.mobileprovision
             if let profile = provisioningProfile {
                 Section(header: Text("Provisioning Profile")) {
-                    NavigationLink(destination: ProvisioningProfileDetailView(profile: profile)) {
+                    NavigationLink(destination: ProvisioningProfileDetailView(profile: profile, certificatesViewModel: certificatesViewModel)) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(profile.name)
                                 .font(.subheadline)
-                            Text("UUID: \(profile.UUID.uuidString)")
+                            Text("UUID: \(profile.uuid.uuidString)")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Text("Expires: \(formatDate(profile.expirationDate))")
@@ -449,7 +476,7 @@ struct FullAppBundleView: View {
                             ?? extPlist?["CFBundleName"] as? String
                             ?? extURL.deletingPathExtension().lastPathComponent
                         let extBundleID = extPlist?["CFBundleIdentifier"] as? String ?? "Unknown"
-                        NavigationLink(destination: BundleInspectorView(bundleURL: extURL)) {
+                        NavigationLink(destination: BundleInspectorView(bundleURL: extURL, certificatesViewModel: certificatesViewModel)) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(extName)
                                     .font(.subheadline)
@@ -470,9 +497,13 @@ struct FullAppBundleView: View {
                 }
             }
         }
+        #if !os(tvOS)
         .listStyle(InsetGroupedListStyle())
-        .navigationTitle(displayName)
         .navigationBarTitleDisplayMode(.inline)
+        #else
+        .listStyle(GroupedListStyle())
+        #endif
+        .navigationTitle(displayName)
         .interactiveDismissDisabled(true)
     }
 
@@ -507,7 +538,9 @@ struct PlistResourceViewer: View {
             }
         }
         .navigationTitle(url.lastPathComponent)
+        #if !os(tvOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .onAppear {
             guard !isLoaded else { return }
             isLoaded = true
@@ -550,7 +583,9 @@ struct ResourceImageViewer: View {
             }
         }
         .navigationTitle(url.lastPathComponent)
+        #if !os(tvOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 }
 
@@ -570,7 +605,9 @@ struct ResourceTextViewer: View {
                 .padding()
         }
         .navigationTitle(url.lastPathComponent)
+        #if !os(tvOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .onAppear {
             guard !isLoaded else { return }
             isLoaded = true
@@ -581,6 +618,7 @@ struct ResourceTextViewer: View {
     }
 }
 
+#if !os(tvOS)
 // MARK: - QuickLook Preview Controller Bridge
 
 struct QLPreviewControllerView: UIViewControllerRepresentable {
@@ -621,3 +659,4 @@ struct ActivityView: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
+#endif

@@ -8,7 +8,7 @@
 
 @preconcurrency import UIKit
 @preconcurrency import Intents
-@preconcurrency import AltSign
+import SideSign
 import SwiftUI
 import MobileCoreServices
 import Combine

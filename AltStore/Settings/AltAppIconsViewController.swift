@@ -9,7 +9,7 @@
 @preconcurrency import UIKit
 import SwiftUI
 
-@preconcurrency import AltSign
+import SideSign
 
 extension UIApplication
 {

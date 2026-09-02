@@ -9,7 +9,7 @@
 @preconcurrency import UIKit
 import Foundation
 import Network
-@preconcurrency import AltSign
+import SideSign
 
 final class SendAppOperation: BasePipelineOperation<InstallAppOperationContext, ALTApplication>, @unchecked Sendable {
     

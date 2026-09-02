@@ -8,6 +8,7 @@
 
 @preconcurrency import UIKit
 import SwiftUI
+import SideSign
 
 typealias SUIButton = SwiftUI.Button
 
@@ -247,6 +248,9 @@ struct AnisetteServersView: View {
     @State private var showingImportAlert = false
     @State private var pendingImportData: Data? = nil
     @State private var pendingImportName: String? = nil
+    #if os(tvOS)
+    @State private var showingTvOptionsMenu = false
+    #endif
 
     var selected: String?
     var onResetAdiPb: (() -> Void)?
@@ -369,6 +373,7 @@ struct AnisetteServersView: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(PlainButtonStyle())
+                        #if !os(tvOS)
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             SwiftUI.Button {
                                 viewModel.toggleHide(item: item)
@@ -377,6 +382,7 @@ struct AnisetteServersView: View {
                             }
                             .tint(item.isHidden ? .blue : .orange)
                         }
+                        #endif
                     }
                     .onMove(perform: viewModel.moveItems)
                 }
@@ -595,7 +601,11 @@ struct AnisetteServersView: View {
                             .listRowBackground(Color.clear)
                     }
                 }
+                #if !os(tvOS)
                 .listStyle(.insetGrouped)
+                #else
+                .listStyle(.grouped)
+                #endif
                 .refreshable {
                     await viewModel.fetchServers(forceRemote: true)
                 }
@@ -612,12 +622,32 @@ struct AnisetteServersView: View {
                     .tint(.red)
                 } else {
                     SwiftUI.Button {
+                        #if !os(tvOS)
                         showingFileImporter = true
+                        #else
+                        if let topVC = UIApplication.shared.topViewController() {
+                            TVWebFileTransferManager.shared.startImport(
+                                acceptedExtensions: ["json"],
+                                title: "Import Anisette Servers JSON",
+                                presentingVC: topVC
+                            ) { fileURL in
+                                guard let fileURL = fileURL else { return }
+                                if let data = try? Data(contentsOf: fileURL) {
+                                    DispatchQueue.main.async {
+                                        pendingImportData = data
+                                        pendingImportName = fileURL.lastPathComponent
+                                        showingImportAlert = true
+                                    }
+                                }
+                            }
+                        }
+                        #endif
                     } label: {
                         Image(systemName: "doc.badge.plus")
                     }
                 }
 
+                #if !os(tvOS)
                 Menu {
                     if viewModel.hasHiddenItems {
                         SwiftUI.Button {
@@ -661,8 +691,46 @@ struct AnisetteServersView: View {
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
+                #else
+                SwiftUI.Button {
+                    showingTvOptionsMenu = true
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                #endif
             }
         }
+        #if os(tvOS)
+        .confirmationDialog("Options", isPresented: $showingTvOptionsMenu) {
+            if viewModel.hasHiddenItems {
+                SwiftUI.Button(viewModel.showHiddenServers ? "Hide Hidden" : "Show Hidden") {
+                    viewModel.showHiddenServers.toggle()
+                }
+            }
+            SwiftUI.Button("Export Current") {
+                Task {
+                    if let url = await viewModel.exportCatalog(unmodified: false), let topVC = UIApplication.shared.topViewController() {
+                        TVWebFileTransferManager.shared.startExport(fileURL: url, title: "Export Anisette Servers JSON", presentingVC: topVC)
+                    }
+                }
+            }
+            if viewModel.isOfflineMode {
+                SwiftUI.Button("Export Original") {
+                    Task {
+                        if let url = await viewModel.exportCatalog(unmodified: true), let topVC = UIApplication.shared.topViewController() {
+                            TVWebFileTransferManager.shared.startExport(fileURL: url, title: "Export Anisette Servers JSON", presentingVC: topVC)
+                        }
+                    }
+                }
+            }
+            SwiftUI.Button("Reset Catalog", role: .destructive) {
+                Task {
+                    await viewModel.resetToOriginalState()
+                }
+            }
+        }
+        #endif
+        #if !os(tvOS)
         .fileImporter(
             isPresented: $showingFileImporter,
             allowedContentTypes: [.json],
@@ -679,13 +747,14 @@ struct AnisetteServersView: View {
                         pendingImportName = url.lastPathComponent
                         showingImportAlert = true
                     } catch {
-                        debugLog("File import failed to read data: \(error.localizedDescription)")
+                        viewModel.errorMessage = "Failed to read file: \(error.localizedDescription)"
                     }
                 }
             case .failure(let error):
-                debugLog("File import failed: \(error.localizedDescription)")
+                viewModel.errorMessage = "Import failed: \(error.localizedDescription)"
             }
         }
+        #endif
         .alert("Clear Imported File?", isPresented: $showingClearAlert) {
             SwiftUI.Button("Clear", role: .destructive) {
                 Task {

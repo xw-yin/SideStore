@@ -7,7 +7,7 @@
 //
 
 import Foundation
-@preconcurrency import AltSign
+import SideSign
 
 struct OperationEntitlements {
     static let defaultAdditionalEntitlements: [ALTEntitlement: any Sendable] = [

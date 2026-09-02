@@ -18,7 +18,7 @@ public extension OperatingSystemVersion {
     }
 }
 
-extension OperatingSystemVersion: @retroactive Comparable
+extension OperatingSystemVersion
 {
     public static func ==(lhs: OperatingSystemVersion, rhs: OperatingSystemVersion) -> Bool
     {

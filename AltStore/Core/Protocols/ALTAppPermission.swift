@@ -8,7 +8,7 @@
 
 import RegexBuilder
 
-@preconcurrency import AltSign
+import SideSign
 
 extension ALTAppPermissionType
 {

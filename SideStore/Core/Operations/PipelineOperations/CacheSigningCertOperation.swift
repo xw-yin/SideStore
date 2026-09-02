@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import AltSign
+import SideSign
 
 final class CacheSigningCertOperation: BasePipelineOperation<AppOperationContext, Void>, @unchecked Sendable {
     override func execute(parentProgress: Progress?) async throws {

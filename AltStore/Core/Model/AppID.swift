@@ -9,7 +9,7 @@
 import Foundation
 import CoreData
 
-@preconcurrency import AltSign
+import SideSign
 
 @objc(AppID)
 public class AppID: BaseEntity

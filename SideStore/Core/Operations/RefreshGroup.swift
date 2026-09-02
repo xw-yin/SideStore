@@ -8,7 +8,7 @@
 
 import Foundation
 import CoreData
-@preconcurrency import AltSign
+import SideSign
 
 final class RefreshGroup: NSObject
 {

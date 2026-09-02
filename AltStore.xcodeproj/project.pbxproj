@@ -15,8 +15,8 @@
 		A8C3702F302DA82A0010213A /* Nuke in Frameworks */ = {isa = PBXBuildFile; productRef = A8C3702E302DA82A0010213A /* Nuke */; };
 		A8C37035302DA84D0010213A /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = A8C37034302DA84D0010213A /* Starscream */; };
 		A8C37039302DA8D90010213A /* SemanticVersion in Frameworks */ = {isa = PBXBuildFile; productRef = A8C37038302DA8D90010213A /* SemanticVersion */; };
-		A8C38DEC302DB4E40010213A /* AltSign-Dynamic in Frameworks */ = {isa = PBXBuildFile; productRef = A8C38DEB302DB4E40010213A /* AltSign-Dynamic */; };
-		A8C38DED302DB4E40010213A /* AltSign-Dynamic in Embed Frameworks */ = {isa = PBXBuildFile; productRef = A8C38DEB302DB4E40010213A /* AltSign-Dynamic */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		A8C38DEC302DB4E40010213A /* SideSign-Dynamic in Frameworks */ = {isa = PBXBuildFile; productRef = A8C38DEB302DB4E40010213A /* SideSign-Dynamic */; };
+		A8C38DED302DB4E40010213A /* SideSign-Dynamic in Embed Frameworks */ = {isa = PBXBuildFile; productRef = A8C38DEB302DB4E40010213A /* SideSign-Dynamic */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		BF989177250AABF4002ACF50 /* AltWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BF989167250AABF3002ACF50 /* AltWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -44,7 +44,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				A8C38DED302DB4E40010213A /* AltSign-Dynamic in Embed Frameworks */,
+				A8C38DED302DB4E40010213A /* SideSign-Dynamic in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -172,7 +172,7 @@
 				A8C3702C302DA80D0010213A /* KeychainAccess in Frameworks */,
 				A8C3702F302DA82A0010213A /* Nuke in Frameworks */,
 				A8C37035302DA84D0010213A /* Starscream in Frameworks */,
-				A8C38DEC302DB4E40010213A /* AltSign-Dynamic in Frameworks */,
+				A8C38DEC302DB4E40010213A /* SideSign-Dynamic in Frameworks */,
 				A8C37039302DA8D90010213A /* SemanticVersion in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -285,7 +285,7 @@
 				A8C3702E302DA82A0010213A /* Nuke */,
 				A8C37034302DA84D0010213A /* Starscream */,
 				A8C37038302DA8D90010213A /* SemanticVersion */,
-				A8C38DEB302DB4E40010213A /* AltSign-Dynamic */,
+				A8C38DEB302DB4E40010213A /* SideSign-Dynamic */,
 				A809CCB43033E85E005DF922 /* AnisetteKit */,
 			);
 			productName = AltStore;
@@ -334,7 +334,7 @@
 			);
 			mainGroup = BFD247612284B9A500981D42;
 			packageReferences = (
-				A8C37021302DA7A70010213A /* XCLocalSwiftPackageReference "Dependencies/AltSign" */,
+				A8C37021302DA7A70010213A /* XCLocalSwiftPackageReference "Dependencies/SideSign" */,
 				A8C37024302DA7BA0010213A /* XCLocalSwiftPackageReference "Dependencies/minimuxer" */,
 				A8C37027302DA7F30010213A /* XCRemoteSwiftPackageReference "MarkdownKit" */,
 				A8C3702A302DA80D0010213A /* XCRemoteSwiftPackageReference "KeychainAccess" */,
@@ -638,7 +638,7 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG BETA";
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "debug-only";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SYSTEM_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/Dependencies/AltSign/Dependencies\"";
+				SYSTEM_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/Dependencies/SideSign/Dependencies\"";
 			};
 			name = Debug;
 		};
@@ -708,7 +708,7 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "debug-only";
 				SWIFT_OPTIMIZATION_LEVEL = "-Osize";
-				SYSTEM_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/Dependencies/AltSign/Dependencies\"";
+				SYSTEM_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/Dependencies/SideSign/Dependencies\"";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -850,9 +850,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		A8C37021302DA7A70010213A /* XCLocalSwiftPackageReference "Dependencies/AltSign" */ = {
+		A8C37021302DA7A70010213A /* XCLocalSwiftPackageReference "Dependencies/SideSign" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Dependencies/AltSign;
+			relativePath = Dependencies/SideSign;
 		};
 		A8C37024302DA7BA0010213A /* XCLocalSwiftPackageReference "Dependencies/minimuxer" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -946,10 +946,10 @@
 			package = A8C37037302DA8D90010213A /* XCRemoteSwiftPackageReference "SemanticVersion" */;
 			productName = SemanticVersion;
 		};
-		A8C38DEB302DB4E40010213A /* AltSign-Dynamic */ = {
+		A8C38DEB302DB4E40010213A /* SideSign-Dynamic */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = A8C37021302DA7A70010213A /* XCLocalSwiftPackageReference "Dependencies/AltSign" */;
-			productName = "AltSign-Dynamic";
+			package = A8C37021302DA7A70010213A /* XCLocalSwiftPackageReference "Dependencies/SideSign" */;
+			productName = "SideSign-Dynamic";
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

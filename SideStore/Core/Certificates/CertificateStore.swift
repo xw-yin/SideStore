@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import AltSign
+import SideSign
 
 public enum CertificateStore {
     /// Loads an ALTCertificate from PKCS#12 data. If password is provided, decrypts with password; if nil, loads unencrypted PKCS#12.

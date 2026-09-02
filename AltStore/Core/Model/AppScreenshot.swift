@@ -8,7 +8,7 @@
 
 import CoreData
 
-@preconcurrency import AltSign
+import SideSign
 
 public extension AppScreenshot
 {
