@@ -246,12 +246,6 @@ final class PipelineExecutor: @unchecked Sendable {
                 result = installedApp
                 return installedApp
                 
-            case .enableJIT:
-                loggerType = EnableJITOperation.self
-                let step = try EnableJITOperation(context: context)
-                result = try await step.execute(parentProgress: progress)
-                return nil
-                
             case .cleanStagedApp:
                 loggerType = CleanStagedAppOperation.self
                 let step = try CleanStagedAppOperation(context: context)

@@ -85,10 +85,6 @@ public final class AppBootManager: @unchecked Sendable {
                 }
             }
             debugLog("[AppBootManager] Minimuxer startup task completed")
-
-            Task.detached { [weak self] in
-                await self?.validateMinimuxerConnection()
-            }
         } catch {
             if error.isMinimuxerPairingFile {
                 needsPairingPrompt = true
@@ -150,17 +146,6 @@ public final class AppBootManager: @unchecked Sendable {
         #endif
     }
 
-    private nonisolated func validateMinimuxerConnection() async {
-        do {
-            _ = try await fetchUDID()
-            self.needsPairingPrompt = false
-        } catch {
-            if error.isMinimuxerPairingFile {
-                self.needsPairingPrompt = true
-            }
-        }
-    }
-    
     public nonisolated func performBootSequence() async {
         debugLog("[AppBootManager] performBootSequence() entered")
         defer {
@@ -172,7 +157,7 @@ public final class AppBootManager: @unchecked Sendable {
             defer {
                 debugLog("[AppBootManager] performBootSequence(): JIT check completed")
             }
-            if #available(iOS 17, *), !UserDefaults.standard.sidejitenable {
+            if #available(iOS 17, *), !UserDefaults.standard.isSideJITServerEnabled {
                 do {
                     try await SideJITManager.shared.isSideJITServerDetected()
                     self.needsSideJITPrompt = true
@@ -180,8 +165,7 @@ public final class AppBootManager: @unchecked Sendable {
                     debugLog("[AppBootManager] Cannot find sideJITServer")
                 }
             }
-
-            if #available(iOS 17, *), UserDefaults.standard.sidejitenable {
+            if #available(iOS 17, *), UserDefaults.standard.isSideJITServerEnabled {
                 await SideJITManager.shared.askForNetwork()
                 debugLog("[AppBootManager] SideJITServer Enabled")
             }

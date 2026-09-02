@@ -142,7 +142,12 @@ final class PipelineRunner: Sendable
         
         try await Task.detached {
             /* Minimuxer Readiness Check */
-            try await AppBootManager.shared.ensureMinimuxerStarted()
+            do {
+                try await AppBootManager.shared.ensureMinimuxerStarted()
+            } catch {
+                group.context.error = error
+                throw error
+            }
             if let minimuxerError = await getMinimuxerStatus().operationError {
                 group.context.error = minimuxerError
                 throw minimuxerError
@@ -222,7 +227,8 @@ final class PipelineRunner: Sendable
             // request update view context's in-mem coredata caches (coz we worked so far on bg context)
             DatabaseManager.shared.viewContext.performAndWait {
                 DatabaseManager.shared.viewContext.processPendingChanges()
-                DatabaseManager.shared.viewContext.refreshAllObjects()
+                // TODO: remove this later once confirmed that view context gets refreshed due to automaticallyMergesChangesFromParent
+                // DatabaseManager.shared.viewContext.refreshAllObjects()
             }
         }
         do {

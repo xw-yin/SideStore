@@ -32,8 +32,8 @@ extension AppDelegate
     nonisolated static let importAppDeepLinkURLKey = "fileURL"
     nonisolated static let appBackupResultKey = "result"
     nonisolated static let addSourceDeepLinkURLKey = "sourceURL"
-    
-    private static var pendingImportIPAURLs = [URL]()
+
+    @MainActor private static var pendingImportIPAURLs = [URL]()
 
     @MainActor static func enqueueAppImport(_ url: URL) {
         self.pendingImportIPAURLs.append(url)
@@ -45,8 +45,7 @@ extension AppDelegate
         return self.pendingImportIPAURLs.removeFirst()
     }
 
-    @MainActor
-    static var hasPendingAppImports: Bool {
+    @MainActor static var hasPendingAppImports: Bool {
         return !self.pendingImportIPAURLs.isEmpty
     }
     
@@ -92,11 +91,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     
     public let consoleLog = ConsoleLog()
 
-    // Holds an imported .ipa URL when the app isn't active yet (cold launch),
-    // so the import notification can be posted once the app becomes active.
-    private var pendingImportIPAURL: URL?
-
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool
     {
 
@@ -115,6 +109,8 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
         // register crash handler
         setupCrashHandler()
+        
+        UNUserNotificationCenter.current().delegate = self
         
         debugLog("===================================================")
         debugLog("|               App is Starting up                |")
@@ -135,19 +131,22 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         AltSign.setLogging(UserDefaults.standard.isAltSignVerboseLoggingEnabled)
         minimuxerSetLogging(UserDefaults.standard.isMinimuxerVerboseLoggingEnabled)
 
-        // Trigger daily boot sync for Anisette servers if needed
-        Task.detached {
-            await AnisetteServersManager.shared.performDailySyncIfNeeded()
-        }
-
         // Override point for customization after application launch.
 //        UserDefaults.standard.setValue(true, forKey: "com.apple.CoreData.MigrationDebug")
 //        UserDefaults.standard.setValue(true, forKey: "com.apple.CoreData.SQLDebug")
 
         // Register default settings before doing anything else.
         UserDefaults.registerDefaults()
+        syncMinimuxerBackendFromUserDefaults()
         
-        
+        // Perform one-time maintenance tasks (e.g. Keychain clearance for 0.6.4*) before initializing services
+        MaintenanceManager.shared.performMaintenanceIfNeeded()
+
+        // Trigger daily boot sync for Anisette servers if needed
+        Task.detached {
+            await AnisetteServersManager.shared.performDailySyncIfNeeded()
+        }
+
         // Recreate Database if requested
         // NOTE: Userdefaults are local to the SideStore.app sandbox and are not shared
         if UserDefaults.standard.recreateDatabaseOnNextStart{
@@ -235,14 +234,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         Task.detached {
             await AppManager.shared.reconcileInstalledApps()
         }
-    }
-
-    func applicationDidBecomeActive(_ application: UIApplication)
-    {
-        // Flush any .ipa import that arrived before the app was active (cold launch).
-        guard let url = self.pendingImportIPAURL else { return }
-        self.pendingImportIPAURL = nil
-        NotificationCenter.default.post(name: AppDelegate.importAppDeepLinkNotification, object: nil, userInfo: [AppDelegate.importAppDeepLinkURLKey: url])
     }
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any]) -> Bool
@@ -353,12 +344,7 @@ private extension AppDelegate
                 return false
             }
 
-            if UIApplication.shared.applicationState == .active {
-                NotificationCenter.default.post(name: AppDelegate.importAppDeepLinkNotification, object: nil, userInfo: [AppDelegate.importAppDeepLinkURLKey: ipaURL])
-            } else {
-                // Defer until the app is active (cold launch) — see applicationDidBecomeActive.
-                self.pendingImportIPAURL = ipaURL
-            }
+            AppDelegate.enqueueAppImport(ipaURL)
 
             return true
         }
@@ -700,6 +686,31 @@ private extension AppDelegate {
             }
         } else {
             debugLog("[AppDelegate] reconcileSelfReinstallation: BundlePath matched pre-installation path. Reinstallation was not completed or failed.")
+        }
+    }
+}
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        if notification.request.identifier.hasPrefix(AppManager.expirationWarningNotificationID),
+           let scheduledTimestamp = notification.request.content.userInfo[AppManager.expirationWarningDateKey] as? TimeInterval
+        {
+            let runningBundleURL = Bundle.isBundledWithLiveContainer
+                ? Bundle.realMainBundle.bundleURL
+                : Bundle.Info.activeBundleURL
+            if let currentExpirationDate = ALTApplication(fileURL: runningBundleURL)?.provisioningProfile?.expirationDate,
+               abs(currentExpirationDate.timeIntervalSince1970 - scheduledTimestamp) > 60
+            {
+                debugLog("[AppDelegate] Suppressing stale expiration warning. Scheduled expiration: \(Date(timeIntervalSince1970: scheduledTimestamp)), current expiration: \(currentExpirationDate)")
+                completionHandler([])
+                return
+            }
+        }
+
+        if #available(iOS 14.0, *) {
+            completionHandler([.banner, .sound])
+        } else {
+            completionHandler([.alert, .sound])
         }
     }
 }

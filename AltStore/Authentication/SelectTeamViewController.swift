@@ -22,7 +22,7 @@ final class SelectTeamViewController: UITableViewController
     private var prototypeHeaderFooterView: SettingsHeaderFooterView!
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
-        return .lightContent
+        return .default
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {
@@ -55,7 +55,7 @@ final class SelectTeamViewController: UITableViewController
     }
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        "Teams"
+        NSLocalizedString("Teams", comment: "")
     }
     
 }

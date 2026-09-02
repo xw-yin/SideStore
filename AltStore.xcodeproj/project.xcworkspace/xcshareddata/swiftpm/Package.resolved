@@ -1,5 +1,5 @@
 {
-  "originHash" : "b80bb65ed727f3de62e81e661277f54d2e66467f0ef891002f438aaab59cd518",
+  "originHash" : "732a7b8c180db86e8b578e60e078fd4d9899590102f45d1ff31d175394bf690e",
   "pins" : [
     {
       "identity" : "anisettekit",
@@ -7,7 +7,7 @@
       "location" : "https://github.com/mahee96/AnisetteKit",
       "state" : {
         "branch" : "main",
-        "revision" : "ec7c0b84499f107d3864637297b28a5c4ad13150"
+        "revision" : "57a20dcd95c2680865187a8e210bd2d4b2f58c58"
       }
     },
     {
@@ -35,6 +35,15 @@
       "state" : {
         "revision" : "2775239e10e23c0b70c5544b98c2af7f65c2bbd9",
         "version" : "10.0.1"
+      }
+    },
+    {
+      "identity" : "remotepairingkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mahee96/RemotePairingKit.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "e72cd0272ab7b4548b5cd22ed4a81008b2b52717"
       }
     },
     {

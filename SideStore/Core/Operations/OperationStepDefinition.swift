@@ -235,10 +235,6 @@ struct PipelineStepDefinition {
         PipelineExecutionStep(.removeApp,                         2)
     ]
 
-    static let enableJIT: [PipelineExecutionStep] = [
-        PipelineExecutionStep(.enableJIT,                       100)
-    ]
-
     static func steps(for operation: AppOperation) -> [PipelineExecutionStep] {
         switch operation {
         case .install, .update:
@@ -259,8 +255,6 @@ struct PipelineStepDefinition {
             return removeApp
         case .deleteApp:
             return deleteApp
-        case .enableJIT:
-            return enableJIT
         }
     }
 }
@@ -282,6 +276,10 @@ struct StandaloneStepDefinition {
         StandaloneExecutionStep(.clearAppCache, 100)
     ]
 
+    static let enableJIT: [StandaloneExecutionStep] = [
+        StandaloneExecutionStep(.enableJIT, 100)
+    ]
+
     static let scheduleExpirationWarningNotification: [StandaloneExecutionStep] = [
         StandaloneExecutionStep(.scheduleExpirationWarningNotification, 100)
     ]
@@ -298,12 +296,12 @@ extension Array where Element == PipelineExecutionStep {
     static var removeApp:            [PipelineExecutionStep] { PipelineStepDefinition.removeApp            }
     static var removeDeactivatedApp: [PipelineExecutionStep] { PipelineStepDefinition.removeDeactivatedApp }
     static var deleteApp:            [PipelineExecutionStep] { PipelineStepDefinition.deleteApp            }
-    static var enableJIT:            [PipelineExecutionStep] { PipelineStepDefinition.enableJIT            }
 }
 
 extension Array where Element == StandaloneExecutionStep {
     static var authenticate:                          [StandaloneExecutionStep] { StandaloneStepDefinition.authenticate                          }
     static var backgroundRefreshApps:                 [StandaloneExecutionStep] { StandaloneStepDefinition.backgroundRefreshApps                 }
     static var clearAppCache:                         [StandaloneExecutionStep] { StandaloneStepDefinition.clearAppCache                         }
+    static var enableJIT:                             [StandaloneExecutionStep] { StandaloneStepDefinition.enableJIT                             }
     static var scheduleExpirationWarningNotification: [StandaloneExecutionStep] { StandaloneStepDefinition.scheduleExpirationWarningNotification }
 }

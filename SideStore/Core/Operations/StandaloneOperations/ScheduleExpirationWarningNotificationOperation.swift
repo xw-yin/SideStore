@@ -8,6 +8,7 @@
 
 import UserNotifications
 import Foundation
+@preconcurrency import AltSign
 
 final class ScheduleExpirationWarningNotificationOperation: BaseStandaloneOperation<StandaloneOperationContext, Bool>, @unchecked Sendable {
     let installedApp: InstalledApp
@@ -18,18 +19,30 @@ final class ScheduleExpirationWarningNotificationOperation: BaseStandaloneOperat
     }
 
     override func execute(parentProgress: Progress?) async throws -> Bool {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[ScheduleExpirationWarningNotificationOperation] execute() started")
-        defer { debugLog("[ScheduleExpirationWarningNotificationOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[ScheduleExpirationWarningNotificationOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         self.setProgress(10)
 
         let center = UNUserNotificationCenter.current()
         let now = Date()
-        var expirationDate = Date()
+        var storedExpirationDate = Date()
         self.setProgress(30)
         installedApp.managedObjectContext?.performAndWait {
-            expirationDate = installedApp.expirationDate
+            storedExpirationDate = installedApp.expirationDate
         }
+
+        let runningBundleURL = Bundle.isBundledWithLiveContainer
+            ? Bundle.realMainBundle.bundleURL
+            : Bundle.Info.activeBundleURL
+        let runningExpirationDate = ALTApplication(fileURL: runningBundleURL)?.provisioningProfile?.expirationDate
+        let expirationDate = runningExpirationDate ?? storedExpirationDate
+
+        debugLog("[ScheduleExpirationWarningNotificationOperation] Scheduling for expiration date: \(expirationDate) (running profile: \(runningExpirationDate != nil))")
 
         let milestones: [(id: String, timeBeforeExp: TimeInterval, title: String, body: String)] = [
             ("24h", 24 * 60 * 60, "SideStore Expiring Soon", "SideStore will expire in 24 hours. Open the app and refresh it to prevent it from expiring."),
@@ -40,6 +53,7 @@ final class ScheduleExpirationWarningNotificationOperation: BaseStandaloneOperat
         let allIdentifiers = milestones.map { "\(AppManager.expirationWarningNotificationID).\($0.id)" }
         self.setProgress(50)
         center.removePendingNotificationRequests(withIdentifiers: allIdentifiers)
+        center.removeDeliveredNotifications(withIdentifiers: allIdentifiers)
 
         let startProgress = self.progress.completedUnitCount
         let endProgress: Int64 = 95
@@ -63,6 +77,7 @@ final class ScheduleExpirationWarningNotificationOperation: BaseStandaloneOperat
             content.title = NSLocalizedString(milestone.title, comment: "")
             content.body = NSLocalizedString(milestone.body, comment: "")
             content.sound = .default
+            content.userInfo[AppManager.expirationWarningDateKey] = expirationDate.timeIntervalSince1970
 
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: triggerInterval, repeats: false)
             let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)

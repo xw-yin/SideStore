@@ -20,6 +20,14 @@ class AuthFlowHandler: AnyObject, AuthenticationHandler, AnisetteServerHandler {
     private lazy var navigationController: UINavigationController = {
         let storyboard = UIStoryboard(name: "Authentication", bundle: nil)
         let navigationController = storyboard.instantiateViewController(withIdentifier: "navigationController") as! UINavigationController
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithDefaultBackground()
+        appearance.backgroundColor = UIColor(named: "SettingsBackground") ?? .systemBackground
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
+        navigationController.navigationBar.standardAppearance = appearance
+        navigationController.navigationBar.scrollEdgeAppearance = appearance
+        navigationController.navigationBar.tintColor = .altPrimary
         navigationController.isModalInPresentation = true
         return navigationController
     }()
@@ -75,7 +83,7 @@ class AuthFlowHandler: AnyObject, AuthenticationHandler, AnisetteServerHandler {
                 }
             }
             
-            self.navigationController.view.tintColor = .altInvertedPrimary
+            self.navigationController.view.tintColor = .altPrimary
             self.navigationController.setViewControllers([authVC], animated: false)
             presentingViewController.present(self.navigationController, animated: true)
         }
@@ -164,7 +172,9 @@ class AuthFlowHandler: AnyObject, AuthenticationHandler, AnisetteServerHandler {
             
             let isPaid = (teamType != .free)
             let initialCount = revokeVC.getSelectedCertificates().count
-            let initialTitle = isPaid ? "Revoke Selected (\(initialCount))" : NSLocalizedString("Revoke", comment: "")
+            let initialTitle = isPaid ?
+                String(format: NSLocalizedString("Revoke Selected (%d)", comment: ""), initialCount) :
+                NSLocalizedString("Revoke", comment: "")
             let revokeAction = UIAlertAction(title: initialTitle, style: .destructive) { _ in
                 alertController.dismiss(animated: true) {
                     let selected = revokeVC.getSelectedCertificates()
@@ -176,8 +186,10 @@ class AuthFlowHandler: AnyObject, AuthenticationHandler, AnisetteServerHandler {
                 revokeAction.isEnabled = !revokeVC.getSelectedCertificates().isEmpty
                 revokeVC.onSelectionChanged = { selected in
                     revokeAction.isEnabled = !selected.isEmpty
-                    let countText = selected.isEmpty ? "" : " (\(selected.count))"
-                    revokeAction.setValue("Revoke Selected\(countText)", forKey: "title")
+                    let title = selected.isEmpty ?
+                        NSLocalizedString("Revoke Selected", comment: "") :
+                        String(format: NSLocalizedString("Revoke Selected (%d)", comment: ""), selected.count)
+                    revokeAction.setValue(title, forKey: "title")
                 }
             }
             
@@ -311,11 +323,15 @@ class AuthFlowHandler: AnyObject, AuthenticationHandler, AnisetteServerHandler {
         }
         
         return await withCheckedContinuation { continuation in
-            let alert = UIAlertController(title: "WARNING: Outdated anisette server", message: "We've detected you are using an older anisette server. Using this server has a higher likelihood of locking your account and causing other issues. Are you sure you want to continue?", preferredStyle: UIAlertController.Style.alert)
-            alert.addAction(UIAlertAction(title: "Continue", style: UIAlertAction.Style.destructive, handler: { action in
+            let alert = UIAlertController(
+                title: NSLocalizedString("WARNING: Outdated anisette server", comment: ""),
+                message: NSLocalizedString("We've detected you are using an older anisette server. Using this server has a higher likelihood of locking your account and causing other issues. Are you sure you want to continue?", comment: ""),
+                preferredStyle: UIAlertController.Style.alert
+            )
+            alert.addAction(UIAlertAction(title: NSLocalizedString("Continue", comment: ""), style: UIAlertAction.Style.destructive, handler: { action in
                 continuation.resume(returning: true)
             }))
-            alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertAction.Style.cancel, handler: { action in
+            alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: UIAlertAction.Style.cancel, handler: { action in
                 continuation.resume(returning: false)
             }))
             

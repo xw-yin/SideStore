@@ -8,6 +8,7 @@
 
 import Foundation
 import Network
+import os
 
 // MARK: - Data Models
 
@@ -297,7 +298,10 @@ final class BonjourDiscoveryManagerV2: NSObject, ObservableObject {
                    let remote = path.remoteEndpoint,
                    case .hostPort(let host, let port) = remote {
                     
-                    let resolvedHost = "\(host)"
+                    var resolvedHost = "\(host)"
+                    if let percentIndex = resolvedHost.firstIndex(of: "%") {
+                        resolvedHost = String(resolvedHost[..<percentIndex])
+                    }
                     let portVal = port.rawValue
                     debugLog("[BonjourDiscoveryV2] Resolved endpoint: \(resolvedHost):\(portVal)")
                     
@@ -359,7 +363,114 @@ final class BonjourDiscoveryManagerV2: NSObject, ObservableObject {
         return commonKnownServiceTypes[normalized]
     }
     
-    private static func resolveHostToIPs(_ host: String) -> [String] {
+    private final class OneShotResolver: @unchecked Sendable {
+        private let lock = NSLock()
+        private var isResumed = false
+        private var browser: NWBrowser?
+        private var activeConnection: NWConnection?
+        private var continuation: CheckedContinuation<(host: String, port: UInt16)?, Never>?
+        
+        init(continuation: CheckedContinuation<(host: String, port: UInt16)?, Never>) {
+            self.continuation = continuation
+        }
+        
+        func setBrowser(_ browser: NWBrowser) {
+            lock.lock()
+            self.browser = browser
+            lock.unlock()
+        }
+        
+        func setActiveConnection(_ connection: NWConnection) {
+            lock.lock()
+            self.activeConnection = connection
+            lock.unlock()
+        }
+        
+        func resumeOnce(_ result: (host: String, port: UInt16)?) {
+            lock.lock()
+            guard !isResumed else {
+                lock.unlock()
+                return
+            }
+            isResumed = true
+            let continuation = self.continuation
+            self.continuation = nil
+            let browser = self.browser
+            self.browser = nil
+            let connection = self.activeConnection
+            self.activeConnection = nil
+            lock.unlock()
+            
+            browser?.cancel()
+            connection?.cancel()
+            continuation?.resume(returning: result)
+        }
+    }
+    
+    public static func resolveFirstService(
+        ofType rawType: String,
+        namePrefix: String = "",
+        timeout: TimeInterval = AppConstants.Bonjour.defaultDiscoveryTimeout
+    ) async -> (host: String, port: UInt16)? {
+        let typeWithoutDot = rawType.hasSuffix(".") ? String(rawType.dropLast()) : rawType
+        let descriptor = NWBrowser.Descriptor.bonjour(type: typeWithoutDot, domain: AppConstants.Bonjour.defaultDomain)
+        let parameters = typeWithoutDot.contains("_tcp") ? NWParameters.tcp : NWParameters.udp
+        parameters.includePeerToPeer = true
+        
+        let browser = NWBrowser(for: descriptor, using: parameters)
+        
+        return await withCheckedContinuation { continuation in
+            let resolver = OneShotResolver(continuation: continuation)
+            resolver.setBrowser(browser)
+            
+            Task {
+                try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                resolver.resumeOnce(nil)
+            }
+            
+            browser.browseResultsChangedHandler = { results, _ in
+                guard let target = results.first(where: {
+                    guard case .service(let name, _, _, _) = $0.endpoint else { return false }
+                    return namePrefix.isEmpty || name.localizedCaseInsensitiveContains(namePrefix)
+                }), case .service(let name, _, _, _) = target.endpoint else { return }
+                
+                let conn = NWConnection(to: target.endpoint, using: parameters)
+                resolver.setActiveConnection(conn)
+                
+                conn.stateUpdateHandler = { state in
+                    switch state {
+                    case .ready, .waiting:
+                        guard let remote = conn.currentPath?.remoteEndpoint,
+                              case .hostPort(let host, let port) = remote else { return }
+                        
+                        let hostStr = "\(host)"
+                        let ips = resolveHostToIPs(hostStr)
+                        let finalHost = ips.first ?? hostStr
+                        debugLog("[BonjourDiscoveryV2] Auto-resolved '\(name)' to \(finalHost):\(port.rawValue)")
+                        resolver.resumeOnce((host: finalHost, port: port.rawValue))
+                        
+                    case .failed:
+                        resolver.resumeOnce(nil)
+                        
+                    default:
+                        break
+                    }
+                }
+                
+                conn.start(queue: .global(qos: .userInitiated))
+            }
+            
+            browser.stateUpdateHandler = { state in
+                if case .failed = state {
+                    resolver.resumeOnce(nil)
+                }
+            }
+            
+            browser.start(queue: .global(qos: .userInitiated))
+        }
+    }
+    
+    static func resolveHostToIPs(_ host: String) -> [String] {
         var addresses: [String] = []
         var results: UnsafeMutablePointer<addrinfo>?
         

@@ -25,6 +25,7 @@ extension AppManager
     static let willInstallAppFromNewSourceNotification = Notification.Name("io.sidestore.AppManager.willInstallAppFromNewSource")
     
     static let expirationWarningNotificationID = "sidestore-expiration-warning"
+    static let expirationWarningDateKey = "sidestore-expiration-date"
     static let enableJITResultNotificationID = "sidestore-enable-jit"
 }
 
@@ -808,10 +809,30 @@ final class AppManager: ObservableObject, @unchecked Sendable
     
     func enableJIT(for installedApp: InstalledApp, completionHandler: @escaping (Result<Void, Error>) -> Void)
     {
-        debugLog("[AppManager] enableJIT() called for app: \(installedApp.bundleIdentifier)")
-        let pipelineHandler = self.makePipelineHandler(presentingViewController: nil)
-        let context = self.makeAuthenticatedContext(presentingViewController: nil)
-        self.pipelineRunner.performVoidOperation(.enableJIT(installedApp), handler: pipelineHandler, context: context, completionHandler: completionHandler)
+        Task.detached {
+            debugLog("[AppManager] enableJIT() called for app: \(installedApp.bundleIdentifier)")
+            let dbBackgroundContext = DatabaseManager.shared.persistentContainer.newBackgroundContext()
+            let context = StandaloneOperationContext(steps: .enableJIT, dbBackgroundContext: dbBackgroundContext)
+            do {
+                let enableJITOperation = try EnableJITOperation(installedApp: installedApp, context: context)
+                do {
+                    _ = try await enableJITOperation.execute()
+                    completionHandler(.success(()))
+                } catch {
+                    var appName: String = ""
+                    installedApp.managedObjectContext?.performAndWait {
+                        appName = installedApp.name
+                    }
+                    if appName.isEmpty { appName = installedApp.name }
+                    let localizedTitle = String(format: NSLocalizedString("Failed to Enable JIT for %@", comment: ""), appName)
+                    let mappedError = (error as NSError).withLocalizedTitle(localizedTitle)
+                    self.log(error, operation: .enableJIT, app: installedApp)
+                    completionHandler(.failure(mappedError))
+                }
+            } catch {
+                completionHandler(.failure(error))
+            }
+        }
     }
 
     @discardableResult
@@ -906,7 +927,7 @@ extension AppManager: PipelineProgress, PipelineExecutionContext, PipelineErrorL
             {
             case .install, .update: 
                 return self.installationProgress[bundleID]
-            case .refresh, .activate, .deactivate, .deleteApp, .backup, .restore, .resign, .removeApp, .removeDeactivatedApp, .enableJIT: 
+            case .refresh, .activate, .deactivate, .deleteApp, .backup, .restore, .resign, .removeApp, .removeDeactivatedApp: 
                 return self.refreshProgress[bundleID]
             }
         }
@@ -923,7 +944,7 @@ extension AppManager: PipelineProgress, PipelineExecutionContext, PipelineErrorL
             {
             case .install, .update: 
                 self.installationProgress[bundleID] = progress
-            case .refresh, .activate, .deactivate, .deleteApp, .backup, .restore, .resign, .removeApp, .removeDeactivatedApp, .enableJIT: 
+            case .refresh, .activate, .deactivate, .deleteApp, .backup, .restore, .resign, .removeApp, .removeDeactivatedApp: 
                 self.refreshProgress[bundleID] = progress
             }
             debugLog("[AppManager] setProgress: \(progress.map { "\($0)" } ?? "nil") for operation: .\(operationName), totalUnitCount: \(progress?.totalUnitCount ?? 0)")
@@ -957,7 +978,6 @@ extension AppManager: PipelineProgress, PipelineExecutionContext, PipelineErrorL
             case .restore:    localizedTitle = String(format: NSLocalizedString("Failed to Restore %@ Backup", comment: ""), appName)
             case .resign:     localizedTitle = String(format: NSLocalizedString("Failed to Resign %@",         comment: ""), appName)
             case .removeApp, .removeDeactivatedApp: localizedTitle = String(format: NSLocalizedString("Failed to Remove %@", comment: ""), appName)
-            case .enableJIT:  localizedTitle = String(format: NSLocalizedString("Failed to Enable JIT for %@", comment: ""), appName)
         }
         
         let nsError = error as NSError
@@ -1005,5 +1025,4 @@ extension AppManager: PipelineProgress, PipelineExecutionContext, PipelineErrorL
     }
 
 }
-
 

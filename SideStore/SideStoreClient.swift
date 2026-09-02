@@ -111,3 +111,27 @@ public final class SideStoreClient: NSObject, RefreshClient, @unchecked Sendable
     }
 }
 
+@objc(SideStoreRefreshService)
+public final class SideStoreRefreshService: NSObject {
+    @objc(performRefreshWithServer:)
+    public static func performRefresh(server: any RefreshServer) {
+        Task {
+            let progress = Progress(totalUnitCount: 1)
+            progress.completedUnitCount = 0
+            let observation = progress.observe(\.fractionCompleted, options: [.new]) { progress, change in
+                if let newValue = change.newValue {
+                    server.updateProgress(newValue)
+                }
+            }
+            defer { observation.invalidate() }
+
+            do {
+                try await SideStoreClient.shared.refreshAllApps(progress: progress)
+                server.finish(nil)
+            } catch {
+                server.finish(error.localizedDescription)
+            }
+        }
+    }
+}
+

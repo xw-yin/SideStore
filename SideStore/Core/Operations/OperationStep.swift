@@ -16,7 +16,6 @@ enum PipelineStep: OperationStep {
     case cleanStagedApp
     case deactivateApp
     case downloadApp
-    case enableJIT
     case exportResignedApp
     case fetchProvisioningProfilesInstall
     case fetchProvisioningProfilesRefresh
@@ -49,7 +48,6 @@ enum PipelineStep: OperationStep {
         ObjectIdentifier(CleanStagedAppOperation.self):                   .cleanStagedApp,
         ObjectIdentifier(DeactivateAppOperation.self):                    .deactivateApp,
         ObjectIdentifier(DownloadAppOperation.self):                      .downloadApp,
-        ObjectIdentifier(EnableJITOperation.self):                        .enableJIT,
         ObjectIdentifier(ExportResignedAppOperation.self):                .exportResignedApp,
         ObjectIdentifier(FetchProvisioningProfilesInstallOperation.self): .fetchProvisioningProfilesInstall,
         ObjectIdentifier(FetchProvisioningProfilesRefreshOperation.self): .fetchProvisioningProfilesRefresh,
@@ -90,6 +88,7 @@ enum StandaloneStep: OperationStep {
     case authentication
     case backgroundRefreshApps
     case clearAppCache
+    case enableJIT
     case fetchAnisetteData
     case fetchAppIDs
     case fetchSource
@@ -100,6 +99,7 @@ enum StandaloneStep: OperationStep {
         ObjectIdentifier(AuthenticationOperation.self):                          .authentication,
         ObjectIdentifier(BackgroundRefreshAppsOperation.self):                   .backgroundRefreshApps,
         ObjectIdentifier(ClearAppCacheOperation.self):                           .clearAppCache,
+        ObjectIdentifier(EnableJITOperation.self):                               .enableJIT,
         ObjectIdentifier(FetchAnisetteDataOperation.self):                       .fetchAnisetteData,
         ObjectIdentifier(SyncAppIDsOperation.self):                              .fetchAppIDs,
         ObjectIdentifier(FetchSourceOperation.self):                             .fetchSource,

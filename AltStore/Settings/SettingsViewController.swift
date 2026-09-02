@@ -178,7 +178,6 @@ final class SettingsViewController: UITableViewController
     override func viewDidLoad()
     {
         super.viewDidLoad()
-        
         let appearance = UINavigationBarAppearance()
         appearance.configureWithDefaultBackground()
         appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
@@ -1059,95 +1058,14 @@ extension SettingsViewController
                 self.present(alertController, animated: true, completion: nil)
                 
             case .refreshSideJITServer:
-                if #available(iOS 17, *) {
-                
-                   let alertController = UIAlertController(
-                      title: NSLocalizedString("SideJITServer", comment: ""),
-                      message: NSLocalizedString("Settings for SideJITServer", comment: ""),
-                      preferredStyle: UIAlertController.Style.actionSheet)
-                    
-                    
-                    if UserDefaults.standard.sidejitenable {
-                        alertController.addAction(UIAlertAction(title: NSLocalizedString("Disable", comment: ""), style: .default){ _ in
-                            UserDefaults.standard.sidejitenable = false
-                        })
-                    } else {
-                        alertController.addAction(UIAlertAction(title: NSLocalizedString("Enable", comment: ""), style: .default){ _ in
-                            UserDefaults.standard.sidejitenable = true
-                        })
-                    }
-                    
-                    alertController.addAction(UIAlertAction(title: NSLocalizedString("Server Address", comment: ""), style: .default){ _ in
-                        let alertController1 = UIAlertController(title: "SideJITServer Address", message: "Please Enter the SideJITServer Address Below. (this is not needed if SideJITServer has already been detected)", preferredStyle: .alert)
-                        
-
-                        alertController1.addTextField { textField in
-                            textField.placeholder = "SideJITServer Address"
-                        }
-                        
-                        
-                        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
-                        alertController1.addAction(cancelAction)
-                        
-
-                        let okAction = UIAlertAction(title: "OK", style: .default) { _ in
-                            if let text = alertController1.textFields?.first?.text {
-                                UserDefaults.standard.textInputSideJITServerurl = text
-                            }
-                        }
-                        
-                        alertController1.addAction(okAction)
-                        
-                        // Present the alert controller
-                        self.present(alertController1, animated: true)
-                    })
-                    
-
-                   alertController.addAction(UIAlertAction(title: NSLocalizedString("Refresh", comment: ""), style: .destructive){ _ in
-                      if UserDefaults.standard.sidejitenable {
-                         var SJSURL = ""
-                          if (UserDefaults.standard.textInputSideJITServerurl ?? "").isEmpty {
-                            SJSURL = "http://sidejitserver._http._tcp.local:8080"
-                         } else {
-                            SJSURL = UserDefaults.standard.textInputSideJITServerurl ?? ""
-                         }
-                        
-                          
-                         let url = URL(string: SJSURL + "/re/")!
-
-                         let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
-                            if let error = error {
-                               debugLog("Error: \(error)")
-                            } else {
-                               // Do nothing with data or response
-                            }
-                         }
-
-                         task.resume()
-                      }
-                   })
-                    
-
-                   let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
-                   alertController.addAction(cancelAction)
-                   //Fix crash on iPad
-                   alertController.popoverPresentationController?.sourceView = self.tableView
-                   alertController.popoverPresentationController?.sourceRect = self.tableView.rectForRow(at: indexPath)
-                   self.present(alertController, animated: true)
-                   self.tableView.deselectRow(at: indexPath, animated: true)
-                } else {
-                   let alertController = UIAlertController(
-                      title: NSLocalizedString("You are not on iOS 17+ This will not work", comment: ""),
-                      message: NSLocalizedString("This is meant for 'SideJITServer' and it only works on iOS 17+ ", comment: ""),
-                      preferredStyle: UIAlertController.Style.actionSheet)
-
-                   alertController.addAction(.cancel)
-                   //Fix crash on iPad
-                   alertController.popoverPresentationController?.sourceView = self.tableView
-                   alertController.popoverPresentationController?.sourceRect = self.tableView.rectForRow(at: indexPath)
-                   self.present(alertController, animated: true)
-                   self.tableView.deselectRow(at: indexPath, animated: true)
-                }
+                let jitConfigView = SideJITServerConfigView()
+                let vc = UIHostingController(rootView: jitConfigView)
+                let appearance = UINavigationBarAppearance()
+                appearance.configureWithDefaultBackground()
+                vc.navigationItem.scrollEdgeAppearance = appearance
+                vc.navigationItem.standardAppearance = appearance
+                self.navigationController?.pushViewController(vc, animated: true)
+                self.tableView.deselectRow(at: indexPath, animated: true)
                 
             case .resetPairingFile:
                 

@@ -11,7 +11,7 @@ import Minimuxer
 import Combine
 
 /*
- Minimuxer.shared.isReady Result Mapping to Core Requirements Statuses:
+ Minimuxer.shared().isReady Result Mapping to Core Requirements Statuses:
  
  | Ready Result Case                        | Network   | VPN       | IPSec     | Ping      | Pairing   | DDI       |
  | ---------------------------------------- | --------- | --------- | --------- | --------- | --------- | --------- |
@@ -89,13 +89,13 @@ final class HealthCheckViewModel: ObservableObject {
 
     nonisolated private func fetchMetrics() async -> HealthCheckMetrics {
         _ = try? await AppBootManager.shared.ensureMinimuxerStarted()
-        let mode = await Minimuxer.shared.getConnectionMode()
-        let wifi = Minimuxer.network.isWifiSatisfied
-        let wired = Minimuxer.network.isWiredSatisfied
-        let usb = Minimuxer.network.isUsbSatisfied
-        let bridge = Minimuxer.network.isBridgeSatisfied
-        let utun = Minimuxer.network.isUTunAvailable
-        let ipsec = Minimuxer.network.isIKEv2IPSecAvailable
+        let mode = await minimuxer.core.getConnectionMode()
+        let wifi = minimuxer.network.isWifiSatisfied
+        let wired = minimuxer.network.isWiredSatisfied
+        let usb = minimuxer.network.isUsbSatisfied
+        let bridge = minimuxer.network.isBridgeSatisfied
+        let utun = minimuxer.network.isUTunAvailable
+        let ipsec = minimuxer.network.isIKEv2IPSecAvailable
         
         let tunnelIfaceIp = ConnectionConfig.shared.formattedTunnelIface
         let tunnelIfaceSubnetMask = ConnectionConfig.shared.tunnelIfaceSubnetMask
@@ -106,7 +106,7 @@ final class HealthCheckViewModel: ObservableObject {
         let remotePeerIp = ConnectionConfig.shared.remotePeerIp
         let remoteReachable = ConnectionConfig.shared.remoteReachable
         
-        let pairingType = Minimuxer.shared.getPairingFileType()
+        let pairingType = minimuxer.core.getPairingFileType()
         let protocolStr: String
         switch pairingType {
         case .rppairing:
@@ -118,14 +118,15 @@ final class HealthCheckViewModel: ObservableObject {
         }
         
         let targetIp = mode == .localVPN ? (overrideTunnelPeerEffective ? overrideTunnelPeerIp : (tunnelPeerIp ?? "")) : remoteServerIp
-        let pingSuccess = !targetIp.isEmpty && Minimuxer.shared.testDeviceConnection(ifaddr: targetIp)
+        let pingSuccess = !targetIp.isEmpty && minimuxer.core.testDeviceConnection(ifaddr: targetIp)
         
-        let ddi = (try? await Minimuxer.shared.isDDIMounted()) ?? false
-        let pairingVerified = (try? await Minimuxer.shared.fetchUDID() != nil) ?? false
-        let isRpPairing = Minimuxer.shared.isrppairing
-        let isPairingLoaded = Minimuxer.shared.isPairingFileLoaded
-        let readyResult = await Minimuxer.shared.isReady(withDDIMountCheck: true)
-        let scanned = Minimuxer.network.activeInterfaces
+        let ddi = (try? await minimuxer.core.isDDIMounted()) ?? false
+        let pairingVerified = (try? await minimuxer.core.fetchUDID() != nil) ?? false
+        let isRpPairing = minimuxer.core.isrppairing
+        let isPairingLoaded = minimuxer.core.isPairingFileLoaded
+        // DDI was queried above. Avoid a second serialized device request here.
+        let readyResult = await minimuxer.core.isReady()
+        let scanned = minimuxer.network.activeInterfaces
         
         return HealthCheckMetrics(
             connectionMode: mode,
@@ -148,7 +149,7 @@ final class HealthCheckViewModel: ObservableObject {
         await withTaskGroup(of: Void.self) { group in
             // Immediate Network & Interface Updates (Wi-Fi, interfaces, VPN tunnel presence)
             group.addTask {
-                for await _ in Minimuxer.network.pathPublisher.values {
+                for await _ in minimuxer.network.pathPublisher.values {
                     guard !Task.isCancelled else { break }
                     await self.updateNetworkState()
                 }
@@ -168,18 +169,19 @@ final class HealthCheckViewModel: ObservableObject {
 
     @MainActor
     private func updateNetworkState() {
-        self.isWifiSatisfied = Minimuxer.network.isWifiSatisfied
-        self.isWiredSatisfied = Minimuxer.network.isWiredSatisfied
-        self.isUsbSatisfied = Minimuxer.network.isUsbSatisfied
-        self.isBridgeSatisfied = Minimuxer.network.isBridgeSatisfied
-        self.isUTunAvailable = Minimuxer.network.isUTunAvailable
-        self.isIKEv2IPSecAvailable = Minimuxer.network.isIKEv2IPSecAvailable
-        self.availableInterfaces = Minimuxer.network.activeInterfaces
-        self.networkSatisfied = Minimuxer.network.isWifiSatisfied
+        let network = minimuxer.network
+        self.isWifiSatisfied = network.isWifiSatisfied
+        self.isWiredSatisfied = network.isWiredSatisfied
+        self.isUsbSatisfied = network.isUsbSatisfied
+        self.isBridgeSatisfied = network.isBridgeSatisfied
+        self.isUTunAvailable = network.isUTunAvailable
+        self.isIKEv2IPSecAvailable = network.isIKEv2IPSecAvailable
+        self.availableInterfaces = network.activeInterfaces
+        self.networkSatisfied = network.isWifiSatisfied
         if self.connectionMode == .localVPN {
-            self.vpnSatisfied = Minimuxer.network.isUTunAvailable
+            self.vpnSatisfied = network.isUTunAvailable
             if !self.isRPPairing {
-                self.ipsecSatisfied = Minimuxer.network.isIKEv2IPSecAvailable
+                self.ipsecSatisfied = network.isIKEv2IPSecAvailable
             }
         }
     }
@@ -204,14 +206,14 @@ final class HealthCheckViewModel: ObservableObject {
         switch m.readyResult {
         case .success:
             let pingSat = m.pingSuccess
-            let isPairingLoaded = Minimuxer.shared.isPairingFileLoaded
+            let isPairingLoaded = minimuxer.core.isPairingFileLoaded
             let pairingSat: Bool? = m.pairingVerified ? true : (isPairingLoaded ? nil : false)
             let ddiSat = m.ddi
             return (netSat, vpnSat, ipsecSat, pingSat, pairingSat, ddiSat)
 
         case .failure(let error):
             var pingSat: Bool? = m.pingSuccess
-            let isPairingLoaded = Minimuxer.shared.isPairingFileLoaded
+            let isPairingLoaded = minimuxer.core.isPairingFileLoaded
             var pairingSat: Bool? = m.pairingVerified ? true : (isPairingLoaded ? nil : false)
             var ddiSat: Bool? = m.ddi
 

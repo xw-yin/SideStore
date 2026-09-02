@@ -23,7 +23,6 @@ enum AppOperation
     case resign(InstalledApp, alternateIconMode: AlternateIconMode = .preserve)
     case removeApp(InstalledApp)
     case removeDeactivatedApp(InstalledApp)
-    case enableJIT(InstalledApp)
     
     var app: AppProtocol {
         switch self
@@ -32,7 +31,7 @@ enum AppOperation
             return app
         case .refresh(let app), .activate(let app), .deactivate(let app), .deleteApp(let app),
              .backup(let app),  .restore(let app),  .resign(let app, _),
-             .removeApp(let app), .removeDeactivatedApp(let app),  .enableJIT(let app):
+             .removeApp(let app), .removeDeactivatedApp(let app):
             return app
         }
     }
@@ -65,7 +64,6 @@ enum AppOperation
         case .restore: return .restore
         case .resign: return .resign
         case .removeApp, .removeDeactivatedApp: return .remove
-        case .enableJIT: return .enableJIT
         }
     }
 }
