@@ -173,6 +173,7 @@ COMMON_BUILD_SETTINGS = \
 	-scheme SideStore \
 	-sdk iphoneos \
 	-configuration $(BUILD_CONFIG) \
+	-clonedSourcePackagesDirPath $(CURDIR)/.spm_cache \
 	CODE_SIGNING_REQUIRED=NO \
 	AD_HOC_CODE_SIGNING_ALLOWED=YES \
 	CODE_SIGNING_ALLOWED=NO \
