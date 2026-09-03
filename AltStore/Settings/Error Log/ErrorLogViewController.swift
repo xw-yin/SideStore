@@ -243,14 +243,17 @@ private extension ErrorLogViewController
         case consoleLog = "console-log"
 
         func getLogPath() -> URL {
-            let appDelegate = UIApplication.shared.delegate as! AppDelegate
-            return appDelegate.consoleLog.logFileURL
+            if let appDelegate = UIApplication.shared.delegate as? AppDelegate {
+                return appDelegate.consoleLog.logFileURL
+            }
+            return FileManager.default.temporaryDirectory.appendingPathComponent("console.log")
         }
     }
     
     @IBAction func showConsoleLogs(_ sender: UIBarButtonItem) {
+        let logURL = (UIApplication.shared.delegate as? AppDelegate)?.consoleLog.logFileURL ?? FileManager.default.temporaryDirectory.appendingPathComponent("console.log")
         // Create the SwiftUI ConsoleLogView with the URL
-        let consoleLogView = ConsoleLogView(logURL: (UIApplication.shared.delegate as! AppDelegate).consoleLog.logFileURL)
+        let consoleLogView = ConsoleLogView(logURL: logURL)
         
         // Create the UIHostingController
         let consoleLogController = UIHostingController(rootView: consoleLogView)

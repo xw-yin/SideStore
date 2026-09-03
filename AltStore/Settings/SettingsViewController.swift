@@ -198,8 +198,9 @@ final class SettingsViewController: UITableViewController
         navigationController?.navigationBar.scrollEdgeAppearance = appearance
         
         self.tableView.backgroundColor = .systemGroupedBackground
-        let nib = UINib(nibName: "SettingsHeaderFooterView", bundle: nil)
-        self.prototypeHeaderFooterView = nib.instantiate(withOwner: nil, options: nil)[0] as? SettingsHeaderFooterView
+        let bundle = Bundle(for: SettingsViewController.self)
+        let nib = UINib(nibName: "SettingsHeaderFooterView", bundle: bundle)
+        self.prototypeHeaderFooterView = nib.instantiate(withOwner: nil, options: nil).first as? SettingsHeaderFooterView
         
         self.tableView.register(nib, forHeaderFooterViewReuseIdentifier: "HeaderFooterView")
         
@@ -212,13 +213,13 @@ final class SettingsViewController: UITableViewController
         self.tableView.addGestureRecognizer(debugModeGestureRecognizer)
         
         // set the version label to show in settings screen
-        self.versionLabel.attributedText = getVersionAttributedString()
-        self.versionLabel.isUserInteractionEnabled = true
-        self.versionLabel.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(copyVersionLabelTapped)))
+        self.versionLabel?.attributedText = getVersionAttributedString()
+        self.versionLabel?.isUserInteractionEnabled = true
+        self.versionLabel?.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(copyVersionLabelTapped)))
         
-        self.versionLabel.numberOfLines = 0
-        self.versionLabel.lineBreakMode = .byWordWrapping
-        self.versionLabel.setNeedsUpdateConstraints()
+        self.versionLabel?.numberOfLines = 0
+        self.versionLabel?.lineBreakMode = .byWordWrapping
+        self.versionLabel?.setNeedsUpdateConstraints()
         
         self.tableView.contentInset.bottom = 40
         
@@ -235,15 +236,17 @@ final class SettingsViewController: UITableViewController
         // We can only configure the contentMode for a button's background image from Interface Builder.
         // This works, but it means buttons don't visually highlight because there's no foreground image.
         // As a workaround, we manually set the foreground image + contentMode here.
-        for button in [self.mastodonButton!, self.threadsButton!, self.twitterButton!, self.githubButton!]
+        for button in [self.mastodonButton, self.threadsButton, self.twitterButton, self.githubButton].compactMap({ $0 })
         {
             // Get the assigned image from Interface Builder.
-            let image = button.configuration?.background.image
+            let image = button.configuration?.background.image ?? button.image(for: .normal)
             
             button.configuration = nil
             button.setImage(image, for: .normal)
             button.imageView?.contentMode = .scaleAspectFit
         }
+        
+        configureReleaseChannelButton()
     }
     
     override func viewWillAppear(_ animated: Bool)
@@ -252,7 +255,6 @@ final class SettingsViewController: UITableViewController
         
         self.navigationItem.title = NSLocalizedString("Settings", comment: "")
         self.tabBarItem.title = NSLocalizedString("Settings", comment: "")
-        self.localizeSettingsControls(in: self.view)
         // show nav bar if not shown already
         self.navigationController?.setNavigationBarHidden(false, animated: animated)
         
@@ -366,13 +368,13 @@ private extension SettingsViewController
         }
         
         // AppRefreshRow
-        self.backgroundRefreshSwitch.isOn = UserDefaults.standard.isBackgroundRefreshEnabled
-        self.noIdleTimeoutSwitch.isOn = UserDefaults.standard.isIdleTimeoutDisableEnabled
-        self.disableAppLimitSwitch.isOn = UserDefaults.standard.isAppLimitDisabled
+        self.backgroundRefreshSwitch?.isOn = UserDefaults.standard.isBackgroundRefreshEnabled
+        self.noIdleTimeoutSwitch?.isOn = UserDefaults.standard.isIdleTimeoutDisableEnabled
+        self.disableAppLimitSwitch?.isOn = UserDefaults.standard.isAppLimitDisabled
 
         // BetaTestingRow
-        self.betaUpdatesSwitch.isOn = UserDefaults.standard.isBetaUpdatesEnabled
-        self.betaTrackPopupButton.isEnabled = UserDefaults.standard.isBetaUpdatesEnabled
+        self.betaUpdatesSwitch?.isOn = UserDefaults.standard.isBetaUpdatesEnabled
+        self.betaTrackPopupButton?.isEnabled = UserDefaults.standard.isBetaUpdatesEnabled
 
         // DiagnosticsRow
         // DiagnosticsRow (managed via DeveloperOptionsView)
@@ -593,8 +595,9 @@ private extension SettingsViewController
     @IBAction func toggleRotateLogsOnStartup(_ sender: UISwitch) {
         UserDefaults.standard.isRotateLogsOnStartupEnabled = sender.isOn
         let suffixFormat: SuffixFormat = sender.isOn ? .timestamp : .none
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        appDelegate.consoleLog.updateConfiguration(baseName: "console", suffixFormat: suffixFormat, policy: .immediate)
+        if let appDelegate = UIApplication.shared.delegate as? AppDelegate {
+            appDelegate.consoleLog.updateConfiguration(baseName: "console", suffixFormat: suffixFormat, policy: .immediate)
+        }
     }
 
     @IBAction func toggleRecreateDatabaseSwitch(_ sender: UISwitch) {
@@ -874,7 +877,9 @@ extension SettingsViewController
         case .signIn where self.activeTeam != nil: return nil
         case .account where self.activeTeam == nil: return nil
         case .signIn, .account, .appRefresh, .techyThings, .credits, .advancedSettings, .betaTesting, .diagnostics:
-            let headerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: "HeaderFooterView") as! SettingsHeaderFooterView
+            guard let headerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: "HeaderFooterView") as? SettingsHeaderFooterView else {
+                return nil
+            }
             self.prepare(headerView, for: section, isHeader: true)
             return headerView
         }
@@ -888,7 +893,9 @@ extension SettingsViewController
         case _ where isSectionHidden(section): return nil
         case .signIn where self.activeTeam != nil: return nil
         case .signIn, .appRefresh, .techyThings, .betaTesting:
-            let footerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: "HeaderFooterView") as! SettingsHeaderFooterView
+            guard let footerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: "HeaderFooterView") as? SettingsHeaderFooterView else {
+                return nil
+            }
             self.prepare(footerView, for: section, isHeader: false)
             return footerView
             
@@ -905,8 +912,11 @@ extension SettingsViewController
         case .signIn where self.activeTeam != nil: return 1.0
         case .account where self.activeTeam == nil: return 1.0
         case .signIn, .account, .appRefresh, .techyThings, .credits, .advancedSettings, .betaTesting, .diagnostics:
-            let height = self.preferredHeight(for: self.prototypeHeaderFooterView, in: section, isHeader: true)
-            return height
+            if let prototype = self.prototypeHeaderFooterView {
+                let height = self.preferredHeight(for: prototype, in: section, isHeader: true)
+                return height
+            }
+            return 44.0
         }
     }
     
@@ -919,8 +929,11 @@ extension SettingsViewController
         case .signIn where self.activeTeam != nil: return 1.0
         case .account where self.activeTeam == nil: return 1.0            
         case .signIn, .appRefresh, .techyThings, .betaTesting:
-            let height = self.preferredHeight(for: self.prototypeHeaderFooterView, in: section, isHeader: false)
-            return height
+            if let prototype = self.prototypeHeaderFooterView {
+                let height = self.preferredHeight(for: prototype, in: section, isHeader: false)
+                return height
+            }
+            return 44.0
             
         case .account, .credits, .advancedSettings, .diagnostics: return 0.0
         }
