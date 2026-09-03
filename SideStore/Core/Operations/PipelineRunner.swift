@@ -140,6 +140,7 @@ final class PipelineRunner: Sendable
         }
         
         try await Task.detached {
+            try await AppBootManager.shared.ensureMinimuxerStarted()
             /* Minimuxer Readiness Check */
             if let minimuxerError = await getMinimuxerStatus().operationError {
                 group.context.error = minimuxerError
