@@ -165,7 +165,7 @@ struct ServiceTypesViewV2: View {
     private var serviceTypesList: some View {
         List {
             Section(
-                header: Text("\(manager.serviceTypes.count) Service\(manager.serviceTypes.count == 1 ? "" : "s") Found"),
+                header: Text(String(format: NSLocalizedString(manager.serviceTypes.count == 1 ? "%d Service Found" : "%d Services Found", comment: "Bonjour service count"), manager.serviceTypes.count)),
                 footer: searchingFooter
             ) {
                 ForEach(manager.serviceTypes) { typeInfo in
@@ -295,7 +295,7 @@ struct ServiceInstancesViewV2: View {
                     Text(serviceType)
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    Text("\(manager.instances.count) Instance\(manager.instances.count == 1 ? "" : "s")")
+                    Text(String(format: NSLocalizedString(manager.instances.count == 1 ? "%d Instance" : "%d Instances", comment: "Bonjour instance count"), manager.instances.count))
                 },
                 footer: searchingFooter
             ) {
@@ -412,7 +412,7 @@ struct ServiceDetailViewV2: View {
                 VStack(alignment: .center, spacing: 8) {
                     Image(systemName: "bonjour")
                         .font(.system(size: 36))
-                        .foregroundColor(.accentColor)
+                        .foregroundStyle(.primary)
                     Text(resolved.name)
                         .font(.headline)
                         .multilineTextAlignment(.center)
