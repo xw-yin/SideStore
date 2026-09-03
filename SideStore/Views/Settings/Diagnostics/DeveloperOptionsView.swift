@@ -592,7 +592,7 @@ struct DeveloperOptionsView: View {
     private func triggerReloadAllWidgets() {
         WidgetCenter.shared.reloadAllTimelines()
         if let top = topViewController() {
-            let toastView = ToastView(text: NSLocalizedString("Reloaded All Widgets", comment: ""), detailText: "Triggered timeline refresh for all widgets.")
+            let toastView = ToastView(text: NSLocalizedString("Reloaded All Widgets", comment: ""), detailText: NSLocalizedString("Triggered timeline refresh for all widgets.", comment: ""))
             toastView.show(in: top)
         }
     }
@@ -601,10 +601,11 @@ struct DeveloperOptionsView: View {
         guard let top = topViewController() else { return }
         do {
             if let rotatedURL = try WidgetLogManager.rotateLog() {
-                let toastView = ToastView(text: NSLocalizedString("Rotated Widget Log", comment: ""), detailText: "Saved to WidgetLogs/\(rotatedURL.lastPathComponent)")
+                let detailText = String(format: NSLocalizedString("Saved to WidgetLogs/%@", comment: ""), rotatedURL.lastPathComponent)
+                let toastView = ToastView(text: NSLocalizedString("Rotated Widget Log", comment: ""), detailText: detailText)
                 toastView.show(in: top)
             } else {
-                let toastView = ToastView(text: NSLocalizedString("Widget Log Empty", comment: ""), detailText: "Nothing to rotate.")
+                let toastView = ToastView(text: NSLocalizedString("Widget Log Empty", comment: ""), detailText: NSLocalizedString("Nothing to rotate.", comment: ""))
                 toastView.show(in: top)
             }
         } catch {
