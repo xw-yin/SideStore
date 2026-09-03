@@ -829,7 +829,7 @@ private extension MyAppsViewController
                 else
                 {
                     // Otherwise, fall back to generic noInstalledApps.
-                    error = RefreshError(.noInstalledApps)
+                    error = OperationError.noInstalledApps
                 }
 
                 let toastView = ToastView(error: error)

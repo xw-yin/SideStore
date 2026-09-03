@@ -155,15 +155,12 @@ final class LaunchViewController: UIViewController {
             self.splashView.removeFromSuperview()
             self.destinationViewController = destinationVC
             
-            Task.detached { @MainActor [weak self] in
-                guard let self = self else { return }
-                if AppBootManager.shared.needsPairingPrompt {
-                    await AppBootManager.shared.promptForPairing(on: self)
-                }
-                
-                if AppBootManager.shared.needsSideJITPrompt {
-                    SideJITManager.shared.presentJITPrompt(presentingVC: self)
-                }
+            if AppBootManager.shared.needsPairingPrompt {
+                PairingFileManager.shared.presentPairingFileAlert(on: self, isRetry: false)
+            }
+            
+            if AppBootManager.shared.needsSideJITPrompt {
+                SideJITManager.shared.presentJITPrompt(presentingVC: self)
             }
         }
     }

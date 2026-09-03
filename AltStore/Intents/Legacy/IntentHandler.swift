@@ -147,7 +147,7 @@ private extension IntentHandler
                     self.finish(intent, response: RefreshAllIntentResponse(code: .success, userActivity: nil))
                     UIApplication.shared.perform(#selector(NSXPCConnection.suspend))
                 }
-                catch ~RefreshErrorCode.noInstalledApps
+                catch OperationError.noInstalledApps
                 {
                     self.finish(intent, response: RefreshAllIntentResponse(code: .success, userActivity: nil))
                     UIApplication.shared.perform(#selector(NSXPCConnection.suspend))
