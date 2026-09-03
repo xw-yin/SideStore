@@ -34,7 +34,7 @@ struct AppIDsListView: View {
 
     var body: some View {
         List {
-            Section(header: Text("Registered App IDs (\(viewModel.appIDs.count))")) {
+            Section(header: Text(String(format: NSLocalizedString("Registered App IDs (%@)", comment: ""), "\(viewModel.appIDs.count)"))) {
                 if filteredAppIDs.isEmpty {
                     if viewModel.isLoading {
                         HStack {
@@ -44,7 +44,7 @@ struct AppIDsListView: View {
                         }
                         .padding(.vertical, 8)
                     } else {
-                        Text(searchText.isEmpty ? "No App IDs registered on Developer Portal." : "No matching App IDs found.")
+                        Text(LocalizedStringKey(searchText.isEmpty ? "No App IDs registered on Developer Portal." : "No matching App IDs found."))
                             .foregroundColor(.secondary)
                             .font(.subheadline)
                     }
@@ -55,9 +55,10 @@ struct AppIDsListView: View {
                                 HStack {
                                     Text(appID.name.isEmpty ? "App ID" : appID.name)
                                         .font(.headline)
+                                        .foregroundColor(.primary)
                                     Spacer()
                                     if !appID.features.isEmpty {
-                                        Text("\(appID.features.count) features")
+                                        Text(String(format: NSLocalizedString("%@ features", comment: ""), "\(appID.features.count)"))
                                             .font(.caption2)
                                             .padding(.horizontal, 6)
                                             .padding(.vertical, 2)
@@ -75,7 +76,7 @@ struct AppIDsListView: View {
                                         .foregroundColor(.secondary)
                                     Spacer()
                                     if let expiration = appID.expirationDate {
-                                        Text("Expires: \(formatDate(expiration))")
+                                        Text(String(format: NSLocalizedString("Expires: %@", comment: ""), formatDate(expiration)))
                                             .font(.caption)
                                             .foregroundColor(expiration < Date() ? .red : .secondary)
                                     }
@@ -97,11 +98,11 @@ struct AppIDsListView: View {
         }
         #if !os(tvOS)
         .listStyle(InsetGroupedListStyle())
-        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search App IDs")
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: Text("Search App IDs"))
         #else
         .listStyle(GroupedListStyle())
         #endif
-        .navigationTitle("App IDs")
+        .navigationTitle(NSLocalizedString("App IDs", comment: ""))
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 SwiftUI.Button {
@@ -118,13 +119,13 @@ struct AppIDsListView: View {
             NavigationView {
                 Form {
                     Section(header: Text("App ID Information"), footer: Text("Bundle ID must match reverse-DNS format (e.g. com.example.myapp).")) {
-                        TextField("Name (e.g. My App)", text: $newAppIDName)
-                        TextField("Bundle Identifier", text: $newAppIDBundleID)
+                        TextField(NSLocalizedString("Name (e.g. My App)", comment: ""), text: $newAppIDName)
+                        TextField(NSLocalizedString("Bundle Identifier", comment: ""), text: $newAppIDBundleID)
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
                     }
                 }
-                .navigationTitle("Register App ID")
+                .navigationTitle(NSLocalizedString("Register App ID", comment: ""))
                 .navigationBarItems(
                     leading: SwiftUI.Button("Cancel") {
                         newAppIDName = ""
@@ -153,7 +154,7 @@ struct AppIDsListView: View {
         .alert(isPresented: $showDeleteConfirmation) {
             Alert(
                 title: Text("Delete App ID?"),
-                message: Text("Are you sure you want to delete '\(appIDToDelete?.name ?? "this App ID")' (\(appIDToDelete?.bundleIdentifier ?? ""))? This will also remove any associated provisioning profiles."),
+                message: Text(String(format: NSLocalizedString("Are you sure you want to delete '%@' (%@)? This will also remove any associated provisioning profiles.", comment: ""), appIDToDelete?.name ?? "this App ID", appIDToDelete?.bundleIdentifier ?? "")),
                 primaryButton: .destructive(Text("Delete")) {
                     if let target = appIDToDelete {
                         Task {

@@ -34,7 +34,7 @@ struct ProfilesListView: View {
 
     var body: some View {
         List {
-            Section(header: Text("Provisioning Profiles (\(viewModel.profiles.count))"), footer: Text("Deleting profiles on the developer portal allows Apple to issue fresh profiles with updated certificates and unflagged UUIDs.")) {
+            Section(header: Text(String(format: NSLocalizedString("Provisioning Profiles (%@)", comment: ""), "\(viewModel.profiles.count)")), footer: Text(LocalizedStringKey("Deleting profiles on the developer portal allows Apple to issue fresh profiles with updated certificates and unflagged UUIDs."))) {
                 if filteredProfiles.isEmpty {
                     if viewModel.isLoading {
                         HStack {
@@ -44,7 +44,7 @@ struct ProfilesListView: View {
                         }
                         .padding(.vertical, 8)
                     } else {
-                        Text(searchText.isEmpty ? "No Provisioning Profiles found on Developer Portal." : "No matching Provisioning Profiles found.")
+                        Text(LocalizedStringKey(searchText.isEmpty ? "No Provisioning Profiles found on Developer Portal." : "No matching Provisioning Profiles found."))
                             .foregroundColor(.secondary)
                             .font(.subheadline)
                     }
@@ -55,6 +55,7 @@ struct ProfilesListView: View {
                                 HStack {
                                     Text(profile.name)
                                         .font(.headline)
+                                        .foregroundColor(.primary)
                                     Spacer()
                                     if profile.expirationDate < Date() {
                                         Text("Expired")
@@ -74,7 +75,7 @@ struct ProfilesListView: View {
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                     Spacer()
-                                    Text("Expires: \(formatDate(profile.expirationDate))")
+                                    Text(String(format: NSLocalizedString("Expires: %@", comment: ""), formatDate(profile.expirationDate)))
                                         .font(.caption)
                                         .foregroundColor(profile.expirationDate < Date() ? .red : .secondary)
                                 }
@@ -111,11 +112,11 @@ struct ProfilesListView: View {
         }
         #if !os(tvOS)
         .listStyle(InsetGroupedListStyle())
-        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search Profiles")
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: Text("Search Profiles"))
         #else
         .listStyle(GroupedListStyle())
         #endif
-        .navigationTitle("Profiles")
+        .navigationTitle(NSLocalizedString("Profiles", comment: ""))
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 SwiftUI.Button {
@@ -163,7 +164,7 @@ struct ProfilesListView: View {
                 #else
                 .listStyle(GroupedListStyle())
                 #endif
-                .navigationTitle("Download Profile")
+                .navigationTitle(NSLocalizedString("Download Profile", comment: ""))
                 .navigationBarItems(trailing: SwiftUI.Button("Cancel") {
                     showDownloadSheet = false
                 })
@@ -172,7 +173,7 @@ struct ProfilesListView: View {
         .alert(isPresented: $showDeleteConfirmation) {
             Alert(
                 title: Text("Delete Provisioning Profile?"),
-                message: Text("Are you sure you want to delete '\(profileToDelete?.name ?? "this profile")' from the Apple Developer Portal?"),
+                message: Text(String(format: NSLocalizedString("Are you sure you want to delete '%@' from the Apple Developer Portal?", comment: ""), profileToDelete?.name ?? "this profile")),
                 primaryButton: .destructive(Text("Delete")) {
                     if let target = profileToDelete {
                         Task {
@@ -183,15 +184,15 @@ struct ProfilesListView: View {
                 secondaryButton: .cancel()
             )
         }
-        .alert("Purge All Profiles?", isPresented: $showPurgeAllConfirmation) {
-            SwiftUI.Button("Delete All (\(viewModel.profiles.count))", role: .destructive) {
+        .alert(NSLocalizedString("Purge All Profiles?", comment: ""), isPresented: $showPurgeAllConfirmation) {
+            SwiftUI.Button(String(format: NSLocalizedString("Delete All (%@)", comment: ""), "\(viewModel.profiles.count)"), role: .destructive) {
                 Task {
                     _ = await viewModel.deleteAllProfiles(presentingViewController: presentingViewController)
                 }
             }
             SwiftUI.Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This will permanently delete all \(viewModel.profiles.count) provisioning profile(s) for team '\(viewModel.team?.name ?? "")' on Apple's developer portal. SideStore will automatically generate fresh profiles on next app install or refresh.")
+            Text(String(format: NSLocalizedString("This will permanently delete all %lld provisioning profile(s) for team '%@' on Apple's developer portal. SideStore will automatically generate fresh profiles on next app install or refresh.", comment: ""), Int64(viewModel.profiles.count), viewModel.team?.name ?? ""))
         }
     }
 

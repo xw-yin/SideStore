@@ -11,6 +11,7 @@ Pods/
 ## Build generated
 build/
 DerivedData
+.spm_cache/
 
 SideStore.xcarchive
 ## Various settings

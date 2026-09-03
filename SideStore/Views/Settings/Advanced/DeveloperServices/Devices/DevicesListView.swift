@@ -42,7 +42,7 @@ struct DevicesListView: View {
 
     var body: some View {
         List {
-            Section(header: Text("Registered Devices (\(viewModel.devices.count))"), footer: Text("Devices registered on your developer team can run development-signed apps. Tap any device to edit its name, disable, or delete it.")) {
+            Section(header: Text(String(format: NSLocalizedString("Registered Devices (%@)", comment: ""), "\(viewModel.devices.count)")), footer: Text(LocalizedStringKey("Devices registered on your developer team can run development-signed apps. Tap any device to edit its name, disable, or delete it."))) {
                 if filteredDevices.isEmpty {
                     if viewModel.isLoading {
                         HStack {
@@ -52,7 +52,7 @@ struct DevicesListView: View {
                         }
                         .padding(.vertical, 8)
                     } else {
-                        Text(searchText.isEmpty ? "No devices registered on Developer Portal." : "No matching devices found.")
+                        Text(LocalizedStringKey(searchText.isEmpty ? "No devices registered on Developer Portal." : "No matching devices found."))
                             .foregroundColor(.secondary)
                             .font(.subheadline)
                     }
@@ -158,11 +158,11 @@ struct DevicesListView: View {
         }
         #if !os(tvOS)
         .listStyle(InsetGroupedListStyle())
-        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search Devices")
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: Text("Search Devices"))
         #else
         .listStyle(GroupedListStyle())
         #endif
-        .navigationTitle("Devices")
+        .navigationTitle(NSLocalizedString("Devices", comment: ""))
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 SwiftUI.Button {
@@ -181,13 +181,13 @@ struct DevicesListView: View {
         .sheet(isPresented: $showRegisterSheet) {
             NavigationView {
                 Form {
-                    Section(header: Text("Device Information"), footer: Text("UDID is a 25-character or 40-character unique device identifier.")) {
-                        TextField("Device Name", text: $newDeviceName)
-                        TextField("Device UDID", text: $newDeviceUDID)
+                    Section(header: Text("Device Information"), footer: Text(LocalizedStringKey("UDID is a 25-character or 40-character unique device identifier."))) {
+                        TextField(NSLocalizedString("Device Name (e.g. John's iPhone)", comment: ""), text: $newDeviceName)
+                        TextField(NSLocalizedString("Device UDID", comment: ""), text: $newDeviceUDID)
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
 
-                        Picker("Device Type", selection: $selectedDeviceType) {
+                        Picker(NSLocalizedString("Device Type", comment: ""), selection: $selectedDeviceType) {
                             Text("iPhone").tag(ALTDeviceType.iphone)
                             Text("iPad").tag(ALTDeviceType.ipad)
                             Text("Apple TV").tag(ALTDeviceType.appleTV)
@@ -207,12 +207,12 @@ struct DevicesListView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "iphone")
-                                Text("Fill Current Device Name")
+                                Text(LocalizedStringKey("Fill Current Device Name"))
                             }
                         }
                     }
                 }
-                .navigationTitle("Register Device")
+                .navigationTitle(NSLocalizedString("Register Device", comment: ""))
                 .navigationBarItems(
                     leading: SwiftUI.Button("Cancel") {
                         showRegisterSheet = false
@@ -238,7 +238,7 @@ struct DevicesListView: View {
             NavigationView {
                 Form {
                     Section(header: Text("Device Name")) {
-                        TextField("Device Name", text: $editDeviceName)
+                        TextField(NSLocalizedString("Device Name", comment: ""), text: $editDeviceName)
                     }
 
                     Section(header: Text("Device Identifier (UDID)")) {
@@ -248,10 +248,10 @@ struct DevicesListView: View {
                     }
 
                     Section(header: Text("Device Details")) {
-                        InfoRow(label: "Type", value: deviceToEdit?.type.displayName ?? "Device")
-                        InfoRow(label: "Status", value: deviceToEdit?.status == "d" ? "Disabled" : "Active", valueColor: deviceToEdit?.status == "d" ? .red : .green)
+                        InfoRow(label: NSLocalizedString("Device Type", comment: ""), value: deviceToEdit?.type.displayName ?? "Device")
+                        InfoRow(label: NSLocalizedString("Status", comment: ""), value: deviceToEdit?.status == "d" ? NSLocalizedString("Disabled", comment: "") : NSLocalizedString("Active", comment: ""), valueColor: deviceToEdit?.status == "d" ? .red : .green)
                         if let devID = deviceToEdit?.deviceID {
-                            InfoRow(label: "Portal ID", value: devID)
+                            InfoRow(label: NSLocalizedString("Portal ID", comment: ""), value: devID)
                         }
                     }
 
@@ -292,7 +292,7 @@ struct DevicesListView: View {
                         }
                     }
                 }
-                .navigationTitle("Edit Device")
+                .navigationTitle(NSLocalizedString("Edit Device Configuration", comment: ""))
                 .navigationBarItems(
                     leading: SwiftUI.Button("Cancel") {
                         showEditSheet = false
@@ -316,7 +316,7 @@ struct DevicesListView: View {
         .alert(isPresented: $showDisableConfirmation) {
             Alert(
                 title: Text("Disable Device?"),
-                message: Text("Are you sure you want to disable '\(deviceToDisable?.name ?? "this device")' on the Apple Developer Portal? Disabled devices will not be included in newly generated provisioning profiles."),
+                message: Text(String(format: NSLocalizedString("Are you sure you want to disable '%@'? It can only be re-enabled during your annual membership renewal period.", comment: ""), deviceToDisable?.name ?? "this device")),
                 primaryButton: .default(Text("Disable")) {
                     if let target = deviceToDisable {
                         Task {
@@ -330,7 +330,7 @@ struct DevicesListView: View {
         .alert(isPresented: $showDeleteConfirmation) {
             Alert(
                 title: Text("Delete Device?"),
-                message: Text("Are you sure you want to delete '\(deviceToDelete?.name ?? "this device")' (\(deviceToDelete?.identifier ?? "")) from the Apple Developer Portal?"),
+                message: Text(String(format: NSLocalizedString("Are you sure you want to delete '%@' (%@) from Apple Developer Portal?", comment: ""), deviceToDelete?.name ?? "this device", deviceToDelete?.identifier ?? "")),
                 primaryButton: .destructive(Text("Delete")) {
                     if let target = deviceToDelete {
                         Task {

@@ -102,7 +102,7 @@ class DeveloperServicesViewModel: ObservableObject {
             let newAppID = try await DeveloperPortalService.shared.addAppID(name: name, bundleIdentifier: bundleIdentifier, team: team, session: session)
             self.appIDs.append(newAppID)
             self.appIDs.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-            self.showToastMessage("Registered App ID '\(newAppID.name)'")
+            self.showToastMessage(String(format: NSLocalizedString("Registered App ID '%@'", comment: ""), newAppID.name))
             return true
         } catch {
             self.errorMessage = error.localizedDescription
@@ -117,7 +117,7 @@ class DeveloperServicesViewModel: ObservableObject {
             let (team, session) = try await self.ensureAuthentication(presentingViewController: presentingViewController)
             _ = try await DeveloperPortalService.shared.deleteAppID(appID, team: team, session: session)
             self.appIDs.removeAll { $0.identifier == appID.identifier }
-            self.showToastMessage("Deleted App ID '\(appID.name)'")
+            self.showToastMessage(String(format: NSLocalizedString("Deleted App ID '%@'", comment: ""), appID.name))
             return true
         } catch {
             self.errorMessage = error.localizedDescription
@@ -134,7 +134,7 @@ class DeveloperServicesViewModel: ObservableObject {
             if let idx = self.appIDs.firstIndex(where: { $0.identifier == appID.identifier }) {
                 self.appIDs[idx] = updated
             }
-            self.showToastMessage("Updated App Groups for '\(appID.name)'")
+            self.showToastMessage(String(format: NSLocalizedString("Updated App Groups for '%@'", comment: ""), appID.name))
             return true
         } catch {
             self.errorMessage = error.localizedDescription
@@ -166,7 +166,7 @@ class DeveloperServicesViewModel: ObservableObject {
                 self.profiles.append(profile)
             }
             self.profiles.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-            self.showToastMessage("Downloaded profile for '\(appID.name)'")
+            self.showToastMessage(String(format: NSLocalizedString("Downloaded profile for '%@'", comment: ""), appID.name))
             return true
         } catch {
             self.errorMessage = error.localizedDescription
@@ -181,7 +181,7 @@ class DeveloperServicesViewModel: ObservableObject {
             let (team, session) = try await self.ensureAuthentication(presentingViewController: presentingViewController)
             _ = try await DeveloperPortalService.shared.deleteProvisioningProfile(profile, team: team, session: session)
             self.profiles.removeAll { $0.uuid == profile.uuid }
-            self.showToastMessage("Deleted profile '\(profile.name)'")
+            self.showToastMessage(String(format: NSLocalizedString("Deleted profile '%@'", comment: ""), profile.name))
             return true
         } catch {
             self.errorMessage = error.localizedDescription
@@ -205,7 +205,11 @@ class DeveloperServicesViewModel: ObservableObject {
                 }
             }
             await self.fetchProfiles(presentingViewController: presentingViewController)
-            self.showToastMessage("Purged \(deleted) profile(s)\(failed > 0 ? " (\(failed) failed)" : "")")
+            if failed > 0 {
+                self.showToastMessage(String(format: NSLocalizedString("Purged %d profile(s) (%d failed)", comment: ""), deleted, failed))
+            } else {
+                self.showToastMessage(String(format: NSLocalizedString("Purged %d profile(s)", comment: ""), deleted))
+            }
             return (deleted, failed)
         } catch {
             self.errorMessage = error.localizedDescription
@@ -233,7 +237,7 @@ class DeveloperServicesViewModel: ObservableObject {
             let newGroup = try await DeveloperPortalService.shared.addAppGroup(name: name, groupIdentifier: groupIdentifier, team: team, session: session)
             self.appGroups.append(newGroup)
             self.appGroups.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-            self.showToastMessage("Created App Group '\(newGroup.name)'")
+            self.showToastMessage(String(format: NSLocalizedString("Created App Group '%@'", comment: ""), newGroup.name))
             return true
         } catch {
             self.errorMessage = error.localizedDescription
@@ -248,7 +252,7 @@ class DeveloperServicesViewModel: ObservableObject {
             let (team, session) = try await self.ensureAuthentication(presentingViewController: presentingViewController)
             _ = try await DeveloperPortalService.shared.deleteAppGroup(group, team: team, session: session)
             self.appGroups.removeAll { $0.identifier == group.identifier || $0.groupID == group.groupID }
-            self.showToastMessage("Deleted App Group '\(group.name)'")
+            self.showToastMessage(String(format: NSLocalizedString("Deleted App Group '%@'", comment: ""), group.name))
             return true
         } catch {
             self.errorMessage = error.localizedDescription
@@ -268,7 +272,7 @@ class DeveloperServicesViewModel: ObservableObject {
                 self.appGroups[idx] = updated
             }
             self.appGroups.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-            self.showToastMessage("Updated App Group '\(updated.name)'")
+            self.showToastMessage(String(format: NSLocalizedString("Updated App Group '%@'", comment: ""), updated.name))
             return true
         } catch {
             self.errorMessage = error.localizedDescription
@@ -296,7 +300,7 @@ class DeveloperServicesViewModel: ObservableObject {
             let newDev = try await DeveloperPortalService.shared.registerDevice(name: name, identifier: identifier, type: type, team: team, session: session)
             self.devices.append(newDev)
             self.devices.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-            self.showToastMessage("Registered Device '\(newDev.name)'")
+            self.showToastMessage(String(format: NSLocalizedString("Registered Device '%@'", comment: ""), newDev.name))
             return true
         } catch {
             self.errorMessage = error.localizedDescription
@@ -316,7 +320,7 @@ class DeveloperServicesViewModel: ObservableObject {
                 self.devices[idx] = updated
             }
             self.devices.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-            self.showToastMessage("Renamed Device to '\(updated.name)'")
+            self.showToastMessage(String(format: NSLocalizedString("Renamed Device to '%@'", comment: ""), updated.name))
             return true
         } catch {
             self.errorMessage = error.localizedDescription
@@ -333,7 +337,7 @@ class DeveloperServicesViewModel: ObservableObject {
             if let idx = self.devices.firstIndex(where: { $0.identifier == device.identifier }) {
                 self.devices[idx] = disabled
             }
-            self.showToastMessage("Disabled Device '\(device.name)'")
+            self.showToastMessage(String(format: NSLocalizedString("Disabled Device '%@'", comment: ""), device.name))
             return true
         } catch {
             self.errorMessage = error.localizedDescription
@@ -348,7 +352,7 @@ class DeveloperServicesViewModel: ObservableObject {
             let (team, session) = try await self.ensureAuthentication(presentingViewController: presentingViewController)
             _ = try await DeveloperPortalService.shared.deleteDevice(device, team: team, session: session)
             self.devices.removeAll { $0.identifier == device.identifier }
-            self.showToastMessage("Deleted Device '\(device.name)'")
+            self.showToastMessage(String(format: NSLocalizedString("Deleted Device '%@'", comment: ""), device.name))
             return true
         } catch {
             self.errorMessage = error.localizedDescription

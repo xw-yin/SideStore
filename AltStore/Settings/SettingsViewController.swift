@@ -1156,6 +1156,8 @@ extension SettingsViewController
             case .developerServices:
                 let developerServicesView = DeveloperServicesView(presentingViewController: self)
                 let vc = UIHostingController(rootView: developerServicesView)
+                vc.view.backgroundColor = .systemGroupedBackground
+                vc.title = NSLocalizedString("Developer Portal Services", comment: "")
                 self.prepare(for: UIStoryboardSegue(identifier: "developerServices", source: self, destination: vc), sender: nil)
 
             case .certificateManagement:
