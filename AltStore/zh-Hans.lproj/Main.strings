@@ -7,9 +7,10 @@
 "4gT-9u-k7y.title" = "我的应用";
 "z04-yg-x1t.text" = "没有可用更新";
 "LLv-8I-6Of.text" = "5/10 个 App ID";
-"zLJ-Cg-ijh.title" = "我的 App";
+"NHb-0F-cHZ.normalTitle" = "查看 App IDs";
+"zLJ-Cg-ijh.title" = "我的应用";
 "y1A-Nm-mw7.title" = "App ID";
-"83Z-Ih-nOW.text" = "App ID 说明";
+"83Z-Ih-nOW.text" = "使用 SideStore 安装的每个应用和应用扩展都必须向 Apple 注册一个 App ID。Apple 限制非付费开发者的 Apple ID 同时最多拥有 10 个 App ID。\n\nApp ID 无法手动删除，但会在一周后自动过期。SideStore 会在 App ID 过期后自动为所有活跃的应用续期。";
 "Zna-7n-kBz.text" = "10 个 App ID";
 "3Co-uv-Fhb.title" = "App ID";
 "fVN-ed-uO1.title" = "新闻";

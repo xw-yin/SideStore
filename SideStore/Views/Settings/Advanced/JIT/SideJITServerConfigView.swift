@@ -97,7 +97,7 @@ struct SideJITServerConfigView: View {
         #else
         .listStyle(.grouped)
         #endif
-        .navigationTitle("SideJITServer")
+        .navigationTitle(NSLocalizedString("SideJITServer", comment: ""))
         .overlay(
             Group {
                 if showCopiedToast {

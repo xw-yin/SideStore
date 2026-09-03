@@ -275,9 +275,9 @@
 "Select 'OK' to locate the latest pairing file or tap 'Help' for more info" = "选择“好”以查找最新配对文件，或点按“帮助”了解详情";
 "Selected Pairing file is still Invalid!" = "所选配对文件仍然无效！";
 "Server Address" = "服务器地址";
-"Settings for SideJITServer" = "SideJITServer 设置";
-"SideJITServer" = "SideJITServer";
-"SideJITServer is unable to connect to your iDevice. Please make sure you have paired your iDevice by running 'SideJITServer -y', or try refreshing SideJITServer from Settings." = "SideJITServer 无法连接到设备。请运行“SideJITServer -y”完成配对，或在设置中刷新 SideJITServer。";
+"Settings for SideJITServer" = "SideJIT 服务器设置";
+"SideJITServer" = "SideJIT 服务器";
+"SideJITServer is unable to connect to your iDevice. Please make sure you have paired your iDevice by running 'SideJITServer -y', or try refreshing SideJITServer from Settings." = "SideJIT 服务器无法连接到设备。请运行“SideJITServer -y”完成配对，或在设置中刷新 SideJIT 服务器。";
 "Sideloaded" = "已侧载";
 "SideStore can only install marketplace apps that have been notarized by Apple." = "SideStore 只能安装经过 Apple 公证的市场 App。";
 "SideStore cannot manage the existing certificate without owning its private key. The apps signed with the existing certificate will expire soon unless they are resigned and renewed explicitly by SideStore." = "没有私钥，SideStore 无法管理现有证书。使用该证书签名的 App 即将到期，必须由 SideStore 重新签名并续期。";
@@ -753,7 +753,7 @@
 "Allow Siri to Refresh Apps…" = "允许 Siri 刷新应用…";
 
 /* SideJITServer */
-"Enable SideJITServer" = "启用 SideJITServer";
+"Enable SideJITServer" = "启用 SideJIT 服务器";
 "Required for JIT on iOS 17+" = "在 iOS 17 及以上版本启用 JIT 时需要";
 "Connection Status" = "连接状态";
 "Status" = "状态";
@@ -941,3 +941,8 @@
 "Disabled Device '%@'" = "已停用设备 “%@”";
 "Deleted Device '%@'" = "已删除设备 “%@”";
 "Portal ID" = "门户 ID";
+
+/* App IDs Screen */
+"View App IDs" = "查看 App IDs";
+"Each app and app extension installed with SideStore must register an App ID with Apple. Apple limits non-developer Apple IDs to 10 App IDs at a time.\n\n**App IDs can't be deleted**, but they do expire after one week. SideStore will automatically renew App IDs for all active apps once they've expired." = "使用 SideStore 安装的每个应用和应用扩展都必须向 Apple 注册一个 App ID。Apple 限制非付费开发者的 Apple ID 同时最多拥有 10 个 App ID。\n\n**App ID 无法手动删除**，但会在一周后自动过期。SideStore 会在 App ID 过期后自动为所有活跃的应用续期。";
+"Each app and app extension installed with SideStore must register an App ID with Apple.\n\nApp IDs for paid developer accounts never expire, and there is no limit to how many you can create." = "使用 SideStore 安装的每个应用和应用扩展都必须向 Apple 注册一个 App ID。\n\n付费开发者账户的 App ID 永不过期，且创建数量不受限制。";

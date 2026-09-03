@@ -1082,6 +1082,7 @@ extension SettingsViewController
             case .refreshSideJITServer:
                 let jitConfigView = SideJITServerConfigView()
                 let vc = UIHostingController(rootView: jitConfigView)
+                vc.title = NSLocalizedString("SideJITServer", comment: "")
                 #if !os(tvOS)
                 let appearance = UINavigationBarAppearance()
                 appearance.configureWithDefaultBackground()

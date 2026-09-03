@@ -42,6 +42,9 @@ final class AppIDsViewController: UICollectionViewController
     {
         super.viewDidLoad()
         
+        self.title = NSLocalizedString("App IDs", comment: "")
+        self.navigationItem.title = NSLocalizedString("App IDs", comment: "")
+        
         self.navigationController?.additionalSafeAreaInsets.top = 20
         self.doneBarButtonItem = self.navigationItem.rightBarButtonItem
         

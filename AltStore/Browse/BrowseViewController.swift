@@ -327,13 +327,7 @@ private extension BrowseViewController
             #endif
             
             guard case .failure(let error) = result else { return }
-            
-            if self.dataSource.itemCount > 0
-            {
-                let toastView = ToastView(error: error)
-                toastView.addTarget(nil, action: #selector(TabBarController.presentSources), for: .touchUpInside)
-                toastView.show(in: self)
-            }
+            debugLog("[BrowseViewController] Failed to update sources: \(error.localizedDescription)")
         }
     }
     

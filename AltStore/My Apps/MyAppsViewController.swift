@@ -87,6 +87,9 @@ class MyAppsViewController: UICollectionViewController
     {
         super.viewDidLoad()
 
+        self.title = NSLocalizedString("My Apps", comment: "")
+        self.navigationItem.title = NSLocalizedString("My Apps", comment: "")
+
         // Allows us to intercept delegate callbacks.
         self.updatesDataSource.fetchedResultsController.delegate = self
         self.activeAppsDataSource.fetchedResultsController.delegate = self
@@ -179,6 +182,13 @@ class MyAppsViewController: UICollectionViewController
     {
         super.viewSafeAreaInsetsDidChange()
         self.collectionView.collectionViewLayout.invalidateLayout()
+    }
+
+    override func viewWillAppear(_ animated: Bool)
+    {
+        super.viewWillAppear(animated)
+        self.title = NSLocalizedString("My Apps", comment: "")
+        self.navigationItem.title = NSLocalizedString("My Apps", comment: "")
     }
 
     override func viewDidAppear(_ animated: Bool)
@@ -1824,6 +1834,7 @@ extension MyAppsViewController
 
         case .activeApps, .inactiveApps:
             let footerView = collectionView.dequeueReusableSupplementaryView(ofKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: "InstalledAppsFooter", for: indexPath) as! InstalledAppsCollectionFooterView
+            footerView.button.setTitle(NSLocalizedString("View App IDs", comment: ""), for: .normal)
 
             guard let team = DatabaseManager.shared.activeTeam() else { return footerView }
             switch team.type

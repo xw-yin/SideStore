@@ -79,6 +79,9 @@ class NewsViewController: UICollectionViewController
     {
         super.viewDidLoad()
         
+        self.title = NSLocalizedString("News", comment: "")
+        self.navigationItem.title = NSLocalizedString("News", comment: "")
+        
         self.collectionView.backgroundColor = .altBackground
 
         // Ignore the safe area for horizontal layout so cards sit symmetrically
@@ -176,6 +179,13 @@ class NewsViewController: UICollectionViewController
             self?.cachedCellSizes.removeAll()
             self?.collectionView.collectionViewLayout.invalidateLayout()
         }
+    }
+    
+    override func viewWillAppear(_ animated: Bool)
+    {
+        super.viewWillAppear(animated)
+        self.title = NSLocalizedString("News", comment: "")
+        self.navigationItem.title = NSLocalizedString("News", comment: "")
     }
 }
 
@@ -286,13 +296,7 @@ private extension NewsViewController
             #endif
             
             guard case .failure(let error) = result else { return }
-            
-            if self.dataSource.itemCount > 0
-            {
-                let toastView = ToastView(error: error)
-                toastView.addTarget(nil, action: #selector(TabBarController.presentSources), for: .touchUpInside)
-                toastView.show(in: self)
-            }
+            debugLog("[NewsViewController] Failed to update sources: \(error.localizedDescription)")
         }
     }
     

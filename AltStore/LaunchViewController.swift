@@ -120,19 +120,7 @@ final class LaunchViewController: UIViewController {
         splashView.updateStatus(NSLocalizedString("Updating sources…", comment: ""))
         AppManager.shared.updateAllSources { result in
             guard case .failure(let error) = result else { return }
-            debugLog("Failed to update sources on launch. \(error.localizedDescription)")
-            
-            
-            let errorDesc = ErrorProcessing(.fullError).getDescription(error: error as NSError)
-            debugLog("Failed to update sources on launch. \(errorDesc)")
-            
-            var mode: ToastView.InfoMode = .fullError
-            if String(describing: error).contains("The Internet connection appears to be offline"){
-                mode = .localizedDescription    // dont make noise!
-            }
-            let toastView = ToastView(error: error, mode: mode)
-            toastView.addTarget(destinationVC, action: #selector(TabBarController.presentSources), for: .touchUpInside)
-            toastView.show(in: destinationVC.selectedViewController ?? destinationVC)
+            debugLog("Failed to update sources on launch: \(error.localizedDescription)")
         }
         updateKnownSources()
         splashView.updateStatus(NSLocalizedString("Almost there…", comment: ""))
