@@ -122,8 +122,12 @@ private extension AltAppIconsViewController
 {
     func makeLayout() -> UICollectionViewCompositionalLayout
     {
+        #if !os(tvOS)
         var configuration = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
         configuration.showsSeparators = true
+        #else
+        var configuration = UICollectionLayoutListConfiguration(appearance: .grouped)
+        #endif
         configuration.backgroundColor = .clear
         configuration.headerMode = .supplementary
                 
@@ -231,10 +235,3 @@ extension AltAppIconsViewController
     }
 }
 
-@available(iOS 17, *)
-#Preview(traits: .portrait) {
-    let altAppIconsViewController = AltAppIconsViewController(collectionViewLayout: UICollectionViewFlowLayout())
-    
-    let navigationController = UINavigationController(rootViewController: altAppIconsViewController)
-    return navigationController
-}

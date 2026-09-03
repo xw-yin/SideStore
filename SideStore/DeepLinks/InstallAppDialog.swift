@@ -17,7 +17,7 @@ public enum InstallAppDialog {
         onConfirm: @escaping () -> Void,
         onCancel: @escaping () -> Void
     ) {
-        let rootVC = presentingViewController ?? topViewController()
+        let rootVC = presentingViewController ?? UIApplication.shared.topViewController()
         guard let presentingVC = rootVC else {
             onCancel()
             return
@@ -43,24 +43,5 @@ public enum InstallAppDialog {
         alert.addAction(cancelAction)
         
         presentingVC.present(alert, animated: true)
-    }
-    
-    @MainActor
-    private static func topViewController(base: UIViewController? = nil) -> UIViewController?
-    {
-        let baseVC = base ?? UIApplication.shared.alt_keyWindow?.rootViewController
-            
-        if let nav = baseVC as? UINavigationController {
-            return topViewController(base: nav.visibleViewController)
-        }
-        if let tab = baseVC as? UITabBarController {
-            if let selected = tab.selectedViewController {
-                return topViewController(base: selected)
-            }
-        }
-        if let presented = baseVC?.presentedViewController {
-            return topViewController(base: presented)
-        }
-        return baseVC
     }
 }

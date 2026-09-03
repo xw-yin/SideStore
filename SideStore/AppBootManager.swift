@@ -165,6 +165,7 @@ public final class AppBootManager: @unchecked Sendable {
                     debugLog("[AppBootManager] Cannot find sideJITServer")
                 }
             }
+
             if #available(iOS 17, *), UserDefaults.standard.isSideJITServerEnabled {
                 await SideJITManager.shared.askForNetwork()
                 debugLog("[AppBootManager] SideJITServer Enabled")

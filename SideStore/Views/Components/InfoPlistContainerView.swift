@@ -67,7 +67,11 @@ struct InfoPlistContainerView: View {
             }
             .pickerStyle(.segmented)
             .padding()
+            #if !os(tvOS)
             .background(Color(.systemGroupedBackground))
+            #else
+            .background(Color.clear)
+            #endif
             
             Divider()
             
@@ -91,7 +95,9 @@ struct InfoPlistContainerView: View {
             }
         }
         .navigationTitle("Info.plist")
+        #if !os(tvOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .interactiveDismissDisabled(true)
     }
 }
@@ -116,7 +122,11 @@ struct InfoPlistTreeView: View {
                 PlistNodeRow(node: node)
             }
         }
+        #if !os(tvOS)
         .listStyle(InsetGroupedListStyle())
+        #else
+        .listStyle(GroupedListStyle())
+        #endif
         .searchable(text: $searchQuery, prompt: "Search keys")
     }
     
@@ -142,6 +152,7 @@ struct PlistNodeRow: View {
     @State private var isCopied = false
     
     var body: some View {
+        #if !os(tvOS)
         if let children = node.children {
             DisclosureGroup {
                 ForEach(children) { child in
@@ -166,42 +177,39 @@ struct PlistNodeRow: View {
                 }
             }
         } else {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(node.key)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .bold()
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        Text(node.value ?? "N/A")
-                            .font(.subheadline)
-                            .foregroundColor(.primary)
-                            .multilineTextAlignment(.leading)
-                    }
+            leafRow
+        }
+        #else
+        if let children = node.children {
+            Section(header: Text("\(node.key) (\(node.typeInfo))")) {
+                ForEach(children) { child in
+                    PlistNodeRow(node: child)
                 }
-                Spacer()
-                
-                SwiftUI.Button {
-                    let textToCopy = node.value ?? ""
-                    UIPasteboard.general.string = textToCopy
-                    withAnimation {
-                        isCopied = true
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        withAnimation {
-                            isCopied = false
-                        }
-                    }
-                } label: {
-                    Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
-                        .font(.subheadline)
-                        .foregroundColor(isCopied ? .green : .accentColor)
-                        .frame(width: 24, height: 24)
-                }
-                .buttonStyle(.plain)
             }
-            .contentShape(Rectangle())
-            .onTapGesture {
+        } else {
+            leafRow
+        }
+        #endif
+    }
+    
+    private var leafRow: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(node.key)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .bold()
+                ScrollView(.horizontal, showsIndicators: false) {
+                    Text(node.value ?? "N/A")
+                        .font(.subheadline)
+                        .foregroundColor(.primary)
+                        .multilineTextAlignment(.leading)
+                }
+            }
+            Spacer()
+            
+            #if !os(tvOS)
+            SwiftUI.Button {
                 let textToCopy = node.value ?? ""
                 UIPasteboard.general.string = textToCopy
                 withAnimation {
@@ -212,8 +220,30 @@ struct PlistNodeRow: View {
                         isCopied = false
                     }
                 }
+            } label: {
+                Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
+                    .font(.subheadline)
+                    .foregroundColor(isCopied ? .green : .accentColor)
+                    .frame(width: 24, height: 24)
+            }
+            .buttonStyle(.plain)
+            #endif
+        }
+        .contentShape(Rectangle())
+        #if !os(tvOS)
+        .onTapGesture {
+            let textToCopy = node.value ?? ""
+            UIPasteboard.general.string = textToCopy
+            withAnimation {
+                isCopied = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                withAnimation {
+                    isCopied = false
+                }
             }
         }
+        #endif
     }
 }
 
@@ -242,6 +272,7 @@ struct InfoPlistRawXMLView: View {
                     }
                     .buttonStyle(.bordered)
                     
+                    #if !os(tvOS)
                     SwiftUI.Button {
                         UIPasteboard.general.string = xmlString
                         withAnimation {
@@ -258,6 +289,7 @@ struct InfoPlistRawXMLView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(isCopied ? .green : .accentColor)
+                    #endif
                 }
                 .padding(.horizontal)
                 .padding(.top)
@@ -267,7 +299,11 @@ struct InfoPlistRawXMLView: View {
                         .font(.system(size: 11, design: .monospaced))
                         .padding()
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        #if !os(tvOS)
                         .background(Color(.secondarySystemBackground))
+                        #else
+                        .background(Color.white.opacity(0.1))
+                        #endif
                         .cornerRadius(8)
                         .padding(.horizontal)
                 } else {
@@ -275,7 +311,11 @@ struct InfoPlistRawXMLView: View {
                         Text(xmlString)
                             .font(.system(size: 11, design: .monospaced))
                             .padding()
+                            #if !os(tvOS)
                             .background(Color(.secondarySystemBackground))
+                            #else
+                            .background(Color.white.opacity(0.1))
+                            #endif
                             .cornerRadius(8)
                     }
                     .padding(.horizontal)
@@ -323,6 +363,7 @@ struct InfoPlistRawView: View {
                     }
                     .buttonStyle(.bordered)
                     
+                    #if !os(tvOS)
                     SwiftUI.Button {
                         UIPasteboard.general.string = jsonString
                         withAnimation {
@@ -339,6 +380,7 @@ struct InfoPlistRawView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(isCopied ? .green : .accentColor)
+                    #endif
                 }
                 .padding(.horizontal)
                 .padding(.top)
@@ -348,7 +390,11 @@ struct InfoPlistRawView: View {
                         .font(.system(size: 11, design: .monospaced))
                         .padding()
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        #if !os(tvOS)
                         .background(Color(.secondarySystemBackground))
+                        #else
+                        .background(Color.white.opacity(0.1))
+                        #endif
                         .cornerRadius(8)
                         .padding(.horizontal)
                 } else {
@@ -356,7 +402,11 @@ struct InfoPlistRawView: View {
                         Text(jsonString)
                             .font(.system(size: 11, design: .monospaced))
                             .padding()
+                            #if !os(tvOS)
                             .background(Color(.secondarySystemBackground))
+                            #else
+                            .background(Color.white.opacity(0.1))
+                            #endif
                             .cornerRadius(8)
                     }
                     .padding(.horizontal)
@@ -530,7 +580,11 @@ struct InfoPlistSemanticView: View {
                 }
             }
         }
+        #if !os(tvOS)
         .listStyle(InsetGroupedListStyle())
+        #else
+        .listStyle(GroupedListStyle())
+        #endif
     }
     
     private func getBackgroundModeIcon(_ mode: String) -> String {
@@ -569,7 +623,9 @@ struct SemanticValueRow: View {
         }
         .contextMenu {
             SwiftUI.Button {
+                #if !os(tvOS)
                 UIPasteboard.general.string = value
+                #endif
             } label: {
                 Label("Copy", systemImage: "doc.on.doc")
             }
@@ -595,12 +651,16 @@ struct LocalCopyableDescriptionRow: View {
         .padding(.vertical, 4)
         .contextMenu {
             SwiftUI.Button {
+                #if !os(tvOS)
                 UIPasteboard.general.string = value
+                #endif
             } label: {
                 Label("Copy Value", systemImage: "doc.on.doc")
             }
             SwiftUI.Button {
+                #if !os(tvOS)
                 UIPasteboard.general.string = key
+                #endif
             } label: {
                 Label("Copy Key", systemImage: "doc.on.doc")
             }
@@ -620,7 +680,9 @@ struct LocalCopyableValueOnlyRow: View {
         }
         .contextMenu {
             SwiftUI.Button {
+                #if !os(tvOS)
                 UIPasteboard.general.string = value
+                #endif
             } label: {
                 Label("Copy", systemImage: "doc.on.doc")
             }
@@ -649,12 +711,16 @@ struct CopyableValueRow: View {
         }
         .contextMenu {
             SwiftUI.Button {
+                #if !os(tvOS)
                 UIPasteboard.general.string = formatValue(value)
+                #endif
             } label: {
                 Label("Copy Value", systemImage: "doc.on.doc")
             }
             SwiftUI.Button {
+                #if !os(tvOS)
                 UIPasteboard.general.string = key
+                #endif
             } label: {
                 Label("Copy Key", systemImage: "doc.on.doc")
             }
@@ -707,7 +773,11 @@ struct SearchBarView: View {
             }
         }
         .padding(8)
+        #if !os(tvOS)
         .background(Color(.secondarySystemBackground))
+        #else
+        .background(Color.white.opacity(0.1))
+        #endif
         .cornerRadius(8)
     }
 }

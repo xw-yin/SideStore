@@ -68,9 +68,7 @@ struct CertificatesView: View {
                         showClearKeyConfirmation = true
                     },
                     onAddKeyBin:  { cert in
-                        certificateToAddKeyFor = cert
-                        fileImportMode = .privateKey
-                        showFileImporter = true
+                        importPrivateKeyAction(for: cert)
                     },
                     onAddKeyText: { cert in
                         keyTextImportItem = KeyTextImportItem(id: cert.serialNumber, cert: cert)
@@ -105,8 +103,7 @@ struct CertificatesView: View {
                     .disabled(viewModel.team == nil)
                     
                     SwiftUI.Button {
-                        fileImportMode = .certificate
-                        showFileImporter = true
+                        importCertificatesAction()
                     } label: {
                         Image(systemName: "square.and.arrow.down")
                     }
@@ -185,7 +182,9 @@ struct CertificatesView: View {
                     }
                 }
                 .navigationTitle("Import Failures")
+                #if !os(tvOS)
                 .navigationBarTitleDisplayMode(.inline)
+                #endif
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         SwiftUI.Button("Done") {
@@ -219,6 +218,7 @@ struct CertificatesView: View {
                 Text("This will clear the locally stored private key of this certificate.\n\nName: \(cert.name)\nS/N: \(cert.serialNumber)")
             }
         }
+        #if !os(tvOS)
         .fileImporter(
             isPresented: $showFileImporter,
             allowedContentTypes: fileImportMode == .certificate ? allowedImportTypes : allowedKeyImportTypes,
@@ -245,6 +245,7 @@ struct CertificatesView: View {
                 viewModel.errorMessage = "Failed to select \(type): " + error.localizedDescription
             }
         }
+        #endif
         .sheet(item: $keyTextImportItem) { item in
             PrivateKeyTextInputView(
                 text: $privateKeyTextInput,
@@ -267,10 +268,12 @@ struct CertificatesView: View {
             requesterEmail: cert.requesterEmail
         )
         let detailVC = UIHostingController(rootView: CertificateDetailView(certificate: cert, portalMetadata: metadata, viewModel: viewModel))
+        #if !os(tvOS)
         let appearance = UINavigationBarAppearance()
         appearance.configureWithDefaultBackground()
         detailVC.navigationItem.scrollEdgeAppearance = appearance
         detailVC.navigationItem.standardAppearance   = appearance
+        #endif
         presentingViewController?.navigationController?.pushViewController(detailVC, animated: true)
     }
     
@@ -296,6 +299,47 @@ struct CertificatesView: View {
         
         presentingViewController?.present(alertController, animated: true)
     }
+    
+    private func importPrivateKeyAction(for cert: ALTX509Certificate) {
+        certificateToAddKeyFor = cert
+        fileImportMode = .privateKey
+        #if !os(tvOS)
+        showFileImporter = true
+        #else
+        guard let topVC = presentingViewController ?? UIApplication.shared.topViewController() else { return }
+        TVWebFileTransferManager.shared.startImport(
+            acceptedExtensions: ["der", "key", "pem", "p12"],
+            title: "Import Private Key (.der/.pem)",
+            presentingVC: topVC
+        ) { fileURL in
+            guard let fileURL = fileURL else { return }
+            do {
+                let data = try Data(contentsOf: fileURL)
+                viewModel.importPrivateKey(data: data, for: cert)
+            } catch {
+                viewModel.errorMessage = "Failed to read private key: " + error.localizedDescription
+            }
+            certificateToAddKeyFor = nil
+        }
+        #endif
+    }
+    
+    private func importCertificatesAction() {
+        fileImportMode = .certificate
+        #if !os(tvOS)
+        showFileImporter = true
+        #else
+        guard let topVC = presentingViewController ?? UIApplication.shared.topViewController() else { return }
+        TVWebFileTransferManager.shared.startImport(
+            acceptedExtensions: ["p12", "der", "pem", "cer", "crt"],
+            title: "Import Certificates",
+            presentingVC: topVC
+        ) { fileURL in
+            guard let fileURL = fileURL else { return }
+            viewModel.startBulkImport(urls: [fileURL])
+        }
+        #endif
+    }
 }
 
 private struct LoadingOverlay: View {
@@ -304,7 +348,11 @@ private struct LoadingOverlay: View {
             Color.black.opacity(0.2).ignoresSafeArea()
             ProgressView()
                 .padding(20)
+                #if !os(tvOS)
                 .background(Color(.secondarySystemBackground))
+                #else
+                .background(Color.white.opacity(0.1))
+                #endif
                 .cornerRadius(10)
         }
     }

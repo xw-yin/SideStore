@@ -261,7 +261,7 @@ final class BackupEngine: NSObject, Sendable {
             if FileManager.default.fileExists(atPath: documentsDirectory.path) {
                 try FileManager.default.copyDirectoryContents(at: documentsDirectory, to: backupDocumentsDirectory, options: [.skipsHiddenFiles], skipNonCopyable: skipNonCopyable, tracker: tracker, logger: logger)
             }
-            debugLog(logger, "[SideBackup]: Copied Documents directory from \(documentsDirectory) to \(backupDocumentsDirectory)")
+            debugLog(logger, "[SideBackup] Copied Documents directory from \(documentsDirectory) to \(backupDocumentsDirectory)")
             
             let backupLibraryDirectory = mainGroupBackupDirectory.appendingPathComponent(libraryDirectory.lastPathComponent)
             if FileManager.default.fileExists(atPath: backupLibraryDirectory.path) {
@@ -270,7 +270,7 @@ final class BackupEngine: NSObject, Sendable {
             if FileManager.default.fileExists(atPath: libraryDirectory.path) {
                 try FileManager.default.copyDirectoryContents(at: libraryDirectory, to: backupLibraryDirectory, options: [.skipsHiddenFiles], skipNonCopyable: skipNonCopyable, tracker: tracker, logger: logger)
             }
-            debugLog(logger, "[SideBackup]: Copied Library directory from \(libraryDirectory) to \(backupLibraryDirectory)")
+            debugLog(logger, "[SideBackup] Copied Library directory from \(libraryDirectory) to \(backupLibraryDirectory)")
             
             for appGroup in Bundle.main.appGroups where appGroup != altstoreAppGroup {
                 guard let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) else {
@@ -285,12 +285,12 @@ final class BackupEngine: NSObject, Sendable {
             _ = try FileManager.default.replaceItemAt(appBackupDirectory, withItemAt: temporaryAppBackupDirectory)
             tracker.complete()
             
-            debugLog(logger, "[SideBackup]: Replaced previous backup with new backup: \(temporaryAppBackupDirectory)")
+            debugLog(logger, "[SideBackup] Replaced previous backup with new backup: \(temporaryAppBackupDirectory)")
         } catch {
             do {
                 try FileManager.default.removeItem(at: temporaryAppBackupDirectory)
             } catch {
-                debugLog(logger, "[SideBackup]: Failed to remove temporary directory. \(error)")
+                debugLog(logger, "[SideBackup] Failed to remove temporary directory. \(error)")
             }
             throw error
         }
@@ -386,12 +386,12 @@ private extension FileManager {
                     // Destination item exists and is locked (e.g. a Snapshot dir held open by a live app).
                     // The existing copy is already in place — warn and skip rather than abort the whole backup.
                     failureCount += 1
-                    debugLog(logger, "[SideBackup]: Backup: Skipping '\(lastComponent)' — destination is locked and cannot be cleared: \(removeError.localizedDescription)")
+                    debugLog(logger, "[SideBackup] Backup: Skipping '\(lastComponent)' — destination is locked and cannot be cleared: \(removeError.localizedDescription)")
                     continue
                 } catch let removeError where isFileExistsError(removeError) {
                     // NSFileWriteFileExistsError — item already exists and we couldn't remove it; skip safely.
                     failureCount += 1
-                    debugLog(logger, "[SideBackup]: Backup: Skipping '\(lastComponent)' — destination already exists and remove failed (516): \(removeError.localizedDescription)")
+                    debugLog(logger, "[SideBackup] Backup: Skipping '\(lastComponent)' — destination already exists and remove failed (516): \(removeError.localizedDescription)")
                     continue
                 }
             }
@@ -408,22 +408,22 @@ private extension FileManager {
                 // Destination got re-created between our remove and copy (race with a live app).
                 // Warn and skip — the existing item remains in the destination.
                 failureCount += 1
-                debugLog(logger, "[SideBackup]: Backup: Skipping '\(lastComponent)' — copy failed due to locking: \(copyError.localizedDescription)")
+                debugLog(logger, "[SideBackup] Backup: Skipping '\(lastComponent)' — copy failed due to locking: \(copyError.localizedDescription)")
                 continue
             } catch let copyError where isFileExistsError(copyError) {
                 // Item re-appeared at destination — skip it, existing copy is fine.
                 failureCount += 1
-                debugLog(logger, "[SideBackup]: Backup: Skipping '\(lastComponent)' — destination re-appeared during copy (516): \(copyError.localizedDescription)")
+                debugLog(logger, "[SideBackup] Backup: Skipping '\(lastComponent)' — destination re-appeared during copy (516): \(copyError.localizedDescription)")
                 continue
             } catch {
                 // Ignore errors for /Documents/Inbox
                 guard !(fileURL.lastPathComponent == "Inbox" && fileURL.deletingLastPathComponent().lastPathComponent == "Documents") else {
-                    debugLog(logger, "[SideBackup]: Failed to copy Inbox directory: \(error)")
+                    debugLog(logger, "[SideBackup] Failed to copy Inbox directory: \(error)")
                     continue
                 }
                 if skipNonCopyable {
                     failureCount += 1
-                    debugLog(logger, "[SideBackup]: Backup: Skipping non-copyable '\(lastComponent)' — \(error.localizedDescription)")
+                    debugLog(logger, "[SideBackup] Backup: Skipping non-copyable '\(lastComponent)' — \(error.localizedDescription)")
                     continue
                 }
                 failureCount += 1
@@ -431,7 +431,7 @@ private extension FileManager {
             }
         }
         
-        debugLog(logger, "[SideBackup]: Copied '\(sourceDirectoryURL.lastPathComponent)' directory — \(successCount) succeeded, \(failureCount) failed/skipped, \(contents.count) total.")
+        debugLog(logger, "[SideBackup] Copied '\(sourceDirectoryURL.lastPathComponent)' directory — \(successCount) succeeded, \(failureCount) failed/skipped, \(contents.count) total.")
     }
     
     @discardableResult
@@ -445,7 +445,7 @@ private extension FileManager {
                 try fallbackMerge?()
                 return true
             } catch let error where isLockingError(error) {
-                debugLog(logger, "[SideBackup]: Backup: Remove attempt \(attempt)/\(maxAttempts) for '\(url.lastPathComponent)' failed — \(error.localizedDescription)")
+                debugLog(logger, "[SideBackup] Backup: Remove attempt \(attempt)/\(maxAttempts) for '\(url.lastPathComponent)' failed — \(error.localizedDescription)")
                 if attempt < maxAttempts { Thread.sleep(forTimeInterval: 0.2) }
                 else { throw error }
             }
@@ -457,22 +457,22 @@ private extension FileManager {
         for attempt in 1...maxAttempts {
             do {
                 try self.copyItem(at: sourceURL, to: destinationURL)
-                verboseLog(logger, "[SideBackup]: Copied item from \(sourceURL) to \(destinationURL)")
+                verboseLog(logger, "[SideBackup] Copied item from \(sourceURL) to \(destinationURL)")
                 return
             } catch let error where isLockingError(error) {
-                verboseLog(logger, "[SideBackup]: Backup: Copy attempt \(attempt)/\(maxAttempts) for '\(sourceURL.lastPathComponent)' failed — \(error.localizedDescription)")
+                verboseLog(logger, "[SideBackup] Backup: Copy attempt \(attempt)/\(maxAttempts) for '\(sourceURL.lastPathComponent)' failed — \(error.localizedDescription)")
                 if attempt < maxAttempts { Thread.sleep(forTimeInterval: 0.2) }
                 else if skipNonCopyable {
-                    debugLog(logger, "[SideBackup]: Backup: Skipping non-copyable '\(sourceURL.lastPathComponent)' after \(maxAttempts) attempts — \(error.localizedDescription)")
+                    debugLog(logger, "[SideBackup] Backup: Skipping non-copyable '\(sourceURL.lastPathComponent)' after \(maxAttempts) attempts — \(error.localizedDescription)")
                     return
                 }
                 else { throw error }
             } catch let error where isFileExistsError(error) {
-                verboseLog(logger, "[SideBackup]: Backup: Destination already exists during copy for '\(destinationURL.lastPathComponent)'. Attempting to remove existing item and retry...")
+                verboseLog(logger, "[SideBackup] Backup: Destination already exists during copy for '\(destinationURL.lastPathComponent)'. Attempting to remove existing item and retry...")
                 do {
                     try self.removeItem(at: destinationURL)
                 } catch {
-                    verboseLog(logger, "[SideBackup]: Backup: Failed to remove conflicting item at \(destinationURL) on attempt \(attempt): \(error.localizedDescription)")
+                    verboseLog(logger, "[SideBackup] Backup: Failed to remove conflicting item at \(destinationURL) on attempt \(attempt): \(error.localizedDescription)")
                 }
             }
         }

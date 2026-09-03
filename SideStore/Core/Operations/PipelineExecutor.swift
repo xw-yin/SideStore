@@ -119,17 +119,9 @@ final class PipelineExecutor: @unchecked Sendable {
                 result = try await step.execute(parentProgress: progress)
                 return nil
                 
-            case .fetchProvisioningProfilesInstall:
-                loggerType = FetchProvisioningProfilesInstallOperation.self
-                let step = try FetchProvisioningProfilesInstallOperation(context: context)
-                let profiles = try await step.execute(parentProgress: progress)
-                context.provisioningProfiles = profiles
-                result = profiles
-                return nil
-                
-            case .fetchProvisioningProfilesRefresh:
-                loggerType = FetchProvisioningProfilesRefreshOperation.self
-                let step = try FetchProvisioningProfilesRefreshOperation(context: context)
+            case .fetchProvisioningProfiles:
+                loggerType = FetchProvisioningProfilesOperation.self
+                let step = try FetchProvisioningProfilesOperation(context: context)
                 let profiles = try await step.execute(parentProgress: progress)
                 context.provisioningProfiles = profiles
                 result = profiles

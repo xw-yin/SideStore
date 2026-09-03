@@ -20,8 +20,12 @@ final class DeactivateAppOperation: BasePipelineOperation<PipelineOperationConte
     }
     
     override func execute(parentProgress: Progress?) async throws -> InstalledApp {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[DeactivateAppOperation] execute() started")
-        defer { debugLog("[DeactivateAppOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[DeactivateAppOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         self.setProgress(10)
         

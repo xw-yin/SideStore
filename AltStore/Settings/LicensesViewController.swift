@@ -14,6 +14,7 @@ final class LicensesViewController: UIViewController
     
     @IBOutlet private var textView: UITextView!
     
+    #if !os(tvOS)
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .default
     }
@@ -33,6 +34,7 @@ final class LicensesViewController: UIViewController
         self.textView.backgroundColor = .systemGroupedBackground
         self.textView.textColor = .label
     }
+    #endif
     
     override func viewWillAppear(_ animated: Bool)
     {

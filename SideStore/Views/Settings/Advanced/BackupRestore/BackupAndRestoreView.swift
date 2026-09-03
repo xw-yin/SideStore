@@ -121,7 +121,9 @@ struct BackupAndRestoreView: View {
         }
         .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
         .navigationTitle("Backup & Restore")
+        #if !os(tvOS)
         .navigationBarTitleDisplayMode(.large)
+        #endif
         .sheet(isPresented: $showingImportFilePicker) {
             DocumentPickerView(contentTypes: [UTType(filenameExtension: "sideconf") ?? .data]) { url in
                 guard let url = url else { return }
@@ -202,8 +204,12 @@ struct BackupAndRestoreView: View {
                 let fileURL = tempDir.appendingPathComponent(AppConstants.accountConfigurationFileName)
                 try encryptedData.write(to: fileURL)
                 
+                #if !os(tvOS)
                 let activityVC = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
                 top.present(activityVC, animated: true)
+                #else
+                TVWebFileTransferManager.shared.startExport(fileURL: fileURL, title: "Export Account", presentingVC: top)
+                #endif
             } catch {
                 showAlert(title: "Export Error", message: error.localizedDescription)
             }
@@ -247,6 +253,7 @@ struct BackupAndRestoreView: View {
     }
 }
 
+#if !os(tvOS)
 struct DocumentPickerView: UIViewControllerRepresentable {
     let contentTypes: [UTType]
     let onPick: (URL?) -> Void
@@ -276,3 +283,25 @@ struct DocumentPickerView: UIViewControllerRepresentable {
         }
     }
 }
+#else
+struct DocumentPickerView: UIViewControllerRepresentable {
+    let contentTypes: [UTType]
+    let onPick: (URL?) -> Void
+    
+    func makeUIViewController(context: Context) -> UIViewController {
+        let vc = UIViewController()
+        DispatchQueue.main.async {
+            TVWebFileTransferManager.shared.startImport(
+                contentTypes: contentTypes,
+                title: "Import File",
+                presentingVC: vc
+            ) { url in
+                onPick(url)
+            }
+        }
+        return vc
+    }
+    
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}
+#endif

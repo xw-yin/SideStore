@@ -14,7 +14,6 @@ import UserNotifications
 import MobileCoreServices
 import Intents
 import Combine
-import WidgetKit
 import UniformTypeIdentifiers
 
 extension AppManager
@@ -153,32 +152,12 @@ final class AppManager: ObservableObject, @unchecked Sendable
             }
             #endif
         
-            do {
-                let installedAppBundleIDs = await dbBackgroundContext.perform {
-                    InstalledApp.all(in: dbBackgroundContext).map { $0.bundleIdentifier }
-                }
-                            
-                let cachedAppDirectories = try FileManager.default.contentsOfDirectory(at: InstalledApp.appsDirectoryURL,
-                                                                                        includingPropertiesForKeys: [.isDirectoryKey, .nameKey],
-                                                                                        options: [.skipsSubdirectoryDescendants, .skipsHiddenFiles])
-                for appDirectory in cachedAppDirectories {
-                    do {
-                        let resourceValues = try appDirectory.resourceValues(forKeys: [.isDirectoryKey, .nameKey])
-                        guard let isDirectory = resourceValues.isDirectory, let bundleID = resourceValues.name else { continue }
-                    
-                        if isDirectory && !installedAppBundleIDs.contains(bundleID) && !self.isActivelyManagingApp(withBundleID: bundleID)
-                        {
-                            if !Bundle.isBundledWithLiveContainer {
-                                debugLog("DELETING CACHED APP: \(bundleID)")
-                                try FileManager.default.removeItem(at: appDirectory)
-                            }
-                        }
-                    } catch {
-                        debugLog("Failed to remove cached app directory. \(error)")
-                    }
-                }
-            } catch {
-                debugLog("Failed to remove cached apps. \(error)")
+            let installedAppBundleIDs = await dbBackgroundContext.perform {
+                Set(InstalledApp.all(in: dbBackgroundContext).map { $0.bundleIdentifier })
+            }
+            
+            CacheAppOperation.pruneUnusedCaches(activeBundleIDs: installedAppBundleIDs) { bundleID in
+                self.isActivelyManagingApp(withBundleID: bundleID)
             }
         }.value
     }
@@ -479,6 +458,7 @@ final class AppManager: ObservableObject, @unchecked Sendable
             }
             
             var taskResults = [(NSManagedObjectID, Result<NSManagedObjectID, Error>)]()
+            
             await withTaskGroup(of: (NSManagedObjectID, Result<NSManagedObjectID, Error>).self) { taskGroup in
                 for data in sourceData {
                     taskGroup.addTask {
@@ -496,6 +476,7 @@ final class AppManager: ObservableObject, @unchecked Sendable
                     taskResults.append(result)
                 }
             }
+            
             
             await managedObjectContext.perform {
                 var fetchedSources = Set<Source>()
@@ -664,27 +645,69 @@ final class AppManager: ObservableObject, @unchecked Sendable
         )
     }
 
-    func installIPA(at ipaURL: URL, progressHandler: ((Progress) -> Void)? = nil) async throws -> InstalledApp
+    @discardableResult
+    func installIPA(at ipaURL: URL,
+                    presentingViewController: UIViewController? = nil,
+                    context: AuthenticatedOperationContext? = nil,
+                    completionHandler: @escaping (Result<InstalledApp, Error>) -> Void) -> RefreshGroup
     {
         debugLog("[AppManager] installIPA() called for file: \(ipaURL.lastPathComponent)")
-        guard ipaURL.pathExtension.lowercased() == "ipa" else { throw OperationError.invalidApp }
+        let group = RefreshGroup(context: self.makeAuthenticatedContext(presentingViewController: presentingViewController, baseContext: context))
+        group.completionHandler = { results in
+            if let result = results.values.first {
+                completionHandler(result)
+            } else {
+                completionHandler(.failure(OperationError.unknown()))
+            }
+        }
 
-        let temporaryDirectory = FileManager.default.uniqueTemporaryURL()
-        defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
+        group.activeTask = Task.detached {
+            do {
+                guard ipaURL.pathExtension.lowercased() == "ipa" else { throw OperationError.invalidApp }
 
-        let unzippedAppDirectory = temporaryDirectory.appendingPathComponent("App")
-        try FileManager.default.createDirectory(at: unzippedAppDirectory, withIntermediateDirectories: true)
+                let temporaryDirectory = FileManager.default.uniqueTemporaryURL()
+                let unzippedAppDirectory = temporaryDirectory.appendingPathComponent("App")
+                try FileManager.default.createDirectory(at: unzippedAppDirectory, withIntermediateDirectories: true)
 
-        let unzippedApplicationURL = try FileManager.default.unzipAppBundle(at: ipaURL, toDirectory: unzippedAppDirectory)
-        guard let appBundle = ALTApplication(fileURL: unzippedApplicationURL) else { throw OperationError.invalidApp }
+                var localURL = ipaURL
+                if !ipaURL.isFileURL {
+                    localURL = try await withCheckedThrowingContinuation { continuation in
+                        let downloadTask = URLSession.shared.downloadTask(with: ipaURL) { (fileURL, response, error) in
+                            do {
+                                let (fileURL, _) = try Result((fileURL, response), error).get()
+                                let dest = temporaryDirectory.appendingPathComponent("App.ipa")
+                                try FileManager.default.moveItem(at: fileURL, to: dest)
+                                continuation.resume(returning: dest)
+                            } catch {
+                                continuation.resume(throwing: error)
+                            }
+                        }
+                        downloadTask.resume()
+                    }
+                }
 
-        let context = self.makeAuthenticatedContext(presentingViewController: nil)
+                let unzippedApplicationURL = try FileManager.default.unzipAppBundle(at: localURL, toDirectory: unzippedAppDirectory)
+                guard let appBundle = ALTApplication(fileURL: unzippedApplicationURL) else { throw OperationError.invalidApp }
 
-        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<InstalledApp, Error>) in
-            let group = self.install(appBundle, presentingViewController: nil, context: context) { result in
+                let subGroup = self.install(appBundle, presentingViewController: presentingViewController, context: group.context) { result in
+                    try? FileManager.default.removeItem(at: temporaryDirectory)
+                    completionHandler(result)
+                }
+                group.progress.addChild(subGroup.progress, withPendingUnitCount: 100)
+            } catch {
+                completionHandler(.failure(error))
+            }
+        }
+
+        return group
+    }
+
+    func installIPA(at ipaURL: URL, progressHandler: ((Progress) -> Void)? = nil) async throws -> InstalledApp
+    {
+        return try await withCheckedThrowingContinuation { continuation in
+            let group = self.installIPA(at: ipaURL) { result in
                 continuation.resume(with: result)
             }
-
             progressHandler?(group.progress)
         }
     }

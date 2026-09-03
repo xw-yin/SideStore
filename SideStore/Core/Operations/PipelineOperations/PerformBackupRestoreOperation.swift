@@ -28,7 +28,12 @@ final class PerformBackupRestoreOperation: BasePipelineOperation<InstallAppOpera
     }
     
     override func execute(parentProgress: Progress?) async throws -> URL {
+        let startTime = CFAbsoluteTimeGetCurrent()
         self.debugLog("[BackupRestoreAppOperation] execute() started. Action: \(action.rawValue)")
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            self.debugLog("[BackupRestoreAppOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         guard let installedApp = context.installedApp else {
             self.debugLog("[BackupRestoreAppOperation] Error: context.installedApp is nil")

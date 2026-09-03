@@ -9,7 +9,11 @@
 import SwiftUI
 import CoreData
 import UniformTypeIdentifiers
+#if !os(tvOS)
 import WidgetKit
+#else
+import TVServices
+#endif
 import SideSign
 
 private extension Color {
@@ -81,7 +85,12 @@ struct DeveloperOptionsView: View {
                         
                         divider
                         
-                        toggleRow(title: "Widget Verbose Logging", isOn: Binding(
+                        #if !os(tvOS)
+                        let title = "Widget Verbose Logging"
+                        #else
+                        let title = "Top Shelf Verbose Logging"
+                        #endif
+                        toggleRow(title: title, isOn: Binding(
                             get: { isAltWidgetVerboseLoggingEnabled },
                             set: { newValue in
                                 isAltWidgetVerboseLoggingEnabled = newValue
@@ -136,10 +145,20 @@ struct DeveloperOptionsView: View {
                             .padding(.horizontal, 16)
                             .frame(height: 50)
                         }
-                        
-                        divider
-                        
-                        NavigationLink(destination: BonjourDiscoveryViewV2()) {
+                    }
+                    .background(Color.settingsRowBackground)
+                    .cornerRadius(14)
+                }
+                
+                // Section: Bonjour
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("BONJOUR")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Color.white.opacity(0.6))
+                        .padding(.horizontal, 16)
+                    
+                    VStack(spacing: 0) {
+                        NavigationLink(destination: BonjourDiscoveryView()) {
                             HStack {
                                 Text("Network Discovery")
                                     .font(.system(size: 17, weight: .bold))
@@ -159,7 +178,12 @@ struct DeveloperOptionsView: View {
                 
                 // Section: Widget Options
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("WIDGET OPTIONS")
+                    #if !os(tvOS)
+                    let title = "WIDGET OPTIONS"
+                    #else
+                    let title = "TOP SHELF OPTIONS"
+                    #endif
+                    Text(title)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
@@ -170,7 +194,13 @@ struct DeveloperOptionsView: View {
                                 Image(systemName: "arrow.clockwise")
                                     .font(.system(size: 18, weight: .semibold))
                                     .foregroundColor(.primary)
-                                Text("Reload All Widgets")
+
+                                #if !os(tvOS)
+                                let title = "Reload All Widgets"
+                                #else
+                                let title = "Reload Top Shelf"
+                                #endif
+                                Text(title)
                                     .font(.system(size: 17, weight: .bold))
                                     .foregroundColor(.primary)
                                 Spacer()
@@ -186,7 +216,13 @@ struct DeveloperOptionsView: View {
                                 Image(systemName: "arrow.triangle.2.circlepath")
                                     .font(.system(size: 18, weight: .semibold))
                                     .foregroundColor(.primary)
-                                Text("Rotate Widget Log")
+                                
+                                #if !os(tvOS)
+                                let title = "Rotate Widget Log"
+                                #else
+                                let title = "Rotate Top Shelf Log"
+                                #endif
+                                Text(title)
                                     .font(.system(size: 17, weight: .bold))
                                     .foregroundColor(.primary)
                                 Spacer()
@@ -369,7 +405,7 @@ struct DeveloperOptionsView: View {
                             if AuthManager.shared.currentAppleID == nil ||
                                AuthManager.shared.password == nil ||
                                CertificateManager.shared.activeCertificate == nil {
-                                if let top = topViewController() {
+                                if let top = UIApplication.shared.topViewController() {
                                     let toastView = ToastView(text: NSLocalizedString("Failed to export account!", comment: ""), detailText: "Account not found or missing credentials.")
                                     toastView.show(in: top)
                                 }
@@ -402,7 +438,9 @@ struct DeveloperOptionsView: View {
         }
         .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
         .navigationTitle("Developer Options")
+        #if !os(tvOS)
         .navigationBarTitleDisplayMode(.large)
+        #endif
         .alert("Delete Database", isPresented: $showDeleteConfirmation) {
             SwiftUI.Button("Delete & Exit", role: .destructive) {
                 _ = DatabaseManager.deleteDatabase()
@@ -441,21 +479,10 @@ struct DeveloperOptionsView: View {
         }
     }
     
-    private func topViewController() -> UIViewController? {
-        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = scene.windows.first(where: { $0.isKeyWindow }),
-              var top = window.rootViewController else {
-            return nil
-        }
-        while let presented = top.presentedViewController {
-            top = presented
-        }
-        return top
-    }
-    
     #if DEBUG
     private func showImportAccountPicker() {
-        guard let top = topViewController() else { return }
+        guard let top = UIApplication.shared.topViewController() else { return }
+        #if !os(tvOS)
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: [UTType(filenameExtension: "sideconf")!, .json], asCopy: false)
         ImportExport.documentPickerHandler = DocumentPickerHandler { selectedURL in
             guard let url = selectedURL else { return }
@@ -471,10 +498,28 @@ struct DeveloperOptionsView: View {
         }
         picker.delegate = ImportExport.documentPickerHandler
         top.present(picker, animated: true)
+        #else
+        TVWebFileTransferManager.shared.startImport(
+            acceptedExtensions: ["sideconf", "json"],
+            title: "Import Account",
+            presentingVC: top
+        ) { selectedURL in
+            guard let url = selectedURL else { return }
+            do {
+                try ImportExport.importAccountJSON(from: url)
+                let email = AuthManager.shared.currentAppleID ?? ""
+                let toastView = ToastView(text: NSLocalizedString("Successfully imported '\(email)'!", comment: ""), detailText: "SideStore should be fully operational!")
+                toastView.show(in: top)
+            } catch {
+                let toastView = ToastView(text: NSLocalizedString("Failed to import account JSON!", comment: ""), detailText: error.localizedDescription)
+                toastView.show(in: top)
+            }
+        }
+        #endif
     }
     
     private func exportAccountJSON(password: String) {
-        guard let top = topViewController() else { return }
+        guard let top = UIApplication.shared.topViewController() else { return }
         guard let account = ImportExport.exportAccountJSON(password: password) else {
             let toastView = ToastView(text: NSLocalizedString("Failed to export account!", comment: ""), detailText: "Account not found or missing credentials.")
             toastView.show(in: top)
@@ -490,8 +535,12 @@ struct DeveloperOptionsView: View {
         let tmpPath = FileManager.default.temporaryDirectory.appendingPathComponent("\(account.email).sideconf")
         do {
             try accountData.write(to: tmpPath)
+            #if !os(tvOS)
             let exportVC = UIDocumentPickerViewController(forExporting: [tmpPath], asCopy: false)
             top.present(exportVC, animated: true)
+            #else
+            TVWebFileTransferManager.shared.startExport(fileURL: tmpPath, title: "Export Account", presentingVC: top)
+            #endif
         } catch {
             let toastView = ToastView(text: NSLocalizedString("Failed to export account!", comment: ""), detailText: error.localizedDescription)
             toastView.show(in: top)
@@ -554,7 +603,7 @@ struct DeveloperOptionsView: View {
 
     
     private func triggerStartEMProxy() {
-        guard let top = topViewController() else { return }
+        guard let top = UIApplication.shared.topViewController() else { return }
         Task {
             do {
                 try await startEMProxy()
@@ -572,7 +621,7 @@ struct DeveloperOptionsView: View {
     }
     
     private func triggerStopEMProxy() {
-        guard let top = topViewController() else { return }
+        guard let top = UIApplication.shared.topViewController() else { return }
         Task {
             do {
                 try await stopEMProxy()
@@ -590,21 +639,34 @@ struct DeveloperOptionsView: View {
     }
     
     private func triggerReloadAllWidgets() {
+        #if !os(tvOS)
         WidgetCenter.shared.reloadAllTimelines()
-        if let top = topViewController() {
-            let toastView = ToastView(text: NSLocalizedString("Reloaded All Widgets", comment: ""), detailText: "Triggered timeline refresh for all widgets.")
+        let title = NSLocalizedString("Reloaded All Widgets", comment: "")
+        let detail = "Triggered timeline refresh for all widgets."
+        #else
+        NotificationCenter.default.post(name: .TVTopShelfItemsDidChange, object: nil)
+        let title = NSLocalizedString("Reloaded Top Shelf", comment: "")
+        let detail = "Triggered Top Shelf refresh."
+        #endif
+        if let top = UIApplication.shared.topViewController() {
+            let toastView = ToastView(text: title, detailText: detail)
             toastView.show(in: top)
         }
     }
     
     private func triggerRotateWidgetLog() {
-        guard let top = topViewController() else { return }
+        guard let top = UIApplication.shared.topViewController() else { return }
+        #if !os(tvOS)
+        let logName = "Widget"
+        #else
+        let logName = "Top Shelf"
+        #endif
         do {
             if let rotatedURL = try WidgetLogManager.rotateLog() {
-                let toastView = ToastView(text: NSLocalizedString("Rotated Widget Log", comment: ""), detailText: "Saved to WidgetLogs/\(rotatedURL.lastPathComponent)")
+                let toastView = ToastView(text: NSLocalizedString("Rotated \(logName) Log", comment: ""), detailText: "Saved to WidgetLogs/\(rotatedURL.lastPathComponent)")
                 toastView.show(in: top)
             } else {
-                let toastView = ToastView(text: NSLocalizedString("Widget Log Empty", comment: ""), detailText: "Nothing to rotate.")
+                let toastView = ToastView(text: NSLocalizedString("\(logName) Log Empty", comment: ""), detailText: "Nothing to rotate.")
                 toastView.show(in: top)
             }
         } catch {

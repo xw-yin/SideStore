@@ -11,8 +11,12 @@ import SideSign
 
 final class EmbedSigningCertOperation: BasePipelineOperation<AppOperationContext, Void>, @unchecked Sendable {
     override func execute(parentProgress: Progress?) async throws {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[EmbedSigningCertOperation] execute() started")
-        defer { debugLog("[EmbedSigningCertOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[EmbedSigningCertOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         
         // 1. Resolve the certificate used for signing this app

@@ -91,7 +91,11 @@ public struct DirectoryExplorerView: View {
                     DirectoryItemListSectionView(viewModel: viewModel, clipboard: clipboard, onSelectFolder: onSelectFolder)
                     EmptyPasteAreaSectionView(viewModel: viewModel, clipboard: clipboard)
                 }
+                #if !os(tvOS)
                 .listStyle(.insetGrouped)
+                #else
+                .listStyle(.grouped)
+                #endif
                 .searchable(text: $viewModel.searchText, prompt: "Search files & folders")
             }
             
@@ -108,7 +112,9 @@ public struct DirectoryExplorerView: View {
             }
         }
         .navigationTitle(viewModel.currentURL.lastPathComponent)
+        #if !os(tvOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 TrailingToolbarMenuView(viewModel: viewModel)
@@ -256,33 +262,34 @@ private struct DirectoryItemListSectionView: View {
     private func renderRow(item: StorageExplorerItem) -> some View {
         let isSelected = selectedURLs.contains(item.url)
         if isSelectionMode {
-            ItemRow(item: item, isSelected: isSelected, isSelectionMode: true, isTextWrapEnabled: isTextWrapEnabled)
-                .onTapGesture {
-                    if viewModel.selectedURLs.contains(item.url) {
-                        viewModel.selectedURLs.remove(item.url)
-                    } else {
-                        viewModel.selectedURLs.insert(item.url)
-                    }
+            AdaptiveTappableRow {
+                if viewModel.selectedURLs.contains(item.url) {
+                    viewModel.selectedURLs.remove(item.url)
+                } else {
+                    viewModel.selectedURLs.insert(item.url)
                 }
+            } content: {
+                ItemRow(item: item, isSelected: isSelected, isSelectionMode: true, isTextWrapEnabled: isTextWrapEnabled)
+            }
         } else if item.isDirectory {
-            ItemRow(item: item, isSelected: false, isSelectionMode: false, isTextWrapEnabled: isTextWrapEnabled)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    verboseLog("[DirectoryExplorerView] Tapped child folder: \(item.name) (\(item.url.path))")
-                    onSelectFolder?(item.url)
-                }
-                .contextMenu {
-                    ItemContextMenuView(viewModel: viewModel, item: item)
-                }
+            AdaptiveTappableRow {
+                verboseLog("[DirectoryExplorerView] Tapped child folder: \(item.name) (\(item.url.path))")
+                onSelectFolder?(item.url)
+            } content: {
+                ItemRow(item: item, isSelected: false, isSelectionMode: false, isTextWrapEnabled: isTextWrapEnabled)
+            }
+            .contextMenu {
+                ItemContextMenuView(viewModel: viewModel, item: item)
+            }
         } else {
-            ItemRow(item: item, isSelected: false, isSelectionMode: false, isTextWrapEnabled: isTextWrapEnabled)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    verboseLog("[DirectoryExplorerView] Tapped file item: \(item.name) (\(item.url.path))")
-                }
-                .contextMenu {
-                    ItemContextMenuView(viewModel: viewModel, item: item)
-                }
+            AdaptiveTappableRow {
+                verboseLog("[DirectoryExplorerView] Tapped file item: \(item.name) (\(item.url.path))")
+            } content: {
+                ItemRow(item: item, isSelected: false, isSelectionMode: false, isTextWrapEnabled: isTextWrapEnabled)
+            }
+            .contextMenu {
+                ItemContextMenuView(viewModel: viewModel, item: item)
+            }
         }
     }
 }
@@ -383,7 +390,11 @@ private struct SelectionActionBarView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
+        #if !os(tvOS)
         .background(Color(UIColor.tertiarySystemBackground))
+        #else
+        .background(Color.white.opacity(0.08))
+        #endif
         .onAppear {
             updateState()
         }
@@ -435,7 +446,11 @@ private struct BottomInformationBarView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
+        #if !os(tvOS)
         .background(Color(UIColor.secondarySystemBackground))
+        #else
+        .background(Color.white.opacity(0.1))
+        #endif
         .onAppear {
             updateState()
         }
@@ -463,8 +478,12 @@ private struct TrailingToolbarMenuView: View {
     @State private var sortAscending: Bool = true
     @State private var groupFoldersFirst: Bool = true
     @State private var isTextWrapEnabled: Bool = true
+    #if os(tvOS)
+    @State private var showTvMenu: Bool = false
+    #endif
     
     var body: some View {
+        #if !os(tvOS)
         Menu {
             SwiftUI.Button {
                 viewModel.isSelectionMode.toggle()
@@ -510,6 +529,41 @@ private struct TrailingToolbarMenuView: View {
         .onReceive(viewModel.objectWillChange.receive(on: DispatchQueue.main)) { _ in
             updateState()
         }
+        #else
+        SwiftUI.Button {
+            showTvMenu = true
+        } label: {
+            Image(systemName: "ellipsis.circle")
+        }
+        .confirmationDialog("Options", isPresented: $showTvMenu) {
+            SwiftUI.Button(isSelectionMode ? "Done Selecting" : "Select") {
+                viewModel.isSelectionMode.toggle()
+                if !viewModel.isSelectionMode { viewModel.selectedURLs.removeAll() }
+            }
+            ForEach(StorageSortOption.allCases) { option in
+                SwiftUI.Button("Sort: \(option.rawValue)") {
+                    if viewModel.sortOption == option {
+                        viewModel.sortAscending.toggle()
+                    } else {
+                        viewModel.sortOption = option
+                        viewModel.sortAscending = true
+                    }
+                }
+            }
+            SwiftUI.Button(groupFoldersFirst ? "Don't Group Folders First" : "Group Folders First") {
+                viewModel.groupFoldersFirst.toggle()
+            }
+            SwiftUI.Button(isTextWrapEnabled ? "Disable Text Wrap" : "Enable Text Wrap") {
+                viewModel.isTextWrapEnabled.toggle()
+            }
+        }
+        .onAppear {
+            updateState()
+        }
+        .onReceive(viewModel.objectWillChange.receive(on: DispatchQueue.main)) { _ in
+            updateState()
+        }
+        #endif
     }
     
     private func updateState() {
@@ -653,4 +707,23 @@ private struct ItemRow: View {
 private struct ShareItem: Identifiable {
     var id: String { url.path }
     let url: URL
+}
+
+private struct AdaptiveTappableRow<Content: View>: View {
+    let action: () -> Void
+    @ViewBuilder let content: () -> Content
+    
+    var body: some View {
+        #if !os(tvOS)
+        content()
+            .contentShape(Rectangle())
+            .onTapGesture(perform: action)
+        #else
+        SwiftUI.Button(action: action) {
+            content()
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(PlainButtonStyle())
+        #endif
+    }
 }

@@ -109,7 +109,7 @@
         <relationship name="team" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Team" inverseName="installedApps" inverseEntity="Team"/>
         <uniquenessConstraints>
             <uniquenessConstraint>
-                <constraint value="bundleIdentifier"/>
+                <constraint value="resignedBundleIdentifier"/>
             </uniquenessConstraint>
         </uniquenessConstraints>
     </entity>

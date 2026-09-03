@@ -11,7 +11,7 @@ import Combine
 import CoreData
 @preconcurrency import Nuke
 
-class BrowseViewController: UICollectionViewController, PeekPopPreviewing
+class BrowseViewController: UICollectionViewController
 {
     // Nil == Show apps from all sources.
     let source: Source?
@@ -83,7 +83,9 @@ class BrowseViewController: UICollectionViewController, PeekPopPreviewing
                                                                #keyPath(StoreApp.subtitle),
                                                                #keyPath(StoreApp.developerName),
                                                                #keyPath(StoreApp.bundleIdentifier)]
+        #if !os(tvOS)
         self.navigationItem.searchController = self.dataSource.searchController
+        #endif
         
         self.prototypeCell.contentView.translatesAutoresizingMaskIntoConstraints = false
         
@@ -96,13 +98,16 @@ class BrowseViewController: UICollectionViewController, PeekPopPreviewing
         let collectionViewLayout = self.collectionViewLayout as! UICollectionViewFlowLayout
         collectionViewLayout.minimumLineSpacing = 30
         
-        (self as PeekPopPreviewing).registerForPreviewing(with: self, sourceView: self.collectionView)
+        #if !os(tvOS)
+        self.registerForPreviewing(with: self, sourceView: self.collectionView)
         
         let refreshControl = UIRefreshControl(frame: .zero, primaryAction: UIAction { [weak self] _ in
             self?.updateSources()
         })
         self.collectionView.refreshControl = refreshControl
+        #endif
         
+        #if !os(tvOS)
         if self.category != nil, #available(iOS 16, *)
         {
             let categoriesMenu = UIMenu(children: [
@@ -114,6 +119,7 @@ class BrowseViewController: UICollectionViewController, PeekPopPreviewing
             
             self.navigationItem.titleMenuProvider = { _ in categoriesMenu }
         }
+        #endif
         
         self.titleSourceIconView = AppIconImageView(style: .circular)
         
@@ -127,17 +133,16 @@ class BrowseViewController: UICollectionViewController, PeekPopPreviewing
         self.titleStackView.spacing = 4
         self.titleStackView.translatesAutoresizingMaskIntoConstraints = false
         
+        #if !os(tvOS)
         self.navigationItem.largeTitleDisplayMode = .never
         
         if #available(iOS 16, *)
         {
             self.navigationItem.preferredSearchBarPlacement = .automatic
         }
+        #endif
         
-        if #available(iOS 15, *)
-        {
-            self.prepareAppSorting()
-        }
+        self.prepareAppSorting()
         
         self.preparePipeline()
         
@@ -317,7 +322,9 @@ private extension BrowseViewController
     func updateSources()
     {
         AppManager.shared.updateAllSources { result in
+            #if !os(tvOS)
             self.collectionView.refreshControl?.endRefreshing()
+            #endif
             
             guard case .failure(let error) = result else { return }
             
@@ -424,6 +431,7 @@ private extension BrowseViewController
         
         self.view.tintColor = tintColor
         
+        #if !os(tvOS)
         let appearance = NavigationBarAppearance()
         appearance.configureWithTintColor(tintColor)
         appearance.configureWithDefaultBackground()
@@ -433,6 +441,7 @@ private extension BrowseViewController
         
         self.navigationItem.standardAppearance = appearance
         self.navigationItem.scrollEdgeAppearance = edgeAppearance
+        #endif
         
         // Necessary to tint UISearchController's inline bar button.
         self.navigationController?.navigationBar.tintColor = tintColor
@@ -490,7 +499,6 @@ private extension BrowseViewController
         }
     }
     
-    @available(iOS 15, *)
     func prepareAppSorting()
     {
         if self.preferredAppSorting == .default && self.source == nil
@@ -688,15 +696,3 @@ extension BrowseViewController: UIViewControllerPreviewingDelegate
     }
 }
 
-@available(iOS 17, *)
-#Preview(traits: .portrait) {
-    DatabaseManager.shared.startForPreview()
-   
-    let storyboard = UIStoryboard(name: "Main", bundle: .main)
-    let browseViewController = storyboard.instantiateViewController(identifier: "browseViewController") { coder in
-        BrowseViewController(source: nil, coder: coder)
-    }
-    
-    let navigationController = UINavigationController(rootViewController: browseViewController)
-    return navigationController
-}

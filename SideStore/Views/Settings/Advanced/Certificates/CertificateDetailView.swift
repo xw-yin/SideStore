@@ -105,6 +105,7 @@ struct CertificateDetailView: View {
                                 .foregroundColor(.primary)
                             Spacer()
                             
+                            #if !os(tvOS)
                             SwiftUI.Button {
                                 UIPasteboard.general.string = details.fingerprintSHA1
                                 copiedFingerprintSHA1 = true
@@ -117,11 +118,14 @@ struct CertificateDetailView: View {
                                     .foregroundColor(copiedFingerprintSHA1 ? .green : .accentColor)
                             }
                             .buttonStyle(.plain)
+                            #endif
                         }
                         Text(details.fingerprintSHA1)
                             .font(.system(size: 11, design: .monospaced))
                             .foregroundColor(.secondary)
+                            #if !os(tvOS)
                             .textSelection(.enabled)
+                            #endif
                             .lineLimit(nil)
                             .multilineTextAlignment(.leading)
                     }
@@ -134,6 +138,7 @@ struct CertificateDetailView: View {
                                 .foregroundColor(.primary)
                             Spacer()
                             
+                            #if !os(tvOS)
                             SwiftUI.Button {
                                 UIPasteboard.general.string = details.fingerprintSHA256
                                 copiedFingerprintSHA256 = true
@@ -146,11 +151,14 @@ struct CertificateDetailView: View {
                                     .foregroundColor(copiedFingerprintSHA256 ? .green : .accentColor)
                             }
                             .buttonStyle(.plain)
+                            #endif
                         }
                         Text(details.fingerprintSHA256)
                             .font(.system(size: 11, design: .monospaced))
                             .foregroundColor(.secondary)
+                            #if !os(tvOS)
                             .textSelection(.enabled)
+                            #endif
                             .lineLimit(nil)
                             .multilineTextAlignment(.leading)
                     }
@@ -179,6 +187,7 @@ struct CertificateDetailView: View {
                             }
                             .buttonStyle(.plain)
                             
+                            #if !os(tvOS)
                             SwiftUI.Button {
                                 UIPasteboard.general.string = privateKey.base64EncodedString()
                                 copiedPrivateKey = true
@@ -191,13 +200,16 @@ struct CertificateDetailView: View {
                             }
                             .buttonStyle(.plain)
                             .padding(.leading, 12)
+                            #endif
                         }
                         
                         if showPrivateKey {
                             Text(privateKey.base64EncodedString())
                                 .font(.system(size: 11, design: .monospaced))
                                 .foregroundColor(.secondary)
+                                #if !os(tvOS)
                                 .textSelection(.enabled)
+                                #endif
                                 .lineLimit(nil)
                                 .multilineTextAlignment(.leading)
                         } else {
@@ -217,6 +229,7 @@ struct CertificateDetailView: View {
                                 .foregroundColor(.primary)
                             Spacer()
                             
+                            #if !os(tvOS)
                             SwiftUI.Button {
                                 let pem = String(data: certData, encoding: .utf8) ?? certData.base64EncodedString()
                                 UIPasteboard.general.string = pem
@@ -229,13 +242,16 @@ struct CertificateDetailView: View {
                                     .foregroundColor(copiedPEM ? .green : .accentColor)
                             }
                             .buttonStyle(.plain)
+                            #endif
                         }
                         
                         ScrollView(.horizontal, showsIndicators: true) {
                             Text(String(data: certData, encoding: .utf8) ?? certData.base64EncodedString())
                                 .font(.system(size: 11, design: .monospaced))
                                 .foregroundColor(.secondary)
+                                #if !os(tvOS)
                                 .textSelection(.enabled)
+                                #endif
                                 .fixedSize(horizontal: true, vertical: false)
                         }
                     }
@@ -246,7 +262,9 @@ struct CertificateDetailView: View {
             }
         }
         .navigationTitle("Certificate Details")
+        #if !os(tvOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 SwiftUI.Button {
@@ -282,7 +300,9 @@ struct CertificateDetailView: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.trailing)
+                #if !os(tvOS)
                 .textSelection(.enabled)
+                #endif
         }
     }
     
@@ -296,8 +316,11 @@ struct CertificateDetailView: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.trailing)
+                #if !os(tvOS)
                 .textSelection(.enabled)
+                #endif
             
+            #if !os(tvOS)
             if value != "N/A" && !value.isEmpty && value != "••••••••" {
                 SwiftUI.Button {
                     UIPasteboard.general.string = value
@@ -313,6 +336,7 @@ struct CertificateDetailView: View {
                 .buttonStyle(.plain)
                 .padding(.leading, 8)
             }
+            #endif
         }
     }
 }

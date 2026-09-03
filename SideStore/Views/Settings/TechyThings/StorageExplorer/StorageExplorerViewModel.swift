@@ -160,12 +160,19 @@ public final class StorageExplorerViewModel: ObservableObject {
     
     private static func getFreeDiskSpaceString() -> String {
         do {
+            #if !os(tvOS)
             let values = try FileManager.default.temporaryDirectory.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey, .volumeAvailableCapacityKey])
             if let free = values.volumeAvailableCapacityForImportantUsage {
                 return ByteCountFormatter.string(fromByteCount: free, countStyle: .file)
             } else if let free = values.volumeAvailableCapacity {
                 return ByteCountFormatter.string(fromByteCount: Int64(free), countStyle: .file)
             }
+            #else
+            let values = try FileManager.default.temporaryDirectory.resourceValues(forKeys: [.volumeAvailableCapacityKey])
+            if let free = values.volumeAvailableCapacity {
+                return ByteCountFormatter.string(fromByteCount: Int64(free), countStyle: .file)
+            }
+            #endif
         } catch {}
         return "Unknown"
     }

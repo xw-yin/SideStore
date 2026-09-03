@@ -17,8 +17,7 @@ enum PipelineStep: OperationStep {
     case deactivateApp
     case downloadApp
     case exportResignedApp
-    case fetchProvisioningProfilesInstall
-    case fetchProvisioningProfilesRefresh
+    case fetchProvisioningProfiles
     case installApp
     case markAppInactive
     case stageBackupApp
@@ -49,8 +48,7 @@ enum PipelineStep: OperationStep {
         ObjectIdentifier(DeactivateAppOperation.self):                    .deactivateApp,
         ObjectIdentifier(DownloadAppOperation.self):                      .downloadApp,
         ObjectIdentifier(ExportResignedAppOperation.self):                .exportResignedApp,
-        ObjectIdentifier(FetchProvisioningProfilesInstallOperation.self): .fetchProvisioningProfilesInstall,
-        ObjectIdentifier(FetchProvisioningProfilesRefreshOperation.self): .fetchProvisioningProfilesRefresh,
+        ObjectIdentifier(FetchProvisioningProfilesOperation.self):        .fetchProvisioningProfiles,
         ObjectIdentifier(InstallAppOperation.self):                       .installApp,
         ObjectIdentifier(MarkAppInactiveOperation.self):                  .markAppInactive,
         ObjectIdentifier(StageBackupAppOperation.self):                   .stageBackupApp,

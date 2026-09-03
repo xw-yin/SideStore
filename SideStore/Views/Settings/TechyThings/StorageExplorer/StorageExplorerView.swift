@@ -52,9 +52,13 @@ public struct StorageExplorerView: View {
                 }
             }
         }
+        #if !os(tvOS)
         .listStyle(.insetGrouped)
-        .navigationTitle("Storage Explorer")
         .navigationBarTitleDisplayMode(.inline)
+        #else
+        .listStyle(.grouped)
+        #endif
+        .navigationTitle("Storage Explorer")
         .onAppear {
             verboseLog("[StorageExplorerView] onAppear triggered")
             self.loadLocations()
@@ -186,6 +190,7 @@ public struct StorageExplorerView: View {
             
             var hwTotalStr = "Unknown"
             var hwFreeStr = "Unknown"
+            #if !os(tvOS)
             do {
                 let values = try fileManager.temporaryDirectory.resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityForImportantUsageKey, .volumeAvailableCapacityKey])
                 if let total = values.volumeTotalCapacity {
@@ -197,6 +202,17 @@ public struct StorageExplorerView: View {
                     hwFreeStr = ByteCountFormatter.string(fromByteCount: Int64(free), countStyle: .file)
                 }
             } catch {}
+            #else
+            do {
+                let values = try fileManager.temporaryDirectory.resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityKey])
+                if let total = values.volumeTotalCapacity {
+                    hwTotalStr = ByteCountFormatter.string(fromByteCount: Int64(total), countStyle: .file)
+                }
+                if let free = values.volumeAvailableCapacity {
+                    hwFreeStr = ByteCountFormatter.string(fromByteCount: Int64(free), countStyle: .file)
+                }
+            } catch {}
+            #endif
             
             let appSizeStr = ByteCountFormatter.string(fromByteCount: totalAppSize, countStyle: .file)
             verboseLog("[StorageExplorerView] statsTask completed successfully. totalAppSize: \(appSizeStr), freeSpace: \(hwFreeStr)")
@@ -221,7 +237,7 @@ private struct StorageLocationRowView: View {
     let location: StorageLocation
     let onSelectFolder: ((URL) -> Void)?
     
-    var body: some View {
+    private var rowContent: some View {
         HStack(spacing: 12) {
             Image(systemName: location.iconName)
                 .font(.title2)
@@ -243,10 +259,24 @@ private struct StorageLocationRowView: View {
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())
-        .onTapGesture {
+    }
+    
+    var body: some View {
+        #if !os(tvOS)
+        rowContent
+            .onTapGesture {
+                verboseLog("[StorageLocationRowView] Tapped container location: \(location.name) (\(location.url.path))")
+                onSelectFolder?(location.url)
+            }
+        #else
+        SwiftUI.Button {
             verboseLog("[StorageLocationRowView] Tapped container location: \(location.name) (\(location.url.path))")
             onSelectFolder?(location.url)
+        } label: {
+            rowContent
         }
+        .buttonStyle(PlainButtonStyle())
+        #endif
     }
 }
 

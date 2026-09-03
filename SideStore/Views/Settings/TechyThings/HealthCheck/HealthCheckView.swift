@@ -163,7 +163,9 @@ struct HealthCheckView: View {
             }
         }
         .navigationTitle("Health Check")
+        #if !os(tvOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .task {
             await viewModel.observeMetrics()
         }

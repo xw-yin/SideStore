@@ -10,7 +10,11 @@ import Foundation
 
 public extension FileManager {
     var documentsDirectory: URL {
+        #if os(tvOS)
+        return self.cachesDirectory
+        #else
         return self.urls(for: .documentDirectory, in: .userDomainMask).first!
+        #endif
     }
 
     var libraryDirectory: URL {

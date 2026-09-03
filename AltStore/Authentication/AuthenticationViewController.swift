@@ -49,15 +49,46 @@ final class AuthenticationViewController: UIViewController
         
         for view in [self.appleIDBackgroundView!, self.passwordBackgroundView!, self.signInButton!]
         {
+            #if !os(tvOS)
             view.clipsToBounds = true
+            #endif
             view.layer.cornerRadius = 16
         }
+
+        self.appleIDTextField.autocapitalizationType = .none
+        self.appleIDTextField.autocorrectionType = .no
+        self.appleIDTextField.spellCheckingType = .no
+        self.appleIDTextField.smartQuotesType = .no
+        self.appleIDTextField.smartDashesType = .no
+        self.appleIDTextField.smartInsertDeleteType = .no
+        self.appleIDTextField.keyboardType = .emailAddress
+        self.appleIDTextField.textContentType = .username
+
+        self.passwordTextField.autocapitalizationType = .none
+        self.passwordTextField.autocorrectionType = .no
+        self.passwordTextField.spellCheckingType = .no
+        self.passwordTextField.smartQuotesType = .no
+        self.passwordTextField.smartDashesType = .no
+        self.passwordTextField.smartInsertDeleteType = .no
+        self.passwordTextField.textContentType = .password
+
+        #if os(tvOS)
+        self.appleIDBackgroundView.backgroundColor = .clear
+        self.passwordBackgroundView.backgroundColor = .clear
+        self.appleIDBackgroundView.isUserInteractionEnabled = true
+        self.passwordBackgroundView.isUserInteractionEnabled = true
+        self.appleIDTextField.borderStyle = .roundedRect
+        self.passwordTextField.borderStyle = .roundedRect
+        #endif
 
         if UIScreen.main.isExtraCompactHeight
         {
             self.contentStackView.spacing = 20
         }
         
+        self.appleIDTextField.delegate = self
+        self.passwordTextField.delegate = self
+
         NotificationCenter.default.addObserver(self, selector: #selector(AuthenticationViewController.textFieldDidChangeText(_:)), name: UITextField.textDidChangeNotification, object: self.appleIDTextField)
         NotificationCenter.default.addObserver(self, selector: #selector(AuthenticationViewController.textFieldDidChangeText(_:)), name: UITextField.textDidChangeNotification, object: self.passwordTextField)
         
@@ -70,6 +101,29 @@ final class AuthenticationViewController: UIViewController
         
         self.signInButton.isIndicatingActivity = false
         self.toastView?.dismiss()
+    }
+
+    override var keyCommands: [UIKeyCommand]? {
+        return [
+            UIKeyCommand(input: "\t", modifierFlags: [], action: #selector(handleTabKey(_:))),
+            UIKeyCommand(input: "\t", modifierFlags: .shift, action: #selector(handleShiftTabKey(_:)))
+        ]
+    }
+
+    @objc private func handleTabKey(_ command: UIKeyCommand) {
+        if self.appleIDTextField.isFirstResponder {
+            self.passwordTextField.becomeFirstResponder()
+        } else if self.passwordTextField.isFirstResponder {
+            self.appleIDTextField.becomeFirstResponder()
+        }
+    }
+
+    @objc private func handleShiftTabKey(_ command: UIKeyCommand) {
+        if self.passwordTextField.isFirstResponder {
+            self.appleIDTextField.becomeFirstResponder()
+        } else if self.appleIDTextField.isFirstResponder {
+            self.passwordTextField.becomeFirstResponder()
+        }
     }
 }
 
@@ -176,6 +230,21 @@ extension AuthenticationViewController: UITextFieldDelegate
         
         return false
     }
+
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool
+    {
+        if string == "\t"
+        {
+            switch textField
+            {
+            case self.appleIDTextField: self.passwordTextField.becomeFirstResponder()
+            case self.passwordTextField: self.appleIDTextField.becomeFirstResponder()
+            default: break
+            }
+            return false
+        }
+        return true
+    }
     
     func textFieldDidBeginEditing(_ textField: UITextField)
     {
@@ -194,4 +263,16 @@ extension AuthenticationViewController
     {
         self.update()
     }
+
+    #if os(tvOS)
+    @objc private func focusAppleID()
+    {
+        self.appleIDTextField.becomeFirstResponder()
+    }
+    
+    @objc private func focusPassword()
+    {
+        self.passwordTextField.becomeFirstResponder()
+    }
+    #endif
 }

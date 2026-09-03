@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="wKh-xq-NuP">
-    <device id="retina4_7" orientation="portrait" appearance="light"/>
+<document type="com.apple.InterfaceBuilder.AppleTV.Storyboard" version="3.0" toolsVersion="23504" targetRuntime="AppleTV" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="wKh-xq-NuP">
+    <device id="appleTV" appearance="light"/>
     <dependencies>
-        <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
@@ -31,13 +30,12 @@
             <objects>
                 <tabBarController storyboardIdentifier="tabBarController" modalPresentationStyle="fullScreen" id="49e-Tb-3d3" customClass="TabBarController" customModule="SideStore" customModuleProvider="target" sceneMemberID="viewController">
                     <tabBar key="tabBar" contentMode="scaleToFill" id="W28-zg-YXA">
-                        <rect key="frame" x="0.0" y="975" width="768" height="49"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
-                        <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
+                        <rect key="frame" x="0.0" y="0.0" width="1920" height="0.0"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                     </tabBar>
                     <connections>
                         <segue destination="kjR-gi-fgT" kind="relationship" relationship="viewControllers" id="eWy-uk-nwG"/>
-                        <segue destination="bTL-bY-9Yq" kind="presentation" identifier="finishJailbreak" id="cIc-Ta-uNk"/>
                         <segue destination="HCK-G6-KdY" kind="relationship" relationship="viewControllers" id="X0t-T6-JeA"/>
                         <segue destination="faz-B4-Sub" kind="relationship" relationship="viewControllers" id="OLu-kM-z1J"/>
                         <segue destination="3Ew-ox-i4n" kind="relationship" relationship="viewControllers" id="phQ-Pc-pqw"/>
@@ -543,14 +541,6 @@
             </objects>
             <point key="canvasLocation" x="962" y="-17"/>
         </scene>
-        <!--PatchApp-->
-        <scene sceneID="vdC-wt-hvX">
-            <objects>
-                <viewControllerPlaceholder storyboardName="PatchApp" id="bTL-bY-9Yq" sceneMemberID="viewController"/>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="NyZ-z6-R2q" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-228" y="551"/>
-        </scene>
         <!--My Apps-->
         <scene sceneID="nhh-BJ-XiT">
             <objects>
@@ -947,7 +937,6 @@
         <image name="MyApps" width="20" height="20"/>
         <image name="News" width="19" height="20"/>
         <image name="Settings" width="20" height="20"/>
-        <image name="escape" catalog="system" width="128" height="123"/>
         <namedColor name="Background">
             <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>

@@ -24,7 +24,9 @@ struct ThemePickerView: View {
                 previewSection
 
                 // Section 2: FULL SPECTRUM COLOR WHEEL & SELECTION
+                #if !os(tvOS)
                 colorWheelSection
+                #endif
 
                 // Section 3: PRESET THEME PALETTES
                 presetsSection
@@ -41,7 +43,9 @@ struct ThemePickerView: View {
         }
         .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
         .navigationTitle("Theme Manager")
+        #if !os(tvOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .onAppear {
             selectedColor = Color(uiColor: themeManager.primaryColor)
         }
@@ -104,6 +108,7 @@ struct ThemePickerView: View {
         }
     }
 
+    #if !os(tvOS)
     private var colorWheelSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(LocalizedStringKey("COLOR SELECTION & WHEEL"))
@@ -131,6 +136,7 @@ struct ThemePickerView: View {
             .cornerRadius(14)
         }
     }
+    #endif
 
     private var presetsSection: some View {
         VStack(alignment: .leading, spacing: 8) {

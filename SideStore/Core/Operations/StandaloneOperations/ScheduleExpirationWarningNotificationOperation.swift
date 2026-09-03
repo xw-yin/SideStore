@@ -57,6 +57,7 @@ final class ScheduleExpirationWarningNotificationOperation: BaseStandaloneOperat
 
         let startProgress = self.progress.completedUnitCount
         let endProgress: Int64 = 95
+        #if !os(tvOS)
         let range = endProgress - startProgress
         let count = milestones.count
         
@@ -84,6 +85,9 @@ final class ScheduleExpirationWarningNotificationOperation: BaseStandaloneOperat
 
             try await center.add(request)
         }
+        #else
+        NotificationCenter.default.post(name: NSNotification.Name("TVTopShelfItemsDidChangeNotification"), object: nil)
+        #endif
         self.setProgress(100)
         return true
     }

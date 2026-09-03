@@ -76,8 +76,13 @@ class VibrantButton: UIButton
     
     private func initialize()
     {
+        #if !os(tvOS)
         let blurEffect = UIBlurEffect(style: .systemThinMaterial)
         let vibrancyEffect = UIVibrancyEffect(blurEffect: blurEffect, style: .fill) // .fill is more vibrant than .secondaryLabel
+        #else
+        let blurEffect = UIBlurEffect(style: .regular)
+        let vibrancyEffect = UIVibrancyEffect(blurEffect: blurEffect)
+        #endif
         
         if #available(iOS 15, *)
         {

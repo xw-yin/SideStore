@@ -103,10 +103,12 @@ class FeaturedViewController: UICollectionViewController
             return nil
         }
         
+        #if !os(tvOS)
         self.navigationItem.searchController = self.searchController
         self.navigationItem.hidesSearchBarWhenScrolling = true
         
         self.navigationItem.largeTitleDisplayMode = .always
+        #endif
     }
     
     override func viewDidAppear(_ animated: Bool) 
@@ -186,7 +188,7 @@ private extension FeaturedViewController
                 return layoutSection
                 
             case _ where section.isFeaturedAppsSection:
-                let itemHeight: NSCollectionLayoutDimension = if #available(iOS 17, *) { .uniformAcrossSiblings(estimate: 350) } else { .estimated(350) }
+                let itemHeight: NSCollectionLayoutDimension = if #available(iOS 17, tvOS 17, *) { .uniformAcrossSiblings(estimate: 350) } else { .estimated(350) }
                 let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: itemHeight)
                 let item = NSCollectionLayoutItem(layoutSize: itemSize)
                 
@@ -627,12 +629,11 @@ extension FeaturedViewController
             
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: kind, for: indexPath) as! UICollectionViewListCell
             
-            var content: UIListContentConfiguration = if #available(iOS 15, *) {
-                .prominentInsetGroupedHeader()
-            }
-            else {
-                .groupedHeader()
-            }
+            #if !os(tvOS)
+            var content: UIListContentConfiguration = .prominentInsetGroupedHeader()
+            #else
+            var content: UIListContentConfiguration = .groupedHeader()
+            #endif
             
             switch section
             {
@@ -707,64 +708,3 @@ extension FeaturedViewController
     }
 }
 
-@available(iOS 17, *)
-#Preview(traits: .portrait) {
-    DatabaseManager.shared.startForPreview()
-    
-    let storyboard = UIStoryboard(name: "Main", bundle: nil)
-    let featuredViewController = storyboard.instantiateViewController(identifier: "featuredViewController")
-    
-    let navigationController = UINavigationController(rootViewController: featuredViewController)
-    navigationController.navigationBar.prefersLargeTitles = true
-    navigationController.modalPresentationStyle = .fullScreen
-    
-    let viewController = UIViewController()
-    
-    AppManager.shared.fetchSources() { (result) in
-        do
-        {
-            let (_, context) = try result.get()
-            try context.save()
-        }
-        catch let error as NSError
-        {
-            debugLog("Failed to fetch sources for preview. \(error.localizedDescription)")
-        }
-    }
-    
-    AppManager.shared.updateKnownSources { result in
-        Task {
-            do
-            {
-                let knownSources = try result.get()
-                
-                let context = DatabaseManager.shared.persistentContainer.newBackgroundContext()
-                
-                await withThrowingTaskGroup(of: Void.self) { taskGroup in
-                    for source in knownSources.0
-                    {
-                        guard let sourceURL = source.sourceURL else { continue }
-                        
-                        taskGroup.addTask {
-                            _ = try await AppManager.shared.fetchSource(sourceURL: sourceURL, managedObjectContext: context)
-                        }
-                    }
-                }
-                
-                await context.performAsync {
-                    try! context.save()
-                }
-                
-                await MainActor.run {
-                    viewController.present(navigationController, animated: true)
-                }
-            }
-            catch
-            {
-                debugLog("Failed to fetch known sources for preview. \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    return viewController
-}

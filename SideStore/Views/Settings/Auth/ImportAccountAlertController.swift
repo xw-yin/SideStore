@@ -18,7 +18,11 @@ class ImportAccountAlertViewController: UIViewController {
         passwordTextField.isSecureTextEntry = true
         passwordTextField.placeholder = NSLocalizedString("File Password", comment: "")
         passwordTextField.borderStyle = .none
+        #if !os(tvOS)
         passwordTextField.backgroundColor = .tertiarySystemFill
+        #else
+        passwordTextField.backgroundColor = UIColor.white.withAlphaComponent(0.15)
+        #endif
         passwordTextField.layer.cornerRadius = 14
         passwordTextField.layer.masksToBounds = true
         passwordTextField.font = .systemFont(ofSize: 16)

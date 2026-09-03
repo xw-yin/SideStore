@@ -9,6 +9,7 @@
 import SwiftUI
 
 enum SideJITConnectionStatus: Equatable {
+    case disabled
     case ready(latencyMs: Int, address: String)
     case discovering
     case disconnected(reason: String)
@@ -16,6 +17,7 @@ enum SideJITConnectionStatus: Equatable {
     
     var color: Color {
         switch self {
+        case .disabled: return .secondary
         case .ready: return .green
         case .discovering, .checking: return .orange
         case .disconnected: return .red
@@ -24,14 +26,11 @@ enum SideJITConnectionStatus: Equatable {
     
     var title: String {
         switch self {
-        case .ready(let latency, _):
-            return String(format: NSLocalizedString("Ready (%d ms)", comment: "SideJIT connection latency"), latency)
-        case .discovering:
-            return NSLocalizedString("Discovering Bonjour…", comment: "SideJIT discovery status")
-        case .checking:
-            return NSLocalizedString("Checking Connection…", comment: "SideJIT connection status")
-        case .disconnected:
-            return NSLocalizedString("Unreachable", comment: "SideJIT connection status")
+        case .disabled: return "Disabled"
+        case .ready(let latency, _): return "Ready (\(latency) ms)"
+        case .discovering: return "Discovering Bonjour…"
+        case .checking: return "Checking Connection…"
+        case .disconnected: return "Unreachable"
         }
     }
 }
@@ -48,6 +47,22 @@ struct SideJITResponseLog: Identifiable {
     var isSuccess: Bool {
         statusCode >= 200 && statusCode < 300
     }
+    
+    var prettyPayload: String {
+        rawPayload.prettyPrintedJSON
+    }
+}
+
+public extension String {
+    var prettyPrintedJSON: String {
+        guard let data = self.data(using: .utf8),
+              let jsonObject = try? JSONSerialization.jsonObject(with: data, options: []),
+              let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.prettyPrinted, .sortedKeys]),
+              let prettyString = String(data: prettyData, encoding: .utf8) else {
+            return self
+        }
+        return prettyString
+    }
 }
 
 enum SideJITDiagnosticAction: Equatable {
@@ -60,7 +75,7 @@ struct SideJITServerConfigView: View {
     @State private var isServerEnabled: Bool = UserDefaults.standard.isSideJITServerEnabled
     @State private var customAddress: String = UserDefaults.standard.textInputSideJITServerurl ?? ""
     @State private var resolvedAddress: String = ""
-    @State private var connectionStatus: SideJITConnectionStatus = .checking
+    @State private var connectionStatus: SideJITConnectionStatus = UserDefaults.standard.isSideJITServerEnabled ? .checking : .disabled
     @State private var latestLog: SideJITResponseLog? = nil
     @State private var activeAction: SideJITDiagnosticAction? = nil
     @State private var showCopiedToast = false
@@ -76,9 +91,13 @@ struct SideJITServerConfigView: View {
             }
             aboutSection
         }
+        #if !os(tvOS)
         .listStyle(.insetGrouped)
-        .navigationTitle("SideJITServer")
         .navigationBarTitleDisplayMode(.inline)
+        #else
+        .listStyle(.grouped)
+        #endif
+        .navigationTitle("SideJITServer")
         .overlay(
             Group {
                 if showCopiedToast {
@@ -117,6 +136,8 @@ struct SideJITServerConfigView: View {
                 UserDefaults.standard.isSideJITServerEnabled = newValue
                 if newValue {
                     refreshServerState()
+                } else {
+                    connectionStatus = .disabled
                 }
             }
         }
@@ -141,7 +162,7 @@ struct SideJITServerConfigView: View {
                 Text("Resolved Address")
                     .layoutPriority(1)
                 Spacer()
-                Text(resolvedAddress.isEmpty ? NSLocalizedString("Resolving…", comment: "SideJIT address status") : resolvedAddress)
+                Text(resolvedAddress.isEmpty ? "Resolving…" : resolvedAddress)
                     .font(.system(size: 13, design: .monospaced))
                     .foregroundColor(resolvedAddress.isEmpty ? .secondary : .primary)
                     .lineLimit(1)
@@ -150,8 +171,10 @@ struct SideJITServerConfigView: View {
             .contextMenu {
                 if !resolvedAddress.isEmpty {
                     SwiftUI.Button {
+                        #if !os(tvOS)
                         UIPasteboard.general.string = resolvedAddress
                         showCopied()
+                        #endif
                     } label: {
                         Label("Copy Address", systemImage: "doc.on.doc")
                     }
@@ -161,9 +184,7 @@ struct SideJITServerConfigView: View {
             HStack {
                 Text("Resolution Mode")
                 Spacer()
-                Text(customAddress.isEmpty
-                     ? NSLocalizedString("Auto (Bonjour mDNS)", comment: "SideJIT address mode")
-                     : NSLocalizedString("Manual Override", comment: "SideJIT address mode"))
+                Text(customAddress.isEmpty ? "Auto (Bonjour mDNS)" : "Manual Override")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
@@ -198,7 +219,7 @@ struct SideJITServerConfigView: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(.secondary)
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -220,7 +241,7 @@ struct SideJITServerConfigView: View {
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.plain)
             .disabled(activeAction != nil)
             
             SwiftUI.Button {
@@ -237,7 +258,7 @@ struct SideJITServerConfigView: View {
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.plain)
             .disabled(activeAction != nil)
             
             SwiftUI.Button {
@@ -254,7 +275,7 @@ struct SideJITServerConfigView: View {
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.plain)
             .disabled(activeAction != nil)
         }
     }
@@ -286,23 +307,36 @@ struct SideJITServerConfigView: View {
                         .foregroundColor(.secondary)
                 }
                 
-                Text(log.rawPayload)
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundColor(.primary)
-                    .padding(8)
+                ScrollView(.vertical, showsIndicators: true) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        Text(log.prettyPayload)
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundColor(.primary)
+                            .multilineTextAlignment(.leading)
+                            .padding(10)
+                    }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(UIColor.secondarySystemGroupedBackground))
-                    .cornerRadius(8)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
-                    )
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxHeight: 200)
+                #if !os(tvOS)
+                .background(Color(UIColor.secondarySystemGroupedBackground))
+                #else
+                .background(Color.white.opacity(0.1))
+                #endif
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                )
             }
             .padding(.vertical, 4)
             .contextMenu {
                 SwiftUI.Button {
-                    UIPasteboard.general.string = log.rawPayload
+                    #if !os(tvOS)
+                    UIPasteboard.general.string = log.prettyPayload
                     showCopied()
+                    #endif
                 } label: {
                     Label("Copy Response", systemImage: "doc.on.doc")
                 }
@@ -347,9 +381,16 @@ struct SideJITServerConfigView: View {
     }
     
     private func refreshServerState() {
+        guard isServerEnabled else {
+            connectionStatus = .disabled
+            debugLog("[SideJITConfig] refreshServerState: SideJITServer is disabled")
+            return
+        }
         connectionStatus = .checking
+        debugLog("[SideJITConfig] refreshServerState: resolving server URL (customAddress='\(customAddress)')")
         Task {
             let serverURL = await SideJITManager.shared.resolveServerURL()
+            debugLog("[SideJITConfig] refreshServerState: resolved serverURL='\(serverURL)'")
             await MainActor.run {
                 self.resolvedAddress = serverURL
             }
@@ -359,6 +400,7 @@ struct SideJITServerConfigView: View {
     
     private func performPing(to serverURL: String) async {
         guard let url = URL(string: serverURL) else {
+            debugLog("[SideJITConfig] performPing: invalid URL string '\(serverURL)'")
             await MainActor.run {
                 self.connectionStatus = .disconnected(reason: "Invalid URL")
             }
@@ -368,12 +410,14 @@ struct SideJITServerConfigView: View {
         let start = Date()
         var request = URLRequest(url: url)
         request.timeoutInterval = AppConstants.SideJIT.timeout
+        debugLog("[SideJITConfig] performPing: sending GET request to \(url) (timeout: \(AppConstants.SideJIT.timeout)s)")
         
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             let latency = Int(Date().timeIntervalSince(start) * 1000)
             let status = (response as? HTTPURLResponse)?.statusCode ?? 200
             let payload = String(data: data, encoding: .utf8) ?? "<binary data>"
+            debugLog("[SideJITConfig] performPing: success from \(url) (status=\(status), latency=\(latency)ms, bytes=\(data.count)):\n\(payload.prettyPrintedJSON)")
             
             await MainActor.run {
                 if status >= 200 && status < 400 {
@@ -391,6 +435,8 @@ struct SideJITServerConfigView: View {
                 )
             }
         } catch {
+            let latency = Int(Date().timeIntervalSince(start) * 1000)
+            debugLog("[SideJITConfig] performPing: request failed for \(url) after \(latency)ms with error: \(error)")
             await MainActor.run {
                 self.connectionStatus = .disconnected(reason: error.localizedDescription)
                 self.latestLog = SideJITResponseLog(
@@ -398,7 +444,7 @@ struct SideJITServerConfigView: View {
                     endpoint: "/",
                     httpMethod: "GET",
                     statusCode: 0,
-                    latencyMs: Int(Date().timeIntervalSince(start) * 1000),
+                    latencyMs: latency,
                     rawPayload: "Error: \(error.localizedDescription)"
                 )
             }
@@ -407,6 +453,7 @@ struct SideJITServerConfigView: View {
     
     private func testHealthCheck() {
         activeAction = .ping
+        debugLog("[SideJITConfig] testHealthCheck: user triggered Test Connection (Ping)")
         Task {
             let serverURL = await SideJITManager.shared.resolveServerURL()
             await performPing(to: serverURL)
@@ -418,9 +465,11 @@ struct SideJITServerConfigView: View {
     
     private func triggerDeviceRefresh() {
         activeAction = .refresh
+        debugLog("[SideJITConfig] triggerDeviceRefresh: user triggered Refresh Devices")
         Task {
             let serverURL = await SideJITManager.shared.resolveServerURL()
             guard let url = URL(string: "\(serverURL)/re/") else {
+                debugLog("[SideJITConfig] triggerDeviceRefresh: invalid URL for '\(serverURL)/re/'")
                 await MainActor.run { self.activeAction = nil }
                 return
             }
@@ -428,14 +477,19 @@ struct SideJITServerConfigView: View {
             let start = Date()
             var request = URLRequest(url: url)
             request.timeoutInterval = AppConstants.SideJIT.timeout
+            debugLog("[SideJITConfig] triggerDeviceRefresh: requesting \(url)")
             
             do {
                 let (data, response) = try await URLSession.shared.data(for: request)
                 let latency = Int(Date().timeIntervalSince(start) * 1000)
                 let status = (response as? HTTPURLResponse)?.statusCode ?? 200
                 let payload = String(data: data, encoding: .utf8) ?? ""
+                debugLog("[SideJITConfig] triggerDeviceRefresh: received status=\(status), latency=\(latency)ms:\n\(payload.prettyPrintedJSON)")
                 
                 await MainActor.run {
+                    if status >= 200 && status < 400 {
+                        self.connectionStatus = .ready(latencyMs: latency, address: serverURL)
+                    }
                     self.latestLog = SideJITResponseLog(
                         timestamp: Date(),
                         endpoint: "/re/",
@@ -447,13 +501,15 @@ struct SideJITServerConfigView: View {
                     self.activeAction = nil
                 }
             } catch {
+                let latency = Int(Date().timeIntervalSince(start) * 1000)
+                debugLog("[SideJITConfig] triggerDeviceRefresh: request failed after \(latency)ms with error: \(error)")
                 await MainActor.run {
                     self.latestLog = SideJITResponseLog(
                         timestamp: Date(),
                         endpoint: "/re/",
                         httpMethod: "GET",
                         statusCode: 0,
-                        latencyMs: Int(Date().timeIntervalSince(start) * 1000),
+                        latencyMs: latency,
                         rawPayload: "Error: \(error.localizedDescription)"
                     )
                     self.activeAction = nil
@@ -464,9 +520,11 @@ struct SideJITServerConfigView: View {
     
     private func queryVersionEndpoint() {
         activeAction = .version
+        debugLog("[SideJITConfig] queryVersionEndpoint: user triggered Query Versions")
         Task {
             let serverURL = await SideJITManager.shared.resolveServerURL()
             guard let url = URL(string: "\(serverURL)/ver/") else {
+                debugLog("[SideJITConfig] queryVersionEndpoint: invalid URL for '\(serverURL)/ver/'")
                 await MainActor.run { self.activeAction = nil }
                 return
             }
@@ -474,12 +532,14 @@ struct SideJITServerConfigView: View {
             let start = Date()
             var request = URLRequest(url: url)
             request.timeoutInterval = AppConstants.SideJIT.timeout
+            debugLog("[SideJITConfig] queryVersionEndpoint: requesting \(url)")
             
             do {
                 let (data, response) = try await URLSession.shared.data(for: request)
                 let latency = Int(Date().timeIntervalSince(start) * 1000)
                 let status = (response as? HTTPURLResponse)?.statusCode ?? 200
                 let payload = String(data: data, encoding: .utf8) ?? ""
+                debugLog("[SideJITConfig] queryVersionEndpoint: received status=\(status), latency=\(latency)ms:\n\(payload.prettyPrintedJSON)")
                 
                 await MainActor.run {
                     self.latestLog = SideJITResponseLog(
@@ -493,13 +553,15 @@ struct SideJITServerConfigView: View {
                     self.activeAction = nil
                 }
             } catch {
+                let latency = Int(Date().timeIntervalSince(start) * 1000)
+                debugLog("[SideJITConfig] queryVersionEndpoint: request failed after \(latency)ms with error: \(error)")
                 await MainActor.run {
                     self.latestLog = SideJITResponseLog(
                         timestamp: Date(),
                         endpoint: "/ver/",
                         httpMethod: "GET",
                         statusCode: 0,
-                        latencyMs: Int(Date().timeIntervalSince(start) * 1000),
+                        latencyMs: latency,
                         rawPayload: "Error: \(error.localizedDescription)"
                     )
                     self.activeAction = nil

@@ -101,8 +101,7 @@ private func getTag(level: String) -> String {
     formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
     formatter.locale = Locale(identifier: "en_US_POSIX")
     let timestamp = formatter.string(from: Date())
-    let padding = level == "DEBUG" ? " " : "  "
-    return "\(timestamp) \(level)\(padding): "
+    return "\(timestamp) \(level): "
 }
 
 // Global print override to shadow Swift's standard print

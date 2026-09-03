@@ -48,7 +48,7 @@ final class PairingFileManager: NSObject {
     }
 }
 
-// MARK: - UI Extension
+#if !os(tvOS)
 extension PairingFileManager: UIDocumentPickerDelegate {
     @MainActor
     func presentPairingFileAlert(on vc: UIViewController, isRetry: Bool, completion: ((URL?) -> Void)? = nil) {
@@ -185,3 +185,78 @@ extension PairingFileManager: UIDocumentPickerDelegate {
         }
     }
 }
+#else
+extension PairingFileManager {
+    @MainActor
+    func presentPairingFileAlert(on vc: UIViewController, isRetry: Bool, completion: ((URL?) -> Void)? = nil) {
+        self.completion = { url in
+            completion?(url)
+            self.completion = nil
+        }
+
+        let title = isRetry ? NSLocalizedString("Invalid Pairing File", comment: "") : NSLocalizedString("Pairing File Required", comment: "")
+        TVWebFileTransferManager.shared.startImport(
+            acceptedExtensions: ["mobiledevicepairing", "plist", "xml"],
+            title: title,
+            presentingVC: vc
+        ) { [weak self] tempURL in
+            guard let self = self else { return }
+            guard let tempURL = tempURL,
+                  let data = try? Data(contentsOf: tempURL),
+                  let pairingString = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else {
+                if let completion = self.completion {
+                    completion(nil)
+                } else {
+                    self.showPairingWarningAndProceed(on: vc)
+                }
+                return
+            }
+
+            do {
+                try self.savePairingFile(contents: pairingString)
+                let documentsPath = FileManager.default.documentsDirectory.appendingPathComponent(Self.pairingFileName)
+                if let completion = self.completion {
+                    completion(documentsPath)
+                } else {
+                    Task.detached {
+                        do {
+                            try await AppBootManager.shared.startMinimuxer(pairingFile: pairingString)
+                        } catch {
+                            debugLog("[PairingFile] startMinimuxer failed: \(error)")
+                        }
+                    }
+                }
+            } catch {
+                debugLog("[PairingFile] Failed to save uploaded pairing file: \(error)")
+                if let completion = self.completion {
+                    completion(nil)
+                }
+            }
+        }
+    }
+
+    func showPairingWarningAndProceed(on vc: UIViewController) {
+        let warningAlert = UIAlertController(
+            title: "⚠️ " + NSLocalizedString("Pairing Required", comment: ""),
+            message: NSLocalizedString("Without a valid pairing file, operations that require a pairing file (such as installing, refreshing, or resigning apps) will not function.", comment: ""),
+            preferredStyle: .alert
+        )
+        warningAlert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default))
+        vc.present(warningAlert, animated: true)
+    }
+
+    func importPairingFile(presentingVC: UIViewController, title: String, message: String) async throws -> URL {
+        try await withCheckedThrowingContinuation { continuation in
+            Task { @MainActor in
+                self.presentPairingFileAlert(on: presentingVC, isRetry: false) { url in
+                    if let url = url {
+                        continuation.resume(returning: url)
+                    } else {
+                        continuation.resume(throwing: MinimuxerWrapperError.pairingFile)
+                    }
+                }
+            }
+        }
+    }
+}
+#endif

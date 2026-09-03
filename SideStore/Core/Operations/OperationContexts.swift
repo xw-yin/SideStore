@@ -284,8 +284,10 @@ class AppOperationContext: PipelineOperationContext
 
     var overrideCertificate: ALTCertificate?
     var targetCertStatus: CertificateStatus?
+    var appendTeamID: Bool = true
 
     var targetBundleIdentifier: String { customBundleIdentifier ?? bundleIdentifier }
+
 
     override var error: Error? {
         get { _error ?? authenticatedContext.error }
@@ -337,7 +339,6 @@ class InstallAppOperationContext: AppOperationContext
     var installedApp: InstalledApp?
     var releaseTrack: ReleaseTrack?
     var additionalEntitlements: [ALTEntitlement: any Sendable] = [:]
-    var appendTeamID: Bool = false
     
     var beginInstallationHandler: ((InstalledApp) -> Void)?
 

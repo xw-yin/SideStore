@@ -29,13 +29,18 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
     }
     
     override func execute(parentProgress: Progress?) async throws -> InstalledApp {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[InstallAppOperation] execute() started")
         defer {
-            debugLog("[InstallAppOperation] execute() completed")
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[InstallAppOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
+        try await super.executePreconditionCheck(parentProgress: parentProgress)
+        
+        defer{
             self.cleanUp()
             self.removeRefreshedIPA()
         }
-        try await super.executePreconditionCheck(parentProgress: parentProgress)
         
         guard
             let certificate = context.overrideCertificate ?? context.authenticatedContext.signingCertificate,
@@ -122,9 +127,6 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
                     in: backgroundContext
                 )
                 installedApp.appExtensions = installedExtensions
-                
-                // Remove stale "PlugIns" (Extensions) from currently installed App
-                self.removeStaleAppExtensions(for: installedApp)
                 self.context.beginInstallationHandler?(installedApp)
                 self.updateActiveAppsStatus(
                     for: installedApp,
@@ -137,7 +139,7 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
             let isSelfReinstall = !isDifferentSideStore &&
                                    installedApp.storeApp?.bundleIdentifier.range(of: Bundle.Info.appbundleIdentifier) != nil
             if isSelfReinstall {
-                if let _ = provisioningProfiles[installedApp.bundleIdentifier],
+                if let _ = provisioningProfiles[self.context.targetBundleIdentifier],
                    let appGroup = Bundle.main.altstoreAppGroup,
                    let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) 
                 {
@@ -159,7 +161,7 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
                 }
             }
             
-            return (installedApp, isDifferentSideStore, installedApp.bundleIdentifier, isSelfReinstall)
+            return (installedApp, isDifferentSideStore, self.context.targetBundleIdentifier, isSelfReinstall)
         }
         
         self.setProgress(30)
@@ -197,8 +199,14 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
                                   certificate: ALTCertificate,
                                   resignedAppBundle: ALTApplication, storeBuildVersion: String?) throws -> InstalledApp
     {
+        let target = self.context.targetBundleIdentifier
+        let predicate = NSPredicate(
+            format: "(%K == %@) OR (%K == %@)",
+            #keyPath(InstalledApp.customBundleIdentifier), target,
+            #keyPath(InstalledApp.resignedBundleIdentifier), resignedAppBundle.bundleIdentifier
+        )
         let installedApp = try InstalledApp.first(
-                                satisfying: NSPredicate(format: "%K == %@", #keyPath(InstalledApp.bundleIdentifier), context.bundleIdentifier),
+                                satisfying: predicate,
                                 in: backgroundContext
                             ) ?? InstalledApp(
                                 resignedAppBundle: resignedAppBundle,
@@ -264,6 +272,15 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
                                          installedApp: InstalledApp,
                                          in backgroundContext: NSManagedObjectContext) throws -> Set<InstalledExtension>
     {
+        guard let targetAppBundle = self.context.targetAppBundle else {
+            throw OperationError.invalidParameters("InstallAppOperation: targetAppBundle is missing in context.")
+        }
+
+        let originalExtensionsByFilename = Dictionary(
+            targetAppBundle.appExtensions.map { ($0.fileURL.lastPathComponent, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+
         var installedExtensions = Set<InstalledExtension>()
         
         if let bundle = Bundle(url: resignedAppBundle.fileURL),
@@ -275,51 +292,46 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
         {
             for case let fileURL as URL in enumerator {
                 guard let appExtensionBundle = Bundle(url: fileURL) else { continue }
-                guard let appExtension = ALTApplication(fileURL: appExtensionBundle.bundleURL) else { continue }
+                guard let resignedAppExtensionBundle = ALTApplication(fileURL: appExtensionBundle.bundleURL) else { continue }
                 
-                let parentBundleID = context.bundleIdentifier
+                let filename = fileURL.lastPathComponent
+                guard let originalExtension = originalExtensionsByFilename[filename] else {
+                    throw OperationError.invalidParameters("InstallAppOperation: extension '\(filename)' not found in targetAppBundle.")
+                }
+                
+                let targetParentBundleID = context.targetBundleIdentifier
                 let resignedParentBundleID = resignedAppBundle.bundleIdentifier
                 
-                let resignedBundleID = appExtension.bundleIdentifier
-                let appExBundleID = resignedBundleID.replacingOccurrences(of: resignedParentBundleID, with: parentBundleID)
+                let originalAppExBundleID = originalExtension.bundleIdentifier
+                let resignedBundleID = resignedAppExtensionBundle.bundleIdentifier
+                var customAppExBundleID: String? = nil
+                if context.customBundleIdentifier != nil {
+                    customAppExBundleID = resignedBundleID.replacingOccurrences(of: resignedParentBundleID, with: targetParentBundleID)
+                }
                 
                 self.debugLog("""
                 [InstallAppOperation] Extension Bundle Mapping:
-                  • parentBundleID         : \(parentBundleID)
+                  • targetParentBundleID   : \(targetParentBundleID)
                   • resignedParentBundleID : \(resignedParentBundleID)
-                  • appExBundleID          : \(appExBundleID)
+                  • originalAppExBundleID  : \(originalAppExBundleID)
+                  • customAppExBundleID    : \(customAppExBundleID ?? "nil")
                   • resignedAppExBundleID  : \(resignedBundleID)
                 """)
                 
                 let installedExtension = try installedApp.appExtensions
-                                                .first(where: { $0.bundleIdentifier == appExBundleID })
+                                                .first(where: { $0.resignedBundleIdentifier == resignedBundleID })
                                             ?? InstalledExtension(
-                                                resignedAppExtensionBundle: appExtension,
-                                                originalBundleIdentifier: appExBundleID,
+                                                resignedAppExtensionBundle: resignedAppExtensionBundle,
+                                                originalBundleIdentifier: originalAppExBundleID,
                                                 context: backgroundContext
                                             )
-                installedExtension.update(resignedAppExtensionBundle: appExtension)
+                installedExtension.customBundleIdentifier = customAppExBundleID
+                installedExtension.update(resignedAppExtensionBundle: resignedAppExtensionBundle)
                 installedExtensions.insert(installedExtension)
             }
         }
 
         return installedExtensions
-    }
-
-    private func removeStaleAppExtensions(for installedApp: InstalledApp) {
-        if let installedAppExns = ALTApplication(fileURL: installedApp.fileURL)?.appExtensions {
-            let currentAppExns = Set(installedApp.appExtensions).map{ $0.bundleIdentifier }
-            let staleAppExns = installedAppExns.filter{ !currentAppExns.contains($0.bundleIdentifier) }
-            
-            for staleAppExn in staleAppExns {
-                do {
-                    try FileManager.default.removeItem(at: staleAppExn.fileURL)
-                    self.debugLog("[InstallAppOperation] removed stale app-extension: \(staleAppExn.fileURL)")
-                } catch {
-                    self.debugLog("[InstallAppOperation] remove appExtensions Error: \(error)")
-                }
-            }
-        }
     }
 
     private func updateActiveAppsStatus(for installedApp: InstalledApp,
@@ -374,6 +386,7 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
             let delaySeconds = Self.selfInstallSuspendDelayNs / 1_000_000_000
             self.debugLog("[InstallAppOperation] We are still installing after \(delaySeconds) seconds")
             
+            #if !os(tvOS)
             let settings = await UNUserNotificationCenter.current().notificationSettings()
             switch settings.authorizationStatus {
                 case .authorized, .ephemeral, .provisional:
@@ -394,6 +407,12 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
                         self.suspendToHomeScreen()
                     }
                 }
+            #else
+            NotificationCenter.default.post(name: NSNotification.Name("TVTopShelfItemsDidChangeNotification"), object: nil)
+            handler.requestBackgroundSuspension {
+                self.suspendToHomeScreen()
+            }
+            #endif
         }
     }
     

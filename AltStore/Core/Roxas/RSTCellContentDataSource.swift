@@ -64,17 +64,21 @@ open class RSTCellContentDataSource<ContentType, CellType: UIView & RSTCellConte
     }
     
     private var isPlaceholderViewVisible: Bool = false
+    #if !os(tvOS)
     private var previousSeparatorStyle: UITableViewCell.SeparatorStyle = .none
+    #endif
     private var previousScrollEnabled: Bool = true
     private var previousBackgroundView: UIView?
 
     private func showPlaceholderView() {
         guard !isPlaceholderViewVisible, let placeholderView, let contentView else { return }
         isPlaceholderViewVisible = true
+        #if !os(tvOS)
         if let tableView = contentView as? UITableView {
             previousSeparatorStyle = tableView.separatorStyle
             tableView.separatorStyle = .none
         }
+        #endif
         previousScrollEnabled = contentView.isScrollEnabled
         contentView.isScrollEnabled = false
         previousBackgroundView = (contentView as? UITableView)?.backgroundView ?? (contentView as? UICollectionView)?.backgroundView
@@ -85,9 +89,11 @@ open class RSTCellContentDataSource<ContentType, CellType: UIView & RSTCellConte
     private func hidePlaceholderView() {
         guard isPlaceholderViewVisible, let contentView else { return }
         isPlaceholderViewVisible = false
+        #if !os(tvOS)
         if let tableView = contentView as? UITableView {
             tableView.separatorStyle = previousSeparatorStyle
         }
+        #endif
         contentView.isScrollEnabled = previousScrollEnabled
         (contentView as? UITableView)?.backgroundView = previousBackgroundView
         (contentView as? UICollectionView)?.backgroundView = previousBackgroundView

@@ -26,6 +26,7 @@ struct ActiveCertSectionView: View {
                         HStack(spacing: 6) {
                             Text("Active Signing Certificate").font(.headline)
                             
+                            #if !os(tvOS)
                             SwiftUI.Button {
                                 UIPasteboard.general.string = activeSerial
                                 UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -37,6 +38,7 @@ struct ActiveCertSectionView: View {
                                     .foregroundColor(hasCopiedActiveSerial ? .green : .secondary)
                             }
                             .buttonStyle(.plain)
+                            #endif
                         }
                         
                         let displaySerial = viewModel.displayActiveSerial(activeSerial)
@@ -45,11 +47,13 @@ struct ActiveCertSectionView: View {
                             + Text(displaySerial).font(.system(size: 13, design: .monospaced))
                         )
                         .foregroundColor(.secondary)
+                        #if !os(tvOS)
                         .onTapGesture {
                             let key = "active_" + activeSerial
                             if viewModel.revealedSerials.contains(key) { viewModel.revealedSerials.remove(key) }
                             else { viewModel.revealedSerials.insert(key) }
                         }
+                        #endif
                         
                         if viewModel.isActiveCertThirdParty {
                             HStack(spacing: 4) {
@@ -76,9 +80,11 @@ struct ActiveCertSectionView: View {
                         Label(isMasked ? "Reveal Details" : "Hide Details",
                               systemImage: isMasked ? "eye" : "eye.slash")
                     }
+                    #if !os(tvOS)
                     SwiftUI.Button { UIPasteboard.general.string = activeSerial } label: {
                         Label("Copy S/N", systemImage: "doc.on.doc")
                     }
+                    #endif
                 }
                 
                 HStack {

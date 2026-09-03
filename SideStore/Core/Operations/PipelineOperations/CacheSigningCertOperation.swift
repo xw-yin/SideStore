@@ -11,8 +11,12 @@ import SideSign
 
 final class CacheSigningCertOperation: BasePipelineOperation<AppOperationContext, Void>, @unchecked Sendable {
     override func execute(parentProgress: Progress?) async throws {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[CacheSigningCertOperation] execute() started")
-        defer { debugLog("[CacheSigningCertOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[CacheSigningCertOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         
         let bundleID = self.context.targetBundleIdentifier

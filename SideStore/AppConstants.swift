@@ -7,8 +7,14 @@
 //
 
 import Foundation
+import SideSign
 
 public enum AppConstants {
+    // features required for functioning
+    public static let mandatoryFeatures: Set<ALTFeature> = [
+        .appGroups
+    ]
+
     enum Proxy {
         static let address = "127.0.0.1"
         static let port = "51820"

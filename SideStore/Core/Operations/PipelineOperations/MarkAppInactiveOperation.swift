@@ -12,8 +12,12 @@ import CoreData
 final class MarkAppInactiveOperation: BasePipelineOperation<InstallAppOperationContext, InstalledApp>, @unchecked Sendable {
     
     override func execute(parentProgress: Progress?) async throws -> InstalledApp {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[MarkAppInactiveOperation] execute() started")
-        defer { debugLog("[MarkAppInactiveOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[MarkAppInactiveOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         guard let installedApp = self.context.installedApp else {
             throw OperationError.invalidParameters("MarkAppInactiveOperation: self.context.installedApp is nil")

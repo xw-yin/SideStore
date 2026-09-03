@@ -73,8 +73,10 @@ class AppExtensionViewHostingController: UIHostingController<AppExtensionView> {
     }
 }
 
+#if !os(tvOS)
 extension AppExtensionViewHostingController: UIPopoverPresentationControllerDelegate {
     func adaptivePresentationStyle(for controller: UIPresentationController) -> UIModalPresentationStyle {
         return .none
     }
 }
+#endif

@@ -14,8 +14,12 @@ import SideSign
 final class SendAppOperation: BasePipelineOperation<InstallAppOperationContext, ALTApplication>, @unchecked Sendable {
     
     override func execute(parentProgress: Progress?) async throws -> ALTApplication {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[SendAppOperation] execute() started")
-        defer { debugLog("[SendAppOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[SendAppOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         self.setProgress(10)
 
@@ -46,12 +50,13 @@ final class SendAppOperation: BasePipelineOperation<InstallAppOperationContext, 
     }
 
     private func processFile(at fileURL: URL, for bundleIdentifier: String) async throws {
-        guard let data = NSData(contentsOf: fileURL) else {
-            debugLog("[SendAppOperation] IPA doesn't exist????")
+        do {
+            let bytes = try Data(contentsOf: fileURL, options: .alwaysMapped)
+            try await yeetAppAFC(bundleIdentifier, bytes)
+            self.setProgress(100)
+        } catch {
+            debugLog("[SendAppOperation] Failed to read or send IPA at \(fileURL): \(error)")
             throw OperationError(.appNotFound(name: bundleIdentifier))
         }
-        let bytes = Data(data)
-        try await yeetAppAFC(bundleIdentifier, bytes)
-        self.setProgress(100)
     }
 }

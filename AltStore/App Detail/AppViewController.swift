@@ -44,6 +44,7 @@ final class AppViewController: UIViewController
     private var _backgroundBlurEffect: UIBlurEffect?
     private var _backgroundBlurTintColor: UIColor?
     
+    #if !os(tvOS)
     private var _preferredStatusBarStyle: UIStatusBarStyle = .default
     private var isNavigationBarHidden = true
     
@@ -58,6 +59,9 @@ final class AppViewController: UIViewController
             return _preferredStatusBarStyle
         }
     }
+    #else
+    private var isNavigationBarHidden = true
+    #endif
     
     override func viewDidLoad()
     {
@@ -193,11 +197,8 @@ final class AppViewController: UIViewController
         self.contentViewController = segue.destination as? AppContentViewController
         self.contentViewController.app = self.app
         
-        if #available(iOS 15, *)
-        {
-            // Fix navigation bar + tab bar appearance on iOS 15.
-            self.setContentScrollView(self.scrollView)
-        }
+        // Fix navigation bar + tab bar appearance on iOS 15.
+        self.setContentScrollView(self.scrollView)
     }
     
     override func viewDidLayoutSubviews()
@@ -218,6 +219,7 @@ final class AppViewController: UIViewController
                 
         let statusBarHeight: Double
 
+        #if !os(tvOS)
         if let navigationController, navigationController.presentingViewController != nil, navigationController.modalPresentationStyle != .fullScreen
         {
             statusBarHeight = 20
@@ -230,6 +232,9 @@ final class AppViewController: UIViewController
         {
             statusBarHeight = 0
         }
+        #else
+        statusBarHeight = 0
+        #endif
 
         let cornerRadius = self.contentViewControllerShadowView.layer.cornerRadius
         
@@ -240,14 +245,21 @@ final class AppViewController: UIViewController
         var backButtonFrame = CGRect(x: inset, y: statusBarHeight,
                                      width: backButtonSize.width + 20, height: backButtonSize.height + 20)
         
+        #if os(tvOS)
+        let maximumContentY = self.view.bounds.height * 0.35
+        var headerFrame = CGRect(x: inset, y: 0, width: self.view.bounds.width - inset * 2, height: self.bannerView.bounds.height)
+        var contentFrame = CGRect(x: 0, y: 0, width: self.view.bounds.width, height: self.view.bounds.height)
+        var backgroundIconFrame = CGRect(x: 0, y: 0, width: self.view.bounds.width, height: self.view.bounds.height * 0.5)
+        #else
         var headerFrame = CGRect(x: inset, y: 0, width: self.view.bounds.width - inset * 2, height: self.bannerView.bounds.height)
         var contentFrame = CGRect(x: 0, y: 0, width: self.view.bounds.width, height: self.view.bounds.height)
         var backgroundIconFrame = CGRect(x: 0, y: 0, width: self.view.bounds.width, height: self.view.bounds.width)
+        let maximumContentY = self.view.bounds.width * 0.667
+        #endif
         
         let minimumHeaderY = backButtonFrame.maxY + 8
         
         let minimumContentY = minimumHeaderY + headerFrame.height + padding
-        let maximumContentY = self.view.bounds.width * 0.667
         
         // A full blur is too much, so we reduce the visible blur by 0.3, resulting in 70% blur.
         let minimumBlurFraction = 0.3 as CGFloat
@@ -467,6 +479,7 @@ private extension AppViewController
         
         self.updateNavigationBarAppearance(isHidden: false)
         
+        #if !os(tvOS)
         if self.traitCollection.userInterfaceStyle == .dark
         {
             self._preferredStatusBarStyle = .lightContent
@@ -480,6 +493,7 @@ private extension AppViewController
         {
             self.navigationController?.setNeedsStatusBarAppearanceUpdate()
         }
+        #endif
     }
     
     func hideNavigationBar()
@@ -494,17 +508,20 @@ private extension AppViewController
         
         self.updateNavigationBarAppearance(isHidden: true)
         
+        #if !os(tvOS)
         self._preferredStatusBarStyle = .lightContent
         
         if #unavailable(iOS 17)
         {
             self.navigationController?.setNeedsStatusBarAppearanceUpdate()
         }
+        #endif
     }
     
     // Copied from HeaderContentViewController
     func updateNavigationBarAppearance(isHidden: Bool)
     {
+        #if !os(tvOS)
         let barAppearance = self.navigationItem.standardAppearance as? NavigationBarAppearance ?? NavigationBarAppearance()
         
         if isHidden
@@ -523,6 +540,7 @@ private extension AppViewController
         
         self.navigationItem.standardAppearance = barAppearance
         self.navigationItem.scrollEdgeAppearance = barAppearance
+        #endif
     }
     
     func prepareBlur()
@@ -716,3 +734,29 @@ extension AppViewController: UIScrollViewDelegate
         self.view.layoutIfNeeded()
     }
 }
+
+#if os(tvOS)
+extension AppViewController
+{
+    override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?)
+    {
+        guard let press = presses.first, press.type == .menu else {
+            super.pressesBegan(presses, with: event)
+            return
+        }
+        
+        if let navigationController = self.navigationController, navigationController.viewControllers.count > 1
+        {
+            navigationController.popViewController(animated: true)
+        }
+        else if self.presentingViewController != nil
+        {
+            self.dismiss(animated: true)
+        }
+        else
+        {
+            super.pressesBegan(presses, with: event)
+        }
+    }
+}
+#endif

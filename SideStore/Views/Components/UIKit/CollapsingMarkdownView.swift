@@ -8,8 +8,11 @@
 
 
 @preconcurrency import UIKit
+#if !os(tvOS)
 import MarkdownKit
+#endif
 
+#if !os(tvOS)
 struct MarkdownManager
 {
     struct Fonts{
@@ -51,6 +54,8 @@ struct MarkdownManager
         )
     }
 }
+#endif
+
 final class CollapsingMarkdownView: UIView {
     /// Called when the collapse state toggles.
     var didToggleCollapse: (() -> Void)?
@@ -87,7 +92,9 @@ final class CollapsingMarkdownView: UIView {
     let toggleButton = UIButton(type: .system)
     
     private let textView = UITextView()
+    #if !os(tvOS)
     private let markdownParser = MarkdownManager().markdownParser
+    #endif
     
     private var previousSize: CGSize?
     private var actualLineCount: Int = 0
@@ -156,7 +163,9 @@ final class CollapsingMarkdownView: UIView {
     
     private func initialize() {
         // Configure text view
+        #if !os(tvOS)
         textView.isEditable = false
+        #endif
         textView.isScrollEnabled = false
         textView.textContainerInset = .zero
         textView.textContainer.lineFragmentPadding = 0
@@ -167,8 +176,10 @@ final class CollapsingMarkdownView: UIView {
         textView.isSelectable = true
         textView.delegate = self
         
+        #if !os(tvOS)
         // Important: This prevents selection handles from appearing
         textView.dataDetectorTypes = .link
+        #endif
     
         // Configure markdown parser
         configureMarkdownParser()
@@ -184,6 +195,7 @@ final class CollapsingMarkdownView: UIView {
     }
 
     private func configureMarkdownParser() {
+        #if !os(tvOS)
         // Configure markdown parser with desired settings
         markdownParser.enabledElements = MarkdownManager.enabledElements
         
@@ -197,6 +209,7 @@ final class CollapsingMarkdownView: UIView {
         markdownParser.header.color = MarkdownManager.Color.header
         markdownParser.bold.color =  MarkdownManager.Color.bold
         markdownParser.list.color =  MarkdownManager.Color.bold
+        #endif
     }
     
     // MARK: - Layout
@@ -265,7 +278,16 @@ final class CollapsingMarkdownView: UIView {
 
     // MARK: - Markdown Processing
     private func updateMarkdownContent() {
+        #if !os(tvOS)
         let attributedString = markdownParser.parse(text)
+        #else
+        let attributedString: NSAttributedString
+        if let nativeAttributed = try? AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)) {
+            attributedString = NSAttributedString(nativeAttributed)
+        } else {
+            attributedString = NSAttributedString(string: text)
+        }
+        #endif
         
         // Apply line spacing
         let mutableAttributedString = NSMutableAttributedString(attributedString: attributedString)
@@ -287,12 +309,14 @@ final class CollapsingMarkdownView: UIView {
 }
 
 extension CollapsingMarkdownView: UITextViewDelegate {
+    #if !os(tvOS)
     // This enables tapping on links while preventing text selection
     func textView(_ textView: UITextView, shouldInteractWith URL: URL, in characterRange: NSRange, interaction: UITextItemInteraction) -> Bool {
         // Open the URL using UIApplication
         UIApplication.shared.open(URL)
         return false // Return false to prevent the default behavior
     }
+    #endif
     
     // This prevents text selection
     func textViewDidChangeSelection(_ textView: UITextView) {

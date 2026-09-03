@@ -60,6 +60,7 @@ enum AppGroupResolution: Sendable {
 }
 
 protocol UserCustomizationHandler: AnyObject {
-    func resolveBundleIDOverride(initialBundleID: String) async throws -> String?
+    func resolveBundleIDOverride(initialBundleID: String) async throws -> (customID: String, appendTeamID: Bool)?
     func resolveAppGroupMismatch(originalGroup: String, correctedGroup: String) async throws -> AppGroupResolution
 }
+

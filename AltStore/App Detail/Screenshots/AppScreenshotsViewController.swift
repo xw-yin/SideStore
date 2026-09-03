@@ -210,17 +210,3 @@ extension AppScreenshotsViewController
     }
 }
 
-@available(iOS 17, *)
-#Preview(traits: .portrait) {
-    DatabaseManager.shared.startForPreview()
-    
-    let fetchRequest = StoreApp.fetchRequest()
-    let storeApp = try! DatabaseManager.shared.viewContext.fetch(fetchRequest).first!
-    
-    let storyboard = UIStoryboard(name: "Main", bundle: .main)
-    let appViewConttroller = storyboard.instantiateViewController(withIdentifier: "appViewController") as! AppViewController
-    appViewConttroller.app = storeApp
-    
-    let navigationController = UINavigationController(rootViewController: appViewConttroller)
-    return navigationController
-}

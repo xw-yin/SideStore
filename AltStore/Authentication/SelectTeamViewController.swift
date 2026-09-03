@@ -7,11 +7,6 @@
 //
 
 @preconcurrency import UIKit
-import SafariServices
-import MessageUI
-import Intents
-import IntentsUI
-
 import SideSign
 
 final class SelectTeamViewController: UITableViewController
@@ -21,9 +16,11 @@ final class SelectTeamViewController: UITableViewController
     
     private var prototypeHeaderFooterView: SettingsHeaderFooterView!
     
+    #if !os(tvOS)
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .default
     }
+    #endif
     
     override func numberOfSections(in tableView: UITableView) -> Int {
         return 1

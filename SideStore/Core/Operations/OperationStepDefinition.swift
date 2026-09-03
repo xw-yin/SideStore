@@ -46,7 +46,7 @@ struct PipelineStepDefinition {
         PipelineExecutionStep(.verifyCertificate,                 5),
         PipelineExecutionStep(.changeAppIcon,                     1),
         PipelineExecutionStep(.removeAppExtensions,               6),
-        PipelineExecutionStep(.fetchProvisioningProfilesInstall, 10),
+        PipelineExecutionStep(.fetchProvisioningProfiles,        10),
         PipelineExecutionStep(.prepareAppExtensionBundleIDs,      1),
         PipelineExecutionStep(.embedSigningCert,                  1),
         PipelineExecutionStep(.resignApp,                        15),
@@ -63,7 +63,7 @@ struct PipelineStepDefinition {
         PipelineExecutionStep(.verifyCertificate,                 5),
         PipelineExecutionStep(.changeAppIcon,                     2),
         PipelineExecutionStep(.removeAppExtensions,               6),
-        PipelineExecutionStep(.fetchProvisioningProfilesInstall, 15),
+        PipelineExecutionStep(.fetchProvisioningProfiles,        15),
         PipelineExecutionStep(.prepareAppExtensionBundleIDs,      2),
         PipelineExecutionStep(.embedSigningCert,                  1),
         PipelineExecutionStep(.resignApp,                        18),
@@ -77,14 +77,14 @@ struct PipelineStepDefinition {
     static let refresh: [PipelineExecutionStep] = [
         PipelineExecutionStep(.updateAppCertificate,              5),
         PipelineExecutionStep(.verifyCertificate,                10),
-        PipelineExecutionStep(.fetchProvisioningProfilesRefresh, 45),
+        PipelineExecutionStep(.fetchProvisioningProfiles,        45),
         PipelineExecutionStep(.refreshApp,                       40)
     ]
 
     static let activateLegacy: [PipelineExecutionStep] = [
         PipelineExecutionStep(.updateAppCertificate,              5),
         PipelineExecutionStep(.verifyCertificate,                10),
-        PipelineExecutionStep(.fetchProvisioningProfilesRefresh, 45),
+        PipelineExecutionStep(.fetchProvisioningProfiles,        45),
         PipelineExecutionStep(.refreshApp,                       40)
     ]
 
@@ -93,7 +93,7 @@ struct PipelineStepDefinition {
         PipelineExecutionStep(.stageBackupApp,                    3),
         PipelineExecutionStep(.updateAppCertificate,              2),
         PipelineExecutionStep(.verifyCertificate,                 2),
-        PipelineExecutionStep(.fetchProvisioningProfilesInstall,  3),
+        PipelineExecutionStep(.fetchProvisioningProfiles,         3),
         PipelineExecutionStep(.prepareAppExtensionBundleIDs,      1),
         PipelineExecutionStep(.embedSigningCert,                  1),
         PipelineExecutionStep(.resignApp,                         3),
@@ -109,7 +109,7 @@ struct PipelineStepDefinition {
         PipelineExecutionStep(.verifyCertificate,                 3),
         PipelineExecutionStep(.changeAppIcon,                     2),
         PipelineExecutionStep(.removeAppExtensions,               2),
-        PipelineExecutionStep(.fetchProvisioningProfilesInstall,  5),
+        PipelineExecutionStep(.fetchProvisioningProfiles,         5),
         PipelineExecutionStep(.prepareAppExtensionBundleIDs,      1),
         PipelineExecutionStep(.embedSigningCert,                  1),
         PipelineExecutionStep(.resignApp,                        15),
@@ -132,7 +132,7 @@ struct PipelineStepDefinition {
         PipelineExecutionStep(.stageBackupApp,                    5),
         PipelineExecutionStep(.updateAppCertificate,              3),
         PipelineExecutionStep(.verifyCertificate,                 3),
-        PipelineExecutionStep(.fetchProvisioningProfilesInstall,  5),
+        PipelineExecutionStep(.fetchProvisioningProfiles,         5),
         PipelineExecutionStep(.prepareAppExtensionBundleIDs,      2),
         PipelineExecutionStep(.embedSigningCert,                  1),
         PipelineExecutionStep(.resignApp,                         5),
@@ -152,7 +152,7 @@ struct PipelineStepDefinition {
         PipelineExecutionStep(.stageBackupApp,                    5),
         PipelineExecutionStep(.updateAppCertificate,              3),
         PipelineExecutionStep(.verifyCertificate,                 3),
-        PipelineExecutionStep(.fetchProvisioningProfilesInstall,  5),
+        PipelineExecutionStep(.fetchProvisioningProfiles,         5),
         PipelineExecutionStep(.prepareAppExtensionBundleIDs,      2),
         PipelineExecutionStep(.embedSigningCert,                  1),
         PipelineExecutionStep(.resignApp,                         5),
@@ -168,7 +168,7 @@ struct PipelineStepDefinition {
         PipelineExecutionStep(.verifyCertificate,                 3),
         PipelineExecutionStep(.changeAppIcon,                     2),
         PipelineExecutionStep(.removeAppExtensions,               2),
-        PipelineExecutionStep(.fetchProvisioningProfilesInstall,  5),
+        PipelineExecutionStep(.fetchProvisioningProfiles,         5),
         PipelineExecutionStep(.prepareAppExtensionBundleIDs,      1),
         PipelineExecutionStep(.embedSigningCert,                  1),
         PipelineExecutionStep(.resignApp,                         5),
@@ -183,7 +183,7 @@ struct PipelineStepDefinition {
     static let restoreLegacy: [PipelineExecutionStep] = [
         PipelineExecutionStep(.updateAppCertificate,              5),
         PipelineExecutionStep(.verifyCertificate,                10),
-        PipelineExecutionStep(.fetchProvisioningProfilesRefresh, 45),
+        PipelineExecutionStep(.fetchProvisioningProfiles,        45),
         PipelineExecutionStep(.refreshApp,                       40)
     ]
 
@@ -192,7 +192,7 @@ struct PipelineStepDefinition {
         PipelineExecutionStep(.stageBackupApp,                    3),
         PipelineExecutionStep(.updateAppCertificate,              2),
         PipelineExecutionStep(.verifyCertificate,                 2),
-        PipelineExecutionStep(.fetchProvisioningProfilesInstall,  3),
+        PipelineExecutionStep(.fetchProvisioningProfiles,         3),
         PipelineExecutionStep(.prepareAppExtensionBundleIDs,      1),
         PipelineExecutionStep(.embedSigningCert,                  1),
         PipelineExecutionStep(.resignApp,                         3),
@@ -208,7 +208,7 @@ struct PipelineStepDefinition {
         PipelineExecutionStep(.verifyCertificate,                 3),
         PipelineExecutionStep(.changeAppIcon,                     2),
         PipelineExecutionStep(.removeAppExtensions,               2),
-        PipelineExecutionStep(.fetchProvisioningProfilesInstall,  5),
+        PipelineExecutionStep(.fetchProvisioningProfiles,         5),
         PipelineExecutionStep(.prepareAppExtensionBundleIDs,      1),
         PipelineExecutionStep(.embedSigningCert,                  1),
         PipelineExecutionStep(.resignApp,                        15),

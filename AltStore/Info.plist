@@ -104,6 +104,7 @@
 	<array>
 		<string>_altserver._tcp</string>
 		<string>_remotepairing-pairable-host._tcp</string>
+		<string>_remotepairing-manual-pairing._tcp</string>
 		<string>_services._dns-sd._udp</string>
 		<string>_airplay._tcp</string>
 		<string>_raop._tcp</string>
@@ -161,6 +162,15 @@
 		<string>_h323._udp</string>
 		<string>_ws._tcp</string>
 		<string>_wss._tcp</string>
+		<string>_remoted._tcp</string>
+		<string>_coredevice._tcp</string>
+		<string>_appletv-v2._tcp</string>
+		<string>_apple-mobdev._tcp</string>
+		<string>_jitstreamer._tcp</string>
+		<string>_matter._tcp</string>
+		<string>_matterc._udp</string>
+		<string>_airprint._tcp</string>
+		<string>_vnc._tcp</string>
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>SideStore can use local network access to discover Bonjour (mDNS) services on your network. This is not required for core functionality.</string>
@@ -231,6 +241,7 @@
 		<string>audio</string>
 		<string>fetch</string>
 		<string>remote-notification</string>
+		<string>processing</string>
 	</array>
 	<key>UIFileSharingEnabled</key>
 	<true/>

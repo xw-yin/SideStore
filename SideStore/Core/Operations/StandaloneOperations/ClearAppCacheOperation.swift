@@ -47,8 +47,12 @@ class ClearAppCacheOperation: BaseStandaloneOperation<StandaloneOperationContext
     }
     
     override func execute(parentProgress: Progress?) async throws -> Bool {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[ClearAppCacheOperation] execute() started")
-        defer { debugLog("[ClearAppCacheOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[ClearAppCacheOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         self.setProgress(10)
         self.clearNukeCache()

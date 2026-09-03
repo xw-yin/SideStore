@@ -33,18 +33,20 @@ struct CertificatesListView: View {
             ForEach(viewModel.groupedCertificatesList) { group in
                 Section {
                     ForEach(group.certificates, id: \.serialNumber) { cert in
-                        CertificateRowView(
-                            cert:        cert,
-                            viewModel:   viewModel,
-                            onRevoke:    { onRevoke(cert) },
-                            onExportP12: { onExportP12(cert) },
-                            onClearKey:  { onClearKey(cert) },
-                            onAddKeyBin: { onAddKeyBin(cert) },
-                            onAddKeyText:{ onAddKeyText(cert) },
-                            onDelete:    { onDelete(cert) }
-                        )
-                        .contentShape(Rectangle())
-                        .onTapGesture { onRowTap(cert) }
+                        AdaptiveTappableRow {
+                            onRowTap(cert)
+                        } content: {
+                            CertificateRowView(
+                                cert:        cert,
+                                viewModel:   viewModel,
+                                onRevoke:    { onRevoke(cert) },
+                                onExportP12: { onExportP12(cert) },
+                                onClearKey:  { onClearKey(cert) },
+                                onAddKeyBin: { onAddKeyBin(cert) },
+                                onAddKeyText:{ onAddKeyText(cert) },
+                                onDelete:    { onDelete(cert) }
+                            )
+                        }
                     }
                 } header: {
                     CertGroupHeaderView(group: group, viewModel: viewModel)
@@ -61,11 +63,16 @@ struct CertificatesListView: View {
 private struct CertGroupHeaderView: View {
     let group: GroupedCertificates
     @ObservedObject var viewModel: CertificatesViewModel
+    #if os(tvOS)
+    @State private var showSortDialog: Bool = false
+    @State private var showGroupDialog: Bool = false
+    #endif
     
     var body: some View {
         HStack(spacing: 12) {
             Text(group.name)
             Spacer()
+            #if !os(tvOS)
             Menu {
                 ForEach(SortOption.allCases) { option in
                     SwiftUI.Button {
@@ -91,6 +98,33 @@ private struct CertGroupHeaderView: View {
             } label: {
                 Image(systemName: "rectangle.3.group").font(.system(size: 13)).foregroundColor(.accentColor)
             }
+            #else
+            SwiftUI.Button {
+                showSortDialog = true
+            } label: {
+                Image(systemName: "arrow.up.arrow.down").font(.system(size: 13)).foregroundColor(.accentColor)
+            }
+            .confirmationDialog("Sort Certificates", isPresented: $showSortDialog) {
+                ForEach(SortOption.allCases) { option in
+                    SwiftUI.Button("\(option.rawValue) \(viewModel.currentSort == option && viewModel.isAscending ? "↑" : "↓")") {
+                        if viewModel.currentSort == option { viewModel.isAscending.toggle() }
+                        else { viewModel.currentSort = option; viewModel.isAscending = (option == .name) }
+                    }
+                }
+            }
+            SwiftUI.Button {
+                showGroupDialog = true
+            } label: {
+                Image(systemName: "rectangle.3.group").font(.system(size: 13)).foregroundColor(.accentColor)
+            }
+            .confirmationDialog("Group Certificates", isPresented: $showGroupDialog) {
+                ForEach(GroupOption.allCases) { option in
+                    SwiftUI.Button(option.rawValue) {
+                        viewModel.currentGroup = option
+                    }
+                }
+            }
+            #endif
             SwiftUI.Button {
                 viewModel.isSectionHideActive.toggle()
             } label: {
@@ -101,5 +135,24 @@ private struct CertGroupHeaderView: View {
             .buttonStyle(.plain)
             .disabled(viewModel.isGlobalHideActive)
         }
+    }
+}
+
+private struct AdaptiveTappableRow<Content: View>: View {
+    let action: () -> Void
+    @ViewBuilder let content: () -> Content
+    
+    var body: some View {
+        #if !os(tvOS)
+        content()
+            .contentShape(Rectangle())
+            .onTapGesture(perform: action)
+        #else
+        SwiftUI.Button(action: action) {
+            content()
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(PlainButtonStyle())
+        #endif
     }
 }

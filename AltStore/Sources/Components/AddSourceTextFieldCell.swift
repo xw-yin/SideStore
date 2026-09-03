@@ -40,7 +40,11 @@ class AddSourceTextFieldCell: UICollectionViewCell
             }
         }
         
+        #if !os(tvOS)
         let blurEffect = UIBlurEffect(style: .systemChromeMaterial)
+        #else
+        let blurEffect = UIBlurEffect(style: .regular)
+        #endif
         self.backgroundEffectView = UIVisualEffectView(effect: blurEffect)
         self.backgroundEffectView.translatesAutoresizingMaskIntoConstraints = false
         self.backgroundEffectView.clipsToBounds = true

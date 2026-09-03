@@ -11,12 +11,16 @@ import Foundation
 public extension FileManager
 {
     var altstoreSharedDirectory: URL? {
+        #if os(tvOS)
+        return self.cachesDirectory
+        #else
         guard let appGroup = Bundle.main.altstoreAppGroup else {
             return nil
         }
         
         let sharedDirectoryURL = self.containerURL(forSecurityApplicationGroupIdentifier: appGroup)
         return sharedDirectoryURL
+        #endif
     }
     
     var appBackupsDirectory: URL? {

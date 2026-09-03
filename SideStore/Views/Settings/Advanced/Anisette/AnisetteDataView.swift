@@ -262,7 +262,7 @@ struct AnisetteDataView: View {
             }
             .pickerStyle(.segmented)
             .padding()
-            .background(Color(.systemGroupedBackground))
+            .background(Color.anisetteGroupedBackground)
             
             List {
                 // Section 1: Operational Mode
@@ -295,12 +295,20 @@ struct AnisetteDataView: View {
                                 .font(.caption.weight(.semibold))
                                 .foregroundColor(.secondary)
                             
+                            #if !os(tvOS)
                             TextEditor(text: $viewModel.clientInfo)
                                 .font(.system(.caption, design: .monospaced))
                                 .frame(minHeight: 80)
                                 .padding(4)
-                                .background(Color(.secondarySystemGroupedBackground))
+                                .background(Color.anisetteSecondaryGroupedBackground)
                                 .cornerRadius(6)
+                            #else
+                            TextField("Client Info", text: $viewModel.clientInfo)
+                                .font(.system(.caption, design: .monospaced))
+                                .padding(4)
+                                .background(Color.anisetteSecondaryGroupedBackground)
+                                .cornerRadius(6)
+                            #endif
                         }
                         .padding(.vertical, 4)
                         
@@ -309,12 +317,20 @@ struct AnisetteDataView: View {
                                 .font(.caption.weight(.semibold))
                                 .foregroundColor(.secondary)
                             
+                            #if !os(tvOS)
                             TextEditor(text: $viewModel.userAgent)
                                 .font(.system(.caption, design: .monospaced))
                                 .frame(minHeight: 80)
                                 .padding(4)
-                                .background(Color(.secondarySystemGroupedBackground))
+                                .background(Color.anisetteSecondaryGroupedBackground)
                                 .cornerRadius(6)
+                            #else
+                            TextField("User Agent", text: $viewModel.userAgent)
+                                .font(.system(.caption, design: .monospaced))
+                                .padding(4)
+                                .background(Color.anisetteSecondaryGroupedBackground)
+                                .cornerRadius(6)
+                            #endif
                         }
                         .padding(.vertical, 4)
                         
@@ -328,7 +344,7 @@ struct AnisetteDataView: View {
                                 .autocapitalization(.none)
                                 .disableAutocorrection(true)
                                 .padding(8)
-                                .background(Color(.secondarySystemGroupedBackground))
+                                .background(Color.anisetteSecondaryGroupedBackground)
                                 .cornerRadius(6)
                         }
                         .padding(.vertical, 4)
@@ -343,7 +359,7 @@ struct AnisetteDataView: View {
                                 .autocapitalization(.none)
                                 .disableAutocorrection(true)
                                 .padding(8)
-                                .background(Color(.secondarySystemGroupedBackground))
+                                .background(Color.anisetteSecondaryGroupedBackground)
                                 .cornerRadius(6)
                         }
                         .padding(.vertical, 4)
@@ -358,7 +374,7 @@ struct AnisetteDataView: View {
                                 .autocapitalization(.none)
                                 .disableAutocorrection(true)
                                 .padding(8)
-                                .background(Color(.secondarySystemGroupedBackground))
+                                .background(Color.anisetteSecondaryGroupedBackground)
                                 .cornerRadius(6)
                         }
                         .padding(.vertical, 4)
@@ -373,7 +389,7 @@ struct AnisetteDataView: View {
                                 .autocapitalization(.allCharacters)
                                 .disableAutocorrection(true)
                                 .padding(8)
-                                .background(Color(.secondarySystemGroupedBackground))
+                                .background(Color.anisetteSecondaryGroupedBackground)
                                 .cornerRadius(6)
                         }
                         .padding(.vertical, 4)
@@ -402,12 +418,20 @@ struct AnisetteDataView: View {
                                 .font(.caption.weight(.semibold))
                                 .foregroundColor(.secondary)
                             
+                            #if !os(tvOS)
                             TextEditor(text: $viewModel.rawEditableJSON)
                                 .font(.system(.caption, design: .monospaced))
                                 .frame(minHeight: 300)
                                 .padding(4)
-                                .background(Color(.secondarySystemGroupedBackground))
+                                .background(Color.anisetteSecondaryGroupedBackground)
                                 .cornerRadius(6)
+                            #else
+                            TextField("Raw JSON", text: $viewModel.rawEditableJSON)
+                                .font(.system(.caption, design: .monospaced))
+                                .padding(4)
+                                .background(Color.anisetteSecondaryGroupedBackground)
+                                .cornerRadius(6)
+                            #endif
                         }
                         .padding(.vertical, 4)
                         
@@ -440,7 +464,9 @@ struct AnisetteDataView: View {
                             Spacer()
                             
                             SwiftUI.Button {
+                                #if !os(tvOS)
                                 UIPasteboard.general.string = viewModel.serverReturnedHeadersJSON
+                                #endif
                                 withAnimation {
                                     isCopiedServer = true
                                 }
@@ -460,7 +486,7 @@ struct AnisetteDataView: View {
                             Text(viewModel.serverReturnedHeadersJSON)
                                 .font(.system(size: 11, design: .monospaced))
                                 .padding(8)
-                                .background(Color(.secondarySystemBackground))
+                                .background(Color.anisetteSecondaryBackground)
                                 .cornerRadius(6)
                         }
                     }
@@ -491,7 +517,22 @@ struct AnisetteDataView: View {
                     }
                     
                     SwiftUI.Button {
+                        #if !os(tvOS)
                         showingFileImporter = true
+                        #else
+                        if let topVC = UIApplication.shared.topViewController() {
+                            TVWebFileTransferManager.shared.startImport(
+                                acceptedExtensions: ["json"],
+                                title: "Import Anisette Client Config JSON",
+                                presentingVC: topVC
+                            ) { fileURL in
+                                guard let fileURL = fileURL else { return }
+                                Task {
+                                    await viewModel.importJSON(url: fileURL)
+                                }
+                            }
+                        }
+                        #endif
                     } label: {
                         Label("Import Config JSON", systemImage: "square.and.arrow.down")
                     }
@@ -499,8 +540,18 @@ struct AnisetteDataView: View {
                     SwiftUI.Button {
                         Task {
                             if let url = await viewModel.exportJSON() {
+                                #if !os(tvOS)
                                 exportFileURL = url
                                 showingShareSheet = true
+                                #else
+                                if let topVC = UIApplication.shared.topViewController() {
+                                    TVWebFileTransferManager.shared.startExport(
+                                        fileURL: url,
+                                        title: "Export Anisette Client Config JSON",
+                                        presentingVC: topVC
+                                    )
+                                }
+                                #endif
                             }
                         }
                     } label: {
@@ -527,20 +578,27 @@ struct AnisetteDataView: View {
                     Text("Actions")
                 }
             }
+            #if !os(tvOS)
             .listStyle(.insetGrouped)
+            #else
+            .listStyle(.grouped)
+            #endif
         }
         .navigationTitle("Client Config")
+        #if !os(tvOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .overlay(
             Group {
                 if viewModel.isLoading {
                     ProgressView()
                         .padding()
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Color(.systemBackground)))
+                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.anisetteSystemBackground))
                         .shadow(radius: 10)
                 }
             }
         )
+        #if !os(tvOS)
         .fileImporter(
             isPresented: $showingFileImporter,
             allowedContentTypes: [.json],
@@ -562,5 +620,40 @@ struct AnisetteDataView: View {
                 ActivityViewController(activityItems: [fileURL])
             }
         }
+        #endif
+    }
+}
+
+private extension Color {
+    static var anisetteGroupedBackground: Color {
+        #if !os(tvOS)
+        Color(.systemGroupedBackground)
+        #else
+        Color.clear
+        #endif
+    }
+    
+    static var anisetteSecondaryGroupedBackground: Color {
+        #if !os(tvOS)
+        Color(.secondarySystemGroupedBackground)
+        #else
+        Color.white.opacity(0.1)
+        #endif
+    }
+    
+    static var anisetteSecondaryBackground: Color {
+        #if !os(tvOS)
+        Color(.secondarySystemBackground)
+        #else
+        Color.white.opacity(0.1)
+        #endif
+    }
+    
+    static var anisetteSystemBackground: Color {
+        #if !os(tvOS)
+        Color(.systemBackground)
+        #else
+        Color.black
+        #endif
     }
 }

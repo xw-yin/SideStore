@@ -12,7 +12,7 @@ import UIKit
 public enum ExportCertificateDialog {
     
     public static func present(callbackTemplate: String, presentingViewController: UIViewController? = nil) {
-        let rootVC = presentingViewController ?? topViewController()
+        let rootVC = presentingViewController ?? UIApplication.shared.topViewController()
         guard let presentingVC = rootVC else { return }
         
         let alert = UIAlertController(
@@ -52,24 +52,5 @@ public enum ExportCertificateDialog {
         alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
         
         presentingVC.present(alert, animated: true)
-    }
-    
-    @MainActor
-    private static func topViewController(base: UIViewController? = nil) -> UIViewController?
-    {
-        let baseVC = base ?? UIApplication.shared.alt_keyWindow?.rootViewController
-            
-        if let nav = baseVC as? UINavigationController {
-            return topViewController(base: nav.visibleViewController)
-        }
-        if let tab = baseVC as? UITabBarController {
-            if let selected = tab.selectedViewController {
-                return topViewController(base: selected)
-            }
-        }
-        if let presented = baseVC?.presentedViewController {
-            return topViewController(base: presented)
-        }
-        return baseVC
     }
 }

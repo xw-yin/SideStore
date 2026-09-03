@@ -18,9 +18,11 @@ final class InstructionsViewController: UIViewController
     @IBOutlet private var dismissButton: UIButton!
     @IBOutlet private var scrollView: UIScrollView!
     
+    #if !os(tvOS)
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .default
     }
+    #endif
     
     override func viewDidLoad()
     {
@@ -52,7 +54,9 @@ final class InstructionsViewController: UIViewController
         
         if self.showsBottomButton
         {
+            #if !os(tvOS)
             self.navigationItem.hidesBackButton = true
+            #endif
         }
         else
         {

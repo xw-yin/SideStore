@@ -287,6 +287,10 @@ class CertificatesViewModel: ObservableObject {
     func submitImportPassword() {
         guard currentImportIndex < pendingImports.count else { return }
         let pending  = pendingImports[currentImportIndex]
+        
+        _ = pending.url.startAccessingSecurityScopedResource()
+        defer { pending.url.stopAccessingSecurityScopedResource() }
+
         guard let certData = try? Data(contentsOf: pending.url) else {
             failedImportsList.append("\(pending.filename): Failed to read file data.")
             importFailedCount += 1

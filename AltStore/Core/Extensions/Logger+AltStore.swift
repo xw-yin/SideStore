@@ -15,11 +15,8 @@ public extension Logger
     static let main = Logger(subsystem: altstoreSubsystem, category: "Main")
     static let sideload = Logger(subsystem: altstoreSubsystem, category: "Sideload")
     static let altjit = Logger(subsystem: altstoreSubsystem, category: "AltJIT")
-    
-    static let fugu14 = Logger(subsystem: altstoreSubsystem, category: "Fugu14")
 }
 
-@available(iOS 15, *)
 public extension OSLogEntryLog.Level
 {
     var localizedName: String {

@@ -63,7 +63,11 @@ struct CacheManagementView: View {
                         }
                     }
                 }
+                #if !os(tvOS)
                 .listStyle(InsetGroupedListStyle())
+                #else
+                .listStyle(GroupedListStyle())
+                #endif
             }
             
             if viewModel.isLoading && !(viewModel.internalApps.isEmpty && viewModel.resignedApps.isEmpty) {
@@ -72,7 +76,11 @@ struct CacheManagementView: View {
                 
                 ProgressView()
                     .padding()
+                    #if !os(tvOS)
                     .background(RoundedRectangle(cornerRadius: 10).fill(Color(.systemBackground)))
+                    #else
+                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.black.opacity(0.8)))
+                    #endif
                     .shadow(radius: 10)
             }
         }
@@ -133,7 +141,11 @@ struct CacheItemRow: View {
                     .frame(width: 40, height: 40)
                     .foregroundColor(.secondary)
                     .padding(4)
+                    #if !os(tvOS)
                     .background(Color(.systemGray6))
+                    #else
+                    .background(Color.gray.opacity(0.2))
+                    #endif
                     .cornerRadius(8)
             }
             
@@ -169,6 +181,7 @@ struct CacheItemRow: View {
     }
 }
 
+#if !os(tvOS)
 struct ActivityViewController: UIViewControllerRepresentable {
     var activityItems: [Any]
     var applicationActivities: [UIActivity]? = nil
@@ -180,3 +193,20 @@ struct ActivityViewController: UIViewControllerRepresentable {
     
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
+#else
+struct ActivityViewController: UIViewControllerRepresentable {
+    var activityItems: [Any]
+    
+    func makeUIViewController(context: Context) -> UIViewController {
+        let vc = UIViewController()
+        if let fileURL = activityItems.first(where: { $0 is URL }) as? URL {
+            DispatchQueue.main.async {
+                TVWebFileTransferManager.shared.startExport(fileURL: fileURL, title: "Export Cache File", presentingVC: vc)
+            }
+        }
+        return vc
+    }
+    
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}
+#endif

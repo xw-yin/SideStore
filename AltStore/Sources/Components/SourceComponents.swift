@@ -15,7 +15,11 @@ class TitleCollectionReusableView: UICollectionReusableView
     
     override init(frame: CGRect)
     {
+        #if !os(tvOS)
         let fontDescriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .largeTitle).withSymbolicTraits(.traitBold)!
+        #else
+        let fontDescriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .title1).withSymbolicTraits(.traitBold)!
+        #endif
         let font = UIFont(descriptor: fontDescriptor, size: 0.0)
         
         self.label = UILabel(frame: .zero)
@@ -72,9 +76,13 @@ class TextViewCollectionViewCell: UICollectionViewCell
     {
         self.textView.font = UIFont.preferredFont(forTextStyle: .body)
         self.textView.isScrollEnabled = false
+        #if !os(tvOS)
         self.textView.isEditable = false
+        #endif
         self.textView.isSelectable = true
+        #if !os(tvOS)
         self.textView.dataDetectorTypes = [.link]
+        #endif
         self.contentView.addSubview(self.textView, pinningEdgesWith: .zero)
     }
     

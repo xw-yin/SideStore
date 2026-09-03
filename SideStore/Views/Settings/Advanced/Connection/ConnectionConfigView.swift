@@ -8,6 +8,7 @@
 
 import SwiftUI
 import Combine
+import Minimuxer
 
 private typealias SButton = SwiftUI.Button
 
@@ -58,6 +59,7 @@ struct ConnectionConfigView: View {
     @State private var draftUseLocalVPN: Bool = ConnectionConfig.shared.useLocalVPN
     @State private var draftOverrideTunnelPeerIp: String = ConnectionConfig.shared.overrideTunnelPeerIp
     @State private var draftRemoteServerIp: String = ConnectionConfig.shared.remoteServerIp
+    @State private var draftRemotePairingPortOverride: String = ""
     @State private var draftWireGuardServerHost: String = ConnectionConfig.shared.wireguardServerHost
     @State private var draftWireGuardServerPort: String = String(ConnectionConfig.shared.wireguardServerPort)
     @State private var alwaysShowWireGuardConfig: Bool = UserDefaults.standard.alwaysShowWireGuardConfig
@@ -77,6 +79,9 @@ struct ConnectionConfigView: View {
                         Group {
                             networkConfigRow(label: "Tunnel IP", text: Binding<String?>(get: { config.formattedTunnelIface }, set: { _ in }), editable: false)
                             networkConfigRow(label: "Device IP", text: Binding<String?>(get: { config.formattedTunnelPeer }, set: { _ in }), editable: false)
+                            if minimuxer.gateway.isRPPairing {
+                                networkConfigRow(label: "RemotePair Port", text: Binding<String?>(get: { String(remotePairingPortCache) }, set: { _ in }), editable: false)
+                            }
                             if config.overrideTunnelPeerIp.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                                 let hasDiscoveredPeer = config.tunnelPeerIp != nil && !config.tunnelPeerIp!.isEmpty
                                 networkConfigRow(
@@ -95,6 +100,14 @@ struct ConnectionConfigView: View {
                             text: Binding<String?>(get: { draftOverrideTunnelPeerIp }, set: { draftOverrideTunnelPeerIp = $0 ?? "" }),
                             editable: true
                         )
+                        if minimuxer.gateway.isRPPairing {
+                            networkConfigRow(
+                                label: "RemotePair Port",
+                                text: Binding<String?>(get: { draftRemotePairingPortOverride }, set: { draftRemotePairingPortOverride = $0 ?? "" }),
+                                editable: true,
+                                isPort: true
+                            )
+                        }
                         if !config.overrideTunnelPeerIp.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             networkConfigRow(
                                 label: "Active",
@@ -108,7 +121,7 @@ struct ConnectionConfigView: View {
                     } footer: {
                         HStack(alignment: .top, spacing: 0) {
                             Text("Note: ")
-                            Text("'Device IP' is optional and if specified should match exactly as in the target VPN's config or Leave empty to prefer auto-discovery.")
+                            Text("'Device IP' and 'RemotePair Port' are optional and if specified should match exactly as in the target VPN's config or Leave empty to prefer auto-discovery/default port \(MinimuxerConstants.remotePairingPort).")
                         }
                     }
                 } else {
@@ -118,6 +131,14 @@ struct ConnectionConfigView: View {
                             text: Binding<String?>(get: { draftRemoteServerIp }, set: { draftRemoteServerIp = $0 ?? "" }),
                             editable: true
                         )
+                        if minimuxer.gateway.isRPPairing {
+                            networkConfigRow(
+                                label: "RemotePair Port",
+                                text: Binding<String?>(get: { draftRemotePairingPortOverride }, set: { draftRemotePairingPortOverride = $0 ?? "" }),
+                                editable: true,
+                                isPort: true
+                            )
+                        }
                         networkConfigRow(
                             label: "Reachable",
                             text: Binding<String?>(get: { config.remoteActive.rawValue }, set: { _ in }),
@@ -129,7 +150,7 @@ struct ConnectionConfigView: View {
                     } footer: {
                         HStack(alignment: .top, spacing: 0) {
                             Text("Note: ")
-                            Text("'Device IP / Endpoint' is mandatory and should match the remote server's address")
+                            Text("'Device IP / Endpoint' is mandatory. 'RemotePair Port' is optional (prefers auto-discovery or default \(MinimuxerConstants.remotePairingPort)).")
                         }
                     }
                 }
@@ -167,6 +188,8 @@ struct ConnectionConfigView: View {
                 draftUseLocalVPN = config.useLocalVPN
                 draftOverrideTunnelPeerIp = config.overrideTunnelPeerIp
                 draftRemoteServerIp = config.remoteServerIp
+                let portOverride = UserDefaults.standard.remotePairingPortOverride
+                draftRemotePairingPortOverride = (portOverride > 0 && portOverride <= 65535) ? String(portOverride) : ""
                 draftWireGuardServerHost = config.wireguardServerHost
                 draftWireGuardServerPort = String(config.wireguardServerPort)
                 alwaysShowWireGuardConfig = UserDefaults.standard.alwaysShowWireGuardConfig
@@ -180,9 +203,11 @@ struct ConnectionConfigView: View {
             if showConfirmDialog {
                 Color.black.opacity(0.3)
                     .ignoresSafeArea()
+                    #if !os(tvOS)
                     .onTapGesture {
                         showConfirmDialog = false
                     }
+                    #endif
                 
                 VStack(spacing: 24) {
                     AnimatedCheckmarkView()
@@ -224,6 +249,14 @@ struct ConnectionConfigView: View {
                 return "Device IP / Endpoint is mandatory for Remote Endpoint mode."
             }
         }
+        if minimuxer.gateway.isRPPairing {
+            let portStr = draftRemotePairingPortOverride.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !portStr.isEmpty {
+                guard let port = UInt16(portStr), port > 0 else {
+                    return "RemotePair Port must be a valid number between 1 and 65535 or left empty for auto-discovery."
+                }
+            }
+        }
         if UserDefaults.standard.enableEMPforWireguard || UserDefaults.standard.alwaysShowWireGuardConfig {
             let host = draftWireGuardServerHost.trimmingCharacters(in: .whitespaces)
             guard !host.isEmpty else {
@@ -247,6 +280,16 @@ struct ConnectionConfigView: View {
         config.remoteServerIp = draftRemoteServerIp
         config.wireguardServerHost = draftWireGuardServerHost.trimmingCharacters(in: .whitespaces)
         config.wireguardServerPort = UInt16(draftWireGuardServerPort)!
+        if minimuxer.gateway.isRPPairing {
+            let portStr = draftRemotePairingPortOverride.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let port = Int(portStr), port > 0 && port <= 65535 {
+                UserDefaults.standard.remotePairingPortOverride = port
+            } else {
+                UserDefaults.standard.remotePairingPortOverride = 0
+            }
+            syncMinimuxerBackendFromUserDefaults()
+            try? await fetchUDID()
+        }
         await bindConnectionConfig()
         showConfirmDialog = true
     }

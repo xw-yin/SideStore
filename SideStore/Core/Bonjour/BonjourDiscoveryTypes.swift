@@ -11,6 +11,7 @@ import Foundation
 public let commonServiceTypesToBrowse: [String] = [
     "_altserver._tcp.",
     "_remotepairing-pairable-host._tcp.",
+    "_remotepairing-manual-pairing._tcp.",
     "_airplay._tcp.",
     "_raop._tcp.",
     "_sftp-ssh._tcp.",
@@ -66,7 +67,16 @@ public let commonServiceTypesToBrowse: [String] = [
     "_h323._tcp.",
     "_h323._udp.",
     "_ws._tcp.",
-    "_wss._tcp."
+    "_wss._tcp.",
+    "_remoted._tcp.",
+    "_coredevice._tcp.",
+    "_appletv-v2._tcp.",
+    "_apple-mobdev._tcp.",
+    "_jitstreamer._tcp.",
+    "_matter._tcp.",
+    "_matterc._udp.",
+    "_airprint._tcp.",
+    "_vnc._tcp."
 ]
 
 public let commonKnownServiceTypes: [String: String] = [
@@ -93,6 +103,7 @@ public let commonKnownServiceTypes: [String: String] = [
     "_apple-mobdev2._tcp.":  "Apple Mobile Device v2",
     "_remotepairing._tcp.":  "Remote Pairing",
     "_remotepairing-pairable-host._tcp.": "Remote Pairing (Pairable Host)",
+    "_remotepairing-manual-pairing._tcp.": "Remote Pairing (Manual / Apple TV)",
     "_rdlink._tcp.":        "Remote Debug Link",
     "_net-assistant._udp.": "Apple Remote Desktop",
     "_rfb._tcp.":           "Remote Frame Buffer (VNC)",
@@ -128,6 +139,15 @@ public let commonKnownServiceTypes: [String: String] = [
     "_h323._udp.":          "H.323 Video Conferencing (UDP)",
     "_ws._tcp.":            "WebSocket Connection",
     "_wss._tcp.":           "Secure WebSocket Connection",
+    "_remoted._tcp.":       "CoreDevice Remote Service Discovery (RSD)",
+    "_coredevice._tcp.":    "Apple CoreDevice Debug Service",
+    "_appletv-v2._tcp.":    "Apple TV Companion Remote Protocol",
+    "_apple-mobdev._tcp.":  "Apple Mobile Device v1 (Wi-Fi Sync)",
+    "_jitstreamer._tcp.":   "JitStreamer Service",
+    "_matter._tcp.":        "Matter Smart Home Device",
+    "_matterc._udp.":       "Matter Device Commissioning",
+    "_airprint._tcp.":      "Apple AirPrint",
+    "_vnc._tcp.":           "VNC Remote Desktop",
 ]
 
 public extension String {

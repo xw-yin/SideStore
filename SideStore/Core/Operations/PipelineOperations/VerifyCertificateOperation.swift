@@ -9,7 +9,6 @@
 @preconcurrency import UIKit
 import Foundation
 import CoreData
-import Security
 import SideSign
 
 final class VerifyCertificateOperation: BasePipelineOperation<AppOperationContext, Void>, @unchecked Sendable {
@@ -21,7 +20,12 @@ final class VerifyCertificateOperation: BasePipelineOperation<AppOperationContex
     }
     
     override func execute(parentProgress: Progress?) async throws {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[VerifyCertificateOperation] execute() started (willResign: \(self.willResign))")
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[VerifyCertificateOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         self.setProgress(10)
         

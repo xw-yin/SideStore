@@ -96,3 +96,5 @@ tmp
 *.mp4
 *.mp3
 
+scratch*.sh
+*.sh

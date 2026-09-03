@@ -8,7 +8,7 @@
 
 import RegexBuilder
 
-@available(iOS 16, *)
+@available(iOS 16, tvOS 16, *)
 public extension Regex where Output == (Substring, Substring)
 {
     static var privacyPermission: some RegexComponent<(Substring, Substring)> {

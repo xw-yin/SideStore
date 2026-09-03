@@ -107,7 +107,7 @@ class ToastView: RSTToastView
     
     override func show(in view: UIView, duration: TimeInterval)
     {
-        if opensErrorLog, #available(iOS 13.0, *), case let configuration = UIImage.SymbolConfiguration(font: self.textLabel.font),
+        if opensErrorLog, case let configuration = UIImage.SymbolConfiguration(font: self.textLabel.font),
            let icon = UIImage(systemName: "chevron.right.circle", withConfiguration: configuration) {
             let tintedIcon = icon.withTintColor(.white, renderingMode: .alwaysOriginal)
             let moreIconImageView = UIImageView(image: tintedIcon)

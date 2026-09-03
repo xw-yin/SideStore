@@ -410,6 +410,7 @@ private extension AppBannerView
             self.backgroundEffectView.contentView.backgroundColor = tintColor?.adjustedForDisplay
             self.backgroundEffectView.backgroundColor = nil
             
+            #if !os(tvOS)
             if let tintColor, tintColor.isTooBright
             {
                 let textVibrancyEffect = UIVibrancyEffect(blurEffect: .init(style: .systemChromeMaterialLight), style: .fill)
@@ -421,6 +422,10 @@ private extension AppBannerView
                 let textVibrancyEffect = UIVibrancyEffect(blurEffect: .init(style: .systemThinMaterialDark), style: .secondaryLabel)
                 self.vibrancyView.effect = textVibrancyEffect
             }
+            #else
+            let textVibrancyEffect = UIVibrancyEffect(blurEffect: UIBlurEffect(style: .dark))
+            self.vibrancyView.effect = textVibrancyEffect
+            #endif
         }
     }
 }

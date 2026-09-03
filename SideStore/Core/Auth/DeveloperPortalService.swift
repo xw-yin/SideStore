@@ -37,6 +37,66 @@ public class DeveloperPortalService {
     public func registerDevice(name: String, identifier: String, type: ALTDeviceType, team: ALTTeam, session: ALTAppleAPISession) async throws -> ALTDevice {
         try await ALTAppleAPI.shared.registerDevice(name: name, identifier: identifier, type: type, team: team, session: session)
     }
+
+    public func updateDevice(_ device: ALTDevice, team: ALTTeam, session: ALTAppleAPISession) async throws -> ALTDevice {
+        try await ALTAppleAPI.shared.updateDevice(device, team: team, session: session)
+    }
+
+    public func disableDevice(_ device: ALTDevice, team: ALTTeam, session: ALTAppleAPISession) async throws -> ALTDevice {
+        try await ALTAppleAPI.shared.disableDevice(device, team: team, session: session)
+    }
+
+    public func deleteDevice(_ device: ALTDevice, team: ALTTeam, session: ALTAppleAPISession) async throws -> Bool {
+        try await ALTAppleAPI.shared.deleteDevice(device, team: team, session: session)
+    }
+
+    public func fetchAppIDs(team: ALTTeam, session: ALTAppleAPISession) async throws -> [ALTAppID] {
+        try await ALTAppleAPI.shared.fetchAppIDs(for: team, session: session)
+    }
+
+    public func addAppID(name: String, bundleIdentifier: String, team: ALTTeam, session: ALTAppleAPISession) async throws -> ALTAppID {
+        try await ALTAppleAPI.shared.addAppID(withName: name, bundleIdentifier: bundleIdentifier, team: team, session: session)
+    }
+
+    public func updateAppID(_ appID: ALTAppID, team: ALTTeam, session: ALTAppleAPISession) async throws -> ALTAppID {
+        try await ALTAppleAPI.shared.updateAppID(appID, team: team, session: session)
+    }
+
+    public func deleteAppID(_ appID: ALTAppID, team: ALTTeam, session: ALTAppleAPISession) async throws -> Bool {
+        try await ALTAppleAPI.shared.deleteAppID(appID, for: team, session: session)
+    }
+
+    public func fetchAppGroups(team: ALTTeam, session: ALTAppleAPISession) async throws -> [ALTAppGroup] {
+        try await ALTAppleAPI.shared.fetchAppGroups(for: team, session: session)
+    }
+
+    public func addAppGroup(name: String, groupIdentifier: String, team: ALTTeam, session: ALTAppleAPISession) async throws -> ALTAppGroup {
+        try await ALTAppleAPI.shared.addAppGroup(name: name, groupIdentifier: groupIdentifier, team: team, session: session)
+    }
+
+    public func updateAppGroup(_ group: ALTAppGroup, team: ALTTeam, session: ALTAppleAPISession) async throws -> ALTAppGroup {
+        try await ALTAppleAPI.shared.updateAppGroup(group, team: team, session: session)
+    }
+
+    public func assignAppID(_ appID: ALTAppID, to groups: [ALTAppGroup], team: ALTTeam, session: ALTAppleAPISession) async throws -> ALTAppID {
+        try await ALTAppleAPI.shared.assign(appID, to: groups, team: team, session: session)
+    }
+
+    public func deleteAppGroup(_ group: ALTAppGroup, team: ALTTeam, session: ALTAppleAPISession) async throws -> Bool {
+        try await ALTAppleAPI.shared.deleteAppGroup(group, team: team, session: session)
+    }
+
+    public func fetchProvisioningProfiles(team: ALTTeam, session: ALTAppleAPISession) async throws -> [ALTProvisioningProfile] {
+        try await ALTAppleAPI.shared.fetchProvisioningProfiles(for: team, session: session)
+    }
+
+    public func downloadProvisioningProfile(for appID: ALTAppID, deviceType: ALTDeviceType = .iphone, team: ALTTeam, session: ALTAppleAPISession) async throws -> ALTProvisioningProfile {
+        try await ALTAppleAPI.shared.downloadProvisioningProfile(for: appID, deviceType: deviceType, team: team, session: session)
+    }
+
+    public func deleteProvisioningProfile(_ profile: ALTProvisioningProfile, team: ALTTeam, session: ALTAppleAPISession) async throws -> Bool {
+        try await ALTAppleAPI.shared.deleteProvisioningProfile(profile, team: team, session: session)
+    }
 }
 
 class DeveloperPortalAuthService: DeveloperPortalService {

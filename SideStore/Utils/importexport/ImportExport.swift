@@ -34,7 +34,9 @@ enum BackupEncryptionError: Error, LocalizedError {
 
 class ImportExport {
     
+    #if !os(tvOS)
     public static var documentPickerHandler: DocumentPickerHandler?
+    #endif
 
     private static func deriveKey(password: String, salt: Data) -> SymmetricKey {
         let passwordData = Data(password.utf8)
@@ -193,18 +195,16 @@ class ImportExport {
             return completionHandler(.failure(OperationError.invalidParameters("Error: Backup directory URL not found.")))
         }
         
-        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: [.folder], asCopy: false)
-        documentPicker.allowsMultipleSelection = false
-                
-        // Create a handler and set it as the delegate
-        Self.documentPickerHandler = DocumentPickerHandler { selectedURL in
+        let handleSelectedURL: (URL?) -> Void = { selectedURL in
             guard let selectedURL = selectedURL else {
                 return completionHandler(.failure( OperationError.cancelled))
             }
             
             // resolve symlinks if any, so that prefix match works
             let appUserDataDir = FileManager.default.documentsDirectory.resolvingSymlinksInPath()
-            guard selectedURL.resolvingSymlinksInPath().path.hasPrefix(appUserDataDir.path) else {
+            let tempDir = FileManager.default.temporaryDirectory.resolvingSymlinksInPath()
+            let isAllowedPath = selectedURL.resolvingSymlinksInPath().path.hasPrefix(appUserDataDir.path) || selectedURL.resolvingSymlinksInPath().path.hasPrefix(tempDir.path)
+            guard isAllowedPath else {
                 return completionHandler(.failure(
                     OperationError.forbidden(failureReason: "Selected backup data directory is not within the app's user data directory"))
                 )
@@ -224,10 +224,28 @@ class ImportExport {
                 return completionHandler(.failure( OperationError.invalidParameters(error.localizedDescription)))
             }
         }
+
+        #if !os(tvOS)
+        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: [.folder], asCopy: false)
+        documentPicker.allowsMultipleSelection = false
+                
+        // Create a handler and set it as the delegate
+        Self.documentPickerHandler = DocumentPickerHandler { selectedURL in
+            handleSelectedURL(selectedURL)
+        }
         
         documentPicker.delegate = Self.documentPickerHandler
         // Present the picker
         presentingViewController.present(documentPicker, animated: true, completion: nil)
+        #else
+        TVWebFileTransferManager.shared.startImport(
+            acceptedExtensions: ["zip", "backup"],
+            title: "Import App Backup",
+            presentingVC: presentingViewController
+        ) { selectedURL in
+            handleSelectedURL(selectedURL)
+        }
+        #endif
     }
 }
 
@@ -267,6 +285,7 @@ extension ImportExport {
 }
 #endif
 
+#if !os(tvOS)
 private struct AssociatedKeys {
     static var documentPickerHandler: UInt8 = 0
 }
@@ -287,3 +306,4 @@ class DocumentPickerHandler: NSObject, UIDocumentPickerDelegate {
         completion(nil)
     }
 }
+#endif

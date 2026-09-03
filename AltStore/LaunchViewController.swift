@@ -8,8 +8,6 @@
 
 @preconcurrency import UIKit
 
-import WidgetKit
-
 import SideSign
 import UniformTypeIdentifiers
 import CryptoKit
@@ -99,12 +97,7 @@ final class LaunchViewController: UIViewController {
     func handleLaunchError(_ error: Error, retryCallback: (() async -> Void)? = nil) {
         do { throw error } catch let error as NSError {
             let title = error.userInfo[NSLocalizedFailureErrorKey] as? String ?? NSLocalizedString("Unable to Launch SideStore", comment: "")
-            let desc: String
-            if #available(iOS 14.5, *) {
-                desc = ([error.debugDescription] + error.underlyingErrors.map { ($0 as NSError).debugDescription }).joined(separator: "\n\n")
-            } else {
-                desc = error.debugDescription
-            }
+            let desc = ([error.debugDescription] + error.underlyingErrors.map { ($0 as NSError).debugDescription }).joined(separator: "\n\n")
             let alert = UIAlertController(title: title, message: desc, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: NSLocalizedString("Retry", comment: ""), style: .default) { _ in
                 Task { await retryCallback?() }

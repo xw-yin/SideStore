@@ -23,7 +23,11 @@ final class SplashView: UIView {
     init(frame: CGRect, appName: String) {
         super.init(frame: frame)
         debugLog("[SplashView] init — splash screen presented")
+        #if !os(tvOS)
         backgroundColor = .systemBackground
+        #else
+        backgroundColor = .black
+        #endif
         setupIcon()
         setupTitle(appName: appName)
         setupStatus()

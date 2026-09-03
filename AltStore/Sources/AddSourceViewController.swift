@@ -141,7 +141,9 @@ private extension AddSourceViewController
                 
             case .preview:
                 var configuration = UICollectionLayoutListConfiguration(appearance: .grouped)
+                #if !os(tvOS)
                 configuration.showsSeparators = false
+                #endif
                 configuration.backgroundColor = .clear
                 
                 if !self.viewModel.sourceURLs.isEmpty && self.viewModel.isShowingPreviewStatus
@@ -170,7 +172,9 @@ private extension AddSourceViewController
                 
             case .recommended:
                 var configuration = UICollectionLayoutListConfiguration(appearance: .grouped)
+                #if !os(tvOS)
                 configuration.showsSeparators = false
+                #endif
                 configuration.backgroundColor = .clear
                 
                 switch self.fetchRecommendedSourcesResult
@@ -693,6 +697,7 @@ private extension AddSourceViewController
     
     func fetchRecommendedSources()
     {
+        debugLog("[AddSourceViewController] Fetching recommended sources started (spinner shown)...")
         // Closure instead of local function so we can capture `self` weakly.
         let finish: (Result<[Source], Error>) -> Void = { [weak self] result in
             self?.fetchRecommendedSourcesResult = result.map { _ in () }
@@ -701,14 +706,14 @@ private extension AddSourceViewController
                 do
                 {
                     let sources = try result.get()
-                    debugLog("Fetched recommended sources: \(sources.map { $0.identifier })")
+                    debugLog("[AddSourceViewController] Recommended sources spinner stopped. Loaded \(sources.count) source(s) into list: \(sources.map { $0.name })")
                     
                     let sectionUpdate = RSTCellContentChange(type: .update, sectionIndex: 0)
                     self?.recommendedSourcesDataSource.setItems(sources, with: [sectionUpdate])
                 }
                 catch
                 {
-                    debugLog("Error fetching recommended sources: \(error)")
+                    debugLog("[AddSourceViewController] Recommended sources spinner stopped (failed: \(error.localizedDescription))")
                     
                     let sectionUpdate = RSTCellContentChange(type: .update, sectionIndex: 0)
                     self?.recommendedSourcesDataSource.setItems([], with: [sectionUpdate])
@@ -738,20 +743,28 @@ private extension AddSourceViewController
                 {
                     dispatchGroup.enter()
                     
-                    _ = try? AppManager.shared.fetchSource(sourceURL: sourceURL, managedObjectContext: context) { result in
-                        // Serialize access to sourcesByURL.
-                        context.performAndWait {
-                            switch result
-                            {
-                            case .failure(let error):
-                                debugLog("Failed to load recommended source \(sourceURL.absoluteString): \(error.localizedDescription) \(error)")
-                                fetchError = error
+                    do
+                    {
+                        _ = try AppManager.shared.fetchSource(sourceURL: sourceURL, managedObjectContext: context) { result in
+                            // Serialize access to sourcesByURL.
+                            context.performAndWait {
+                                switch result
+                                {
+                                case .failure(let error):
+                                    debugLog("Failed to load recommended source \(sourceURL.absoluteString): \(error.localizedDescription) \(error)")
+                                    
+                                case .success(let source):
+                                    sourcesByURL[source.sourceURL] = source
+                                }
                                 
-                            case .success(let source): sourcesByURL[source.sourceURL] = source
+                                dispatchGroup.leave()
                             }
-                            
-                            dispatchGroup.leave()
                         }
+                    }
+                    catch
+                    {
+                        debugLog("Failed to start loading recommended source \(sourceURL.absoluteString): \(error.localizedDescription)")
+                        dispatchGroup.leave()
                     }
                 }
                 
@@ -967,12 +980,3 @@ extension AddSourceViewController: UITextFieldDelegate
     }
 }
 
-@available(iOS 17.0, *)
-#Preview(traits: .portrait) {
-    DatabaseManager.shared.startForPreview()
-    
-    let storyboard = UIStoryboard(name: "Sources", bundle: .main)
-    
-    let addSourceNavigationController = storyboard.instantiateViewController(withIdentifier: "addSourceNavigationController")
-    return addSourceNavigationController
-}

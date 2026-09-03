@@ -37,12 +37,14 @@ class ErrorDetailsViewController: UIViewController
         self.textView.alwaysBounceVertical = true
         self.textView.showsVerticalScrollIndicator = true
 
-        if #available(iOS 15, *), let sheetController = self.navigationController?.sheetPresentationController
+        #if !os(tvOS)
+        if let sheetController = self.navigationController?.sheetPresentationController
         {
             sheetController.detents = [.medium(), .large()]
             sheetController.selectedDetentIdentifier = .medium
             sheetController.prefersGrabberVisible = true
         }
+        #endif
     }
 
     override func viewDidLayoutSubviews()

@@ -410,17 +410,26 @@ public extension InstalledApp
     // TODO: @mahee96: Do NOT hardcode app's url scheme prefixes as in here
     //       Need to get it dynamically from the Info.plist of other means
     var openAppURL: URL {
-        let identifier = self.resignedBundleIdentifier.isEmpty ? self.bundleIdentifier : self.resignedBundleIdentifier
-        let openAppURL = URL(string: "sidestore-" + identifier + "://")!
-        return openAppURL
+        return InstalledApp.openAppURL(resignedBundleIdentifier: self.resignedBundleIdentifier)
     }
     
     // TODO: @mahee96: Do NOT hardcode app's url scheme prefixes as in here
     //       Need to get it dynamically from the Info.plist of other means
+    class func openAppURL(resignedBundleIdentifier: String) -> URL
+    {
+        let openAppURL = URL(string: "sidestore-" + resignedBundleIdentifier + "://")!
+        return openAppURL
+    }
+    
+    class func openAppURL(for app: InstalledAppProtocol) -> URL
+    {
+        return self.openAppURL(resignedBundleIdentifier: app.resignedBundleIdentifier)
+    }
+    
     class func openAppURL(for app: AppProtocol) -> URL
     {
-        let openAppURL = URL(string: "sidestore-" + app.bundleIdentifier + "://")!
-        return openAppURL
+        let identifier = (app as? InstalledAppProtocol)?.resignedBundleIdentifier ?? app.bundleIdentifier
+        return self.openAppURL(resignedBundleIdentifier: identifier)
     }
 }
 
@@ -450,7 +459,7 @@ public extension InstalledApp
     class func refreshedIPAURL(for app: AppProtocol) -> URL
     {
         let ipaURL = self.directoryURL(for: app).appendingPathComponent("Refreshed.ipa")
-        debugLog("`ipaURL`: \(ipaURL.absoluteString)")
+        debugLog("[InstalledApp] 'ipaURL': \(ipaURL.absoluteString)")
         return ipaURL
     }
     
@@ -484,9 +493,10 @@ public extension InstalledApp
         return iconsDirectory.appendingPathComponent("\(bundleIdentifier).png")
     }
     
-    class func alternateIconURL(for app: AppProtocol) -> URL
+    class func alternateIconURL(for app: InstalledAppProtocol) -> URL
     {
-        return self.alternateIconURL(forBundleIdentifier: app.bundleIdentifier)
+        let bundleID = app.customBundleIdentifier ?? app.resignedBundleIdentifier
+        return self.alternateIconURL(forBundleIdentifier: bundleID)
     }
     
     var directoryURL: URL {

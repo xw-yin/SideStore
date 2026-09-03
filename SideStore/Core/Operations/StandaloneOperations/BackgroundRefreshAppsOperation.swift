@@ -57,8 +57,12 @@ final class BackgroundRefreshAppsOperation: BaseStandaloneOperation<OperationCon
     }
     
     override func execute(parentProgress: Progress?) async throws -> [String: Result<InstalledApp, Error>] {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[BackgroundRefreshAppsOperation] execute() started")
-        defer { debugLog("[BackgroundRefreshAppsOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[BackgroundRefreshAppsOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         self.setProgress(10)
         
@@ -169,6 +173,7 @@ final class BackgroundRefreshAppsOperation: BaseStandaloneOperation<OperationCon
     
     private func scheduleFinishedRefreshingNotification(for result: Result<[String: Result<InstalledApp, Error>], Error>, delay: TimeInterval = 5) {
         func scheduleFinishedRefreshingNotification() {
+            #if !os(tvOS)
             self.cancelFinishedRefreshingNotification()
             
             let content = UNMutableNotificationContent()
@@ -222,6 +227,9 @@ final class BackgroundRefreshAppsOperation: BaseStandaloneOperation<OperationCon
                     }
                 }
             }
+            #else
+            NotificationCenter.default.post(name: NSNotification.Name("TVTopShelfItemsDidChangeNotification"), object: nil)
+            #endif
         }
         
         if self.presentsFinishedNotification {

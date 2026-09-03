@@ -7,16 +7,11 @@
 //
 
 @preconcurrency import UIKit
-import SafariServices
-import QuickLook
 import CoreData
-
 import Nuke
-
-import QuickLook
 import SwiftUI
 
-final class ErrorLogViewController: UITableViewController, QLPreviewControllerDelegate
+final class ErrorLogViewController: UITableViewController
 {
     private lazy var dataSource = self.makeDataSource()
     private var expandedErrorIDs = Set<NSManagedObjectID>()
@@ -40,9 +35,11 @@ final class ErrorLogViewController: UITableViewController, QLPreviewControllerDe
     
     private var _exportedLogURL: URL?
     
+    #if !os(tvOS)
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .default
     }
+    #endif
     
     override func viewDidLoad()
     {
@@ -158,7 +155,9 @@ private extension ErrorLogViewController
             cell.appIconImageView.layer.borderWidth = 1.0 / displayScale
                         
             cell.menuButton.isHidden = true
-            cell.menuButton.menu = nil
+            if #available(tvOS 17.0, *) {
+                cell.menuButton.menu = nil
+            }
             cell.selectionStyle = .none
 
             // Include errorDescriptionTextView's text in cell summary.
@@ -243,14 +242,6 @@ private extension ErrorLogViewController
     enum LogView: String {
         case consoleLog = "console-log"
 
-        // Method to get the QLPreviewController for this log type
-        func getViewController(_ dataSource: QLPreviewControllerDataSource) -> QLPreviewController {
-            let previewController = QLPreviewController()
-            previewController.restorationIdentifier = self.rawValue
-            previewController.dataSource = dataSource
-            return previewController
-        }
-        
         func getLogPath() -> URL {
             let appDelegate = UIApplication.shared.delegate as! AppDelegate
             return appDelegate.consoleLog.logFileURL
@@ -265,12 +256,14 @@ private extension ErrorLogViewController
         let consoleLogController = UIHostingController(rootView: consoleLogView)
         
         // Configure the bottom sheet presentation
+        #if !os(tvOS)
         consoleLogController.modalPresentationStyle = .pageSheet
         if let sheet = consoleLogController.sheetPresentationController {
             sheet.detents = [.medium(), .large()]  // You can adjust the size of the sheet (medium/large)
             sheet.prefersGrabberVisible = true    // Optional: Shows a grabber at the top of the sheet
             sheet.selectedDetentIdentifier = .large  // Default size when presented
         }
+        #endif
         
         // Present the bottom sheet
         present(consoleLogController, animated: true, completion: nil)
@@ -307,24 +300,26 @@ private extension ErrorLogViewController
     
     func copyErrorMessage(for loggedError: LoggedError)
     {
+        #if !os(tvOS)
         let nsError = loggedError.error as NSError
         let errorMessage = [nsError.localizedDescription, nsError.localizedRecoverySuggestion].compactMap { $0 }.joined(separator: "\n\n")
         
         UIPasteboard.general.string = errorMessage
+        #endif
     }
     
     func copyErrorCode(for loggedError: LoggedError)
     {
+        #if !os(tvOS)
         let errorCode = loggedError.error.localizedErrorCode
         UIPasteboard.general.string = errorCode
+        #endif
     }
     
     func searchFAQ(for loggedError: LoggedError)
     {
         let staticURL = URL(string: "https://docs.sidestore.io/docs/troubleshooting/error-codes")!
-        let safariViewController = SFSafariViewController(url: staticURL)
-        safariViewController.preferredControlTintColor = .altPrimary
-        self.present(safariViewController, animated: true)
+        self.openWebURL(staticURL, preferredTintColor: .altPrimary)
     }
 
     func viewMoreDetails(for loggedError: LoggedError) {
@@ -334,6 +329,7 @@ private extension ErrorLogViewController
 
 extension ErrorLogViewController
 {
+    @available(tvOS 17.0, *)
     override func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
     {
         let loggedError = self.dataSource.item(at: indexPath)
@@ -366,6 +362,7 @@ extension ErrorLogViewController
         }
     }
     
+    #if !os(tvOS)
     override func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration?
     {
         let deleteAction = UIContextualAction(style: .destructive, title: NSLocalizedString("Delete", comment: "")) { _, _, completion in
@@ -395,6 +392,7 @@ extension ErrorLogViewController
         configuration.performsFirstActionWithFullSwipe = false
         return configuration
     }
+    #endif
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String?
     {
@@ -412,24 +410,7 @@ extension ErrorLogViewController
     }
 }
 
-extension ErrorLogViewController: QLPreviewControllerDataSource {
-    func numberOfPreviewItems(in controller: QLPreviewController) -> Int {
-        return 1
-    }
 
-    func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem
-    {
-        guard let identifier = controller.restorationIdentifier,
-              let logView = LogView(rawValue: identifier) else
-        {
-            let errorURL = FileManager.default.temporaryDirectory.appendingPathComponent("LogPreviewError.txt")
-            let errorMessage = "Error: Failed to load log for '\(controller.restorationIdentifier ?? "unknown")'."
-            try? errorMessage.write(to: errorURL, atomically: true, encoding: .utf8)
-            return errorURL as QLPreviewItem
-        }
-        return logView.getLogPath() as QLPreviewItem
-    }
-}
 
 extension ErrorLogViewController
 {
@@ -448,47 +429,18 @@ extension ErrorLogViewController
     }
     private func updateButtonInteractivity()
     {
-        for case let cell as ErrorLogTableViewCell in self.tableView.visibleCells
-        {
-            if self.isScrolling
+        if #available(tvOS 17.0, *) {
+            for case let cell as ErrorLogTableViewCell in self.tableView.visibleCells
             {
-                cell.menuButton.showsMenuAsPrimaryAction = false
-            }
-            else
-            {
-                cell.menuButton.showsMenuAsPrimaryAction = true
+                if self.isScrolling
+                {
+                    cell.menuButton.showsMenuAsPrimaryAction = false
+                }
+                else
+                {
+                    cell.menuButton.showsMenuAsPrimaryAction = true
+                }
             }
         }
     }
 }
-
-//extension ErrorLogViewController: QLPreviewControllerDataSource, QLPreviewControllerDelegate
-//{
-//    func numberOfPreviewItems(in controller: QLPreviewController) -> Int
-//    {
-//        return 1
-//    }
-//    
-//    func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem
-//    {
-//        return (_exportedLogURL as? NSURL) ?? NSURL()
-//    }
-//    
-//    func previewControllerDidDismiss(_ controller: QLPreviewController)
-//    {
-//        guard let exportedLogURL = _exportedLogURL else { return }
-//        
-//        let parentDirectory = exportedLogURL.deletingLastPathComponent()
-//        
-//        do
-//        {
-//            try FileManager.default.removeItem(at: parentDirectory)
-//        }
-//        catch
-//        {
-//            debugLog("Failed to remove temporary log directory \(parentDirectory.lastPathComponent). \(error.localizedDescription)")
-//        }
-//        
-//        _exportedLogURL = nil
-//    }
-//}

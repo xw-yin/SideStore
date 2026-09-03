@@ -35,7 +35,11 @@ class PreviewAppScreenshotsViewController: UICollectionViewController
         let tintColor = self.app.tintColor ?? .altPrimary
         self.navigationController?.view.tintColor = tintColor
         
+        #if !os(tvOS)
         self.view.backgroundColor = .systemBackground
+        #else
+        self.view.backgroundColor = .black
+        #endif
         self.collectionView.backgroundColor = nil
         
         let collectionViewLayout = self.makeLayout()
@@ -215,15 +219,3 @@ private extension PreviewAppScreenshotsViewController
     }
 }
 
-@available(iOS 17, *)
-#Preview(traits: .portrait) {
-    DatabaseManager.shared.startForPreview()
-    
-    let fetchRequest = StoreApp.fetchRequest()
-    let storeApp = try! DatabaseManager.shared.viewContext.fetch(fetchRequest).first!
-    
-    let previewViewController = PreviewAppScreenshotsViewController(app: storeApp)
-    
-    let navigationController = UINavigationController(rootViewController: previewViewController)
-    return navigationController
-}

@@ -6,6 +6,7 @@
 //  Copyright © 2020 Riley Testut. All rights reserved.
 //
 
+#if !os(tvOS)
 import Intents
 
 public class ViewAppIntentHandler: NSObject, ViewAppIntentHandling
@@ -29,3 +30,4 @@ public class ViewAppIntentHandler: NSObject, ViewAppIntentHandling
         }
     }
 }
+#endif

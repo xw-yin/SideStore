@@ -8,7 +8,11 @@
 
 import Foundation
 import UIKit
+#if !os(tvOS)
 import WidgetKit
+#else
+import TVServices
+#endif
 
 public final class WidgetDataManager: @unchecked Sendable {
     public static let shared = WidgetDataManager()
@@ -72,8 +76,13 @@ public final class WidgetDataManager: @unchecked Sendable {
         for (bundleID, iconImage) in icons {
             cacheIcon(iconImage, for: bundleID)
         }
+        #if !os(tvOS)
         WidgetCenter.shared.reloadAllTimelines()
         print("[WidgetDataManager] Triggered WidgetCenter.shared.reloadAllTimelines()")
+        #else
+        NotificationCenter.default.post(name: .TVTopShelfItemsDidChange, object: nil)
+        print("[WidgetDataManager] Triggered TVTopShelfItemsDidChange notification")
+        #endif
     }
 
     public func cacheIcon(_ iconImage: UIImage, for bundleIdentifier: String) {

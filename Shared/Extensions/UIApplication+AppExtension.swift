@@ -24,4 +24,18 @@ public extension UIApplication
             .flatMap { $0.windows }
             .first
     }
+    
+    func topViewController(base: UIViewController? = nil) -> UIViewController? {
+        let root = base ?? alt_keyWindow?.rootViewController
+        if let nav = root as? UINavigationController {
+            return topViewController(base: nav.visibleViewController ?? nav.topViewController)
+        }
+        if let tab = root as? UITabBarController {
+            return topViewController(base: tab.selectedViewController)
+        }
+        if let presented = root?.presentedViewController {
+            return topViewController(base: presented)
+        }
+        return root
+    }
 }

@@ -39,11 +39,7 @@ public class FileOutputStream: OutputStream {
             
             guard let fileHandle = self.fileHandle else { return }
             
-            if #available(iOS 13.4, macOS 10.15.4, *) {
-                try fileHandle.write(contentsOf: data)
-            } else {
-                fileHandle.write(data)
-            }
+            try fileHandle.write(contentsOf: data)
             
             // A successful write resets the failure cooldown
             lastFailureTime = nil
@@ -63,11 +59,7 @@ public class FileOutputStream: OutputStream {
                 lastFailureTime = nil
                 
                 do {
-                    if #available(iOS 13.4, macOS 10.15.4, *) {
-                        try newHandle.write(contentsOf: data)
-                    } else {
-                        newHandle.write(data)
-                    }
+                    try newHandle.write(contentsOf: data)
                 } catch {
                     self.fileHandle = nil
                     lastFailureTime = Date() // Record failing point
@@ -109,19 +101,11 @@ public class FileOutputStream: OutputStream {
     }
     
     public func flush() {
-        if #available(iOS 13.0, macOS 10.15, *) {
-            try? fileHandle?.synchronize()
-        } else {
-            fileHandle?.synchronizeFile()
-        }
+        try? fileHandle?.synchronize()
     }
     
     public func close() {
-        if #available(iOS 13.0, macOS 10.15, *) {
-            try? fileHandle?.close()
-        } else {
-            fileHandle?.closeFile()
-        }
+        try? fileHandle?.close()
         fileHandle = nil
     }
 }

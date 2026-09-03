@@ -61,11 +61,7 @@ public enum WidgetLogManager {
         
         """
         if let resetData = resetHeader.data(using: .utf8) {
-            if #available(iOS 13.4, macOS 10.15.4, *) {
-                try fileHandle.write(contentsOf: resetData)
-            } else {
-                fileHandle.write(resetData)
-            }
+            try fileHandle.write(contentsOf: resetData)
         }
         
         return destinationURL

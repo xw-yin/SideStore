@@ -225,6 +225,9 @@ public struct ConsoleLogView: View {
     @State private var fontSize: CGFloat = 12
     @State private var visibleIndices: Set<Int> = []
     @State private var showCopiedBanner: Bool = false
+    #if os(tvOS)
+    @State private var showTvMenu: Bool = false
+    #endif
     
     private let resultHighlightColor = Color.orange
     private let resultHighlightOpacity = 0.5
@@ -281,13 +284,20 @@ public struct ConsoleLogView: View {
                  }
 
                  SwiftUI.Button(action: {
+                     #if !os(tvOS)
                      showShareSheet = true
+                     #else
+                     if let topVC = UIApplication.shared.topViewController() {
+                         TVWebFileTransferManager.shared.startExport(fileURL: viewModel.activeLogURL, title: "Export Log", presentingVC: topVC)
+                     }
+                     #endif
                  }) {
                      Image(systemName: "square.and.arrow.up")
                          .foregroundColor(.primary)
                          .font(.system(size: 19))
                  }
                  
+                 #if !os(tvOS)
                  Menu {
                      SwiftUI.Button(action: {
                          viewModel.setSource(.console)
@@ -344,6 +354,15 @@ public struct ConsoleLogView: View {
                  } primaryAction: {
                      scrollToBottom.toggle()
                  }
+                 #else
+                 SwiftUI.Button(action: {
+                     showTvMenu = true
+                 }) {
+                     Image(systemName: "ellipsis")
+                         .foregroundColor(.primary)
+                         .imageScale(.large)
+                 }
+                 #endif
             }
             .padding(15)
             .padding(.top, 5)
@@ -362,39 +381,47 @@ public struct ConsoleLogView: View {
                       .foregroundColor(.secondary)
                       .padding(.trailing, 4)
 
-                  TextField("Search", text: $searchText)
-                      .textFieldStyle(RoundedBorderTextFieldStyle())
-                      .onChange(of: searchText) { newValue in
-                          viewModel.searchTerm = newValue
-                          viewModel.performSearch()
-                      }
-                      .keyboardShortcut("f", modifiers: .command) // Focus search field
-                  
-                  if !searchText.isEmpty {
-                      // Search navigation buttons
-                      SwiftUI.Button(action: {
-                          viewModel.previousSearchResult()
-                          scrollToIndex = viewModel.searchResults[viewModel.currentSearchIndex]
-                      }) {
-                          Image(systemName: "chevron.up")
-                      }
-                      .keyboardShortcut(.return, modifiers: [.command, .shift])
-                      .disabled(viewModel.searchResults.isEmpty)
-                      
-                      SwiftUI.Button(action: {
-                          viewModel.nextSearchResult()
-                          scrollToIndex = viewModel.searchResults[viewModel.currentSearchIndex]
-                      }) {
-                          Image(systemName: "chevron.down")
-                      }
-                      .keyboardShortcut(.return, modifiers: .command)
-                      .disabled(viewModel.searchResults.isEmpty)
+                   TextField("Search", text: $searchText)
+                       #if !os(tvOS)
+                       .textFieldStyle(RoundedBorderTextFieldStyle())
+                       #endif
+                       .onChange(of: searchText) { newValue in
+                           viewModel.searchTerm = newValue
+                           viewModel.performSearch()
+                       }
+                       #if !os(tvOS)
+                       .keyboardShortcut("f", modifiers: .command) // Focus search field
+                       #endif
+                   
+                   if !searchText.isEmpty {
+                       // Search navigation buttons
+                       SwiftUI.Button(action: {
+                           viewModel.previousSearchResult()
+                           scrollToIndex = viewModel.searchResults[viewModel.currentSearchIndex]
+                       }) {
+                           Image(systemName: "chevron.up")
+                       }
+                       #if !os(tvOS)
+                       .keyboardShortcut(.return, modifiers: [.command, .shift])
+                       #endif
+                       .disabled(viewModel.searchResults.isEmpty)
+                       
+                       SwiftUI.Button(action: {
+                           viewModel.nextSearchResult()
+                           scrollToIndex = viewModel.searchResults[viewModel.currentSearchIndex]
+                       }) {
+                           Image(systemName: "chevron.down")
+                       }
+                       #if !os(tvOS)
+                       .keyboardShortcut(.return, modifiers: .command)
+                       #endif
+                       .disabled(viewModel.searchResults.isEmpty)
 
-                      // Results counter
-                      Text("\(viewModel.currentSearchIndex + 1)/\(viewModel.searchResults.count)")
-                          .foregroundColor(.gray)
-                          .font(.caption)
-                  }
+                       // Results counter
+                       Text("\(viewModel.currentSearchIndex + 1)/\(viewModel.searchResults.count)")
+                           .foregroundColor(.gray)
+                           .font(.caption)
+                   }
                   
                   SwiftUI.Button(action: {
                       searchBarState.toggle()
@@ -417,7 +444,9 @@ public struct ConsoleLogView: View {
                             Text(displayLine)
                                 .font(.system(size: fontSize, design: .monospaced))
                                 .foregroundColor(.primary)
+                                #if !os(tvOS)
                                 .textSelection(.enabled)
+                                #endif
                                 .background(
                                     viewModel.searchResults.contains(index) ?
                                     otherResultsColor.opacity(otherResultsOpacity) : Color.clear
@@ -451,6 +480,7 @@ public struct ConsoleLogView: View {
         }
         .background(Color(uiColor: .systemBackground))
         .edgesIgnoringSafeArea(.all)
+        #if !os(tvOS)
         .sheet(isPresented: $showShareSheet) {
             ActivityViewController(activityItems: [viewModel.activeLogURL])
         }
@@ -467,6 +497,28 @@ public struct ConsoleLogView: View {
                 debugLog("Failed to select log file: \(error)")
             }
         }
+        #else
+        .confirmationDialog("Logs Menu", isPresented: $showTvMenu) {
+            SwiftUI.Button("Console Log") { viewModel.setSource(.console) }
+            SwiftUI.Button("Widget Log") { viewModel.setSource(.widget) }
+            if let importedURL = viewModel.importedURL {
+                SwiftUI.Button("Imported Log (\(importedURL.lastPathComponent))") { viewModel.setSource(.imported(url: importedURL)) }
+            }
+            if viewModel.importedURL == nil {
+                SwiftUI.Button("Import Log...") {
+                    if let topVC = UIApplication.shared.topViewController() {
+                        TVWebFileTransferManager.shared.startImport(acceptedExtensions: ["log", "txt"], title: "Import Log File", presentingVC: topVC) { fileURL in
+                            guard let fileURL = fileURL else { return }
+                            viewModel.importLog(from: fileURL)
+                        }
+                    }
+                }
+            } else {
+                SwiftUI.Button("Remove Imported", role: .destructive) { viewModel.clearImportedLog() }
+            }
+            SwiftUI.Button("Scroll to Bottom") { scrollToBottom.toggle() }
+        }
+        #endif
         .overlay(
             Group {
                 if showCopiedBanner {
@@ -494,7 +546,9 @@ public struct ConsoleLogView: View {
             return showTimestamp ? line : stripTimestamp(from: line)
         }
         let textToCopy = linesToCopy.joined(separator: "\n")
+        #if !os(tvOS)
         UIPasteboard.general.string = textToCopy
+        #endif
         withAnimation {
             showCopiedBanner = true
         }

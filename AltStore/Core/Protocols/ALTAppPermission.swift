@@ -160,7 +160,7 @@ extension ALTAppPrivacyPermission: ALTAppPermission
     public var type: ALTAppPermissionType { .privacy }
     
     public var synthesizedName: String? {
-        guard #available(iOS 16, *), let match = self.rawValue.wholeMatch(of: Regex.privacyPermission) else { return nil }
+        guard #available(iOS 16, tvOS 16, *), let match = self.rawValue.wholeMatch(of: Regex.privacyPermission) else { return nil }
         
         let synthesizedNamed = String(match.1)
         return synthesizedNamed

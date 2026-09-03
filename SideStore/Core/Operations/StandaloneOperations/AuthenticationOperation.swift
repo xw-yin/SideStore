@@ -609,7 +609,7 @@ private extension AuthenticationOperation {
             return finalCert
         } catch {
             self.debugLog("[Authentication] requestCertificate: Failed with error: \(error)")
-            if case .tooManyCertificates(_) = error as? DeveloperPortalError {
+            if case .tooManyCertificates = error as? DeveloperPortalError {
                 let friendlyError: AuthenticationError = (team.type == .free) 
                                         ? AuthenticationError(.certificateLimitReachedFree) 
                                         : AuthenticationError(.certificateLimitReachedPaid)
@@ -722,45 +722,45 @@ private enum AnisetteProvider {
     }
 
     private static func fetchRemote(handler: AnisetteServerHandler) async throws -> ALTAnisetteData {
-        let serverUrls = await AnisetteServersManager.shared.getActiveServerURLs()
-        guard !serverUrls.isEmpty else {
-            throw NSError(domain: "AnisetteError", code: 0, userInfo: [NSLocalizedDescriptionKey: "No working anisette servers configured."])
+        let serverUrlStrings = await AnisetteServersManager.shared.getActiveServerURLs()
+        let servers = serverUrlStrings.compactMap { URL(string: $0) }
+        guard !servers.isEmpty else {
+            throw AnisetteError.noServersConfigured
         }
 
         let lastServer = UserDefaults.standard.menuAnisetteURL
-        if UserDefaults.standard.disableAnisetteRotation {
-            let activeServer = !lastServer.isEmpty ? lastServer : (serverUrls.first ?? "")
-            guard let serverURL = URL(string: activeServer) else {
-                throw NSError(domain: "AnisetteError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid server URL: \(activeServer)"])
+        let startIndex = servers.firstIndex(where: { $0.absoluteString == lastServer }) ?? 0
+
+        let provider = SideSign.AnisetteDataProvider.shared
+        let existingBlob = AnisetteDataManager.shared.anisetteAdiBlob.flatMap { Data(base64Encoded: $0) }
+
+        let (anisetteData, newAdiBlob) = try await provider.fetchAnisetteDataWithFailover(
+            servers: UserDefaults.standard.disableAnisetteRotation ? [servers[startIndex]] : servers,
+            startIndex: startIndex,
+            existingAdiBlob: existingBlob,
+            onError: { error in
+                if case AnisetteError.outdatedV1Server(let serverURL, _) = error {
+                    if UserDefaults.standard.defaultServerURL == serverURL.absoluteString {
+                        return true
+                    }
+                    let shouldContinue = try await handler.warnOutdatedAnisetteServer()
+                    if shouldContinue {
+                        UserDefaults.standard.defaultServerURL = serverURL.absoluteString
+                    }
+                    return shouldContinue
+                }
+                return false
+            },
+            onSuccess: { successfulServer in
+                UserDefaults.standard.menuAnisetteURL = successfulServer.absoluteString
+                debugLog("[AuthenticationOperation] Successfully fetched Anisette data from \(successfulServer.absoluteString)")
             }
-            let provider = SideSign.AnisetteDataProvider(mode: .remote(server: serverURL))
-            let (data, _) = try await provider.fetchAnisetteData()
-            return data
+        )
+
+        if let freshBlob = newAdiBlob {
+            AnisetteDataManager.shared.anisetteAdiBlob = freshBlob.base64EncodedString()
         }
 
-        let startIndex = serverUrls.firstIndex(of: lastServer) ?? 0
-        var lastError: Error?
-
-        for triedCount in 0..<serverUrls.count {
-            let currentIndex = (startIndex + triedCount) % serverUrls.count
-            let currentServerUrlString = serverUrls[currentIndex]
-
-            guard let serverURL = URL(string: currentServerUrlString) else {
-                continue
-            }
-
-            do {
-                let provider = SideSign.AnisetteDataProvider(mode: .remote(server: serverURL))
-                let (anisetteData, _) = try await provider.fetchAnisetteData()
-                UserDefaults.standard.menuAnisetteURL = currentServerUrlString
-                debugLog("[AuthenticationOperation] Successfully fetched Anisette data from \(serverURL.absoluteString)")
-                return anisetteData
-            } catch {
-                lastError = error
-                debugLog("[AuthenticationOperation] Server failed: \(serverURL.absoluteString) with error: \(error.localizedDescription)")
-            }
-        }
-
-        throw lastError ?? NSError(domain: "AnisetteError", code: 0, userInfo: [NSLocalizedDescriptionKey: "All anisette servers failed."])
+        return anisetteData
     }
 }

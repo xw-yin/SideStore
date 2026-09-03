@@ -14,8 +14,12 @@ import SideSign
 final class UpdateAppCertificateOperation: BasePipelineOperation<InstallAppOperationContext, Void>, @unchecked Sendable {
     
     override func execute(parentProgress: Progress?) async throws {
+        let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[UpdateAppCertificateOperation] execute() started")
-        defer { debugLog("[UpdateAppCertificateOperation] execute() completed") }
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            debugLog("[UpdateAppCertificateOperation] execute() took: \(String(format: "%.3fs", elapsed))")
+        }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         
         if let installedApp = self.context.installedApp, let serialNumber = installedApp.certificateSerialNumber {

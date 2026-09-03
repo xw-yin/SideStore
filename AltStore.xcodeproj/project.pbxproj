@@ -7,17 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A809CCB53033E85E005DF922 /* AnisetteKit in Frameworks */ = {isa = PBXBuildFile; productRef = A809CCB43033E85E005DF922 /* AnisetteKit */; };
 		A84596F62F7DC4C90000B8CD /* SideStore.conf in Resources */ = {isa = PBXBuildFile; fileRef = A84596F52F7DC4C90000B8CD /* SideStore.conf */; };
-		A8C37026302DA7BA0010213A /* Minimuxer in Frameworks */ = {isa = PBXBuildFile; productRef = A8C37025302DA7BA0010213A /* Minimuxer */; };
-		A8C37029302DA7F30010213A /* MarkdownKit in Frameworks */ = {isa = PBXBuildFile; productRef = A8C37028302DA7F30010213A /* MarkdownKit */; };
+		A87939D3303A89CA004D9227 /* Minimuxer in Frameworks */ = {isa = PBXBuildFile; productRef = A87939D2303A89CA004D9227 /* Minimuxer */; };
+		A8C37029302DA7F30010213A /* MarkdownKit in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = A8C37028302DA7F30010213A /* MarkdownKit */; };
 		A8C3702C302DA80D0010213A /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = A8C3702B302DA80D0010213A /* KeychainAccess */; };
 		A8C3702F302DA82A0010213A /* Nuke in Frameworks */ = {isa = PBXBuildFile; productRef = A8C3702E302DA82A0010213A /* Nuke */; };
 		A8C37035302DA84D0010213A /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = A8C37034302DA84D0010213A /* Starscream */; };
 		A8C37039302DA8D90010213A /* SemanticVersion in Frameworks */ = {isa = PBXBuildFile; productRef = A8C37038302DA8D90010213A /* SemanticVersion */; };
-		A8C38DEC302DB4E40010213A /* SideSign-Dynamic in Frameworks */ = {isa = PBXBuildFile; productRef = A8C38DEB302DB4E40010213A /* SideSign-Dynamic */; };
-		A8C38DED302DB4E40010213A /* SideSign-Dynamic in Embed Frameworks */ = {isa = PBXBuildFile; productRef = A8C38DEB302DB4E40010213A /* SideSign-Dynamic */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		BF989177250AABF4002ACF50 /* AltWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BF989167250AABF3002ACF50 /* AltWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A8F5E9AF30422E3600DBD7E1 /* SideSign in Frameworks */ = {isa = PBXBuildFile; productRef = A8F5E9AE30422E3600DBD7E1 /* SideSign */; };
+		BF989177250AABF4002ACF50 /* AltWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BF989167250AABF3002ACF50 /* AltWidgetExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,7 +42,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				A8C38DED302DB4E40010213A /* SideSign-Dynamic in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -107,6 +104,83 @@
 				Info.plist,
 				Resources/ReleaseEntitlements.plist,
 			);
+			platformFiltersByRelativePath = {
+				Authentication/Authentication.storyboard = (
+					ios,
+				);
+				Authentication/tvOS/Authentication.storyboard = (
+					tvos,
+				);
+				Components/AppBannerView.xib = (
+					ios,
+				);
+				Components/tvOS/AppBannerView.xib = (
+					tvos,
+				);
+				Core/Resources/RSTPlaceholderView.xib = (
+					ios,
+				);
+				Core/Resources/tvOS/RSTPlaceholderView.xib = (
+					tvos,
+				);
+				"My Apps/InstalledAppsCollectionHeaderView.xib" = (
+					ios,
+				);
+				"My Apps/UpdateCollectionViewCell.xib" = (
+					ios,
+				);
+				"My Apps/tvOS/InstalledAppsCollectionHeaderView.xib" = (
+					tvos,
+				);
+				"My Apps/tvOS/UpdateCollectionViewCell.xib" = (
+					tvos,
+				);
+				News/NewsCollectionViewCell.xib = (
+					ios,
+				);
+				News/tvOS/NewsCollectionViewCell.xib = (
+					tvos,
+				);
+				Settings/AboutPatreonHeaderView.xib = (
+					ios,
+				);
+				Settings/Settings.storyboard = (
+					ios,
+				);
+				Settings/SettingsHeaderFooterView.xib = (
+					ios,
+				);
+				Settings/tvOS/AboutPatreonHeaderView.xib = (
+					tvos,
+				);
+				Settings/tvOS/Settings.storyboard = (
+					tvos,
+				);
+				Settings/tvOS/SettingsHeaderFooterView.xib = (
+					tvos,
+				);
+				Sources/Components/SourceHeaderView.xib = (
+					ios,
+				);
+				Sources/Components/tvOS/SourceHeaderView.xib = (
+					tvos,
+				);
+				Sources/Sources.storyboard = (
+					ios,
+				);
+				Sources/tvOS/Sources.storyboard = (
+					tvos,
+				);
+				iOS/LaunchScreen.storyboard = (
+					ios,
+				);
+				iOS/Main.storyboard = (
+					ios,
+				);
+				tvOS/Main.storyboard = (
+					tvos,
+				);
+			};
 			target = BFD247692284B9A500981D42 /* SideStore */;
 		};
 		A8EEC8CD2F4B146B00F2436D /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
@@ -133,6 +207,9 @@
 			membershipExceptions = (
 				Utils/datastructures/SingletonGenericMap.swift,
 				Utils/pagination/PaginationDataHolder.swift,
+				Widget/WidgetData/WidgetDataManager.swift,
+				Widget/WidgetData/WidgetLogManager.swift,
+				Widget/WidgetData/WidgetModels.swift,
 			);
 			target = BF989166250AABF3002ACF50 /* AltWidgetExtension */;
 		};
@@ -166,14 +243,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A809CCB53033E85E005DF922 /* AnisetteKit in Frameworks */,
-				A8C37026302DA7BA0010213A /* Minimuxer in Frameworks */,
+				A8F5E9AF30422E3600DBD7E1 /* SideSign in Frameworks */,
 				A8C37029302DA7F30010213A /* MarkdownKit in Frameworks */,
 				A8C3702C302DA80D0010213A /* KeychainAccess in Frameworks */,
 				A8C3702F302DA82A0010213A /* Nuke in Frameworks */,
 				A8C37035302DA84D0010213A /* Starscream in Frameworks */,
-				A8C38DEC302DB4E40010213A /* SideSign-Dynamic in Frameworks */,
 				A8C37039302DA8D90010213A /* SemanticVersion in Frameworks */,
+				A87939D3303A89CA004D9227 /* Minimuxer in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -279,14 +355,13 @@
 			);
 			name = SideStore;
 			packageProductDependencies = (
-				A8C37025302DA7BA0010213A /* Minimuxer */,
 				A8C37028302DA7F30010213A /* MarkdownKit */,
 				A8C3702B302DA80D0010213A /* KeychainAccess */,
 				A8C3702E302DA82A0010213A /* Nuke */,
 				A8C37034302DA84D0010213A /* Starscream */,
 				A8C37038302DA8D90010213A /* SemanticVersion */,
-				A8C38DEB302DB4E40010213A /* SideSign-Dynamic */,
-				A809CCB43033E85E005DF922 /* AnisetteKit */,
+				A87939D2303A89CA004D9227 /* Minimuxer */,
+				A8F5E9AE30422E3600DBD7E1 /* SideSign */,
 			);
 			productName = AltStore;
 			productReference = BFD2476A2284B9A500981D42 /* SideStore.app */;
@@ -335,13 +410,12 @@
 			mainGroup = BFD247612284B9A500981D42;
 			packageReferences = (
 				A8C37021302DA7A70010213A /* XCLocalSwiftPackageReference "Dependencies/SideSign" */,
-				A8C37024302DA7BA0010213A /* XCLocalSwiftPackageReference "Dependencies/minimuxer" */,
 				A8C37027302DA7F30010213A /* XCRemoteSwiftPackageReference "MarkdownKit" */,
 				A8C3702A302DA80D0010213A /* XCRemoteSwiftPackageReference "KeychainAccess" */,
 				A8C3702D302DA82A0010213A /* XCRemoteSwiftPackageReference "Nuke" */,
 				A8C37033302DA84D0010213A /* XCRemoteSwiftPackageReference "Starscream" */,
 				A8C37037302DA8D90010213A /* XCRemoteSwiftPackageReference "SemanticVersion" */,
-				A809CCB33033E85E005DF922 /* XCRemoteSwiftPackageReference "AnisetteKit" */,
+				A87939D1303A89C9004D9227 /* XCLocalSwiftPackageReference "Dependencies/minimuxer" */,
 			);
 			productRefGroup = BFD2476B2284B9A500981D42 /* Products */;
 			projectDirPath = "";
@@ -433,6 +507,7 @@
 		};
 		BF989176250AABF4002ACF50 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			platformFilter = ios;
 			target = BF989166250AABF3002ACF50 /* AltWidgetExtension */;
 			targetProxy = BF989175250AABF4002ACF50 /* PBXContainerItemProxy */;
 		};
@@ -462,9 +537,12 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PRODUCT_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "SideBackup/SideBackup-Bridging-Header.h";
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2,3";
+				TVOS_DEPLOYMENT_TARGET = 15.0;
 			};
 			name = Debug;
 		};
@@ -491,9 +569,12 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PRODUCT_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "SideBackup/SideBackup-Bridging-Header.h";
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2,3";
+				TVOS_DEPLOYMENT_TARGET = 15.0;
 			};
 			name = Release;
 		};
@@ -751,12 +832,14 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PRODUCT_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "debug-only";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2,3";
+				TVOS_DEPLOYMENT_TARGET = 15.0;
 			};
 			name = Debug;
 		};
@@ -798,13 +881,15 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PRODUCT_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "debug-only";
 				SWIFT_OPTIMIZATION_LEVEL = "-Osize";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2,3";
+				TVOS_DEPLOYMENT_TARGET = 15.0;
 			};
 			name = Release;
 		};
@@ -850,25 +935,17 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		A87939D1303A89C9004D9227 /* XCLocalSwiftPackageReference "Dependencies/minimuxer" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Dependencies/minimuxer;
+		};
 		A8C37021302DA7A70010213A /* XCLocalSwiftPackageReference "Dependencies/SideSign" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Dependencies/SideSign;
 		};
-		A8C37024302DA7BA0010213A /* XCLocalSwiftPackageReference "Dependencies/minimuxer" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Dependencies/minimuxer;
-		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		A809CCB33033E85E005DF922 /* XCRemoteSwiftPackageReference "AnisetteKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/mahee96/AnisetteKit";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
 		A8C37027302DA7F30010213A /* XCRemoteSwiftPackageReference "MarkdownKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/bmoliveira/MarkdownKit.git";
@@ -912,12 +989,7 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		A809CCB43033E85E005DF922 /* AnisetteKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A809CCB33033E85E005DF922 /* XCRemoteSwiftPackageReference "AnisetteKit" */;
-			productName = AnisetteKit;
-		};
-		A8C37025302DA7BA0010213A /* Minimuxer */ = {
+		A87939D2303A89CA004D9227 /* Minimuxer */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Minimuxer;
 		};
@@ -946,10 +1018,10 @@
 			package = A8C37037302DA8D90010213A /* XCRemoteSwiftPackageReference "SemanticVersion" */;
 			productName = SemanticVersion;
 		};
-		A8C38DEB302DB4E40010213A /* SideSign-Dynamic */ = {
+		A8F5E9AE30422E3600DBD7E1 /* SideSign */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A8C37021302DA7A70010213A /* XCLocalSwiftPackageReference "Dependencies/SideSign" */;
-			productName = "SideSign-Dynamic";
+			productName = SideSign;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

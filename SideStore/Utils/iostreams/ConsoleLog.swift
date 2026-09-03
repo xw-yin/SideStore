@@ -122,11 +122,7 @@ class ConsoleLog {
             
             """
             if let data = header.data(using: .utf8) {
-                if #available(iOS 13.4, macOS 10.15.4, *) {
-                    try? handle.write(contentsOf: data)
-                } else {
-                    handle.write(data)
-                }
+                try? handle.write(contentsOf: data)
             }
         }
         

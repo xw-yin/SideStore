@@ -7,7 +7,6 @@
 //
 
 @preconcurrency import UIKit
-import SafariServices
 import Combine
 
 import Nuke
@@ -149,20 +148,24 @@ class SourceDetailViewController: HeaderContentViewController<SourceHeaderView, 
             self.navigationBarButton.tintColor = self.source.effectiveTintColor?.adjustedForDisplay ?? .altPrimary
             self.navigationBarButton.isHidden = false
 
+            #if !os(tvOS)
             if #available(iOS 16, *)
             {
                 self.navigationItem.rightBarButtonItem?.isHidden = false
             }
+            #endif
 
         case false?:
             title = NSLocalizedString("ADD", comment: "")
             self.navigationBarButton.tintColor = self.source.effectiveTintColor?.adjustedForDisplay ?? .altPrimary
             self.navigationBarButton.isHidden = false
 
+            #if !os(tvOS)
             if #available(iOS 16, *)
             {
                 self.navigationItem.rightBarButtonItem?.isHidden = false
             }
+            #endif
 
         case nil:
             title = ""
@@ -235,10 +238,7 @@ class SourceDetailViewController: HeaderContentViewController<SourceHeaderView, 
     @objc private func showWebsite()
     {
         guard let websiteURL = self.source.websiteURL else { return }
-        
-        let safariViewController = SFSafariViewController(url: websiteURL)
-        safariViewController.preferredControlTintColor = self.source.effectiveTintColor ?? .altPrimary
-        self.present(safariViewController, animated: true, completion: nil)
+        self.openWebURL(websiteURL, preferredTintColor: self.source.effectiveTintColor ?? .altPrimary)
     }
 }
 

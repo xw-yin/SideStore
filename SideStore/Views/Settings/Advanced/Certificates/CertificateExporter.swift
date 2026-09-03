@@ -22,8 +22,10 @@ enum CertificateExporter {
     }
     
     static func copyPublicCertAsPEM(_ cert: ALTX509Certificate, onError: @escaping (String) -> Void) {
+        #if !os(tvOS)
         guard let data = cert.data else { onError("Public certificate data is missing."); return }
         UIPasteboard.general.string = String(data: data, encoding: .utf8) ?? data.base64EncodedString()
+        #endif
     }
     
     static func shareP12(_ cert: ALTCertificate, password: String, onError: @escaping (String) -> Void) {
@@ -47,9 +49,11 @@ enum CertificateExporter {
     }
     
     static func copyPrivateKey(_ cert: ALTCertificate) {
+        #if !os(tvOS)
         let keyData = cert.privateKey
         UIPasteboard.general.string = String(data: keyData, encoding: .utf8) ?? keyData.base64EncodedString()
         UINotificationFeedbackGenerator().notificationOccurred(.success)
+        #endif
     }
     
     private static func share(data: Data, filename: String, onError: @escaping (String) -> Void) {
@@ -60,14 +64,17 @@ enum CertificateExporter {
             onError("Failed to write temp export file: " + error.localizedDescription)
             return
         }
+        guard let rootVC = UIApplication.shared.topViewController() else { return }
+        #if !os(tvOS)
         let activityVC = UIActivityViewController(activityItems: [tempURL], applicationActivities: nil)
-        guard let rootVC = UIApplication.shared.alt_keyWindow?.rootViewController else { return }
-        let presenter = rootVC.presentedViewController ?? rootVC
         if let popover = activityVC.popoverPresentationController {
-            popover.sourceView = presenter.view
-            popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+            popover.sourceView = rootVC.view
+            popover.sourceRect = CGRect(x: rootVC.view.bounds.midX, y: rootVC.view.bounds.midY, width: 0, height: 0)
             popover.permittedArrowDirections = []
         }
-        presenter.present(activityVC, animated: true)
+        rootVC.present(activityVC, animated: true)
+        #else
+        TVWebFileTransferManager.shared.startExport(fileURL: tempURL, title: "Export Certificate / Key", presentingVC: rootVC)
+        #endif
     }
 }
