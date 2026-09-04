@@ -276,8 +276,8 @@
 "Selected Pairing file is still Invalid!" = "所选配对文件仍然无效！";
 "Server Address" = "服务器地址";
 "Settings for SideJITServer" = "SideJITServer 设置";
-"SideJITServer" = "SideJITServer";
-"SideJITServer is unable to connect to your iDevice. Please make sure you have paired your iDevice by running 'SideJITServer -y', or try refreshing SideJITServer from Settings." = "SideJITServer 无法连接到设备。请运行“SideJITServer -y”完成配对，或在设置中刷新 SideJITServer。";
+"SideJITServer" = "SideJIT 服务器";
+"SideJITServer is unable to connect to your iDevice. Please make sure you have paired your iDevice by running 'SideJITServer -y', or try refreshing SideJITServer from Settings." = "SideJIT 服务器无法连接到设备。请运行“SideJITServer -y”完成配对，或在设置中刷新 SideJIT 服务器。";
 "Sideloaded" = "已侧载";
 "SideStore can only install marketplace apps that have been notarized by Apple." = "SideStore 只能安装经过 Apple 公证的市场 App。";
 "SideStore cannot manage the existing certificate without owning its private key. The apps signed with the existing certificate will expire soon unless they are resigned and renewed explicitly by SideStore." = "没有私钥，SideStore 无法管理现有证书。使用该证书签名的 App 即将到期，必须由 SideStore 重新签名并续期。";
@@ -358,7 +358,7 @@
 "Unable to Add Source" = "无法添加来源";
 "Unable to Change App Icon" = "无法更改 App 图标";
 "Unable to Clear Cache" = "无法清除缓存";
-"Unable to connect to SideJITServer. Please check that you are on the same Wi-Fi of and your Firewall has been set correctly on your server." = "无法连接 SideJITServer。请确认设备处于同一 Wi-Fi，且服务器防火墙设置正确。";
+"Unable to connect to SideJITServer. Please check that you are on the same Wi-Fi of and your Firewall has been set correctly on your server." = "无法连接 SideJIT 服务器。请确认设备处于同一 Wi-Fi，且服务器防火墙设置正确。";
 "Unable to Export Detailed Log" = "无法导出详细日志";
 "Unable to Fetch Apps" = "无法获取 App";
 "Unable to Fetch News" = "无法获取新闻";
@@ -753,7 +753,7 @@
 "Allow Siri to Refresh Apps…" = "允许 Siri 刷新应用…";
 
 /* SideJITServer */
-"Enable SideJITServer" = "启用 SideJITServer";
+"Enable SideJITServer" = "启用 SideJIT 服务器";
 "Required for JIT on iOS 17+" = "在 iOS 17 及以上版本启用 JIT 时需要";
 "Connection Status" = "连接状态";
 "Status" = "状态";
@@ -763,7 +763,7 @@
 "Resolution Mode" = "解析模式";
 "Auto (Bonjour mDNS)" = "自动（Bonjour mDNS）";
 "Manual Override" = "手动指定";
-"Leave empty to automatically discover SideJITServer on your local network via Bonjour." = "留空即可通过 Bonjour 自动发现局域网中的 SideJITServer。";
+"Leave empty to automatically discover SideJITServer on your local network via Bonjour." = "留空即可通过 Bonjour 自动发现局域网中的 SideJIT 服务器。";
 "Diagnostics & Tools" = "诊断与工具";
 "Test Connection (Ping)" = "测试连接（Ping）";
 "Refresh Device Cache (/re/)" = "刷新设备缓存（/re/）";
@@ -771,8 +771,50 @@
 "Latest Server Response" = "最近的服务器响应";
 "Copy Response" = "复制响应";
 "About" = "关于";
-"SideJITServer attaches Apple's debugserver service on macOS to running apps on iOS 17+ over local Wi-Fi or USB." = "SideJITServer 可通过局域网 Wi-Fi 或 USB，将 macOS 上的 Apple debugserver 服务附加到 iOS 17 及以上版本中正在运行的应用。";
-"When SideStore triggers JIT, SideJITServer sends the debug attach signal and enables Just-In-Time execution instantly." = "SideStore 触发 JIT 时，SideJITServer 会发送调试附加信号并立即启用即时编译。";
+"SideJITServer attaches Apple's debugserver service on macOS to running apps on iOS 17+ over local Wi-Fi or USB." = "SideJIT 服务器可通过局域网 Wi-Fi 或 USB，将 macOS 上的 Apple debugserver 服务附加到 iOS 17 及更高版本中正在运行的应用。";
+"When SideStore triggers JIT, SideJITServer sends the debug attach signal and enables Just-In-Time execution instantly." = "SideStore 触发 JIT 时，SideJIT 服务器会发送调试附加信号并立即启用即时编译。";
+"SideJITServer Detected" = "检测到 SideJIT 服务器";
+"Would you like to enable SideJITServer" = "是否要启用 SideJIT 服务器？";
+"SideJITServer settings" = "SideJIT 服务器设置";
+
+/* Refresh failures and remaining settings text */
+"Fetching Anisette Servers..." = "正在获取 Anisette 服务器…";
+"Reaching catalog source '%@'..." = "正在访问目录来源“%@”…";
+"Retrying..." = "正在重试…";
+"Retry Connection" = "重试连接";
+"Hidden" = "已隐藏";
+"Available Servers (OFFLINE)" = "可用服务器（离线）";
+"Available Servers" = "可用服务器";
+"Drag to reorder server priority. Swipe left on a server to hide or unhide it." = "拖动可调整服务器优先级。向左滑动可隐藏或取消隐藏服务器。";
+"Catalog File" = "目录文件";
+"Export Current" = "导出当前配置";
+"Export Original" = "导出原始配置";
+"Reset Catalog" = "重置目录";
+"Reset Source to Default" = "将来源重置为默认值";
+"Server List URL" = "服务器列表 URL";
+"Server Catalog Source" = "服务器目录来源";
+"Customization" = "自定义";
+"Troubleshooting" = "故障排查";
+"Reset adi.pb" = "重置 adi.pb";
+"Choose a method to send feedback:" = "请选择反馈方式：";
+"Send Email" = "发送邮件";
+"Clear Refresh Attempts" = "清除刷新尝试记录";
+"Are you sure you want to clear all existing refresh attempt entries?" = "确定要清除所有已有的刷新尝试记录吗？";
+"Refresh \(${applicationName})" = "刷新 \(${applicationName})";
+"Refresh \(${applicationName}) apps" = "刷新 \(${applicationName}) 应用";
+"Refresh my \(${applicationName}) apps" = "刷新我的 \(${applicationName}) 应用";
+"Refresh apps with \(${applicationName})" = "使用 \(${applicationName}) 刷新应用";
+"Install IPA with \(${applicationName})" = "使用 \(${applicationName}) 安装 IPA";
+"Install an IPA with \(${applicationName})" = "使用 \(${applicationName}) 安装 IPA 文件";
+"The operation timed out." = "操作超时。";
+"An error occurred while provisioning: %@. Please try again. If the issue persists, report it on GitHub Issues!" = "签名配置时发生错误：%@。请重试；如果问题仍然存在，请在 GitHub Issues 中报告。";
+"You are not signed in." = "尚未登录。";
+"The operation returned an unknown result." = "操作返回了未知结果。";
+"The app is in an invalid format." = "应用格式无效。";
+"The current pairing file is invalid or missing." = "当前配对文件无效或缺失。";
+"Minimuxer has not been started yet." = "Minimuxer 尚未启动。";
+"Pairing Required:" = "需要配对：";
+"Failed to refresh apps in background." = "后台刷新应用失败。";
 "Copied to Clipboard" = "已复制到剪贴板";
 "Ready (%d ms)" = "就绪（%d 毫秒）";
 "Discovering Bonjour…" = "正在通过 Bonjour 发现…";
