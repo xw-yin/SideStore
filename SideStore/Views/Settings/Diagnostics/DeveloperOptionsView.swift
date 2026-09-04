@@ -154,7 +154,7 @@ struct DeveloperOptionsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("BONJOUR")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {

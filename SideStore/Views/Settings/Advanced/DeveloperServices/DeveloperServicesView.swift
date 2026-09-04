@@ -58,9 +58,9 @@ struct DeveloperServicesView: View {
                                 .frame(width: 28)
 
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("App IDs")
+                                Text("View App IDs")
                                     .font(.body)
-                                Text("\(viewModel.appIDs.count) registered")
+                                Text(String(format: NSLocalizedString("%d registered", comment: "Registered App ID count"), viewModel.appIDs.count))
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -78,7 +78,7 @@ struct DeveloperServicesView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Provisioning Profiles")
                                     .font(.body)
-                                Text("\(viewModel.profiles.count) active on portal")
+                                Text(String(format: NSLocalizedString("%d active on portal", comment: "Active provisioning profile count"), viewModel.profiles.count))
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -96,7 +96,7 @@ struct DeveloperServicesView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("App Groups")
                                     .font(.body)
-                                Text("\(viewModel.appGroups.count) configured")
+                                Text(String(format: NSLocalizedString("%d configured", comment: "Configured App Group count"), viewModel.appGroups.count))
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -114,7 +114,7 @@ struct DeveloperServicesView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Registered Devices")
                                     .font(.body)
-                                Text("\(viewModel.devices.count) devices")
+                                Text(String(format: NSLocalizedString("%d devices", comment: "Registered device count"), viewModel.devices.count))
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
