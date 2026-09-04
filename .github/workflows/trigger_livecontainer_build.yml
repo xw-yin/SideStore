@@ -13,15 +13,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send repository_dispatch event to LiveContainer
+        env:
+          LC_TRIGGER_TOKEN: ${{ secrets.LC_TRIGGER_TOKEN }}
         run: |
-          TOKEN="${{ secrets.LC_TRIGGER_TOKEN || secrets.PERSONAL_ACCESS_TOKEN }}"
-          if [ -n "$TOKEN" ]; then
-            curl -s -X POST \
-              -H "Accept: application/vnd.github+json" \
-              -H "Authorization: Bearer $TOKEN" \
-              https://api.github.com/repos/xw-yin/LiveContainer/dispatches \
-              -d "{\"event_type\":\"sidestore_updated\",\"client_payload\":{\"sidestore_revision\":\"${{ github.sha }}\"}}" \
-              || echo "Optional dispatch trigger completed."
-          else
-            echo "Secret LC_TRIGGER_TOKEN not set; skipping cross-repo dispatch."
+          if [ -z "$LC_TRIGGER_TOKEN" ]; then
+            echo "LC_TRIGGER_TOKEN is required to trigger the LiveContainer build." >&2
+            exit 1
           fi
+
+          curl --fail-with-body --silent --show-error -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $LC_TRIGGER_TOKEN" \
+            https://api.github.com/repos/xw-yin/LiveContainer/dispatches \
+            -d "{\"event_type\":\"sidestore_updated\",\"client_payload\":{\"sidestore_revision\":\"${{ github.sha }}\"}}"
