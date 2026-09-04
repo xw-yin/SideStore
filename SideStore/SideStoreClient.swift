@@ -96,7 +96,7 @@ public final class SideStoreClient: NSObject, RefreshClient, @unchecked Sendable
                             throw error
                         }
                         continuation.resume()
-                    } catch ~RefreshErrorCode.noInstalledApps {
+                    } catch OperationError.noInstalledApps {
                         continuation.resume()
                     } catch {
                         continuation.resume(throwing: error)
@@ -134,4 +134,3 @@ public final class SideStoreRefreshService: NSObject {
         }
     }
 }
-
