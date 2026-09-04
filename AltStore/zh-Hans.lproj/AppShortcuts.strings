@@ -1,0 +1,9 @@
+/* App Shortcuts (zh-Hans) */
+
+"Refresh ${applicationName}" = "刷新 ${applicationName}";
+"Refresh ${applicationName} apps" = "刷新 ${applicationName} 应用";
+"Refresh my ${applicationName} apps" = "刷新我的 ${applicationName} 应用";
+"Refresh apps with ${applicationName}" = "使用 ${applicationName} 刷新应用";
+
+"Install IPA with ${applicationName}" = "使用 ${applicationName} 安装 IPA";
+"Install an IPA with ${applicationName}" = "使用 ${applicationName} 安装 IPA 文件";

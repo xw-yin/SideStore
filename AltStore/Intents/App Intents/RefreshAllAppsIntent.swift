@@ -35,8 +35,8 @@ class IntentError: NSError, CustomLocalizedStringResourceConvertible, @unchecked
 @available(iOS 17.0, tvOS 17.0, *)
 struct InstallIPAIntent: AppIntent, ProgressReportingIntent
 {
-    static var title: LocalizedStringResource = LocalizedStringResource("Install IPA", defaultValue: "安装 IPA")
-    static var description = IntentDescription(LocalizedStringResource("Installs an IPA file with SideStore.", defaultValue: "使用 SideStore 安装 IPA 文件。"))
+    static var title: LocalizedStringResource = "Install IPA"
+    static var description = IntentDescription("Installs an IPA file with SideStore.")
     static var openAppWhenRun = false
 
     @Parameter(title: "IPA File")
@@ -124,8 +124,8 @@ struct RefreshAllAppsIntent: AppIntent, CustomIntentMigratedAppIntent, Predictab
 {
     static let intentClassName = "RefreshAllIntent"
     
-    static var title: LocalizedStringResource = LocalizedStringResource("Refresh All Apps", defaultValue: "刷新所有应用")
-    static var description = IntentDescription(LocalizedStringResource("Refreshes your sideloaded apps to prevent them from expiring.", defaultValue: "刷新已侧载的应用以防止证书过期。"))
+    static var title: LocalizedStringResource = "Refresh All Apps"
+    static var description = IntentDescription("Refreshes your sideloaded apps to prevent them from expiring.")
     
     static var parameterSummary: some ParameterSummary {
         Summary("Refresh All Apps")
@@ -134,7 +134,7 @@ struct RefreshAllAppsIntent: AppIntent, CustomIntentMigratedAppIntent, Predictab
     static var predictionConfiguration: some IntentPredictionConfiguration {
         IntentPrediction {
             DisplayRepresentation(
-                title: LocalizedStringResource("Refresh All Apps", defaultValue: "刷新所有应用"),
+                title: "Refresh All Apps",
                 subtitle: ""
             )
         }
@@ -194,7 +194,7 @@ struct RefreshAllAppsIntent: AppIntent, CustomIntentMigratedAppIntent, Predictab
                 }
             }
             
-            return .result(dialog: IntentDialog(LocalizedStringResource("All apps have been refreshed.", defaultValue: "所有应用已成功刷新。")))
+            return .result(dialog: IntentDialog("All apps have been refreshed."))
         }
         catch
         {

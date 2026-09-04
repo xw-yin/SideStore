@@ -10,6 +10,7 @@
 import UserNotifications
 import AVFoundation
 import Intents
+import AppIntents
 import SideSign
 import CoreData
 import Nuke
@@ -144,6 +145,10 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         // Register default settings before doing anything else.
         UserDefaults.registerDefaults()
         syncMinimuxerBackendFromUserDefaults()
+
+        if #available(iOS 17.0, tvOS 17.0, *) {
+            ShortcutsProvider.updateAppShortcutParameters()
+        }
         
         // Perform one-time maintenance tasks (e.g. Keychain clearance for 0.6.4*) before initializing services
         MaintenanceManager.shared.performMaintenanceIfNeeded()

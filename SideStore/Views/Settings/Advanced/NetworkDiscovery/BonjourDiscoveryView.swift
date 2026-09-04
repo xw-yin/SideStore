@@ -268,7 +268,7 @@ struct ServiceTypesView: View {
                             SwiftUI.Button {
                                 viewModel.serviceTypeGroupOption = opt
                             } label: {
-                                Label(opt.rawValue, systemImage: viewModel.serviceTypeGroupOption == opt ? "checkmark" : "")
+                                Label(LocalizedStringKey(opt.rawValue), systemImage: viewModel.serviceTypeGroupOption == opt ? "checkmark" : "")
                             }
                         }
                     } label: {
@@ -280,7 +280,7 @@ struct ServiceTypesView: View {
                             SwiftUI.Button {
                                 viewModel.serviceTypeSortOption = opt
                             } label: {
-                                Label(opt.rawValue, systemImage: viewModel.serviceTypeSortOption == opt ? "checkmark" : "")
+                                Label(LocalizedStringKey(opt.rawValue), systemImage: viewModel.serviceTypeSortOption == opt ? "checkmark" : "")
                             }
                         }
                     } label: {
@@ -297,7 +297,7 @@ struct ServiceTypesView: View {
                 }
                 .confirmationDialog("Group By", isPresented: $showGroupDialog) {
                     ForEach(ServiceTypeGroupOption.allCases, id: \.self) { opt in
-                        SwiftUI.Button(opt.rawValue) {
+                        SwiftUI.Button(LocalizedStringKey(opt.rawValue)) {
                             viewModel.serviceTypeGroupOption = opt
                         }
                     }
@@ -310,7 +310,7 @@ struct ServiceTypesView: View {
                 }
                 .confirmationDialog("Sort By", isPresented: $showSortDialog) {
                     ForEach(ServiceTypeSortOption.allCases, id: \.self) { opt in
-                        SwiftUI.Button(opt.rawValue) {
+                        SwiftUI.Button(LocalizedStringKey(opt.rawValue)) {
                             viewModel.serviceTypeSortOption = opt
                         }
                     }
@@ -514,7 +514,7 @@ struct ServiceInstancesView: View {
                             SwiftUI.Button {
                                 viewModel.instanceGroupOption = opt
                             } label: {
-                                Label(opt.rawValue, systemImage: viewModel.instanceGroupOption == opt ? "checkmark" : "")
+                                Label(LocalizedStringKey(opt.rawValue), systemImage: viewModel.instanceGroupOption == opt ? "checkmark" : "")
                             }
                         }
                     } label: {
@@ -526,7 +526,7 @@ struct ServiceInstancesView: View {
                             SwiftUI.Button {
                                 viewModel.instanceSortOption = opt
                             } label: {
-                                Label(opt.rawValue, systemImage: viewModel.instanceSortOption == opt ? "checkmark" : "")
+                                Label(LocalizedStringKey(opt.rawValue), systemImage: viewModel.instanceSortOption == opt ? "checkmark" : "")
                             }
                         }
                     } label: {
@@ -543,7 +543,7 @@ struct ServiceInstancesView: View {
                 }
                 .confirmationDialog("Group By", isPresented: $showGroupDialog) {
                     ForEach(ServiceInstanceGroupOption.allCases, id: \.self) { opt in
-                        SwiftUI.Button(opt.rawValue) {
+                        SwiftUI.Button(LocalizedStringKey(opt.rawValue)) {
                             viewModel.instanceGroupOption = opt
                         }
                     }
@@ -556,7 +556,7 @@ struct ServiceInstancesView: View {
                 }
                 .confirmationDialog("Sort By", isPresented: $showSortDialog) {
                     ForEach(ServiceInstanceSortOption.allCases, id: \.self) { opt in
-                        SwiftUI.Button(opt.rawValue) {
+                        SwiftUI.Button(LocalizedStringKey(opt.rawValue)) {
                             viewModel.instanceSortOption = opt
                         }
                     }
