@@ -26,7 +26,7 @@
 "nSh-L8-ca0.text" = "测试版更新渠道";
 "pMI-Aj-nQF.text" = "发送反馈";
 "sni-07-q0M.text" = "查看刷新记录";
-"46q-DB-5nc.text" = "SideJIT 服务器";
+"46q-DB-5nc.text" = "SideJITServer";
 "ysS-9s-dXm.text" = "重置配对文件";
 "eds-Dj-36y.text" = "Anisette 服务器";
 "cac-Mn-lbl.text" = "缓存管理";
@@ -68,5 +68,4 @@
 "usr-Cst-lbl.text" = "用户自定义";
 "stg-Ex-lbl.text" = "存储管理器";
 "1cD-4y-vTJ.title" = "控制台";
-"dev-Svc-lbl.text" = "开发者服务";
 
