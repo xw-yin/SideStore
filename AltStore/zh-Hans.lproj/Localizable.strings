@@ -753,7 +753,7 @@
 "Allow Siri to Refresh Apps…" = "允许 Siri 刷新应用…";
 
 /* SideJITServer */
-"Enable SideJITServer" = "启用 SideJIT 服务器";
+"Enable SideJITServer" = "启用 SideJITServer";
 "Required for JIT on iOS 17+" = "在 iOS 17 及以上版本启用 JIT 时需要";
 "Connection Status" = "连接状态";
 "Status" = "状态";
