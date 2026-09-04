@@ -65,6 +65,13 @@ public enum AppConstants {
         public static let defaultUserAgent = "AuthKit/1 (Macintosh; OS X 26.6) (com.apple.dt.Xcode/26.0)"
     }
 
-    public static let pairingFileName = "ALTPairingFile.mobiledevicepairing"
+    public enum Pairing {
+        public static let bundleResourceName = "ALTPairingFile"
+        public static let fileExtension = "mobiledevicepairing"
+        public static let fileName = "\(bundleResourceName).\(fileExtension)"
+        public static let placeholderString = "insert pairing file here"
+    }
+
+    public static let pairingFileName = Pairing.fileName
     public static let accountConfigurationFileName = "Account.sideconf"
 }

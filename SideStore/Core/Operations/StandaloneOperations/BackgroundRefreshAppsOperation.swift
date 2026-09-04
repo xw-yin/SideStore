@@ -9,16 +9,6 @@
 @preconcurrency import UIKit
 import CoreData
 
-typealias RefreshError = RefreshErrorCode.Error
-enum RefreshErrorCode: Int, ALTErrorEnum, CaseIterable {
-    case noInstalledApps
-    
-    var errorFailureReason: String {
-        switch self {
-        case .noInstalledApps: return NSLocalizedString("No active apps require refreshing.", comment: "")
-        }
-    }
-}
 
 private extension CFNotificationName {
     static let requestAppState = CFNotificationName("com.altstore.RequestAppState" as CFString)
@@ -73,7 +63,7 @@ final class BackgroundRefreshAppsOperation: BaseStandaloneOperation<OperationCon
         }
         
         guard !self.installedApps.isEmpty else {
-            let error = RefreshError(.noInstalledApps)
+            let error = OperationError.noInstalledApps
             self.scheduleFinishedRefreshingNotification(for: .failure(error), delay: 0)
             throw error
         }
@@ -191,9 +181,9 @@ final class BackgroundRefreshAppsOperation: BaseStandaloneOperation<OperationCon
                 
                 content.title = NSLocalizedString("Refreshed Apps", comment: "")
                 content.body = NSLocalizedString("All apps have been refreshed.", comment: "")
-            } catch ~OperationError.Code.noConnection, ~OperationError.Code.noVPN, ~RefreshErrorCode.noInstalledApps {
+            } catch OperationError.noConnection, OperationError.noVPN, OperationError.noInstalledApps {
                 shouldPresentAlert = false
-            } catch ~OperationError.Code.serverNotFound where self.ignoresServerNotFoundError {
+            } catch OperationError.serverNotFound where self.ignoresServerNotFoundError {
                 shouldPresentAlert = false
             } catch {
                 self.debugLog("Failed to refresh apps in background. \(error)")

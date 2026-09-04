@@ -97,9 +97,14 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         dateFormatter.dateStyle = .medium
         dateFormatter.timeStyle = .medium
         let dateString = dateFormatter.string(from: Date())
-        let paddingCount = 49 - dateString.count
-        let leftPadding = String(repeating: " ", count: max(0, paddingCount / 2))
-        let rightPadding = String(repeating: " ", count: max(0, paddingCount - leftPadding.count))
+        let versionString = Bundle.Info.activeBundleVersion
+
+        func centerInBanner(_ text: String, width: Int = 49) -> String {
+            let padding = max(0, width - text.count)
+            let left = String(repeating: " ", count: padding / 2)
+            let right = String(repeating: " ", count: padding - left.count)
+            return "|\(left)\(text)\(right)|"
+        }
 
         // register console logging and start capturing
         let suffixFormat: SuffixFormat = UserDefaults.standard.isRotateLogsOnStartupEnabled ? .timestamp : .none
@@ -116,7 +121,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         debugLog("===================================================")
         debugLog("| Console Logger started capturing output streams |")
         debugLog("===================================================")
-        debugLog("|\(leftPadding)\(dateString)\(rightPadding)|")
+        debugLog(centerInBanner(versionString))
+        debugLog("===================================================")
+        debugLog(centerInBanner(dateString))
         debugLog("===================================================")
         debugLog("\n")
 

@@ -56,7 +56,7 @@ final class SendAppOperation: BasePipelineOperation<InstallAppOperationContext, 
             self.setProgress(100)
         } catch {
             debugLog("[SendAppOperation] Failed to read or send IPA at \(fileURL): \(error)")
-            throw OperationError(.appNotFound(name: bundleIdentifier))
+            throw OperationError.appNotFound(name: bundleIdentifier)
         }
     }
 }

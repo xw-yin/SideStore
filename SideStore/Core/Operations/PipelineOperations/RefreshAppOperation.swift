@@ -25,14 +25,10 @@ final class RefreshAppOperation: BasePipelineOperation<InstallAppOperationContex
             throw OperationError.invalidParameters("RefreshAppOperation.execute: self.context.provisioningProfiles is nil")
         }
         
-        guard let appBundle = self.context.targetAppBundle else { throw OperationError(.appNotFound(name: nil)) }
+        guard let appBundle = self.context.targetAppBundle else { throw OperationError.appNotFound(name: nil) }
         self.setProgress(10)
         for p in profiles {
-            do {
-                try await installProvisioningProfiles(p.value.data)
-            } catch {
-                throw MinimuxerWrapperError.profileInstall
-            }
+            try await installProvisioningProfiles(p.value.data)
         }
         
         self.setProgress(80)
@@ -53,7 +49,7 @@ final class RefreshAppOperation: BasePipelineOperation<InstallAppOperationContex
         
         guard let mainApp = self.context.installedApp,
               let installedApp = dbContext.object(with: mainApp.objectID) as? InstalledApp else {
-            throw OperationError(.appNotFound(name: appBundle.name))
+            throw OperationError.appNotFound(name: appBundle.name)
         }
         installedApp.update(provisioningProfile: profiles.values.first!)
         

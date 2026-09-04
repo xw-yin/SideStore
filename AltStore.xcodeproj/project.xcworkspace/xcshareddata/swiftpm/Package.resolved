@@ -7,7 +7,7 @@
       "location" : "https://github.com/mahee96/AnisetteKit.git",
       "state" : {
         "branch" : "main",
-        "revision" : "433084d91c1ddbca84f988f0e3b204eedc0fda27"
+        "revision" : "2cc982d9425237b8f702d28e4272e5a31105ad58"
       }
     },
     {
@@ -16,7 +16,7 @@
       "location" : "https://github.com/mahee96/CodeSignKit.git",
       "state" : {
         "branch" : "main",
-        "revision" : "c242c59255bd4ef465b535da7cbd21f1cce2e51f"
+        "revision" : "15f95c1f13e3b48727c17b3b4e23e4d06917abb8"
       }
     },
     {
@@ -47,12 +47,12 @@
       }
     },
     {
-      "identity" : "minizip-ng",
+      "identity" : "libdeflate",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SideStore/minizip-ng",
+      "location" : "https://github.com/SideStore/libdeflate",
       "state" : {
-        "branch" : "develop",
-        "revision" : "12a8ab8ccac4a36d4a45340921c7de5f18b0efab"
+        "branch" : "master",
+        "revision" : "da6c7dae03b78dc71af973664575e4209786fbfe"
       }
     },
     {

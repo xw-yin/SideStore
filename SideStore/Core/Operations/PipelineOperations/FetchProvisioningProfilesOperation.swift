@@ -213,53 +213,14 @@ private extension FetchProvisioningProfilesOperation{
             
             let sortedExpirationDates = appIDs.compactMap { $0.expirationDate }.sorted(by: { $0 < $1 })
             
-            //App ID name must be ascii. If the name is not ascii, using bundleID instead
-            let appIDName: String
-            if !name.allSatisfy({ $0.isASCII }) {
-                //Contains non ASCII (Such as Chinese/Japanese...), using bundleID
-                appIDName = bundleIdentifier
-            } else {
-                //ASCII text, keep going as usual
-                appIDName = name
-            }
+            let sanitized = name.filter { $0.isLetter || $0.isNumber || $0.isWhitespace }
+            let appIDName = sanitized.isEmpty ? bundleIdentifier : sanitized
             
-            do {
-                self.debugLog("[FetchProvisioningProfiles] Calling ALTAppleAPI.shared.addAppID with name '\(appIDName)' and identifier '\(bundleIdentifier)'...")
-                let appID = try await ALTAppleAPI.shared.addAppID(withName: appIDName, bundleIdentifier: bundleIdentifier, team: team, session: session)
-                self.context.sharedContext?.appendAppID(appID)
-                self.debugLog("[FetchProvisioningProfiles] Successfully registered new App ID '\(appID.bundleIdentifier)' on Apple portal.")
-                return appID
-            } catch let error as DeveloperPortalError {
-                switch error {
-                case .maximumAppIDLimitReached:
-                    self.debugLog("[FetchProvisioningProfiles] addAppID failed: maximumAppIDLimitReached")
-                    if let expirationDate = sortedExpirationDates.first {
-                        throw OperationError.maximumAppIDLimitReached(appName: targetAppBundle.name, requiredAppIDs: requiredAppIDs, availableAppIDs: availableAppIDs, expirationDate: expirationDate)
-                    }
-                    throw error
-
-                case .bundleIdentifierUnavailable:
-                    self.debugLog("[FetchProvisioningProfiles] addAppID failed: bundleIdentifierUnavailable for '\(bundleIdentifier)'. Re-checking portal...")
-                    let appIDs = try await TaskChainCoalescer.shared.coalesce(key: "fetch_app_ids_\(team.identifier)") {
-                        try await ALTAppleAPI.shared.fetchAppIDs(for: team, session: session)
-                    }
-                    self.context.sharedContext?.appIDs = appIDs
-                    if let appID = appIDs.first(where: { $0.bundleIdentifier == bundleIdentifier }) {
-                        self.debugLog("[FetchProvisioningProfiles] Found App ID on secondary fetch after bundleIdentifierUnavailable: \(appID.bundleIdentifier)")
-                        return appID
-                    } else {
-                        self.debugLog("[FetchProvisioningProfiles] App ID '\(bundleIdentifier)' unavailable and not found in secondary fetch.")
-                        throw OperationError.appIDUnavailable
-                    }
-
-                default:
-                    self.debugLog("[FetchProvisioningProfiles] addAppID failed with error: \(error.localizedDescription)")
-                    throw error
-                }
-            } catch {
-                self.debugLog("[FetchProvisioningProfiles] addAppID failed with error: \(error.localizedDescription)")
-                throw error
-            }
+            self.debugLog("[FetchProvisioningProfiles] Calling ALTAppleAPI.shared.addAppID with name '\(appIDName)' and identifier '\(bundleIdentifier)'...")
+            let appID = try await ALTAppleAPI.shared.addAppID(withName: appIDName, bundleIdentifier: bundleIdentifier, team: team, session: session)
+            self.context.sharedContext?.appendAppID(appID)
+            self.debugLog("[FetchProvisioningProfiles] Successfully registered new App ID '\(appID.bundleIdentifier)' on Apple portal.")
+            return appID
         }
     }
     

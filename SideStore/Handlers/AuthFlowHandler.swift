@@ -395,10 +395,16 @@ class AuthFlowHandler: AnyObject, AuthenticationHandler, AnisetteServerHandler {
                 }
             }
             
-            let isPaid = (teamType != .free)
+            let isPaid = (teamType != .free && teamType != .unknown)
             let initialCount = revokeVC.getSelectedCertificates().count
-            let initialTitle = isPaid ? "Revoke Selected (\(initialCount))" : NSLocalizedString("Revoke", comment: "")
-            let revokeAction = UIAlertAction(title: initialTitle, style: .destructive) { _ in
+            let initialTitle: String
+            if isPaid {
+                initialTitle = (initialCount == 0) ? "Continue Without Revoking" : "Revoke Selected (\(initialCount))"
+            } else {
+                initialTitle = "Revoke"
+            }
+            let actionStyle: UIAlertAction.Style = (isPaid && initialCount == 0) ? .default : .destructive
+            let revokeAction = UIAlertAction(title: initialTitle, style: actionStyle) { _ in
                 alertController.dismiss(animated: true) {
                     let selected = revokeVC.getSelectedCertificates()
                     continuation.resume(returning: .revokeSelected(selected))
@@ -406,11 +412,15 @@ class AuthFlowHandler: AnyObject, AuthenticationHandler, AnisetteServerHandler {
             }
             
             if isPaid {
-                revokeAction.isEnabled = !revokeVC.getSelectedCertificates().isEmpty
+                revokeAction.isEnabled = true
                 revokeVC.onSelectionChanged = { selected in
-                    revokeAction.isEnabled = !selected.isEmpty
-                    let countText = selected.isEmpty ? "" : " (\(selected.count))"
-                    revokeAction.setValue("Revoke Selected\(countText)", forKey: "title")
+                    if selected.isEmpty {
+                        revokeAction.setValue(NSLocalizedString("Continue Without Revoking", comment: ""), forKey: "title")
+                        revokeAction.setValue(nil, forKey: "titleTextColor")
+                    } else {
+                        revokeAction.setValue("Revoke Selected (\(selected.count))", forKey: "title")
+                        revokeAction.setValue(UIColor.systemRed, forKey: "titleTextColor")
+                    }
                 }
             }
             

@@ -24,6 +24,12 @@ struct PlistNode: Identifiable {
         } else if let array = value as? [Any] {
             let children = array.enumerated().map { parse(key: "Index \($0)", value: $1) }
             return PlistNode(key: key, value: nil, typeInfo: "Array (\(array.count) items)", children: children)
+        } else if let data = value as? Data {
+            let hex = data.map { String(format: "%02x", $0) }.joined()
+            return PlistNode(key: key, value: hex, typeInfo: "Data (\(data.count) bytes)", children: nil)
+        } else if let date = value as? Date {
+            let str = ISO8601DateFormatter().string(from: date)
+            return PlistNode(key: key, value: str, typeInfo: "Date", children: nil)
         } else {
             let typeStr: String
             if value is Bool {
@@ -51,12 +57,25 @@ enum InfoPlistMode: String, CaseIterable, Identifiable {
 // MARK: - Container View
 struct InfoPlistContainerView: View {
     let plist: [String: Any]
+    var title: String = "Info.plist"
     
-    @State private var selectedMode: InfoPlistMode = .semantic
+    @State private var selectedMode: InfoPlistMode
     
     // Parent level cache to persist raw output between tab switches
     @State private var xmlString: String = ""
     @State private var jsonString: String = ""
+    
+    init(plist: [String: Any], title: String = "Info.plist") {
+        self.plist = plist
+        self.title = title
+        let hasAppMetadata = plist["CFBundleDisplayName"] != nil ||
+            plist["CFBundleName"] != nil ||
+            plist["CFBundleIdentifier"] != nil ||
+            plist["CFBundleShortVersionString"] != nil ||
+            plist["CFBundleVersion"] != nil ||
+            plist["MinimumOSVersion"] != nil
+        _selectedMode = State(initialValue: hasAppMetadata ? .semantic : .tree)
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -94,7 +113,7 @@ struct InfoPlistContainerView: View {
                 }
             }
         }
-        .navigationTitle("Info.plist")
+        .navigationTitle(title)
         #if !os(tvOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -420,8 +439,30 @@ struct InfoPlistRawView: View {
         }
     }
     
+    static func jsonSanitize(_ value: Any) -> Any {
+        if let data = value as? Data {
+            return data.base64EncodedString()
+        } else if let date = value as? Date {
+            return ISO8601DateFormatter().string(from: date)
+        } else if let dict = value as? [String: Any] {
+            var sanitized: [String: Any] = [:]
+            for (k, v) in dict {
+                sanitized[k] = jsonSanitize(v)
+            }
+            return sanitized
+        } else if let array = value as? [Any] {
+            return array.map { jsonSanitize($0) }
+        } else if value is String || value is NSNumber || value is Bool {
+            return value
+        } else {
+            return "\(value)"
+        }
+    }
+    
     private func generateJSONString(from plist: [String: Any]) -> String {
-        guard let data = try? JSONSerialization.data(withJSONObject: plist, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]),
+        let sanitized = Self.jsonSanitize(plist)
+        guard JSONSerialization.isValidJSONObject(sanitized),
+              let data = try? JSONSerialization.data(withJSONObject: sanitized, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]),
               let string = String(data: data, encoding: .utf8) else {
             return "{}"
         }
@@ -510,14 +551,25 @@ struct InfoPlistSemanticView: View {
         return keys.filter { $0.localizedCaseInsensitiveContains(searchQuery) }
     }
     
+    private var hasAppMetadata: Bool {
+        plist["CFBundleDisplayName"] != nil ||
+        plist["CFBundleName"] != nil ||
+        plist["CFBundleIdentifier"] != nil ||
+        plist["CFBundleShortVersionString"] != nil ||
+        plist["CFBundleVersion"] != nil ||
+        plist["MinimumOSVersion"] != nil
+    }
+    
     var body: some View {
         List {
-            // General Info
-            Section(header: Text("General Info")) {
-                SemanticValueRow(label: "App Name", value: appName)
-                SemanticValueRow(label: "Bundle Identifier", value: bundleID)
-                SemanticValueRow(label: "Version", value: version)
-                SemanticValueRow(label: "Minimum OS", value: minOS)
+            // General Info — only show if app metadata is actually present in plist
+            if hasAppMetadata {
+                Section(header: Text("General Info")) {
+                    SemanticValueRow(label: "App Name", value: appName)
+                    SemanticValueRow(label: "Bundle Identifier", value: bundleID)
+                    SemanticValueRow(label: "Version", value: version)
+                    SemanticValueRow(label: "Minimum OS", value: minOS)
+                }
             }
             
             // Privacy Permissions Card
@@ -728,8 +780,9 @@ struct CopyableValueRow: View {
     }
     
     private func formatValue(_ val: Any) -> String {
-        if JSONSerialization.isValidJSONObject(val) {
-            if let data = try? JSONSerialization.data(withJSONObject: val, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]),
+        let sanitized = InfoPlistRawView.jsonSanitize(val)
+        if JSONSerialization.isValidJSONObject(sanitized) {
+            if let data = try? JSONSerialization.data(withJSONObject: sanitized, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]),
                let string = String(data: data, encoding: .utf8) {
                 let lines = string.components(separatedBy: .newlines)
                 let formatted = lines.map { line -> String in
@@ -739,6 +792,12 @@ struct CopyableValueRow: View {
                 }.joined(separator: "\n")
                 return formatted
             }
+        }
+        if let data = val as? Data {
+            return data.map { String(format: "%02x", $0) }.joined()
+        }
+        if let date = val as? Date {
+            return ISO8601DateFormatter().string(from: date)
         }
         if let array = val as? [Any] {
             return "[" + array.map { formatValue($0) }.joined(separator: ", ") + "]"

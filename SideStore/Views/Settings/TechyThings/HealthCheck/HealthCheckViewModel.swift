@@ -117,7 +117,7 @@ final class HealthCheckViewModel: ObservableObject {
             protocolStr = "Unknown"
         }
         
-        let targetIp = mode == .localVPN ? (overrideTunnelPeerEffective ? overrideTunnelPeerIp : (tunnelPeerIp ?? "")) : remoteServerIp
+        let targetIp = mode == .localVPN ? (overrideTunnelPeerEffective ? overrideTunnelPeerIp : (ConnectionConfig.shared.tunnelPeerIp ?? "")) : remoteServerIp
         let pingSuccess = !targetIp.isEmpty && minimuxer.core.testDeviceConnection(ifaddr: targetIp)
         
         let ddi = (try? await minimuxer.core.isDDIMounted()) ?? false

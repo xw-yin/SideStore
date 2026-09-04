@@ -20,7 +20,22 @@ public enum SideStoreLogging {
     }
 }
 
-@inline(__always)
+private func getFastTimestamp() -> String {
+    let now = Date()
+    let cal = Calendar.current
+    let comps = cal.dateComponents([.year, .month, .day, .hour, .minute, .second, .nanosecond], from: now)
+    let ms = (comps.nanosecond ?? 0) / 1_000_000
+    return String(format: "%04d-%02d-%02dT%02d:%02d:%02d.%03d",
+                  comps.year ?? 0, comps.month ?? 0, comps.day ?? 0,
+                  comps.hour ?? 0, comps.minute ?? 0, comps.second ?? 0,
+                  ms)
+}
+
+private func getTag(level: String) -> String {
+    let timestamp = getFastTimestamp()
+    return "\(timestamp) \(level): "
+}
+
 public func debugLog(_ text: @autoclosure () -> String) {
     let message = formatLogMessage(text())
     if !message.isEmpty && message.allSatisfy({ $0 == "\n" || $0 == "\r" }) {
@@ -30,7 +45,6 @@ public func debugLog(_ text: @autoclosure () -> String) {
     }
 }
 
-@inline(__always)
 public func verboseLog(_ text: @autoclosure () -> String) {
     if SideStoreLogging.isLoggingEnabled {
         let message = formatLogMessage(text())
@@ -40,16 +54,6 @@ public func verboseLog(_ text: @autoclosure () -> String) {
             print("\(getTag(level: "[V]"))\(message)")
         }
     }
-}
-
-// MARK: - Private Logging Helpers & Error Formatter
-
-private func getTag(level: String) -> String {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
-    formatter.locale = Locale(identifier: "en_US_POSIX")
-    let timestamp = formatter.string(from: Date())
-    return "\(timestamp) \(level): "
 }
 
 public func formatLogMessage(_ message: String) -> String {

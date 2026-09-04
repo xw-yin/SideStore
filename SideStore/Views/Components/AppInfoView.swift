@@ -8,6 +8,7 @@
 
 import SwiftUI
 import SideSign
+import CodeSignKit
 
 struct AppInfoView: View {
     let installedApp: InstalledApp
@@ -73,6 +74,24 @@ struct AppInfoView: View {
                     InfoRow(label: "Installed Date", value: formatDate(installedApp.installedDate))
                     if let serialNumber = installedApp.certificateSerialNumber {
                         InfoRow(label: "Certificate Serial", value: serialNumber)
+                    }
+                    if let execName = infoPlist?["CFBundleExecutable"] as? String {
+                        let execURL = appBundleURL.appendingPathComponent(execName)
+                        if FileManager.default.fileExists(atPath: execURL.path) && MachOParser.isMachOBinary(at: execURL) {
+                            NavigationLink(destination: MachOResourceViewer(url: execURL)) {
+                                HStack {
+                                    Text("Executable")
+                                        .font(.subheadline)
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Text(execName)
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                        } else {
+                            InfoRow(label: "Executable", value: execName)
+                        }
                     }
                     InfoRow(label: "Uses Main Profile", value: installedApp.useMainProfile ? "Yes" : "No")
                 }
@@ -453,8 +472,23 @@ struct ExtensionInfoView: View {
                 if let minOS = plist?["MinimumOSVersion"] as? String {
                     InfoRow(label: "Min iOS", value: minOS)
                 }
-                if let exec = plist?["CFBundleExecutable"] as? String {
-                    InfoRow(label: "Executable", value: exec)
+                if let exec = plist?["CFBundleExecutable"] as? String, let extURL = extensionURL {
+                    let execURL = extURL.appendingPathComponent(exec)
+                    if FileManager.default.fileExists(atPath: execURL.path) && MachOParser.isMachOBinary(at: execURL) {
+                        NavigationLink(destination: MachOResourceViewer(url: execURL)) {
+                            HStack {
+                                Text("Executable")
+                                    .font(.subheadline)
+                                    .foregroundColor(.primary)
+                                Spacer()
+                                Text(exec)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    } else {
+                        InfoRow(label: "Executable", value: exec)
+                    }
                 }
 
                 // Dates from provisioning profile (ground truth)
@@ -578,7 +612,22 @@ struct BundleInspectorView: View {
                 InfoRow(label: "Bundle ID", value: bundleID)
                 InfoRow(label: "Version", value: version)
                 if let execName = infoPlist?["CFBundleExecutable"] as? String {
-                    InfoRow(label: "Executable", value: execName)
+                    let execURL = bundleURL.appendingPathComponent(execName)
+                    if FileManager.default.fileExists(atPath: execURL.path) && MachOParser.isMachOBinary(at: execURL) {
+                        NavigationLink(destination: MachOResourceViewer(url: execURL)) {
+                            HStack {
+                                Text("Executable")
+                                    .font(.subheadline)
+                                    .foregroundColor(.primary)
+                                Spacer()
+                                Text(execName)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    } else {
+                        InfoRow(label: "Executable", value: execName)
+                    }
                 }
                 if let minOS = infoPlist?["MinimumOSVersion"] as? String {
                     InfoRow(label: "Min iOS", value: minOS)

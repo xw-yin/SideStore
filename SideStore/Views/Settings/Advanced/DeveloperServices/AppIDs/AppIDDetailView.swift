@@ -152,6 +152,7 @@ struct AppIDDetailView: View {
         .onAppear {
             initializeSelectedGroups()
         }
+        .developerServicesToast(viewModel: viewModel)
     }
 
     private func initializeSelectedGroups() {

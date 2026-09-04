@@ -36,11 +36,18 @@ class RevokeCertificatesAlertViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.showsVerticalScrollIndicator = true
+        scrollView.alwaysBounceVertical = false
+        view.addSubview(scrollView)
+
         let stackView = UIStackView()
         stackView.axis = .vertical
         stackView.spacing = 10
         stackView.alignment = .fill
         stackView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(stackView)
 
         let isPaid = (teamType != .free)
 
@@ -105,18 +112,22 @@ class RevokeCertificatesAlertViewController: UIViewController {
             stackView.addArrangedSubview(rowStack)
         }
 
-        view.addSubview(stackView)
-
         NSLayoutConstraint.activate([
-            stackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 4),
-            stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -4),
-            stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8),
-            stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -8)
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+
+            stackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 4),
+            stackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -4),
+            stackView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 8),
+            stackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -8),
+            stackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -16)
         ])
 
         let rowHeight: CGFloat = 54
         let totalHeight = CGFloat(certificates.count) * rowHeight + 12
-        self.preferredContentSize = CGSize(width: 270, height: min(totalHeight, 220))
+        self.preferredContentSize = CGSize(width: 270, height: min(totalHeight, 200))
     }
 
     private func updateButtonImage(_ button: UIButton, isChecked: Bool) {

@@ -30,7 +30,7 @@ struct DeveloperServicesView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(team.name)
                                     .font(.headline)
-                                Text(String(format: NSLocalizedString("Team ID: %@", comment: ""), team.identifier))
+                                Text("Team ID: \(team.identifier)")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                             }
@@ -60,7 +60,7 @@ struct DeveloperServicesView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("App IDs")
                                     .font(.body)
-                                Text(String(format: NSLocalizedString("%@ registered", comment: ""), "\(viewModel.appIDs.count)"))
+                                Text("\(viewModel.appIDs.count) registered")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -78,7 +78,7 @@ struct DeveloperServicesView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Provisioning Profiles")
                                     .font(.body)
-                                Text(String(format: NSLocalizedString("%@ active on portal", comment: ""), "\(viewModel.profiles.count)"))
+                                Text("\(viewModel.profiles.count) active on portal")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -96,7 +96,7 @@ struct DeveloperServicesView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("App Groups")
                                     .font(.body)
-                                Text(String(format: NSLocalizedString("%@ configured", comment: ""), "\(viewModel.appGroups.count)"))
+                                Text("\(viewModel.appGroups.count) configured")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -114,7 +114,7 @@ struct DeveloperServicesView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Registered Devices")
                                     .font(.body)
-                                Text(String(format: NSLocalizedString("%@ devices", comment: ""), "\(viewModel.devices.count)"))
+                                Text("\(viewModel.devices.count) devices")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -139,7 +139,7 @@ struct DeveloperServicesView: View {
                     .shadow(radius: 6)
             }
         }
-        .navigationTitle(NSLocalizedString("Developer Portal Services", comment: ""))
+        .navigationTitle("Developer Portal")
         .onAppear {
             if viewModel.appIDs.isEmpty && viewModel.profiles.isEmpty {
                 viewModel.loadAll(presentingViewController: presentingViewController)
@@ -151,12 +151,21 @@ struct DeveloperServicesView: View {
         .alert(isPresented: $viewModel.showErrorAlert) {
             Alert(
                 title: Text("Developer Portal Error"),
-                message: Text(viewModel.errorMessage ?? NSLocalizedString("An unknown error occurred.", comment: "")),
+                message: Text(viewModel.errorMessage ?? "An unknown error occurred."),
                 dismissButton: .default(Text("OK"))
             )
         }
-        .overlay(
-            DeveloperServicesToastView(isShowing: $viewModel.showToast, message: viewModel.toastMessage)
+        .developerServicesToast(viewModel: viewModel)
+    }
+}
+
+extension View {
+    func developerServicesToast(viewModel: DeveloperServicesViewModel) -> some View {
+        self.overlay(
+            DeveloperServicesToastView(isShowing: Binding(
+                get: { viewModel.showToast },
+                set: { viewModel.showToast = $0 }
+            ), message: viewModel.toastMessage)
         )
     }
 }
@@ -173,10 +182,10 @@ struct DeveloperServicesToastView: View {
                     .font(.subheadline)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(Color(UIColor.secondarySystemGroupedBackground))
-                    .foregroundColor(Color(UIColor.label))
+                    .background(Color(UIColor.label).opacity(0.85))
+                    .foregroundColor(Color(UIColor.systemBackground))
                     .cornerRadius(20)
-                    .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 3)
+                    .shadow(radius: 5)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                     .onAppear {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
