@@ -824,7 +824,7 @@ private extension MyAppsViewController
                    let storeApp = altstoreApp.storeApp, storeApp.isPledgeRequired && !storeApp.isPledged
                 {
                     // Assume the reason there are no apps is because we are no longer pledged to AltStore beta.
-                    error = OperationError(.pledgeInactive(appName: altstoreApp.name))
+                    error = OperationError.pledgeInactive(appName: altstoreApp.name)
                 }
                 else
                 {
