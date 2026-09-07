@@ -30,10 +30,10 @@ struct WirelessPairTargetDialog: View {
             }
             #if !os(tvOS)
             .background(Color(.systemGroupedBackground).ignoresSafeArea())
-            .navigationBarTitle(viewModel.dialogMode == .client ? "Select Device To Pair" : "Select Server Interface", displayMode: .inline)
+            .navigationBarTitle(LocalizedStringKey(viewModel.dialogMode == .client ? "Select Device To Pair" : "Select Server Interface"), displayMode: .inline)
             #else
             .background(Color.black.ignoresSafeArea())
-            .navigationTitle(viewModel.dialogMode == .client ? "Select Device To Pair" : "Select Server Interface")
+            .navigationTitle(LocalizedStringKey(viewModel.dialogMode == .client ? "Select Device To Pair" : "Select Server Interface"))
             #endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -101,7 +101,7 @@ struct WirelessPairTargetDialog: View {
                 .fill(color)
                 .frame(width: 5, height: 5)
             
-            Text(name)
+            Text(LocalizedStringKey(name))
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(.secondary)
         }

@@ -254,7 +254,7 @@ struct ConnectionDetailsCard: View {
                     
                     VStack(alignment: .leading, spacing: 0) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(label)
+                            Text(LocalizedStringKey(label))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             Text(value)
@@ -294,7 +294,7 @@ struct ConnectionDetailsCard: View {
                             UIPasteboard.general.string = value
                             #endif
                         } label: {
-                            Label("Copy \(label)", systemImage: "doc.on.doc")
+                            Label("Copy \(NSLocalizedString(label, comment: "Wireless pairing connection field"))", systemImage: "doc.on.doc")
                         }
                     }
                 }
