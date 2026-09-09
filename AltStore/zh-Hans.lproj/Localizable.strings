@@ -1069,3 +1069,4 @@
 "No Instances Found" = "未找到实例";
 "No devices are currently advertising this service." = "当前没有设备正在广播此服务。";
 "Ensure **Local Network Access** is provided otherwise this function may not work as intended since it is based on L N A..." = "请确保已授予**本地网络**访问权限，否则此功能可能无法正常工作，因为它依赖本地网络访问。";
+"Background refresh requires authentication. Please open LiveContainer to sign in." = "后台刷新需要进行身份验证。请打开 LiveContainer 登录。";

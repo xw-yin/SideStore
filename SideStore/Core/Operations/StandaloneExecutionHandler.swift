@@ -19,6 +19,7 @@ enum ProvisioningErrorDecision {
 }
 
 protocol AuthenticationHandler: AnyObject {
+    var isPresenterAvailable: Bool { get }
     func credentials() async throws -> (String, String)
     func verificationCode(for mode: TwoFactorMode) async throws -> TwoFactorAction
     func handleSignInResult(_ result: Result<(ALTAccount, ALTAppleAPISession), Error>) async
@@ -31,5 +32,11 @@ protocol AuthenticationHandler: AnyObject {
     func resolveResign(mismatchReason: CodeSignValidationReason, context: AuthenticatedOperationContext) async throws -> Bool
     
     func complete() async
+}
+
+extension AuthenticationHandler {
+    var isPresenterAvailable: Bool {
+        return true
+    }
 }
 

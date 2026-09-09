@@ -28,21 +28,27 @@ class AuthFlowHandler: AnyObject, AuthenticationHandler, AnisetteServerHandler {
         self.presentingViewController = presentingViewController
     }
 
-    private var isPresenterAvailable: Bool {
-        return self.presentingViewController != nil || self.navigationController.presentingViewController != nil
+    var isPresenterAvailable: Bool {
+        return self.activePresenter != nil
     }
 
     private var activePresenter: UIViewController? {
         if self.navigationController.presentingViewController != nil {
             return self.navigationController
         }
-        return self.presentingViewController?.presentedViewController ?? self.presentingViewController
+        if let presentingViewController = self.presentingViewController {
+            return presentingViewController.presentedViewController ?? presentingViewController
+        }
+        if let topVC = UIApplication.shared.topViewController() {
+            return topVC.presentedViewController ?? topVC
+        }
+        return nil
     }
     
     @MainActor
     func credentials() async throws -> (String, String) {
-        guard let presentingViewController = self.presentingViewController else {
-            throw OperationError.invalidOperationContext("AuthFlowHandler: Cannot prompt for credentials because presentingViewController is nil")
+        guard let presenter = self.activePresenter else {
+            throw OperationError.invalidOperationContext("AuthFlowHandler: Cannot prompt for credentials because presenting view controller is unavailable")
         }
         
         if let _ = self.presentedAuthVC {
@@ -88,7 +94,7 @@ class AuthFlowHandler: AnyObject, AuthenticationHandler, AnisetteServerHandler {
             
             self.navigationController.navigationBar.tintColor = .altPrimary
             self.navigationController.setViewControllers([authVC], animated: false)
-            presentingViewController.present(self.navigationController, animated: true)
+            presenter.present(self.navigationController, animated: true)
         }
     }
     

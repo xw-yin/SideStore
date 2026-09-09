@@ -36,7 +36,13 @@ class PipelineHandler: PipelineExecutionHandler,
     }
 
     private var activePresenter: UIViewController? {
-        return self.presentingViewController?.presentedViewController ?? self.presentingViewController
+        if let presentingViewController = self.presentingViewController {
+            return presentingViewController.presentedViewController ?? presentingViewController
+        }
+        if let topVC = UIApplication.shared.topViewController() {
+            return topVC.presentedViewController ?? topVC
+        }
+        return nil
     }
     
     var isResignActive: Bool {

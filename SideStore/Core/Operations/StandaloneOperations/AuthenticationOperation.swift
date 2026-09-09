@@ -59,6 +59,7 @@ final class AuthenticationOperation: BaseStandaloneOperation<AuthenticatedOperat
     private var appleIDEmailAddress: String?
     private var requiresPostAuthFlow = false
     private var lastFetchedAnisetteData: ALTAnisetteData?
+    private var lastSilentSignInError: Error?
     
     let skipDeviceRegistration: Bool
     let skipCertificateProvisioning: Bool
@@ -152,10 +153,24 @@ final class AuthenticationOperation: BaseStandaloneOperation<AuthenticatedOperat
     }
     
     private func startAuthentication(reportProgress: @escaping @Sendable (Int64) -> Void) async throws -> AuthenticationResult {
-        let (account, session) = if let silentResult = try await self.silentSignIn() {
-            silentResult
+        let account: ALTAccount
+        let session: ALTAppleAPISession
+        if let silentResult = try await self.silentSignIn() {
+            account = silentResult.0
+            session = silentResult.1
         } else {
-            try await self.authenticationLoop()
+            if !self.context.authenticationHandler.isPresenterAvailable {
+                if let lastError = self.lastSilentSignInError {
+                    throw lastError
+                } else if !AuthManager.shared.isAuthenticated {
+                    throw OperationError.notAuthenticated
+                } else {
+                    throw OperationError.invalidOperationContext(NSLocalizedString("Background refresh requires authentication. Please open LiveContainer to sign in.", comment: ""))
+                }
+            }
+            let loopResult = try await self.authenticationLoop()
+            account = loopResult.account
+            session = loopResult.session
         }
         self.context.session = session
         AuthManager.shared.session = session
@@ -260,6 +275,8 @@ final class AuthenticationOperation: BaseStandaloneOperation<AuthenticatedOperat
     }
     
     private func silentSignIn() async throws -> (ALTAccount, ALTAppleAPISession)? {
+        self.lastSilentSignInError = nil
+        
         // Try silent auth using Keychain Token
         if let adsid = AuthManager.shared.adsid, 
            let xcodeToken = AuthManager.shared.xcodeToken 
@@ -278,6 +295,7 @@ final class AuthenticationOperation: BaseStandaloneOperation<AuthenticatedOperat
                 )
             } catch {
                 self.debugLog("[AuthenticationOperation] Token authentication failed: \(error)")
+                self.lastSilentSignInError = error
             }
         }
         
@@ -290,6 +308,7 @@ final class AuthenticationOperation: BaseStandaloneOperation<AuthenticatedOperat
                 return try await self.authenticate(appleID: appleID, password: password)
             } catch {
                 self.debugLog("[AuthenticationOperation] Saved password authentication failed: \(error)")
+                self.lastSilentSignInError = error
             }
         }
 
