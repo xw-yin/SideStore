@@ -1,17 +1,6 @@
 name: Nightly SideStore Build
 
 on:
-  push:
-    branches: [develop, LiveContainerSupport]
-    paths-ignore:
-      - '**.md'
-      - 'LICENSE'
-      - '.editorconfig'
-      - '.gitignore'
-      - '.gitmodules'
-      - '.github/**'
-  schedule:
-    - cron: "0 0 * * *"
   workflow_dispatch:
 
 concurrency:
