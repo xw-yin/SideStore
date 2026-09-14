@@ -207,7 +207,7 @@ final class SignableCertificatesListViewController: UITableViewController {
             cell.contentConfiguration = UIHostingConfiguration {
                 SignableCertificateRowView(cert: cert, appName: installedApp.name, appCertSerial: installedApp.certificateSerialNumber, viewModel: viewModel)
             }
-            .background(Color.white.opacity(0.15))
+            .background(Color(UIColor.secondarySystemGroupedBackground))
         } else {
             let certName = cert.name
             let machineName = cert.machineName ?? "N/A"
@@ -225,9 +225,9 @@ final class SignableCertificatesListViewController: UITableViewController {
             Requester: \(cert.requesterEmail ?? "N/A")
             Keys: public + private
             """
-            cell.textLabel?.textColor = .white
+            cell.textLabel?.textColor = .label
             cell.textLabel?.font = .systemFont(ofSize: 12, weight: .regular)
-            cell.backgroundColor = UIColor.white.withAlphaComponent(0.15)
+            cell.backgroundColor = .secondarySystemGroupedBackground
             cell.accessoryType = isCurrent ? .checkmark : .none
             cell.tintColor = .green
         }

@@ -383,21 +383,21 @@ struct DeveloperOptionsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("DEVICE (TCP) PROBE TIMEOUT")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
                         HStack(spacing: 12) {
                             Text("Timeout (ms)")
                                 .font(.system(size: 17, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(.primary)
                             
                             Spacer()
                             
                             TextField("ms", text: $tcpProbeTimeoutText)
                                 .keyboardType(.numberPad)
                                 .multilineTextAlignment(.trailing)
-                                .foregroundColor(.white)
+                                .foregroundColor(.primary)
                                 .font(.system(size: 17))
                                 .frame(width: 90)
                                 .onChange(of: tcpProbeTimeoutText) { newValue in
@@ -423,10 +423,10 @@ struct DeveloperOptionsView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "arrow.counterclockwise")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Text("Use Default (\(AppConstants.Minimuxer.defaultTCPProbeTimeoutMs) ms)")
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                             }
                             .padding(.horizontal, 16)
@@ -441,7 +441,7 @@ struct DeveloperOptionsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("CONNECTION CONFIG")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -516,7 +516,7 @@ struct DeveloperOptionsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("ONBOARDING")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
 
                     VStack(spacing: 0) {
@@ -524,14 +524,14 @@ struct DeveloperOptionsView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "sparkles")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Text("Replay Onboarding")
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color.white.opacity(0.4))
+                                    .foregroundColor(.secondary)
                             }
                             .padding(.horizontal, 16)
                             .frame(height: 50)

@@ -65,11 +65,11 @@ struct ExperimentalFeaturesView: View {
                             HStack {
                                 Text("Network Discovery")
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color.white.opacity(0.4))
+                                    .foregroundColor(.secondary)
                             }
                             .padding(.horizontal, 16)
                             .frame(height: 50)

@@ -9,8 +9,8 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 private extension Color {
-    static let settingsRowBackground = Color.white.opacity(0.15)
-    static let settingsDivider = Color.white.opacity(0.15)
+    static let settingsRowBackground = Color(UIColor.secondarySystemGroupedBackground)
+    static let settingsDivider = Color(UIColor.separator)
 }
 
 @MainActor
@@ -297,6 +297,65 @@ struct AnisetteDataView: View {
                 .padding(.top, 4)
                 
                 if viewModel.viewMode == 0 {
+                    interactiveModeSection
+                } else {
+                    rawJsonModeSection
+                }
+                
+                remoteServerSyncSection
+                actionsSection
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 32)
+        }
+        .background(Color(uiColor: .settingsBackground).ignoresSafeArea())
+        .navigationTitle("Client Config")
+        #if !os(tvOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .overlay(
+            Group {
+                if viewModel.isLoading {
+                    ProgressView()
+                        .padding()
+                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.settingsRowBackground))
+                        .shadow(radius: 10)
+                }
+            }
+        )
+        #if !os(tvOS)
+        .fileImporter(
+            isPresented: $showingFileImporter,
+            allowedContentTypes: [.json],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                if let url = urls.first {
+                    Task {
+                        await viewModel.importJSON(url: url)
+                    }
+                }
+            case .failure(let error):
+                viewModel.showToast(text: "File Selection Failed", error: error)
+            }
+        }
+        #endif
+        .sheet(isPresented: Binding<Bool>(
+            get: { exportURL != nil },
+            set: { if !$0 { exportURL = nil } }
+        )) {
+            if let url = exportURL {
+                ActivityViewController(activityItems: [url])
+            }
+        }
+    }
+    
+
+    @ViewBuilder
+    private var interactiveModeSection: some View {
+
                     // SECTION 1: PRIMARY CLIENT HEADERS
                     VStack(alignment: .leading, spacing: 8) {
                         sectionHeader("PRIMARY CLIENT HEADERS")
@@ -451,7 +510,12 @@ struct AnisetteDataView: View {
                         .cornerRadius(14)
                     }
                     .disabled(viewModel.clientInfo.isEmpty || viewModel.userAgent.isEmpty)
-                } else {
+
+    }
+
+    @ViewBuilder
+    private var rawJsonModeSection: some View {
+
                     // RAW JSON VIEW
                     VStack(alignment: .leading, spacing: 8) {
                         sectionHeader("RAW CONFIGURATION JSON")
@@ -459,10 +523,10 @@ struct AnisetteDataView: View {
                         VStack(spacing: 12) {
                             TextEditor(text: $viewModel.rawEditableJSON)
                                 .font(.system(size: 12, design: .monospaced))
-                                .foregroundColor(.white)
+                                .foregroundColor(.primary)
                                 .frame(minHeight: 320)
                                 .padding(8)
-                                .background(Color.white.opacity(0.06))
+                                .background(Color(UIColor.tertiarySystemGroupedBackground))
                                 .cornerRadius(10)
                             
                             SwiftUI.Button {
@@ -487,8 +551,11 @@ struct AnisetteDataView: View {
                         .background(Color.settingsRowBackground)
                         .cornerRadius(14)
                     }
-                }
-                
+
+    }
+
+    @ViewBuilder
+    private var remoteServerSyncSection: some View {
                 // SECTION: REMOTE SERVER SYNC (ONLY IN REMOTE MODE)
                 if !UserDefaults.standard.useOnDeviceAnisette {
                     VStack(alignment: .leading, spacing: 8) {
@@ -500,7 +567,7 @@ struct AnisetteDataView: View {
                                     HStack {
                                         Text("Server: \(URL(string: UserDefaults.standard.menuAnisetteURL)?.host ?? "Active Server")")
                                             .font(.caption)
-                                            .foregroundColor(Color.white.opacity(0.6))
+                                            .foregroundColor(.secondary)
                                         Spacer()
                                         SwiftUI.Button {
                                             #if !os(tvOS)
@@ -518,14 +585,15 @@ struct AnisetteDataView: View {
                                             .font(.footnote.weight(.semibold))
                                             .foregroundColor(isCopiedServer ? .green : .accentColor)
                                         }
+                                        .buttonStyle(.borderless)
                                     }
                                     
                                     ScrollView(.horizontal, showsIndicators: true) {
                                         Text(viewModel.serverReturnedHeadersJSON)
                                             .font(.system(size: 11, design: .monospaced))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(.primary)
                                             .padding(10)
-                                            .background(Color.black.opacity(0.3))
+                                            .background(Color(UIColor.tertiarySystemGroupedBackground))
                                             .cornerRadius(8)
                                     }
                                     
@@ -542,7 +610,7 @@ struct AnisetteDataView: View {
                                             Spacer()
                                         }
                                         .frame(height: 44)
-                                        .background(Color.white.opacity(0.12))
+                                        .background(Color.accentColor)
                                         .cornerRadius(10)
                                     }
                                     .disabled(viewModel.serverReturnedHeadersJSON == "{}" || viewModel.serverReturnedHeadersJSON.isEmpty)
@@ -552,7 +620,7 @@ struct AnisetteDataView: View {
                                 HStack {
                                     Label("Remote Server Sync", systemImage: "network")
                                         .font(.system(size: 16, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(.primary)
                                     Spacer()
                                     SwiftUI.Button {
                                         Task {
@@ -568,7 +636,7 @@ struct AnisetteDataView: View {
                                         .foregroundColor(.accentColor)
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 5)
-                                        .background(Color.white.opacity(0.1))
+                                        .background(Color(UIColor.tertiarySystemGroupedBackground))
                                         .cornerRadius(8)
                                     }
                                     .buttonStyle(.borderless)
@@ -582,6 +650,11 @@ struct AnisetteDataView: View {
                     }
                 }
                 
+
+    }
+
+    @ViewBuilder
+    private var actionsSection: some View {
                 // SECTION: ACTIONS
                 VStack(alignment: .leading, spacing: 8) {
                     sectionHeader("ACTIONS")
@@ -608,11 +681,11 @@ struct AnisetteDataView: View {
                             HStack {
                                 Label("Import Config JSON", systemImage: "square.and.arrow.down")
                                     .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color.white.opacity(0.4))
+                                    .foregroundColor(.secondary)
                             }
                             .padding(.horizontal, 16)
                             .frame(height: 50)
@@ -630,11 +703,11 @@ struct AnisetteDataView: View {
                             HStack {
                                 Label("Export Config JSON", systemImage: "square.and.arrow.up")
                                     .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color.white.opacity(0.4))
+                                    .foregroundColor(.secondary)
                             }
                             .padding(.horizontal, 16)
                             .frame(height: 50)
@@ -668,58 +741,13 @@ struct AnisetteDataView: View {
                     .background(Color.settingsRowBackground)
                     .cornerRadius(14)
                 }
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 32)
-        }
-        .background(Color(uiColor: .settingsBackground).ignoresSafeArea())
-        .navigationTitle("Client Config")
-        #if !os(tvOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
-        .overlay(
-            Group {
-                if viewModel.isLoading {
-                    ProgressView()
-                        .padding()
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.settingsRowBackground))
-                        .shadow(radius: 10)
-                }
-            }
-        )
-        #if !os(tvOS)
-        .fileImporter(
-            isPresented: $showingFileImporter,
-            allowedContentTypes: [.json],
-            allowsMultipleSelection: false
-        ) { result in
-            switch result {
-            case .success(let urls):
-                if let url = urls.first {
-                    Task {
-                        await viewModel.importJSON(url: url)
-                    }
-                }
-            case .failure(let error):
-                viewModel.showToast(text: "File Selection Failed", error: error)
-            }
-        }
-        #endif
-        .sheet(isPresented: Binding<Bool>(
-            get: { exportURL != nil },
-            set: { if !$0 { exportURL = nil } }
-        )) {
-            if let url = exportURL {
-                ActivityViewController(activityItems: [url])
-            }
-        }
+
     }
-    
+
     private func sectionHeader(_ title: String) -> some View {
-        Text(title)
+        Text(LocalizedStringKey(title))
             .font(.system(size: 13, weight: .semibold))
-            .foregroundColor(Color.white.opacity(0.6))
+            .foregroundColor(.secondary)
             .padding(.horizontal, 16)
     }
     
@@ -733,40 +761,40 @@ struct AnisetteDataView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                 Spacer()
                 Text(headerKey)
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(Color.white.opacity(0.45))
+                    .foregroundColor(.secondary)
             }
             
             if isMultiline {
                 #if !os(tvOS)
                 TextEditor(text: text)
                     .font(.system(size: 12, design: .monospaced))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .frame(minHeight: 64)
                     .padding(6)
-                    .background(Color.white.opacity(0.06))
+                    .background(Color(UIColor.tertiarySystemGroupedBackground))
                     .cornerRadius(8)
                 #else
                 TextField(placeholder, text: text)
                     .font(.system(size: 13, design: .monospaced))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .padding(8)
-                    .background(Color.white.opacity(0.06))
+                    .background(Color(UIColor.tertiarySystemGroupedBackground))
                     .cornerRadius(8)
                 #endif
             } else {
                 TextField(placeholder, text: text)
                     .font(.system(size: 13, design: .monospaced))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .autocapitalization(autocapitalization)
                     .disableAutocorrection(true)
                     .padding(8)
-                    .background(Color.white.opacity(0.06))
+                    .background(Color(UIColor.tertiarySystemGroupedBackground))
                     .cornerRadius(8)
             }
         }
@@ -778,17 +806,17 @@ struct AnisetteDataView: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 3) {
                 HStack {
-                    Text(title)
+                    Text(LocalizedStringKey(title))
                         .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     Spacer()
                     Text(headerKey)
                         .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(Color.white.opacity(0.45))
+                        .foregroundColor(.secondary)
                 }
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.system(size: 12))
-                    .foregroundColor(Color.white.opacity(0.55))
+                    .foregroundColor(.secondary)
             }
         }
         .padding(.horizontal, 16)

@@ -330,7 +330,7 @@ public struct InfoPlistCustomizationCoreView: View {
             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    .stroke(Color(UIColor.separator), lineWidth: 1)
             )
             .shadow(color: Color.black.opacity(0.4), radius: 24, x: 0, y: 12)
             .padding(.horizontal, 20)

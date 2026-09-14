@@ -505,12 +505,12 @@ struct UserCustomizationsView: View {
         SwiftUI.Button(action: onTap) {
             VStack(alignment: .leading, spacing: 6) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
+                    Text(LocalizedStringKey(title))
                         .font(.system(size: 17, weight: .bold))
                         .foregroundColor(.primary)
                         .fixedSize(horizontal: false, vertical: true)
                     if let subtitle = subtitle {
-                        Text(subtitle)
+                        Text(LocalizedStringKey(subtitle))
                             .font(.system(size: 12, weight: .regular))
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -730,7 +730,7 @@ struct UserCustomizationsView: View {
                     Spacer()
                     Picker("", selection: customizeAppExtensionsBinding) {
                         ForEach(AppExtensionCustomization.allCases) { (option: AppExtensionCustomization) in
-                            Text(option.displayName).tag(option)
+                            Text(LocalizedStringKey(option.displayName)).tag(option)
                         }
                     }
                     .pickerStyle(.menu)

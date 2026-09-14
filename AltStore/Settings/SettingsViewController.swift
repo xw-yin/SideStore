@@ -83,19 +83,19 @@ extension SettingsViewController
         case userCustomizations     // row 10 - User Customizations
 
         static var allCases: [AdvancedSettingsRow] {
-            var rows: [AdvancedSettingsRow] = [.sendFeedback, .refreshAttempts, .refreshSideJITServer, .resetPairingFile]
-            if !UserDefaults.standard.useOnDeviceAnisette {
-                rows.append(.anisetteServers)
-            }
-            rows.append(contentsOf: [
+            return [
+                .sendFeedback,
+                .refreshAttempts,
+                .refreshSideJITServer,
+                .resetPairingFile,
+                .anisetteServers,
                 .connectionConfig,
                 .developerServices,
                 .profileManagement,
                 .certificateManagement,
                 .backupAndRestore,
                 .userCustomizations
-            ])
-            return rows
+            ]
         }
     }
 

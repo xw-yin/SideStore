@@ -40,7 +40,7 @@ final class AccountVerificationRow: InsetGroupTableViewCell {
         self.backgroundColor = .clear
         self.contentView.backgroundColor = .clear
         self.backgroundConfiguration = .clear()
-        self.tintColor = UIColor.white.withAlphaComponent(0.6)
+        self.tintColor = .secondaryLabel
         self.layoutMargins = UIEdgeInsets(top: 8, left: 30, bottom: 8, right: 30)
         
         self.titleLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -48,14 +48,14 @@ final class AccountVerificationRow: InsetGroupTableViewCell {
         
         self.subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
         self.subtitleLabel.font = UIFont.systemFont(ofSize: 13, weight: .regular)
-        self.subtitleLabel.textColor = UIColor.white.withAlphaComponent(0.8)
+        self.subtitleLabel.textColor = .secondaryLabel
         self.subtitleLabel.numberOfLines = 2
         
         self.iconImageView.translatesAutoresizingMaskIntoConstraints = false
         self.iconImageView.contentMode = .scaleAspectFit
         
         self.spinner.translatesAutoresizingMaskIntoConstraints = false
-        self.spinner.color = .white
+        self.spinner.color = .secondaryLabel
         self.spinner.hidesWhenStopped = true
         
         let textStack = UIStackView(arrangedSubviews: [self.titleLabel, self.subtitleLabel])
@@ -123,9 +123,9 @@ final class AccountVerificationRow: InsetGroupTableViewCell {
             
         case .checking:
             self.titleLabel.text = NSLocalizedString("Account Verification", comment: "")
-            self.titleLabel.textColor = .white
+            self.titleLabel.textColor = .label
             self.subtitleLabel.text = NSLocalizedString("Verifying account status...", comment: "")
-            self.subtitleLabel.textColor = UIColor.white.withAlphaComponent(0.7)
+            self.subtitleLabel.textColor = .secondaryLabel
             self.iconImageView.image = nil
             self.iconImageView.isHidden = true
             self.spinner.startAnimating()
@@ -145,7 +145,7 @@ final class AccountVerificationRow: InsetGroupTableViewCell {
                 subtitle = NSLocalizedString("Device registration pending", comment: "")
             }
             self.subtitleLabel.text = subtitle
-            self.subtitleLabel.textColor = UIColor.white.withAlphaComponent(0.8)
+            self.subtitleLabel.textColor = .secondaryLabel
             
             let symbolConfig = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
             self.iconImageView.image = UIImage(systemName: "exclamationmark.triangle.fill", withConfiguration: symbolConfig)?

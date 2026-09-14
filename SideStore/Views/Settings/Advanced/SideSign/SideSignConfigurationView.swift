@@ -11,8 +11,8 @@ import UniformTypeIdentifiers
 import SideSign
 
 private extension Color {
-    static let settingsRowBackground = Color.white.opacity(0.15)
-    static let settingsDivider = Color.white.opacity(0.15)
+    static let settingsRowBackground = Color(UIColor.secondarySystemGroupedBackground)
+    static let settingsDivider = Color(UIColor.separator)
 }
 
 @MainActor
@@ -328,10 +328,10 @@ struct SideSignConfigurationView: View {
                         VStack(spacing: 12) {
                             TextEditor(text: $viewModel.rawEditableJSON)
                                 .font(.system(size: 12, design: .monospaced))
-                                .foregroundColor(.white)
+                                .foregroundColor(.primary)
                                 .frame(minHeight: 320)
                                 .padding(8)
-                                .background(Color.white.opacity(0.06))
+                                .background(Color(UIColor.tertiarySystemGroupedBackground))
                                 .cornerRadius(10)
 
                             SwiftUI.Button {
@@ -384,11 +384,11 @@ struct SideSignConfigurationView: View {
                             HStack {
                                 Label("Import Config JSON", systemImage: "square.and.arrow.down")
                                     .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color.white.opacity(0.4))
+                                    .foregroundColor(.secondary)
                             }
                             .padding(.horizontal, 16)
                             .frame(height: 50)
@@ -406,11 +406,11 @@ struct SideSignConfigurationView: View {
                             HStack {
                                 Label("Export Config JSON", systemImage: "square.and.arrow.up")
                                     .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color.white.opacity(0.4))
+                                    .foregroundColor(.secondary)
                             }
                             .padding(.horizontal, 16)
                             .frame(height: 50)
@@ -493,9 +493,9 @@ struct SideSignConfigurationView: View {
     }
 
     private func sectionHeader(_ title: String) -> some View {
-        Text(title)
+        Text(LocalizedStringKey(title))
             .font(.system(size: 13, weight: .semibold))
-            .foregroundColor(Color.white.opacity(0.6))
+            .foregroundColor(.secondary)
             .padding(.horizontal, 16)
     }
 
@@ -508,40 +508,40 @@ struct SideSignConfigurationView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                 Spacer()
                 Text(headerKey)
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(Color.white.opacity(0.45))
+                    .foregroundColor(.secondary)
             }
 
             if isMultiline {
                 #if !os(tvOS)
                 TextEditor(text: text)
                     .font(.system(size: 12, design: .monospaced))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .frame(minHeight: 64)
                     .padding(6)
-                    .background(Color.white.opacity(0.06))
+                    .background(Color(UIColor.tertiarySystemGroupedBackground))
                     .cornerRadius(8)
                 #else
                 TextField(placeholder, text: text)
                     .font(.system(size: 13, design: .monospaced))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .padding(8)
-                    .background(Color.white.opacity(0.06))
+                    .background(Color(UIColor.tertiarySystemGroupedBackground))
                     .cornerRadius(8)
                 #endif
             } else {
                 TextField(placeholder, text: text)
                     .font(.system(size: 13, design: .monospaced))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
                     .padding(8)
-                    .background(Color.white.opacity(0.06))
+                    .background(Color(UIColor.tertiarySystemGroupedBackground))
                     .cornerRadius(8)
             }
         }
