@@ -43,6 +43,23 @@ public actor OnDeviceAnisetteManager {
         provider.isReady()
     }
 
+    public nonisolated var hasProvisionedAdiPb: Bool {
+        if let base64Blob = AnisetteConfigManager.shared.anisetteAdiBlob,
+           let decoded = Data(base64Encoded: base64Blob, options: .ignoreUnknownCharacters),
+           !decoded.isEmpty {
+            return true
+        }
+        return false
+    }
+
+    public nonisolated var provisionedAdiPbSize: Int {
+        if let base64Blob = AnisetteConfigManager.shared.anisetteAdiBlob,
+           let decoded = Data(base64Encoded: base64Blob, options: .ignoreUnknownCharacters) {
+            return decoded.count
+        }
+        return 0
+    }
+
     public func fetchAnisetteData() async throws -> ALTAnisetteData {
         debugLog("[OnDeviceAnisetteManager] [Fetch] Fetching on-device Anisette headers...")
 

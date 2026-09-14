@@ -1486,3 +1486,14 @@
 "Profile Created" = "描述文件创建时间";
 "Profile Expires" = "描述文件过期时间";
 
+/* ODA Status */
+"Libraries Status" = "规则库状态";
+"Local macOS emulation libraries for ADI" = "用于 ADI 本地模拟的 macOS 运行依赖库";
+"Ready" = "已就绪";
+"Not Downloaded" = "未下载";
+"Local Provisioning (adi.pb)" = "本地认证凭据 (adi.pb)";
+"Apple ID hardware token stored in Keychain" = "存储在钥匙串中的 Apple ID 设备硬件令牌";
+"Provisioned (%d B)" = "已生成（%d B）";
+"Not Provisioned" = "未生成";
+
+

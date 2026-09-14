@@ -57,6 +57,9 @@ struct UserCustomizationsView: View {
     @State private var wireGuardExportURL: URL? = nil
 
     @State private var isFreeAccount: Bool = false
+    @State private var odaIsReady: Bool = false
+    @State private var hasAdiPb: Bool = false
+    @State private var adiPbSize: Int = 0
 
     struct EditDialogState: Identifiable {
         let id = UUID()
@@ -121,6 +124,58 @@ struct UserCustomizationsView: View {
                                 }
                             )
                         )
+                        
+                        if useOnDeviceAnisette {
+                            divider
+                            
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(NSLocalizedString("Libraries Status", comment: ""))
+                                        .font(.system(size: 17, weight: .bold))
+                                        .foregroundColor(.primary)
+                                    Text(NSLocalizedString("Local macOS emulation libraries for ADI", comment: ""))
+                                        .font(.system(size: 12, weight: .regular))
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                HStack(spacing: 6) {
+                                    Circle()
+                                        .fill(odaIsReady ? Color.green : Color.orange)
+                                        .frame(width: 8, height: 8)
+                                    Text(odaIsReady ? NSLocalizedString("Ready", comment: "") : NSLocalizedString("Not Downloaded", comment: ""))
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(odaIsReady ? .green : .orange)
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .frame(minHeight: 50)
+                            
+                            divider
+                            
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(NSLocalizedString("Local Provisioning (adi.pb)", comment: ""))
+                                        .font(.system(size: 17, weight: .bold))
+                                        .foregroundColor(.primary)
+                                    Text(NSLocalizedString("Apple ID hardware token stored in Keychain", comment: ""))
+                                        .font(.system(size: 12, weight: .regular))
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                HStack(spacing: 6) {
+                                    Circle()
+                                        .fill(hasAdiPb ? Color.green : Color.secondary)
+                                        .frame(width: 8, height: 8)
+                                    Text(hasAdiPb ? String(format: NSLocalizedString("Provisioned (%d B)", comment: ""), adiPbSize) : NSLocalizedString("Not Provisioned", comment: ""))
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(hasAdiPb ? .green : .secondary)
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .frame(minHeight: 50)
+                        }
                         
                         divider
                         
@@ -467,7 +522,19 @@ struct UserCustomizationsView: View {
         }
         .task {
             isFreeAccount = (try? await AuthManager.shared.getAuthenticatedTeam())?.type == .free
+            await refreshODAStatus()
         }
+        .onAppear {
+            Task {
+                await refreshODAStatus()
+            }
+        }
+    }
+
+    private func refreshODAStatus() async {
+        odaIsReady = await OnDeviceAnisetteManager.shared.isReady()
+        hasAdiPb = OnDeviceAnisetteManager.shared.hasProvisionedAdiPb
+        adiPbSize = OnDeviceAnisetteManager.shared.provisionedAdiPbSize
     }
 
     private func toggleRow(title: String, subtitle: String? = nil, isOn: Binding<Bool>) -> some View {
@@ -901,6 +968,7 @@ struct UserCustomizationsView: View {
             Task {
                 await AuthManager.shared.signOut(keepCertificate: true, keepAnisetteData: false, keepAnisetteHeaders: keepHeaders)
                 debugLog("Reset adi.pb (keepAnisetteHeaders: \(keepHeaders)) and signed out")
+                await refreshODAStatus()
                 if let topVC = UIApplication.shared.topViewController() {
                     let alert = UIAlertController(
                         title: NSLocalizedString("Cleared adi.pb!", comment: ""),
