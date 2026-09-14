@@ -1261,8 +1261,13 @@ extension SettingsViewController
                     selected: UserDefaults.standard.menuAnisetteURL,
                     onResetAdiPb: { [weak self] in
                         guard let self = self else { return }
-                        ToastView(text: "Cleared adi.pb!", detailText: "You will need to log back into Apple ID in SideStore.")
-                            .show(in: self)
+                        let alert = UIAlertController(
+                            title: NSLocalizedString("Cleared adi.pb!", comment: ""),
+                            message: NSLocalizedString("Please log back into Apple ID in SideStore.", comment: ""),
+                            preferredStyle: .alert
+                        )
+                        alert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default, handler: nil))
+                        self.present(alert, animated: true, completion: nil)
                     }
                 )
                 

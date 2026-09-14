@@ -112,8 +112,8 @@ struct AppInfoView: View {
                 }
                 
                 // Metadata Section
-                Section(header: Text("General Metadata")) {
-                    InfoRow(label: "Status", value: installedApp.isActive ? "Active" : "Inactive", valueColor: installedApp.isActive ? .green : .red)
+                Section(header: Text(NSLocalizedString("General Metadata", comment: ""))) {
+                    InfoRow(label: "Status", value: installedApp.isActive ? NSLocalizedString("Active", comment: "") : NSLocalizedString("Inactive", comment: ""), valueColor: installedApp.isActive ? .green : .red)
                     InfoRow(label: "Version", value: installedApp.localizedVersion)
                     if let team = installedApp.team {
                         InfoRow(label: "Team Name", value: team.name)
@@ -130,7 +130,7 @@ struct AppInfoView: View {
                         if FileManager.default.fileExists(atPath: execURL.path) && MachOParser.isMachOBinary(at: execURL) {
                             NavigationLink(destination: MachOResourceViewer(url: execURL)) {
                                 HStack {
-                                    Text("Executable")
+                                    Text(NSLocalizedString("Executable", comment: ""))
                                         .font(.subheadline)
                                         .foregroundColor(.primary)
                                     Spacer()
@@ -143,13 +143,13 @@ struct AppInfoView: View {
                             InfoRow(label: "Executable", value: execName)
                         }
                     }
-                    InfoRow(label: "Uses Main Profile", value: installedApp.useMainProfile ? "Yes" : "No")
+                    InfoRow(label: "Uses Main Profile", value: installedApp.useMainProfile ? NSLocalizedString("Yes", comment: "") : NSLocalizedString("No", comment: ""))
                 }
                 
                 // Provisioning Profile Section
                 if resignedProfileURL != nil || bundleProfileURL != nil {
                     Section(header: HStack {
-                        Text(showResignedProfile ? "Provisioning Profile (Resigned)" : "Provisioning Profile (Bundle)")
+                        Text(showResignedProfile ? NSLocalizedString("Provisioning Profile (Resigned)", comment: "") : NSLocalizedString("Provisioning Profile (Bundle)", comment: ""))
                         Spacer()
                         SwiftUI.Button {
                             showResignedProfile.toggle()
@@ -175,14 +175,14 @@ struct AppInfoView: View {
                                 SwiftUI.Button {
                                     showResignedProfile.toggle()
                                 } label: {
-                                    Label(showResignedProfile ? "Switch to Bundle Profile" : "Switch to Resigned Profile",
+                                    Label(showResignedProfile ? NSLocalizedString("Switch to Bundle Profile", comment: "") : NSLocalizedString("Switch to Resigned Profile", comment: ""),
                                           systemImage: showResignedProfile ? "circle" : "checkmark.circle.fill")
                                 }
                                 if let url = activeProfileURL {
                                     SwiftUI.Button {
                                         shareSheetItem = ShareableURLItem(url: url)
                                     } label: {
-                                        Label("Share Profile", systemImage: "square.and.arrow.up")
+                                        Label(NSLocalizedString("Share Profile", comment: ""), systemImage: "square.and.arrow.up")
                                     }
                                 }
                             }
@@ -190,15 +190,15 @@ struct AppInfoView: View {
                         } else {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(showResignedProfile ? "No Resigned Profile Cached" : "No Bundle Profile Found")
+                                    Text(showResignedProfile ? NSLocalizedString("No Resigned Profile Cached", comment: "") : NSLocalizedString("No Bundle Profile Found", comment: ""))
                                         .font(.subheadline)
                                         .foregroundColor(.secondary)
-                                    Text("Tap toggle to view \(showResignedProfile ? "bundle" : "resigned") profile")
+                                    Text(showResignedProfile ? NSLocalizedString("Tap toggle to view bundle profile", comment: "") : NSLocalizedString("Tap toggle to view resigned profile", comment: ""))
                                         .font(.caption2)
                                         .foregroundColor(.secondary)
                                 }
                                 Spacer()
-                                SwiftUI.Button("Switch") {
+                                SwiftUI.Button(NSLocalizedString("Switch", comment: "")) {
                                     showResignedProfile.toggle()
                                 }
                                 .font(.caption)
@@ -210,7 +210,7 @@ struct AppInfoView: View {
                 // Info.plist Section
                 if resignedInfoPlistURL != nil || bundleInfoPlistURL != nil {
                     Section(header: HStack {
-                        Text(showResignedInfoPlist ? "Info.plist (Resigned)" : "Info.plist (Bundle)")
+                        Text(showResignedInfoPlist ? NSLocalizedString("Info.plist (Resigned)", comment: "") : NSLocalizedString("Info.plist (Bundle)", comment: ""))
                         Spacer()
                         SwiftUI.Button {
                             showResignedInfoPlist.toggle()
@@ -222,23 +222,23 @@ struct AppInfoView: View {
                         .buttonStyle(BorderlessButtonStyle())
                     }) {
                         if let plist = infoPlist {
-                            NavigationLink(destination: InfoPlistContainerView(plist: plist, title: showResignedInfoPlist ? "Info.plist (Resigned)" : "Info.plist (Bundle)", plistURL: activeInfoPlistURL)) {
-                                Text("View Info.plist (\(plist.count) keys)")
+                            NavigationLink(destination: InfoPlistContainerView(plist: plist, title: showResignedInfoPlist ? NSLocalizedString("Info.plist (Resigned)", comment: "") : NSLocalizedString("Info.plist (Bundle)", comment: ""), plistURL: activeInfoPlistURL)) {
+                                Text(String(format: NSLocalizedString("View Info.plist (%d keys)", comment: ""), plist.count))
                                     .font(.subheadline)
-                            }
+                        }
                             #if !os(tvOS)
                             .contextMenu {
                                 SwiftUI.Button {
                                     showResignedInfoPlist.toggle()
                                 } label: {
-                                    Label(showResignedInfoPlist ? "Switch to Bundle Info.plist" : "Switch to Resigned Info.plist",
+                                    Label(showResignedInfoPlist ? NSLocalizedString("Switch to Bundle Info.plist", comment: "") : NSLocalizedString("Switch to Resigned Info.plist", comment: ""),
                                           systemImage: showResignedInfoPlist ? "circle" : "checkmark.circle.fill")
                                 }
                                 if let url = activeInfoPlistURL {
                                     SwiftUI.Button {
                                         shareSheetItem = ShareableURLItem(url: url)
                                     } label: {
-                                        Label("Share Info.plist", systemImage: "square.and.arrow.up")
+                                        Label(NSLocalizedString("Share Info.plist", comment: ""), systemImage: "square.and.arrow.up")
                                     }
                                 }
                             }
@@ -246,15 +246,15 @@ struct AppInfoView: View {
                         } else {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(showResignedInfoPlist ? "No Resigned Info.plist Cached" : "No Bundle Info.plist Found")
+                                    Text(showResignedInfoPlist ? NSLocalizedString("No Resigned Info.plist Cached", comment: "") : NSLocalizedString("No Bundle Info.plist Found", comment: ""))
                                         .font(.subheadline)
                                         .foregroundColor(.secondary)
-                                    Text("Tap toggle to view \(showResignedInfoPlist ? "bundle" : "resigned") Info.plist")
+                                    Text(showResignedInfoPlist ? NSLocalizedString("Tap toggle to view bundle Info.plist", comment: "") : NSLocalizedString("Tap toggle to view resigned Info.plist", comment: ""))
                                         .font(.caption2)
                                         .foregroundColor(.secondary)
                                 }
                                 Spacer()
-                                SwiftUI.Button("Switch") {
+                                SwiftUI.Button(NSLocalizedString("Switch", comment: "")) {
                                     showResignedInfoPlist.toggle()
                                 }
                                 .font(.caption)
@@ -265,7 +265,7 @@ struct AppInfoView: View {
                 
                 // App Extensions Section
                 if !installedApp.appExtensions.isEmpty {
-                    Section(header: Text("App Extensions")) {
+                    Section(header: Text(NSLocalizedString("App Extensions", comment: ""))) {
                         ForEach(Array(installedApp.appExtensions), id: \.bundleIdentifier) { ext in
                             NavigationLink(destination: ExtensionInfoView(appExtension: ext, parentAppURL: appBundleURL, certificatesViewModel: certificatesViewModel)) {
                                 VStack(alignment: .leading, spacing: 4) {
@@ -281,9 +281,9 @@ struct AppInfoView: View {
                 }
 
                 // Resources Section
-                Section(header: Text("Resources")) {
-                    NavigationLink(destination: BundleResourceBrowserView(rootURL: appBundleURL, title: "Bundle Contents")) {
-                        Text("Browse Bundle Contents")
+                Section(header: Text(NSLocalizedString("Resources", comment: ""))) {
+                    NavigationLink(destination: BundleResourceBrowserView(rootURL: appBundleURL, title: NSLocalizedString("Bundle Contents", comment: ""))) {
+                        Text(NSLocalizedString("Browse Bundle Contents", comment: ""))
                             .font(.subheadline)
                     }
                 }
@@ -293,8 +293,8 @@ struct AppInfoView: View {
             #else
             .listStyle(GroupedListStyle())
             #endif
-            .navigationTitle("App Details")
-            .navigationBarItems(trailing: SwiftUI.Button("Close") {
+            .navigationTitle(NSLocalizedString("App Details", comment: ""))
+            .navigationBarItems(trailing: SwiftUI.Button(NSLocalizedString("Close", comment: "")) {
                 presentationMode.wrappedValue.dismiss()
             })
             .overlay(
@@ -462,7 +462,7 @@ struct InfoRow: View {
     
     var body: some View {
         HStack {
-            Text(label)
+            Text(NSLocalizedString(label, comment: ""))
                 .font(.subheadline)
                 .foregroundColor(.secondary)
             Spacer()
@@ -661,7 +661,7 @@ struct ExtensionInfoView: View {
     var body: some View {
         List {
             // General Metadata — sourced from the actual bundle, not CoreData
-            Section(header: Text("Extension Metadata")) {
+            Section(header: Text(NSLocalizedString("Extension Metadata", comment: ""))) {
                 let plist = infoPlist
                 let profile = provisioningProfile
 
@@ -688,7 +688,7 @@ struct ExtensionInfoView: View {
                     if FileManager.default.fileExists(atPath: execURL.path) && MachOParser.isMachOBinary(at: execURL) {
                         NavigationLink(destination: MachOResourceViewer(url: execURL)) {
                             HStack {
-                                Text("Executable")
+                                Text(NSLocalizedString("Executable", comment: ""))
                                     .font(.subheadline)
                                     .foregroundColor(.primary)
                                 Spacer()
@@ -712,7 +712,7 @@ struct ExtensionInfoView: View {
             // Provisioning Profile
             if resignedProfileURL != nil || bundleProfileURL != nil {
                 Section(header: HStack {
-                    Text(showResignedProfile ? "Provisioning Profile (Resigned)" : "Provisioning Profile (Bundle)")
+                    Text(showResignedProfile ? NSLocalizedString("Provisioning Profile (Resigned)", comment: "") : NSLocalizedString("Provisioning Profile (Bundle)", comment: ""))
                     Spacer()
                     SwiftUI.Button {
                         showResignedProfile.toggle()
@@ -741,14 +741,14 @@ struct ExtensionInfoView: View {
                             SwiftUI.Button {
                                 showResignedProfile.toggle()
                             } label: {
-                                Label(showResignedProfile ? "Switch to Bundle Profile" : "Switch to Resigned Profile",
+                                Label(showResignedProfile ? NSLocalizedString("Switch to Bundle Profile", comment: "") : NSLocalizedString("Switch to Resigned Profile", comment: ""),
                                       systemImage: showResignedProfile ? "circle" : "checkmark.circle.fill")
                             }
                             if let url = activeProfileURL {
                                 SwiftUI.Button {
                                     shareSheetItem = ShareableURLItem(url: url)
                                 } label: {
-                                    Label("Share Profile", systemImage: "square.and.arrow.up")
+                                    Label(NSLocalizedString("Share Profile", comment: ""), systemImage: "square.and.arrow.up")
                                 }
                             }
                         }
@@ -756,15 +756,15 @@ struct ExtensionInfoView: View {
                     } else {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(showResignedProfile ? "No Resigned Profile Cached" : "No Bundle Profile Found")
+                                Text(showResignedProfile ? NSLocalizedString("No Resigned Profile Cached", comment: "") : NSLocalizedString("No Bundle Profile Found", comment: ""))
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
-                                Text("Tap toggle to view \(showResignedProfile ? "bundle" : "resigned") profile")
+                                Text(showResignedProfile ? NSLocalizedString("Tap toggle to view bundle profile", comment: "") : NSLocalizedString("Tap toggle to view resigned profile", comment: ""))
                                     .font(.caption2)
                                     .foregroundColor(.secondary)
                             }
                             Spacer()
-                            SwiftUI.Button("Switch") {
+                            SwiftUI.Button(NSLocalizedString("Switch", comment: "")) {
                                 showResignedProfile.toggle()
                             }
                             .font(.caption)
@@ -776,7 +776,7 @@ struct ExtensionInfoView: View {
             // Info.plist
             if resignedInfoPlistURL != nil || bundleInfoPlistURL != nil {
                 Section(header: HStack {
-                    Text(showResignedInfoPlist ? "Info.plist (Resigned)" : "Info.plist (Bundle)")
+                    Text(showResignedInfoPlist ? NSLocalizedString("Info.plist (Resigned)", comment: "") : NSLocalizedString("Info.plist (Bundle)", comment: ""))
                     Spacer()
                     SwiftUI.Button {
                         showResignedInfoPlist.toggle()
@@ -788,8 +788,8 @@ struct ExtensionInfoView: View {
                     .buttonStyle(BorderlessButtonStyle())
                 }) {
                     if let plist = infoPlist {
-                        NavigationLink(destination: InfoPlistContainerView(plist: plist, title: showResignedInfoPlist ? "Info.plist (Resigned)" : "Info.plist (Bundle)", plistURL: activeInfoPlistURL)) {
-                            Text("View Info.plist (\(plist.count) keys)")
+                        NavigationLink(destination: InfoPlistContainerView(plist: plist, title: showResignedInfoPlist ? NSLocalizedString("Info.plist (Resigned)", comment: "") : NSLocalizedString("Info.plist (Bundle)", comment: ""), plistURL: activeInfoPlistURL)) {
+                            Text(String(format: NSLocalizedString("View Info.plist (%d keys)", comment: ""), plist.count))
                                 .font(.subheadline)
                         }
                         #if !os(tvOS)
@@ -797,14 +797,14 @@ struct ExtensionInfoView: View {
                             SwiftUI.Button {
                                 showResignedInfoPlist.toggle()
                             } label: {
-                                Label(showResignedInfoPlist ? "Switch to Bundle Info.plist" : "Switch to Resigned Info.plist",
+                                Label(showResignedInfoPlist ? NSLocalizedString("Switch to Bundle Info.plist", comment: "") : NSLocalizedString("Switch to Resigned Info.plist", comment: ""),
                                       systemImage: showResignedInfoPlist ? "circle" : "checkmark.circle.fill")
                             }
                             if let url = activeInfoPlistURL {
                                 SwiftUI.Button {
                                     shareSheetItem = ShareableURLItem(url: url)
                                 } label: {
-                                    Label("Share Info.plist", systemImage: "square.and.arrow.up")
+                                    Label(NSLocalizedString("Share Info.plist", comment: ""), systemImage: "square.and.arrow.up")
                                 }
                             }
                         }
@@ -812,15 +812,15 @@ struct ExtensionInfoView: View {
                     } else {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(showResignedInfoPlist ? "No Resigned Info.plist Cached" : "No Bundle Info.plist Found")
+                                Text(showResignedInfoPlist ? NSLocalizedString("No Resigned Info.plist Cached", comment: "") : NSLocalizedString("No Bundle Info.plist Found", comment: ""))
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
-                                Text("Tap toggle to view \(showResignedInfoPlist ? "bundle" : "resigned") Info.plist")
+                                Text(showResignedInfoPlist ? NSLocalizedString("Tap toggle to view bundle Info.plist", comment: "") : NSLocalizedString("Tap toggle to view resigned Info.plist", comment: ""))
                                     .font(.caption2)
                                     .foregroundColor(.secondary)
                             }
                             Spacer()
-                            SwiftUI.Button("Switch") {
+                            SwiftUI.Button(NSLocalizedString("Switch", comment: "")) {
                                 showResignedInfoPlist.toggle()
                             }
                             .font(.caption)
@@ -831,7 +831,7 @@ struct ExtensionInfoView: View {
 
             // Nested Sub-Extensions (recursive)
             if !subExtensions.isEmpty {
-                Section(header: Text("Nested Extensions (\(subExtensions.count))")) {
+                Section(header: Text(String(format: NSLocalizedString("Nested Extensions (%d)", comment: ""), subExtensions.count))) {
                     ForEach(subExtensions, id: \.path) { subURL in
                         let subParser = try? InfoPlistParser(bundleURL: subURL)
                         let subName = subParser?.displayName
@@ -917,7 +917,7 @@ struct BundleInspectorView: View {
 
     var body: some View {
         List {
-            Section(header: Text("Bundle Metadata")) {
+            Section(header: Text(NSLocalizedString("Bundle Metadata", comment: ""))) {
                 InfoRow(label: "Name", value: displayName)
                 InfoRow(label: "Bundle ID", value: bundleID)
                 InfoRow(label: "Version", value: version)
@@ -926,7 +926,7 @@ struct BundleInspectorView: View {
                     if FileManager.default.fileExists(atPath: execURL.path) && MachOParser.isMachOBinary(at: execURL) {
                         NavigationLink(destination: MachOResourceViewer(url: execURL)) {
                             HStack {
-                                Text("Executable")
+                                Text(NSLocalizedString("Executable", comment: ""))
                                     .font(.subheadline)
                                     .foregroundColor(.primary)
                                 Spacer()
@@ -945,7 +945,7 @@ struct BundleInspectorView: View {
             }
 
             if let profile = provisioningProfile {
-                Section(header: Text("Provisioning Profile")) {
+                Section(header: Text(NSLocalizedString("Provisioning Profile", comment: ""))) {
                     NavigationLink(destination: ProvisioningProfileDetailView(profile: profile, profileURL: bundleURL.appendingPathComponent("embedded.mobileprovision"), certificatesViewModel: certificatesViewModel)) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(profile.name)
@@ -962,16 +962,16 @@ struct BundleInspectorView: View {
             }
 
             if let plist = infoPlist {
-                Section(header: Text("Info.plist")) {
+                Section(header: Text(NSLocalizedString("Info.plist", comment: ""))) {
                     NavigationLink(destination: InfoPlistContainerView(plist: plist, plistURL: InfoPlistParser.resolveInfoPlistURL(for: bundleURL))) {
-                        Text("View Info.plist (\(plist.count) keys)")
+                        Text(String(format: NSLocalizedString("View Info.plist (%d keys)", comment: ""), plist.count))
                             .font(.subheadline)
                     }
                 }
             }
 
             if !subExtensions.isEmpty {
-                Section(header: Text("Nested Extensions (\(subExtensions.count))")) {
+                Section(header: Text(String(format: NSLocalizedString("Nested Extensions (%d)", comment: ""), subExtensions.count))) {
                     ForEach(subExtensions, id: \.path) { subURL in
                         let subParser = try? InfoPlistParser(bundleURL: subURL)
                         let subName = subParser?.displayName
@@ -992,9 +992,9 @@ struct BundleInspectorView: View {
             }
 
             // Resources
-            Section(header: Text("Resources")) {
-                NavigationLink(destination: BundleResourceBrowserView(rootURL: bundleURL, title: "Bundle Contents")) {
-                    Text("Browse Bundle Contents")
+            Section(header: Text(NSLocalizedString("Resources", comment: ""))) {
+                NavigationLink(destination: BundleResourceBrowserView(rootURL: bundleURL, title: NSLocalizedString("Bundle Contents", comment: ""))) {
+                    Text(NSLocalizedString("Browse Bundle Contents", comment: ""))
                         .font(.subheadline)
                 }
             }

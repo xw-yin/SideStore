@@ -514,7 +514,7 @@ struct DeveloperOptionsView: View {
                 #endif
                 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("ONBOARDING")
+                    Text(NSLocalizedString("ONBOARDING", comment: ""))
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
@@ -525,7 +525,7 @@ struct DeveloperOptionsView: View {
                                 Image(systemName: "sparkles")
                                     .font(.system(size: 18, weight: .semibold))
                                     .foregroundColor(.primary)
-                                Text("Replay Onboarding")
+                                Text(NSLocalizedString("Replay Onboarding", comment: ""))
                                     .font(.system(size: 17, weight: .bold))
                                     .foregroundColor(.primary)
                                 Spacer()
@@ -555,10 +555,10 @@ struct DeveloperOptionsView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "arrow.counterclockwise")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
-                                Text("Reset Onboarding State")
+                                    .foregroundColor(.primary)
+                                Text(NSLocalizedString("Reset Onboarding State", comment: ""))
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                             }
                             .padding(.horizontal, 16)

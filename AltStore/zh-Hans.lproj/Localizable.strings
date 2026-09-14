@@ -1402,3 +1402,87 @@
 "No exported resigned apps." = "没有已导出的重签名应用。";
 
 "Save as Overrides" = "保存为自定义覆盖";
+
+/* Missing Localizations & New Features */
+"Keep header customizations" = "保留请求头自定义";
+"Keep Anisette data" = "保留 Anisette 数据";
+"Keep Anisette headers" = "保留 Anisette 请求头";
+"Keep SideSign headers" = "保留 SideSign 请求头";
+"Please log back into Apple ID in SideStore." = "已退出登录，请重新登录 Apple ID。";
+"Cleared adi.pb!" = "已清除 adi.pb！";
+
+/* Developer Options & Onboarding */
+"ONBOARDING" = "新手引导";
+"Replay Onboarding" = "重新播放新手引导";
+"Reset Onboarding State" = "重置新手引导状态";
+"Onboarding reset for next launch" = "已重置新手引导状态，将在下次启动时显示";
+
+/* Devices & Device Registration */
+"Devices registered on your developer team can run development-signed apps. Tap any device to edit its name, disable, or delete it." = "在开发者团队注册的设备可以运行开发签名的应用。点击任意设备可编辑名称、停用或删除。";
+"Fetch Current Device UDID" = "获取当前设备 UDID";
+"Fetched Device UDID: %@" = "已获取设备 UDID：%@";
+"Current Device UDID not available" = "当前设备 UDID 不可用";
+"Fill Current Device Name" = "填入当前设备名称";
+"Disable Device?" = "停用设备？";
+"Delete Device?" = "删除设备？";
+"Are you sure you want to disable '%@'? It will no longer be included in newly generated provisioning profiles." = "确定要停用“%@”吗？新生成的描述文件中将不再包含该设备。";
+"Are you sure you want to delete '%@' from the Apple Developer Portal? This action cannot be undone." = "确定要从 Apple 开发者门户删除“%@”吗？此操作无法撤销。";
+"UDID is a 25-character or 40-character unique device identifier." = "UDID 是 25 位或 40 位的唯一设备标识符。";
+"Search Devices" = "搜索设备";
+"Copy UDID" = "拷贝 UDID";
+"Edit Name" = "编辑名称";
+
+/* Skip setup notices */
+"Certificate Setup Skipped" = "已跳过证书配置";
+"Active signing certificate is not present and wasn't fetched/setup properly. You can complete the pending actions later or go into Settings -> Certificate Management and setup certificates manually." = "未配置有效签名证书。您可以稍后在“设置”->“证书管理”中手动配置。";
+"Device Registration Skipped" = "已跳过设备注册";
+"Your device is not yet registered under this developer team. Apps cannot be installed or refreshed until registration is completed. You can complete this later in Settings." = "此设备尚未在当前开发者团队注册。注册完成前无法安装或刷新应用。您可以稍后在“设置”中完成注册。";
+
+/* My Apps & App Info */
+"Change Provisioning Profile" = "更改描述文件";
+"Reset Provisioning Profile" = "重置描述文件";
+"General Metadata" = "通用元数据";
+"Status" = "状态";
+"Active" = "已激活";
+"Inactive" = "未激活";
+"Version" = "版本";
+"Team Name" = "团队名称";
+"Team ID" = "团队 ID";
+"Expiration Date" = "过期时间";
+"Refreshed Date" = "刷新时间";
+"Installed Date" = "安装时间";
+"Certificate Serial" = "证书序列号";
+"Executable" = "可执行文件";
+"Uses Main Profile" = "使用主描述文件";
+"Provisioning Profile (Resigned)" = "描述文件（重签名）";
+"Provisioning Profile (Bundle)" = "描述文件（包内置）";
+"Switch to Bundle Profile" = "切换为包内置描述文件";
+"Switch to Resigned Profile" = "切换为重签名描述文件";
+"No Resigned Profile Cached" = "未缓存重签名描述文件";
+"No Bundle Profile Found" = "未找到包内置描述文件";
+"Tap toggle to view bundle profile" = "点击切换查看包内置描述文件";
+"Tap toggle to view resigned profile" = "点击切换查看重签名描述文件";
+"Share Profile" = "分享描述文件";
+"Info.plist (Resigned)" = "Info.plist（重签名）";
+"Info.plist (Bundle)" = "Info.plist（包内置）";
+"View Info.plist (%d keys)" = "查看 Info.plist（%d 个键）";
+"Switch to Bundle Info.plist" = "切换为包内置 Info.plist";
+"Switch to Resigned Info.plist" = "切换为重签名 Info.plist";
+"No Resigned Info.plist Cached" = "未缓存重签名 Info.plist";
+"No Bundle Info.plist Found" = "未找到包内置 Info.plist";
+"Tap toggle to view bundle Info.plist" = "点击切换查看包内置 Info.plist";
+"Tap toggle to view resigned Info.plist" = "点击切换查看重签名 Info.plist";
+"Share Info.plist" = "分享 Info.plist";
+"App Extensions" = "应用扩展 (App Extensions)";
+"Extension Metadata" = "扩展元数据";
+"Nested Extensions (%d)" = "嵌套扩展（%d）";
+"Bundle Metadata" = "App 包元数据";
+"Bundle Contents" = "App 包内容";
+"Browse Bundle Contents" = "浏览 App 包内容";
+"App Details" = "应用详情";
+"Close" = "关闭";
+"Switch" = "切换";
+"Min iOS" = "最低 iOS 版本";
+"Profile Created" = "描述文件创建时间";
+"Profile Expires" = "描述文件过期时间";
+

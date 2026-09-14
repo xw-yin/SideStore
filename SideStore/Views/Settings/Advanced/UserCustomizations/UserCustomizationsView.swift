@@ -902,13 +902,13 @@ struct UserCustomizationsView: View {
                 await AuthManager.shared.signOut(keepCertificate: true, keepAnisetteData: false, keepAnisetteHeaders: keepHeaders)
                 debugLog("Reset adi.pb (keepAnisetteHeaders: \(keepHeaders)) and signed out")
                 if let topVC = UIApplication.shared.topViewController() {
-                    let detail = keepHeaders
-                        ? NSLocalizedString("Signed out of Apple ID. You can now sign back in with fresh provisioning.", comment: "")
-                        : NSLocalizedString("Signed out of Apple ID. Reset adi.pb and header configs to defaults.", comment: "")
-                    ToastView(
-                        text: NSLocalizedString("Cleared adi.pb!", comment: ""),
-                        detailText: detail
-                    ).show(in: topVC)
+                    let alert = UIAlertController(
+                        title: NSLocalizedString("Cleared adi.pb!", comment: ""),
+                        message: NSLocalizedString("Please log back into Apple ID in SideStore.", comment: ""),
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default, handler: nil))
+                    topVC.present(alert, animated: true, completion: nil)
                 }
             }
         }
