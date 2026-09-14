@@ -782,3 +782,55 @@
 /* Minimuxer backend */
 "MINIMUXER BACKEND" = "MINIMUXER 后端";
 "Changing the Minimuxer backend requires restarting SideStore. If canceled, changes will not be saved." = "更改 Minimuxer 后端需要重启 SideStore。取消后将不会保存更改。";
+
+/* My Apps */
+"EXPIRED" = "已过期";
+"REVOKED" = "已撤销";
+"Backup" = "备份";
+"Create Backup" = "创建备份";
+"Delete Backup" = "删除备份";
+"Delete Backup for “%@”?" = "删除“%@”的备份？";
+"Are you sure you want to delete the backup for this app? This action cannot be undone." = "确定要删除此 App 的备份吗？此操作无法撤销。";
+"Certificate" = "证书";
+"Change Certificate" = "更改证书";
+"Delete App" = "删除 App";
+"Delete “%@”?" = "删除“%@”？";
+"Remove Icon" = "移除图标";
+"Failed to Remove %@" = "无法移除 %@";
+
+/* Install & Pipeline Alerts */
+"Install App" = "安装 App";
+"Bundle ID Mismatch" = "Bundle ID 不匹配";
+"App Group Discrepancy" = "App Group 差异";
+"Correct & Proceed" = "更正并继续";
+"Keep Original" = "保留原始";
+"App Extensions" = "App 扩展";
+"“%@” will be automatically given these permissions once installed." = "安装后，“%@”将自动获得这些权限。";
+"This version of “%@” requires additional permissions." = "此版本的“%@”需要额外权限。";
+"Finish Refresh" = "完成刷新";
+"To finish refreshing, SideStore must be moved to the background. To do this, you can either go to the Home Screen manually or by hitting Continue. Please reopen SideStore after doing this." = "为完成刷新，SideStore 必须切换至后台。你可以手动返回主屏幕或点按“继续”。完成此操作后请重新打开 SideStore。";
+"Refreshing..." = "正在刷新...";
+"SideStore will automatically move to the homescreen to finish refreshing!" = "SideStore 将自动退回主屏幕以完成刷新！";
+
+/* App IDs Modal */
+"Each app and app extension installed with SideStore must register an App ID with Apple. Apple limits non-developer Apple IDs to 10 App IDs at a time.\n\n**App IDs can't be deleted**, but they do expire after one week. SideStore will automatically renew App IDs for all active apps once they've expired." = "使用 SideStore 安装的每个 App 和 App 扩展都必须向 Apple 注册一个 App ID。Apple 限制非开发者 Apple ID 一次最多只能拥有 10 个 App ID。\n\n**App ID 无法被删除**，但会在一周后过期。一旦过期，SideStore 将自动为所有活跃的 App 续订 App ID。";
+"Each app and app extension installed with SideStore must register an App ID with Apple.\n\nApp IDs for paid developer accounts never expire, and there is no limit to how many you can create." = "使用 SideStore 安装的每个 App 和 App 扩展都必须向 Apple 注册一个 App ID。\n\n付费开发者账户的 App ID 永不过期，且创建数量没有限制。";
+"App IDs Deleted" = "已删除 App ID";
+
+/* Connection Config */
+"Use Local VPN" = "使用本地 VPN";
+"Tunnel IP" = "隧道 IP";
+"Reachable" = "可访问";
+"Note: " = "注意：";
+"'Device IP' is optional and if specified should match exactly as in the target VPN's config or Leave empty to prefer auto-discovery." = "“设备 IP”为选填项。若指定，应与目标 VPN 配置完全一致；留空则优先使用自动发现。";
+"Device IP / Endpoint" = "设备 IP / 端点";
+"'Device IP / Endpoint' is mandatory and should match the remote server's address" = "“设备 IP / 端点”为必填项，应与远程服务器地址一致。";
+"Bind Host / IP" = "绑定主机 / IP";
+"Bind Port" = "绑定端口";
+"Invalid Configuration" = "无效配置";
+"Please check your configuration settings." = "请检查您的配置设置。";
+"Device IP / Endpoint is mandatory for Remote Endpoint mode." = "远程端点模式下“设备 IP / 端点”为必填项。";
+"Bind Host / IP cannot be empty." = "绑定主机 / IP 不能为空。";
+"Bind Port must be a valid number between 1 and 65535." = "绑定端口必须是 1 到 65535 之间的有效数字。";
+"Configuration Saved" = "配置已保存";
+

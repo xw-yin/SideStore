@@ -31,7 +31,7 @@ struct AppExtensionView: View {
                     }
                 }
             }
-            .navigationTitle("App Extensions")
+            .navigationTitle(NSLocalizedString("App Extensions", comment: ""))
             .onDisappear {
                 completion(selection)
             }

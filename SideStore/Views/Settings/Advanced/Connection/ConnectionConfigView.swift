@@ -14,40 +14,11 @@ private typealias SButton = SwiftUI.Button
 enum ActiveState: String {
     case yes = "Yes"
     case no = "No"
-}
 
-struct AnimatedCheckmarkView: View {
-    @State private var outerCircleTrim: CGFloat = 0.0
-    @State private var checkmarkTrim: CGFloat = 0.0
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .stroke(Color.green.opacity(0.2), lineWidth: 4)
-                .frame(width: 70, height: 70)
-            
-            Circle()
-                .trim(from: 0.0, to: outerCircleTrim)
-                .stroke(Color.green, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                .frame(width: 70, height: 70)
-                .rotationEffect(.degrees(-90))
-            
-            Path { path in
-                path.move(to: CGPoint(x: 21, y: 35))
-                path.addLine(to: CGPoint(x: 30, y: 44))
-                path.addLine(to: CGPoint(x: 49, y: 25))
-            }
-            .trim(from: 0.0, to: checkmarkTrim)
-            .stroke(Color.green, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
-            .frame(width: 70, height: 70)
-        }
-        .onAppear {
-            withAnimation(.easeIn(duration: 0.4)) {
-                outerCircleTrim = 1.0
-            }
-            withAnimation(.easeIn(duration: 0.3).delay(0.4)) {
-                checkmarkTrim = 1.0
-            }
+    var localized: String {
+        switch self {
+        case .yes: return NSLocalizedString("Yes", comment: "")
+        case .no: return NSLocalizedString("No", comment: "")
         }
     }
 }
@@ -66,171 +37,133 @@ struct ConnectionConfigView: View {
     @State private var showValidationErrorAlert = false
 
     var body: some View {
-        ZStack {
-            List {
-                Section {
-                    Toggle("Use Local VPN", isOn: $draftUseLocalVPN)
-                }
+        List {
+            Section {
+                Toggle(NSLocalizedString("Use Local VPN", comment: ""), isOn: $draftUseLocalVPN)
+            }
 
-                if draftUseLocalVPN {
-                    Section(header: Text("Auto Discovered from network")) {
-                        Group {
-                            networkConfigRow(label: "Tunnel IP", text: Binding<String?>(get: { config.formattedTunnelIface }, set: { _ in }), editable: false)
-                            networkConfigRow(label: "Device IP", text: Binding<String?>(get: { config.formattedTunnelPeer }, set: { _ in }), editable: false)
-                            if config.overrideTunnelPeerIp.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                let hasDiscoveredPeer = config.tunnelPeerIp != nil && !config.tunnelPeerIp!.isEmpty
-                                networkConfigRow(
-                                    label: "Reachable",
-                                    text: Binding<String?>(get: { hasDiscoveredPeer ? config.tunnelPeerActive.rawValue : "N/A" }, set: { _ in }),
-                                    editable: false,
-                                    textColor: hasDiscoveredPeer ? (config.tunnelPeerActive == .yes ? .green : .red) : .gray
-                                )
-                            }
-                        }
-                    }
-                    
-                    Section {
-                        networkConfigRow(
-                            label: "Device IP",
-                            text: Binding<String?>(get: { draftOverrideTunnelPeerIp }, set: { draftOverrideTunnelPeerIp = $0 ?? "" }),
-                            editable: true
-                        )
-                        if !config.overrideTunnelPeerIp.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            if draftUseLocalVPN {
+                Section(header: Text(NSLocalizedString("Auto Discovered from network", comment: ""))) {
+                    Group {
+                        networkConfigRow(label: NSLocalizedString("Tunnel IP", comment: ""), text: Binding<String?>(get: { config.formattedTunnelIface }, set: { _ in }), editable: false)
+                        networkConfigRow(label: NSLocalizedString("Device IP", comment: ""), text: Binding<String?>(get: { config.formattedTunnelPeer }, set: { _ in }), editable: false)
+                        if config.overrideTunnelPeerIp.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            let hasDiscoveredPeer = config.tunnelPeerIp != nil && !config.tunnelPeerIp!.isEmpty
                             networkConfigRow(
-                                label: "Active",
-                                text: Binding<String?>(get: { config.overrideTunnelPeerActive.rawValue }, set: { _ in }),
+                                label: NSLocalizedString("Reachable", comment: ""),
+                                text: Binding<String?>(get: { hasDiscoveredPeer ? config.tunnelPeerActive.localized : "N/A" }, set: { _ in }),
                                 editable: false,
-                                textColor: config.overrideTunnelPeerActive == .yes ? .green : .red
+                                textColor: hasDiscoveredPeer ? (config.tunnelPeerActive == .yes ? .green : .red) : .gray
                             )
                         }
-                    } header: {
-                        Text("User Configuration")
-                    } footer: {
-                        HStack(alignment: .top, spacing: 0) {
-                            Text("Note: ")
-                            Text("'Device IP' is optional and if specified should match exactly as in the target VPN's config or Leave empty to prefer auto-discovery.")
-                        }
-                    }
-                } else {
-                    Section {
-                        networkConfigRow(
-                            label: "Device IP / Endpoint",
-                            text: Binding<String?>(get: { draftRemoteServerIp }, set: { draftRemoteServerIp = $0 ?? "" }),
-                            editable: true
-                        )
-                        networkConfigRow(
-                            label: "Reachable",
-                            text: Binding<String?>(get: { config.remoteActive.rawValue }, set: { _ in }),
-                            editable: false,
-                            textColor: config.remoteActive == .yes ? .green : .red
-                        )
-                    } header: {
-                        Text("Remote Endpoint")
-                    } footer: {
-                        HStack(alignment: .top, spacing: 0) {
-                            Text("Note: ")
-                            Text("'Device IP / Endpoint' is mandatory and should match the remote server's address")
-                        }
                     }
                 }
-
-                if UserDefaults.standard.enableEMPforWireguard || UserDefaults.standard.alwaysShowWireGuardConfig {
-                    Section {
-                        networkConfigRow(
-                            label: "Bind Host / IP",
-                            text: Binding<String?>(get: { draftWireGuardServerHost }, set: { draftWireGuardServerHost = $0 ?? "" }),
-                            editable: true
-                        )
-                        networkConfigRow(
-                            label: "Bind Port",
-                            text: Binding<String?>(get: { draftWireGuardServerPort }, set: { draftWireGuardServerPort = $0 ?? "" }),
-                            editable: true,
-                            isPort: true
-                        )
-                    } header: {
-                        Text("WireGuard Server Parameters")
-                    } footer: {
-                        Text("Configures the local UDP loopback host and port bound by EMProxy.")
-                    }
-                }
-            }
-            .navigationTitle("Connection Config")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    SButton("Confirm") {
-                        Task { await commitChanges() }
-                    }
-                }
-            }
-            .disabled(showConfirmDialog)
-            .onAppear {
-                draftUseLocalVPN = config.useLocalVPN
-                draftOverrideTunnelPeerIp = config.overrideTunnelPeerIp
-                draftRemoteServerIp = config.remoteServerIp
-                draftWireGuardServerHost = config.wireguardServerHost
-                draftWireGuardServerPort = String(config.wireguardServerPort)
-                alwaysShowWireGuardConfig = UserDefaults.standard.alwaysShowWireGuardConfig
-            }
-            .alert("Invalid Configuration", isPresented: $showValidationErrorAlert) {
-                SwiftUI.Button("OK", role: .cancel) {}
-            } message: {
-                Text(validationError ?? "Please check your configuration settings.")
-            }
-            
-            if showConfirmDialog {
-                Color.black.opacity(0.3)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        showConfirmDialog = false
-                    }
                 
-                VStack(spacing: 24) {
-                    AnimatedCheckmarkView()
-                        .padding(.top, 10)
-                    
-                    Text("Changes saved")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.primary)
-                    
-                    SwiftUI.Button(action: {
-                        showConfirmDialog = false
-                    }) {
-                        Text("OK")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.primary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(Color(uiColor: .secondarySystemFill))
-                            .clipShape(Capsule())
+                Section {
+                    networkConfigRow(
+                        label: NSLocalizedString("Device IP", comment: ""),
+                        text: Binding<String?>(get: { draftOverrideTunnelPeerIp }, set: { draftOverrideTunnelPeerIp = $0 ?? "" }),
+                        editable: true
+                    )
+                    if !config.overrideTunnelPeerIp.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        networkConfigRow(
+                            label: NSLocalizedString("Active", comment: ""),
+                            text: Binding<String?>(get: { config.overrideTunnelPeerActive.localized }, set: { _ in }),
+                            editable: false,
+                            textColor: config.overrideTunnelPeerActive == .yes ? .green : .red
+                        )
                     }
-                    .buttonStyle(PlainButtonStyle())
+                } header: {
+                    Text(NSLocalizedString("User Configuration", comment: ""))
+                } footer: {
+                    HStack(alignment: .top, spacing: 0) {
+                        Text(NSLocalizedString("Note: ", comment: ""))
+                        Text(NSLocalizedString("'Device IP' is optional and if specified should match exactly as in the target VPN's config or Leave empty to prefer auto-discovery.", comment: ""))
+                    }
                 }
-                .padding(24)
-                .frame(width: 320)
-                .background(.ultraThinMaterial)
-                .environment(\.colorScheme, .dark)
-                .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-                .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
-                .transition(.scale.combined(with: .opacity))
+            } else {
+                Section {
+                    networkConfigRow(
+                        label: NSLocalizedString("Device IP / Endpoint", comment: ""),
+                        text: Binding<String?>(get: { draftRemoteServerIp }, set: { draftRemoteServerIp = $0 ?? "" }),
+                        editable: true
+                    )
+                    networkConfigRow(
+                        label: NSLocalizedString("Reachable", comment: ""),
+                        text: Binding<String?>(get: { config.remoteActive.localized }, set: { _ in }),
+                        editable: false,
+                        textColor: config.remoteActive == .yes ? .green : .red
+                    )
+                } header: {
+                    Text(NSLocalizedString("Remote Endpoint", comment: ""))
+                } footer: {
+                    HStack(alignment: .top, spacing: 0) {
+                        Text(NSLocalizedString("Note: ", comment: ""))
+                        Text(NSLocalizedString("'Device IP / Endpoint' is mandatory and should match the remote server's address", comment: ""))
+                    }
+                }
+            }
+
+            if UserDefaults.standard.enableEMPforWireguard || UserDefaults.standard.alwaysShowWireGuardConfig {
+                Section {
+                    networkConfigRow(
+                        label: NSLocalizedString("Bind Host / IP", comment: ""),
+                        text: Binding<String?>(get: { draftWireGuardServerHost }, set: { draftWireGuardServerHost = $0 ?? "" }),
+                        editable: true
+                    )
+                    networkConfigRow(
+                        label: NSLocalizedString("Bind Port", comment: ""),
+                        text: Binding<String?>(get: { draftWireGuardServerPort }, set: { draftWireGuardServerPort = $0 ?? "" }),
+                        editable: true,
+                        isPort: true
+                    )
+                } header: {
+                    Text(NSLocalizedString("WireGuard Server Parameters", comment: ""))
+                } footer: {
+                    Text(NSLocalizedString("Configures the local UDP loopback host and port bound by EMProxy.", comment: ""))
+                }
             }
         }
-        .animation(.easeInOut, value: showConfirmDialog)
+        .navigationTitle(NSLocalizedString("Connection Config", comment: ""))
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                SButton(NSLocalizedString("Confirm", comment: "")) {
+                    Task { await commitChanges() }
+                }
+            }
+        }
+        .onAppear {
+            draftUseLocalVPN = config.useLocalVPN
+            draftOverrideTunnelPeerIp = config.overrideTunnelPeerIp
+            draftRemoteServerIp = config.remoteServerIp
+            draftWireGuardServerHost = config.wireguardServerHost
+            draftWireGuardServerPort = String(config.wireguardServerPort)
+            alwaysShowWireGuardConfig = UserDefaults.standard.alwaysShowWireGuardConfig
+        }
+        .alert(NSLocalizedString("Invalid Configuration", comment: ""), isPresented: $showValidationErrorAlert) {
+            SwiftUI.Button(NSLocalizedString("OK", comment: ""), role: .cancel) {}
+        } message: {
+            Text(validationError ?? NSLocalizedString("Please check your configuration settings.", comment: ""))
+        }
+        .alert(NSLocalizedString("Configuration Saved", comment: ""), isPresented: $showConfirmDialog) {
+            SwiftUI.Button(NSLocalizedString("OK", comment: ""), role: .cancel) {}
+        }
     }
 
     private func validateInputs() -> String? {
         if !draftUseLocalVPN {
             let remoteIp = draftRemoteServerIp.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !remoteIp.isEmpty else {
-                return "Device IP / Endpoint is mandatory for Remote Endpoint mode."
+                return NSLocalizedString("Device IP / Endpoint is mandatory for Remote Endpoint mode.", comment: "")
             }
         }
         if UserDefaults.standard.enableEMPforWireguard || UserDefaults.standard.alwaysShowWireGuardConfig {
             let host = draftWireGuardServerHost.trimmingCharacters(in: .whitespaces)
             guard !host.isEmpty else {
-                return "Bind Host / IP cannot be empty."
+                return NSLocalizedString("Bind Host / IP cannot be empty.", comment: "")
             }
             guard let port = UInt16(draftWireGuardServerPort), port > 0 else {
-                return "Bind Port must be a valid number between 1 and 65535."
+                return NSLocalizedString("Bind Port must be a valid number between 1 and 65535.", comment: "")
             }
         }
         return nil
@@ -256,7 +189,7 @@ struct ConnectionConfigView: View {
     }
 
     private func networkConfigRow(
-        label: LocalizedStringKey,
+        label: String,
         text: Binding<String?>,
         editable: Bool,
         textColor: Color? = nil,
