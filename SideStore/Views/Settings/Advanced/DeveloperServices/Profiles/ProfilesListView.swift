@@ -14,20 +14,19 @@ struct ProfilesListView: View {
     weak var presentingViewController: UIViewController?
 
     @State private var searchText = ""
-    @State private var showDownloadSheet = false
-    @State private var selectedAppIDForDownload: ALTAppID? = nil
+    @State private var showCreateProfileSheet = false
 
-    @State private var profileToDelete: ALTProvisioningProfile? = nil
+    @State private var profileToDelete: ALTListedProvisioningProfile? = nil
     @State private var showDeleteConfirmation = false
     @State private var showPurgeAllConfirmation = false
 
-    private var filteredProfiles: [ALTProvisioningProfile] {
+    private var filteredProfiles: [ALTListedProvisioningProfile] {
         if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return viewModel.profiles
         }
         return viewModel.profiles.filter {
             $0.name.localizedCaseInsensitiveContains(searchText) ||
-            $0.bundleIdentifier.localizedCaseInsensitiveContains(searchText) ||
+            ($0.bundleIdentifier?.localizedCaseInsensitiveContains(searchText) == true) ||
             $0.uuid.uuidString.localizedCaseInsensitiveContains(searchText)
         }
     }
@@ -51,38 +50,19 @@ struct ProfilesListView: View {
                 } else {
                     ForEach(filteredProfiles, id: \.uuid) { profile in
                         NavigationLink(destination: ProfilePortalDetailView(profile: profile, viewModel: viewModel, presentingViewController: presentingViewController)) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Text(profile.name)
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
-                                    Spacer()
-                                    if profile.expirationDate < Date() {
-                                        Text("Expired")
-                                            .font(.caption2)
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
-                                            .background(Color.red.opacity(0.15))
-                                            .foregroundColor(.red)
-                                            .cornerRadius(6)
-                                    }
-                                }
-                                Text(profile.bundleIdentifier)
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                                HStack {
-                                    Text("UUID: \(profile.uuid.uuidString.prefix(8))...")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    Spacer()
-                                    Text(String(format: NSLocalizedString("Expires: %@", comment: ""), formatDate(profile.expirationDate)))
-                                        .font(.caption)
-                                        .foregroundColor(profile.expirationDate < Date() ? .red : .secondary)
-                                }
-                            }
-                            .padding(.vertical, 2)
+                            ProfileRow(profile: profile, formatDate: formatDate)
                         }
+                        #if !os(tvOS)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            SwiftUI.Button(role: .destructive) {
+                                profileToDelete = profile
+                                showDeleteConfirmation = true
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                        #endif
+                        .contextMenu {
                             SwiftUI.Button(role: .destructive) {
                                 profileToDelete = profile
                                 showDeleteConfirmation = true
@@ -120,55 +100,17 @@ struct ProfilesListView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 SwiftUI.Button {
-                    showDownloadSheet = true
+                    showCreateProfileSheet = true
                 } label: {
-                    Image(systemName: "arrow.down.doc")
+                    Image(systemName: "plus")
                 }
             }
         }
         .refreshable {
-            await viewModel.fetchProfiles(presentingViewController: presentingViewController)
+            await viewModel.fetchProfiles(presentingViewController: presentingViewController, isPullToRefresh: true)
         }
-        .sheet(isPresented: $showDownloadSheet) {
-            NavigationView {
-                List {
-                    Section(header: Text("Select App ID to Generate Profile")) {
-                        if viewModel.appIDs.isEmpty {
-                            Text("No App IDs available. Register an App ID first.")
-                                .foregroundColor(.secondary)
-                                .font(.subheadline)
-                        } else {
-                            ForEach(viewModel.appIDs, id: \.identifier) { appID in
-                                SwiftUI.Button {
-                                    Task {
-                                        showDownloadSheet = false
-                                        _ = await viewModel.downloadProfile(for: appID, presentingViewController: presentingViewController)
-                                    }
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(appID.name.isEmpty ? "App ID" : appID.name)
-                                            .font(.headline)
-                                            .foregroundColor(.primary)
-                                        Text(appID.bundleIdentifier)
-                                            .font(.subheadline)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    .padding(.vertical, 2)
-                                }
-                            }
-                        }
-                    }
-                }
-                #if !os(tvOS)
-                .listStyle(InsetGroupedListStyle())
-                #else
-                .listStyle(GroupedListStyle())
-                #endif
-                .navigationTitle(NSLocalizedString("Download Profile", comment: ""))
-                .navigationBarItems(trailing: SwiftUI.Button("Cancel") {
-                    showDownloadSheet = false
-                })
-            }
+        .sheet(isPresented: $showCreateProfileSheet) {
+            CreateManualProfileView(viewModel: viewModel, presentingViewController: presentingViewController)
         }
         .alert(isPresented: $showDeleteConfirmation) {
             Alert(
@@ -202,5 +144,71 @@ struct ProfilesListView: View {
         formatter.dateStyle = .short
         formatter.timeStyle = .none
         return formatter.string(from: date)
+    }
+}
+
+private struct ProfileRow: View {
+    let profile: ALTListedProvisioningProfile
+    let formatDate: (Date) -> String
+
+    private var isExpired: Bool {
+        profile.dateExpire < Date()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(profile.name)
+                    .font(.headline)
+                Spacer()
+                if isExpired {
+                    Text("Expired")
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.red.opacity(0.15))
+                        .foregroundColor(.red)
+                        .cornerRadius(6)
+                }
+                Text("Expires: \(formatDate(profile.dateExpire))")
+                    .font(.caption)
+                    .foregroundColor(isExpired ? .red : .secondary)
+            }
+
+            HStack {
+                if let bundleID = profile.bundleIdentifier {
+                    Text(bundleID)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+                if let type = profile.profileType {
+                    Text(type.rawValue.uppercased())
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.12))
+                        .foregroundColor(.secondary)
+                        .cornerRadius(6)
+                }
+                if let isTeam = profile.isTeamProfile {
+                    Text(isTeam ? "Xcode Managed" : "Manual")
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(isTeam ? Color.blue.opacity(0.12) : Color.purple.opacity(0.12))
+                        .foregroundColor(isTeam ? .blue : .purple)
+                        .cornerRadius(6)
+                }
+            }
+
+            Text(profile.uuid.uuidString)
+                .font(.system(.caption2, design: .monospaced))
+                .foregroundColor(.secondary.opacity(0.8))
+        }
+        .padding(.vertical, 2)
     }
 }

@@ -7,12 +7,13 @@
 //
 
 import Foundation
+import SideSign
 
 public final class MaintenanceManager {
     public static let shared = MaintenanceManager()
 
     // Increment this counter whenever you want to trigger another maintenance pass in future updates
-    public static let currentMaintenanceCounter = 1
+    public static let currentMaintenanceCounter = 3
 
     public static let maintenanceCounterFileName = ".maintenance_counter"
 
@@ -20,37 +21,42 @@ public final class MaintenanceManager {
         FileManager.default.altstoreSharedDirectory?.appendingPathComponent(Self.maintenanceCounterFileName)
     }
 
+    private var completedCounter: Int {
+        get {
+            guard let url = maintenanceCounterFileURL,
+                  let str = try? String(contentsOf: url, encoding: .utf8),
+                  let val = Int(str.trimmingCharacters(in: .whitespacesAndNewlines)) else { return 0 }
+            return val
+        }
+        set {
+            guard let url = maintenanceCounterFileURL else { return }
+            try? "\(newValue)".write(to: url, atomically: true, encoding: .utf8)
+        }
+    }
+
     private init() {}
 
-    public func performMaintenanceIfNeeded() {
-        guard let fileURL = maintenanceCounterFileURL else {
-            debugLog("[MaintenanceManager] ERROR: Unable to resolve App Group shared directory.")
-            return
-        }
+    public func performMaintenanceIfNeeded() async {
+        let current = completedCounter
+        guard current < Self.currentMaintenanceCounter else { return }
 
-        let completedCounter: Int
-        if let data = try? Data(contentsOf: fileURL),
-           let str = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
-           let val = Int(str) {
-            completedCounter = val
-        } else {
-            completedCounter = 0
-        }
-
-        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-
-        // Check if 0.6.4* maintenance has been completed for this counter
-        if completedCounter < Self.currentMaintenanceCounter && currentVersion.hasPrefix("0.6.4") {
-            debugLog("[MaintenanceManager] Performing one-time Keychain reset for version \(currentVersion) (counter: \(Self.currentMaintenanceCounter))...")
-            Keychain.shared.clearAll()
-
-            let counterString = "\(Self.currentMaintenanceCounter)"
-            do {
-                try counterString.data(using: .utf8)?.write(to: fileURL, options: .atomic)
-                debugLog("[MaintenanceManager] Saved maintenance counter \(Self.currentMaintenanceCounter) to App Group at \(fileURL.path).")
-            } catch {
-                debugLog("[MaintenanceManager] ERROR: Failed to save maintenance counter to App Group: \(error)")
+        for pass in (current + 1)...Self.currentMaintenanceCounter {
+            debugLog("[MaintenanceManager] Running maintenance pass \(pass)...")
+            switch pass {
+            case 1:
+                Keychain.shared.clearAll()
+                await AuthManager.shared.signOut(keepCertificate: false, keepAnisetteData: false)
+            case 2:
+                AnisetteDataManager.shared.clearCache()
+                await AuthManager.shared.signOut(keepCertificate: true, keepAnisetteData: false)
+            case 3:
+                UserDefaults.standard.tunnelOverridePeerIp = nil
+            default:
+                break
             }
         }
+
+        completedCounter = Self.currentMaintenanceCounter
+        debugLog("[MaintenanceManager] Maintenance up to counter \(Self.currentMaintenanceCounter) complete.")
     }
 }

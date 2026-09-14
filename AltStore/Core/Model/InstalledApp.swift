@@ -47,6 +47,78 @@ public protocol InstalledAppProtocol: Fetchable
     var refreshedDate: Date { get }
     var expirationDate: Date { get }
     var installedDate: Date { get }
+    
+    var appBundleFingerprint: String? { get }
+    var signingCertificateURL: URL { get }
+    var directoryURL: URL { get }
+    var fileURL: URL { get }
+    var refreshedIPAURL: URL { get }
+    var alternateIconURL: URL { get }
+
+    var customProvisioningProfileURL: URL? { get }
+    var customInfoPlistURL: URL? { get }
+    var customEntitlementsURL: URL? { get }
+    var customProvisioningProfile: ALTProvisioningProfile? { get }
+    var customEntitlements: [String: any Sendable]? { get }
+}
+
+public extension InstalledAppProtocol {
+    var appBundleFingerprint: String? { nil }
+    
+    var directoryURL: URL {
+        return InstalledApp.appsDirectoryURL.appendingPathComponent(self.resignedBundleIdentifier)
+    }
+    
+    var fileURL: URL {
+        if let signature = self.appBundleFingerprint {
+            let payloadURL = InstalledApp.payloadURL(forSignature: signature)
+            if FileManager.default.fileExists(atPath: payloadURL.path) {
+                return payloadURL
+            }
+        }
+        return self.directoryURL.appendingPathComponent("App.app")
+    }
+    
+    var refreshedIPAURL: URL {
+        return self.directoryURL.appendingPathComponent("Refreshed.ipa")
+    }
+    
+    var alternateIconURL: URL {
+        let bundleID = self.customBundleIdentifier ?? self.resignedBundleIdentifier
+        let appSupport = FileManager.default.applicationSupportDirectory
+        return appSupport.appendingPathComponent("AppIcons", isDirectory: true).appendingPathComponent("\(bundleID).png")
+    }
+    
+    var signingCertificateURL: URL {
+        return self.directoryURL.appendingPathComponent("signing_certificate.der")
+    }
+
+    var customProvisioningProfileURL: URL? {
+        let fileURL = self.directoryURL.appendingPathComponent("ProvisioningProfiles").appendingPathComponent("\(self.resignedBundleIdentifier).mobileprovision")
+        return FileManager.default.fileExists(atPath: fileURL.path) ? fileURL : nil
+    }
+
+    var customInfoPlistURL: URL? {
+        let fileURL = self.directoryURL.appendingPathComponent("Info.plist").appendingPathComponent("\(self.resignedBundleIdentifier).plist")
+        return FileManager.default.fileExists(atPath: fileURL.path) ? fileURL : nil
+    }
+
+    var customEntitlementsURL: URL? {
+        let fileURL = self.directoryURL.appendingPathComponent("Entitlements").appendingPathComponent("\(self.resignedBundleIdentifier).plist")
+        return FileManager.default.fileExists(atPath: fileURL.path) ? fileURL : nil
+    }
+
+    var customProvisioningProfile: ALTProvisioningProfile? {
+        guard let url = self.customProvisioningProfileURL else { return nil }
+        return try? ALTProvisioningProfile(url: url)
+    }
+
+    var customEntitlements: [String: any Sendable]? {
+        guard let url = self.customEntitlementsURL,
+              let parser = try? InfoPlistParser(plistURL: url)
+        else { return nil }
+        return parser.rawDictionary
+    }
 }
 
 @objc(InstalledApp)
@@ -72,6 +144,7 @@ public class InstalledApp: BaseEntity, InstalledAppProtocol
     @NSManaged public var certificateSerialNumber: String?
     @NSManaged public var storeBuildVersion: String?
     @NSManaged public var certificateStatusRaw: String?
+    @NSManaged public var appBundleFingerprint: String?
     
     public var certificateStatus: CertificateStatus {
         get {
@@ -241,15 +314,14 @@ public extension InstalledApp
         self.expirationDate = provisioningProfile.expirationDate
     }
     
-    func loadIcon(completion: @escaping (Result<UIImage?, Error>) -> Void)
+    func loadIcon() async throws -> UIImage?
     {
         if Bundle.isBundledWithLiveContainer,
            self.bundleIdentifier == StoreApp.altstoreAppID,
            let hostApplication = ALTApplication(fileURL: Bundle.realMainBundle.bundleURL),
            let hostIcon = hostApplication.icon
         {
-            completion(.success(hostIcon))
-            return
+            return hostIcon
         }
         if self.bundleIdentifier == StoreApp.altstoreAppID,
            let iconName = UIApplication.alt_shared?.value(forKey: "alternateIconName") as? String
@@ -257,33 +329,24 @@ public extension InstalledApp
             // Use alternate app icon for AltStore, if one was chosen.
             let imageName = iconName.replacingOccurrences(of: "Icon", with: "")
             let image = UIImage(named: imageName) ?? UIImage(named: iconName)
-            
-            completion(.success(image))
-            return
+            return image
         }
         
         let hasAlternateIcon = self.hasAlternateIcon
         let alternateIconURL = self.alternateIconURL
         let fileURL = self.fileURL
         
-        DispatchQueue.global().async {
-            do
+        return try await Task.detached(priority: .userInitiated) {
+            if hasAlternateIcon,
+               case let data = try Data(contentsOf: alternateIconURL),
+               let icon = UIImage(data: data)
             {
-                if hasAlternateIcon,
-                   case let data = try Data(contentsOf: alternateIconURL),
-                   let icon = UIImage(data: data)
-                {
-                    return completion(.success(icon))
-                }
-                
-                let appBundle = ALTApplication(fileURL: fileURL)
-                completion(.success(appBundle?.icon))
+                return icon
             }
-            catch
-            {
-                completion(.failure(error))
-            }
-        }
+            
+            let appBundle = ALTApplication(fileURL: fileURL)
+            return appBundle?.icon
+        }.value
     }
 
     func matches(_ appVersion: AppVersion) -> Bool 
@@ -407,29 +470,14 @@ public extension InstalledApp
 
 public extension InstalledApp
 {
-    // TODO: @mahee96: Do NOT hardcode app's url scheme prefixes as in here
-    //       Need to get it dynamically from the Info.plist of other means
     var openAppURL: URL {
-        return InstalledApp.openAppURL(resignedBundleIdentifier: self.resignedBundleIdentifier)
+        return InstalledApp.openAppURL(targetBundleIdentifier: self.resignedBundleIdentifier)
     }
     
-    // TODO: @mahee96: Do NOT hardcode app's url scheme prefixes as in here
-    //       Need to get it dynamically from the Info.plist of other means
-    class func openAppURL(resignedBundleIdentifier: String) -> URL
+    class func openAppURL(targetBundleIdentifier: String) -> URL
     {
-        let openAppURL = URL(string: "sidestore-" + resignedBundleIdentifier + "://")!
+        let openAppURL = URL(string: "sidestore-" + targetBundleIdentifier + "://")!
         return openAppURL
-    }
-    
-    class func openAppURL(for app: InstalledAppProtocol) -> URL
-    {
-        return self.openAppURL(resignedBundleIdentifier: app.resignedBundleIdentifier)
-    }
-    
-    class func openAppURL(for app: AppProtocol) -> URL
-    {
-        let identifier = (app as? InstalledAppProtocol)?.resignedBundleIdentifier ?? app.bundleIdentifier
-        return self.openAppURL(resignedBundleIdentifier: identifier)
     }
 }
 
@@ -449,77 +497,28 @@ public extension InstalledApp
         let appsDirectoryURL = baseDirectory.appendingPathComponent("Apps")
         return appsDirectoryURL
     }
-    
-    class func fileURL(for app: AppProtocol) -> URL
-    {
-        let appURL = self.directoryURL(for: app).appendingPathComponent("App.app")
-        return appURL
+
+
+    class func payloadDirectoryURL(forSignature signature: String) -> URL {
+        return InstalledApp.appsDirectoryURL.appendingPathComponent("Payloads").appendingPathComponent(signature)
     }
-    
-    class func refreshedIPAURL(for app: AppProtocol) -> URL
-    {
-        let ipaURL = self.directoryURL(for: app).appendingPathComponent("Refreshed.ipa")
-        debugLog("[InstalledApp] 'ipaURL': \(ipaURL.absoluteString)")
-        return ipaURL
+
+    class func payloadURL(forSignature signature: String) -> URL {
+        return self.payloadDirectoryURL(forSignature: signature).appendingPathComponent("App.app")
     }
-    
-    class func directoryURL(for app: AppProtocol) -> URL
-    {
-        let directoryURL = InstalledApp.appsDirectoryURL.appendingPathComponent(app.bundleIdentifier)
-        
-        do { try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true, attributes: nil) }
-        catch { debugLog("\(error)") }
-        
-        return directoryURL
-    }
-    
+
     class func installedAppUTI(forBundleIdentifier bundleIdentifier: String) -> String
     {
         let installedAppUTI = "io.sidestore.Installed." + bundleIdentifier
         return installedAppUTI
     }
     
-    class func installedBackupAppUTI(forBundleIdentifier bundleIdentifier: String) -> String
-    {
-        let installedBackupAppUTI = InstalledApp.installedAppUTI(forBundleIdentifier: bundleIdentifier) + ".backup"
-        return installedBackupAppUTI
-    }
-    
-    class func alternateIconURL(forBundleIdentifier bundleIdentifier: String) -> URL
-    {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let iconsDirectory = appSupport.appendingPathComponent("AppIcons", isDirectory: true)
-        try? FileManager.default.createDirectory(at: iconsDirectory, withIntermediateDirectories: true, attributes: nil)
-        return iconsDirectory.appendingPathComponent("\(bundleIdentifier).png")
-    }
-    
-    class func alternateIconURL(for app: InstalledAppProtocol) -> URL
-    {
-        let bundleID = app.customBundleIdentifier ?? app.resignedBundleIdentifier
-        return self.alternateIconURL(forBundleIdentifier: bundleID)
-    }
-    
-    var directoryURL: URL {
-        return InstalledApp.directoryURL(for: self)
-    }
-    
-    var fileURL: URL {
-        return InstalledApp.fileURL(for: self)
-    }
-    
-    var refreshedIPAURL: URL {
-        return InstalledApp.refreshedIPAURL(for: self)
-    }
-    
-    var installedAppUTI: String {
+    public var installedAppUTI: String {
         return InstalledApp.installedAppUTI(forBundleIdentifier: self.resignedBundleIdentifier)
     }
     
-    var installedBackupAppUTI: String {
-        return InstalledApp.installedBackupAppUTI(forBundleIdentifier: self.resignedBundleIdentifier)
+    public var installedBackupAppUTI: String {
+        return self.installedAppUTI + ".backup"
     }
-    
-    var alternateIconURL: URL {
-        return InstalledApp.alternateIconURL(for: self)
-    }
+
 }

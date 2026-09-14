@@ -8,7 +8,7 @@
 
 import Foundation
 
-final class PrepareAppExtensionBundleIDsOperation: BasePipelineOperation<AppOperationContext, Void>, @unchecked Sendable {
+final class PrepareAppExtensionBundleIDsOperation: BasePipelineOperation<InstallAppOperationContext, Void>, @unchecked Sendable {
     override func execute(parentProgress: Progress?) async throws {
         let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[PrepareAppExtensionBundleIDsOperation] execute() started")

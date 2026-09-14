@@ -152,6 +152,11 @@ struct AppIDDetailView: View {
         .onAppear {
             initializeSelectedGroups()
         }
+        .refreshable {
+            async let fetchIDs: () = viewModel.fetchAppIDs(presentingViewController: presentingViewController, isPullToRefresh: true)
+            async let fetchGroups: () = viewModel.fetchAppGroups(presentingViewController: presentingViewController, isPullToRefresh: true)
+            _ = await (fetchIDs, fetchGroups)
+        }
         .developerServicesToast(viewModel: viewModel)
     }
 

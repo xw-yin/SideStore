@@ -680,7 +680,7 @@ public extension StoreApp
             }
         }
         
-        return URL(string: "https://sidestore.io/apps-v2.json/apps/sidestore/icon.png")!
+        return AppConstants.Sources.sideStoreFallbackIconURL
     }
 
     func configureForEmbeddedLiveContainer()
@@ -697,7 +697,7 @@ public extension StoreApp
     class func makeAltStoreApp(version: String, buildVersion: String?, in context: NSManagedObjectContext) -> StoreApp
     {
         let placeholderBundleId = StoreApp.altstoreAppID
-        let placeholderDownloadURL = URL(string: "https://sidestore.io")!
+        let placeholderDownloadURL = AppConstants.Sources.sideStoreWebsite
         let placeholderSourceID = Source.altStoreIdentifier
         let placeholderVersion = "0.0.0"
         let placeholderDate = Date.distantPast

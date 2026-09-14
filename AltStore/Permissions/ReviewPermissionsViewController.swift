@@ -82,7 +82,7 @@ class ReviewPermissionsViewController: UICollectionViewController
         self.dataSource.proxy = self
         self.collectionView.dataSource = self.dataSource
         
-        self.collectionView.register(UICollectionViewListCell.self, forCellWithReuseIdentifier: RSTCellContentGenericCellIdentifier)
+        self.collectionView.register(UICollectionViewListCell.self, forCellWithReuseIdentifier: CellContentGenericCellIdentifier)
         self.collectionView.register(UICollectionViewListCell.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: UICollectionView.elementKindSectionHeader)
         
         let cancelButton = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(ReviewPermissionsViewController.cancel))
@@ -194,9 +194,9 @@ extension ReviewPermissionsViewController
         }
     }
     
-    func makeDataSource() -> RSTCompositeCollectionViewDataSource<NSString>
+    func makeDataSource() -> CompositeCollectionViewDataSource<NSString>
     {
-        let approveDataSource = RSTDynamicCollectionViewDataSource<NSString>()
+        let approveDataSource = DynamicCollectionViewDataSource<NSString>()
         approveDataSource.numberOfSectionsHandler = { 1 }
         approveDataSource.numberOfItemsHandler = { _ in 1 }
         approveDataSource.dynamicCellConfigurationHandler = { cell, indexPath in
@@ -229,15 +229,15 @@ extension ReviewPermissionsViewController
             cell.backgroundConfiguration = backgroundConfig
         }
         
-        let dataSource = RSTCompositeCollectionViewDataSource<NSString>(dataSources: [self.knownPermissionsDataSource,
+        let dataSource = CompositeCollectionViewDataSource<NSString>(dataSources: [self.knownPermissionsDataSource,
                                                                                        self.unknownPermissionsDataSource,
                                                                                        approveDataSource])
         return dataSource
     }
     
-    func makeKnownPermissionsDataSource() -> RSTArrayCollectionViewDataSource<NSString>
+    func makeKnownPermissionsDataSource() -> ArrayCollectionViewDataSource<NSString>
     {
-        let dataSource = RSTArrayCollectionViewDataSource<NSString>(items: self.knownPermissions.map { $0.rawValue as NSString })
+        let dataSource = ArrayCollectionViewDataSource<NSString>(items: self.knownPermissions.map { $0.rawValue as NSString })
         dataSource.cellConfigurationHandler = { [weak self] cell, permission, indexPath in
             let cell = cell as! UICollectionViewListCell
             let permission = ALTEntitlement(rawValue: permission as String)
@@ -247,9 +247,9 @@ extension ReviewPermissionsViewController
         return dataSource
     }
     
-    func makeUnknownPermissionsDataSource() -> RSTArrayCollectionViewDataSource<NSString>
+    func makeUnknownPermissionsDataSource() -> ArrayCollectionViewDataSource<NSString>
     {
-        let dataSource = RSTArrayCollectionViewDataSource<NSString>(items: self.unknownPermissions.map { $0.rawValue as NSString })
+        let dataSource = ArrayCollectionViewDataSource<NSString>(items: self.unknownPermissions.map { $0.rawValue as NSString })
         dataSource.cellConfigurationHandler = { [weak self] cell, permission, indexPath in
             let cell = cell as! UICollectionViewListCell
             let permission = ALTEntitlement(rawValue: permission as String)

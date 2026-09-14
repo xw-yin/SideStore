@@ -12,9 +12,12 @@ import SideSign
 
 final class RefreshGroup: NSObject
 {
-    let context: AuthenticatedOperationContext
+    let dbContext: NSManagedObjectContext
     let sharedContext: SharedPipelineContext
     let progress = Progress.discreteProgress(totalUnitCount: 100)
+    var error: Error?
+    var isCellularRefreshGroup: Bool = false
+    let operationStartTime: CFAbsoluteTime = CFAbsoluteTimeGetCurrent()
     
     var completionHandler: (([String: Result<InstalledApp, Error>]) -> Void)?
     var beginInstallationHandler: ((InstalledApp) -> Void)?
@@ -23,14 +26,14 @@ final class RefreshGroup: NSObject
     
     // Keep strong references to managed object contexts
     // so they don't die out from under us.
-    private(set) var _contexts = Set<NSManagedObjectContext>()
+    private(set) var retainedContexts = Set<NSManagedObjectContext>()
     
     var activeTask: Task<Void, Never>?
     private let lock = NSLock()
     
-    init(context: AuthenticatedOperationContext, sharedContext: SharedPipelineContext = SharedPipelineContext())
+    init(dbContext: NSManagedObjectContext, sharedContext: SharedPipelineContext = SharedPipelineContext())
     {
-        self.context = context
+        self.dbContext = dbContext
         self.sharedContext = sharedContext
         super.init()
     }
@@ -45,7 +48,7 @@ final class RefreshGroup: NSObject
             case .failure: break
             case .success(let installedApp):
                 guard let context = installedApp.managedObjectContext else { break }
-                self._contexts.insert(context)
+                self.retainedContexts.insert(context)
             }
         }
     }

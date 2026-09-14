@@ -9,14 +9,14 @@ import Foundation
 
 public enum SideStoreLogging {
     private static let lock = NSLock()
-    private nonisolated(unsafe) static var _isLoggingEnabled: Bool = false
+    private nonisolated(unsafe) static var rawLoggingEnabled: Bool = false
 
     public static var isLoggingEnabled: Bool {
-        lock.withLock { _isLoggingEnabled }
+        lock.withLock { rawLoggingEnabled }
     }
 
     public static func setLogging(_ enabled: Bool) {
-        lock.withLock { _isLoggingEnabled = enabled }
+        lock.withLock { rawLoggingEnabled = enabled }
     }
 }
 

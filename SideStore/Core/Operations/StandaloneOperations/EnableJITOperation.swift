@@ -45,11 +45,11 @@ final class EnableJITOperation: BaseStandaloneOperation<StandaloneOperationConte
     private func enableJIT(for installedApp: InstalledApp) async throws
     {
         let userdefaults = UserDefaults.standard
-        let dbContext = self.context.dbBackgroundContext ?? installedApp.managedObjectContext
+        let dbContext = self.context.dbBackgroundContext
 
-        let (targetBundleId, appName) = await dbContext?.perform {
+        let (targetBundleId, appName) = await dbContext.perform {
             (installedApp.resignedBundleIdentifier, installedApp.name)
-        } ?? (installedApp.resignedBundleIdentifier, installedApp.name)
+        }
 
         if #available(iOS 17, *), userdefaults.isSideJITServerEnabled {
             let sideJITURLString = await SideJITManager.shared.resolveServerURL()
@@ -92,9 +92,12 @@ final class EnableJITOperation: BaseStandaloneOperation<StandaloneOperationConte
                 let percent = 30 + Int64(Double(retry) / Double(maxRetries) * 60.0)
                 self.setProgress(percent)
                 do {
+                    await CellularRefreshManager.shared.turnOffDataIfNeeded()
                     try await debugApp(targetBundleId)
+                    await CellularRefreshManager.shared.turnOnDataIfNeeded()
                     return
                 } catch {
+                    await CellularRefreshManager.shared.turnOnDataIfNeeded()
                     lastError = error
                 }
             }
@@ -105,8 +108,14 @@ final class EnableJITOperation: BaseStandaloneOperation<StandaloneOperationConte
 
 @available(iOS 17, *)
 func enableJITSideJITServer(serverURL: URL, bundleIdentifier: String, appName: String) async throws {
-    guard let udid = try await fetchUDID(useStatic: true) else {
-        throw SideJITServerErrorType.other("Unable to get UDID")
+    let udid: String
+    do {
+        await CellularRefreshManager.shared.turnOffDataIfNeeded()
+        udid = try await fetchUDID()
+        await CellularRefreshManager.shared.turnOnDataIfNeeded()
+    } catch {
+        await CellularRefreshManager.shared.turnOnDataIfNeeded()
+        throw error
     }
 
     let serverURLWithUDID = serverURL.appendingPathComponent(udid)

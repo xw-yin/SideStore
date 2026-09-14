@@ -20,7 +20,7 @@ private let pipelineStepToggles: [(name: String, step: PipelineStep)] = [
     ("Clean Staged App",                        .cleanStagedApp),
     ("Deactivate App",                          .deactivateApp),
     ("Download App",                            .downloadApp),
-    ("Export Resigned App",                     .exportResignedApp),
+    ("Export Resigned IPA",                     .exportResignedIPA),
     ("Fetch Provisioning Profiles",             .fetchProvisioningProfiles),
     ("Install App",                             .installApp),
     ("Preflight Checks",                        .preflightChecks),
@@ -38,14 +38,15 @@ private let pipelineStepToggles: [(name: String, step: PipelineStep)] = [
     ("User Customization",                      .userCustomization),
     ("Verify App",                              .verifyApp),
     ("Verify Certificate",                      .verifyCertificate),
+    ("Create IPA",                              .createIPA),
 ]
 
 private let standaloneStepToggles: [(name: String, step: StandaloneStep)] = [
-    ("Authentication",                          .authentication),
+    ("Sign In",                                 .signIn),
     ("Background Refresh Apps",                 .backgroundRefreshApps),
     ("Clear App Cache",                         .clearAppCache),
     ("Enable JIT",                              .enableJIT),
-    ("Fetch App IDs",                           .fetchAppIDs),
+    ("Sync App IDs",                            .syncAppIDs),
     ("Fetch Source",                            .fetchSource),
     ("Schedule Expiration Warning",             .scheduleExpirationWarningNotification),
 ]

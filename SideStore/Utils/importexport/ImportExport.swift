@@ -65,8 +65,8 @@ class ImportExport {
     public static func exportAccount(password: String, includeApplePassword: Bool) throws -> Data {
         guard let email = AuthManager.shared.currentAppleID,
               let activeCert = CertificateManager.shared.activeCertificate,
-              let identifier = AnisetteDataManager.shared.anisetteIdentifier,
-              let adiPB = AnisetteDataManager.shared.anisetteAdiBlob else {
+              let identifier = AnisetteConfigManager.shared.anisetteIdentifier,
+              let adiPB = AnisetteConfigManager.shared.anisetteAdiBlob else {
             throw OperationError.invalidParameters("Account or signing data is missing.")
         }
         
@@ -102,7 +102,7 @@ class ImportExport {
         return finalData
     }
 
-    public static func importAccount(_ encryptedData: Data, filePassword: String) throws -> ImportedAccount {
+    public static func importAccount(_ encryptedData: Data, filePassword: String) async throws -> ImportedAccount {
         guard encryptedData.count > 16 else {
             throw BackupEncryptionError.invalidDataFormat
         }
@@ -117,13 +117,13 @@ class ImportExport {
             let decryptedData = try AES.GCM.open(sealedBox, using: key)
             let account = try Foundation.JSONDecoder().decode(ImportedAccount.self, from: decryptedData)
             
-            AuthManager.shared.signOut()
+            await AuthManager.shared.signOut()
             AuthManager.shared.currentAppleID = account.email
             if let pass = account.password, !pass.isEmpty {
                 AuthManager.shared.password = pass
             }
-            AnisetteDataManager.shared.anisetteAdiBlob = account.anisetteAdiBlob
-            AnisetteDataManager.shared.anisetteIdentifier = account.anisetteIdentifier
+            AnisetteConfigManager.shared.anisetteAdiBlob = account.anisetteAdiBlob
+            AnisetteConfigManager.shared.anisetteIdentifier = account.anisetteIdentifier
             
             let altCert = try CertificateManager.parse(account.certificateData, password: account.certificatePassword)
             try CertificateManager.shared.setActiveCertificate(altCert)
@@ -255,8 +255,8 @@ extension ImportExport {
         guard let email = AuthManager.shared.currentAppleID,
               let passwordStr = AuthManager.shared.password,
               let activeCert = CertificateManager.shared.activeCertificate,
-              let identifier = AnisetteDataManager.shared.anisetteIdentifier,
-              let adiPB = AnisetteDataManager.shared.anisetteAdiBlob else {
+              let identifier = AnisetteConfigManager.shared.anisetteIdentifier,
+              let adiPB = AnisetteConfigManager.shared.anisetteAdiBlob else {
             return nil
         }
         if let certPass = activeCert.password {
@@ -266,18 +266,18 @@ extension ImportExport {
         }
     }
 
-    static func importAccountJSON(from file: URL) throws {
+    static func importAccountJSON(from file: URL) async throws {
         _ = file.startAccessingSecurityScopedResource()
         defer { file.stopAccessingSecurityScopedResource() }
         
         let accountData = try Data(contentsOf: file)
         let account = try Foundation.JSONDecoder().decode(ImportedAccount.self, from: accountData)
         
-        AuthManager.shared.signOut()
+        await AuthManager.shared.signOut()
         AuthManager.shared.currentAppleID = account.email
         AuthManager.shared.password = account.password
-        AnisetteDataManager.shared.anisetteAdiBlob = account.anisetteAdiBlob
-        AnisetteDataManager.shared.anisetteIdentifier = account.anisetteIdentifier
+        AnisetteConfigManager.shared.anisetteAdiBlob = account.anisetteAdiBlob
+        AnisetteConfigManager.shared.anisetteIdentifier = account.anisetteIdentifier
         
         let altCert = try CertificateManager.parse(account.certificateData, password: account.certificatePassword)
         try CertificateManager.shared.setActiveCertificate(altCert)

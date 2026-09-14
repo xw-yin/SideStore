@@ -19,6 +19,10 @@ public extension UserDefaults
         get { self.object(forKey: #function) as? Date }
         set { self.set(newValue, forKey: #function) }
     }
+    @objc var hasCompletedOnboarding: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
     @objc var acctFileChecksum: String? {
         get { self.string(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
@@ -67,6 +71,42 @@ public extension UserDefaults
         get { self.string(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
+    @objc var customAnisetteClientInfo: String? {
+        get { self.string(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var customAnisetteUserAgent: String? {
+        get { self.string(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var customAnisetteDeviceID: String? {
+        get { self.string(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var customAnisetteLocalUserID: String? {
+        get { self.string(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var customAnisetteLocale: String? {
+        get { self.string(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var customAnisetteTimeZone: String? {
+        get { self.string(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var customAnisetteXcodeVersion: String? {
+        get { self.string(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var customAnisetteSerialNumber: String? {
+        get { self.string(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var customAnisetteRoutingInfo: String? {
+        get { self.string(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
     
     @objc var isBackgroundRefreshEnabled: Bool {
         get { self.bool(forKey: #function) }
@@ -81,6 +121,10 @@ public extension UserDefaults
         set { self.set(newValue, forKey: #function) }
     }
     @objc var remotePairingPortOverride: Int {
+        get { self.integer(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var deviceProbeTimeoutOverride: Int {
         get { self.integer(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
@@ -116,24 +160,54 @@ public extension UserDefaults
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
+    @objc var customizeInfoPlist: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var preferSheetForInfoPlistCustomization: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var customizeEntitlements: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var preferSheetForEntitlementsCustomization: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
     @objc var customizeAppId: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
-    var customizeAppExtensions: Bool {
-        get {
-            if self.object(forKey: "customizeAppExtensions") != nil {
-                return self._customizeAppExtensions
-            }
-            if let activeTeam = DatabaseManager.shared.activeTeam(), activeTeam.type != .free {
-                return false
-            }
-            return true
-        }
-        set { self._customizeAppExtensions = newValue }
+    @objc var customizeAppIcon: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
     }
-    @objc(customizeAppExtensions) private var _customizeAppExtensions: Bool {
-        get { self.bool(forKey: "customizeAppExtensions") }
+    @objc var customizeProvisioningProfile: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var turnOffDataShortcutName: String {
+        get { self.string(forKey: #function) ?? "TurnOffData" }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var turnOnDataShortcutName: String {
+        get { self.string(forKey: #function) ?? "TurnOnData" }
+        set { self.set(newValue, forKey: #function) }
+    }
+    
+    var customizeAppExtensions: AppExtensionCustomization {
+        get {
+            let option = _customizeAppExtensions.flatMap { AppExtensionCustomization(rawValue: $0) } ?? .promptUser
+            return option
+        }
+        set {
+            _customizeAppExtensions = newValue.rawValue
+        }
+    }
+    @objc(customizeAppExtensions) private var _customizeAppExtensions: String? {
+        get { self.string(forKey: "customizeAppExtensions") }
         set { self.set(newValue, forKey: "customizeAppExtensions") }
     }
     var autoFixAppGroupIDs: Bool {
@@ -148,6 +222,10 @@ public extension UserDefaults
     @objc(autoFixAppGroupIDs) private var _autoFixAppGroupIDs: Bool {
         get { self.bool(forKey: "autoFixAppGroupIDs") }
         set { self.set(newValue, forKey: "autoFixAppGroupIDs") }
+    }
+    @objc var preferResignedIPA: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
     }
     @objc var isExportResignedAppEnabled: Bool {
         get { self.bool(forKey: #function) }
@@ -178,6 +256,18 @@ public extension UserDefaults
         set { self.set(newValue, forKey: #function) }
     }
     @objc var keepAnisetteDataAfterLogout: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var isDeviceRegistered: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var keepAnisetteHeadersAfterLogout: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var keepSideSignHeadersAfterLogout: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
@@ -287,6 +377,10 @@ public extension UserDefaults
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
+    @objc var acceptIPv6ConnectionConfig: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
 
     @nonobjc var preferredAppSorting: AppSorting {
         get {
@@ -369,6 +463,8 @@ public extension UserDefaults
             #keyPath(UserDefaults.minimuxerGatewayBackend): GatewayBackend.idevice.rawValue,
             #keyPath(UserDefaults.keepSigningCertsAfterLogout): true,
             #keyPath(UserDefaults.keepAnisetteDataAfterLogout): true,
+            #keyPath(UserDefaults.keepAnisetteHeadersAfterLogout): true,
+            #keyPath(UserDefaults.keepSideSignHeadersAfterLogout): true,
             #keyPath(UserDefaults.isBackgroundRefreshEnabled): true,
             #keyPath(UserDefaults.isBetaUpdatesEnabled): false,
             #keyPath(UserDefaults.permissionCheckingDisabled): true,
@@ -380,17 +476,26 @@ public extension UserDefaults
             #keyPath(UserDefaults.appVerificationDisabled): false,
             #keyPath(UserDefaults.isIdleTimeoutDisableEnabled): true,
             #keyPath(UserDefaults.betaUdpatesTrack): defaultBetaUpdatesTrack,
-            #keyPath(UserDefaults.menuAnisetteList): "https://servers.sidestore.io/servers.json",
-            #keyPath(UserDefaults.menuAnisetteURL): "https://ani.sidestore.io",
+            #keyPath(UserDefaults.menuAnisetteList): AppConstants.Anisette.Servers.defaultSource,
+            #keyPath(UserDefaults.menuAnisetteURL): AppConstants.Anisette.Servers.defaultServerURL,
             #keyPath(UserDefaults.isAnisetteOfflineMode): false,
             #keyPath(UserDefaults.disableAnisetteRotation): false,
             #keyPath(UserDefaults.useOnDeviceAnisette): true,
             #keyPath(UserDefaults.useLocalVPN): true,
+            #keyPath(UserDefaults.acceptIPv6ConnectionConfig): false,
             #keyPath(UserDefaults.enableEMPforWireguard): false,
             #keyPath(UserDefaults.skipNonCopyableBackupFiles): true,
             
             #keyPath(UserDefaults.responseCachingDisabled): false,
+            #keyPath(UserDefaults.customizeInfoPlist): false,
+            #keyPath(UserDefaults.preferSheetForInfoPlistCustomization): true,
+            #keyPath(UserDefaults.customizeEntitlements): false,
+            #keyPath(UserDefaults.preferSheetForEntitlementsCustomization): true,
             #keyPath(UserDefaults.customizeAppId): false,
+            #keyPath(UserDefaults.customizeAppIcon): false,
+            #keyPath(UserDefaults.customizeProvisioningProfile): false,
+            #keyPath(UserDefaults._customizeAppExtensions): AppExtensionCustomization.promptUser.rawValue,
+            #keyPath(UserDefaults.preferResignedIPA): true,
             #keyPath(UserDefaults.isExportResignedAppEnabled): false,
             #keyPath(UserDefaults.isVerboseOperationsLoggingEnabled): false,
             #keyPath(UserDefaults.isSideStoreVerboseLoggingEnabled): false,
@@ -399,8 +504,11 @@ public extension UserDefaults
             #keyPath(UserDefaults.isRotateLogsOnStartupEnabled): true,
             #keyPath(UserDefaults.recreateDatabaseOnNextStart): false,
             #keyPath(UserDefaults.isCellularRefreshEnabled): false,
+            #keyPath(UserDefaults.turnOffDataShortcutName): "TurnOffData",
+            #keyPath(UserDefaults.turnOnDataShortcutName): "TurnOnData",
             #keyPath(UserDefaults.isPairingReset): true,
             #keyPath(UserDefaults.isDebugModeEnabled): false,
+            #keyPath(UserDefaults.isDeviceRegistered): false,
 
         ] as [String: Any]
 

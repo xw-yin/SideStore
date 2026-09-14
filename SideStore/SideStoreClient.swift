@@ -71,15 +71,7 @@ public final class SideStoreClient: NSObject, RefreshClient, @unchecked Sendable
 
     public func refreshAllApps(progress: Progress) async throws {
         if !DatabaseManager.shared.isStarted {
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                DatabaseManager.shared.start { error in
-                    if let error {
-                        continuation.resume(throwing: error)
-                    } else {
-                        continuation.resume()
-                    }
-                }
-            }
+            try await DatabaseManager.shared.start()
         }
         try await AppBootManager.shared.ensureMinimuxerStarted()
 

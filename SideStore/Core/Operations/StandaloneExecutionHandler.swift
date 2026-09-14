@@ -16,12 +16,18 @@ protocol AnisetteServerHandler: AnyObject {
 enum ProvisioningErrorDecision {
     case retry
     case cancel
+    case skip
 }
 
-protocol AuthenticationHandler: AnyObject {
-    var isPresenterAvailable: Bool { get }
+enum RevokeDecision {
+    case keepExisting
+    case revokeSelected([ALTX509Certificate])
+}
+
+protocol SignInHandler: AnyObject, CertificateProvisioningHandler, DeviceProvisioningHandler, CodeSignValidationHandler {
     func credentials() async throws -> (String, String)
-    func verificationCode(for mode: TwoFactorMode) async throws -> TwoFactorAction
+    func verificationCode(for request: TwoFactorRequest) async throws -> TwoFactorResponse
+    func accountRepair(url: URL, message: String) async -> AccountRepairDecision
     func handleSignInResult(_ result: Result<(ALTAccount, ALTAppleAPISession), Error>) async
     
     func resolveTeam(_ teams: [ALTTeam]) async throws -> ALTTeam
@@ -29,14 +35,10 @@ protocol AuthenticationHandler: AnyObject {
     func resolvePostAuth() async
     
     func resolveRevocation(certificates: [ALTX509Certificate], teamType: ALTTeamType) async throws -> RevokeDecision
-    func resolveResign(mismatchReason: CodeSignValidationReason, context: AuthenticatedOperationContext) async throws -> Bool
+    
+    func showCertificateSkipAcknowledgment() async
+    func showDeviceRegistrationSkipAcknowledgment() async
     
     func complete() async
-}
-
-extension AuthenticationHandler {
-    var isPresenterAvailable: Bool {
-        return true
-    }
 }
 

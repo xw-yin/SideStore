@@ -15,6 +15,7 @@ import WidgetKit
 import TVServices
 #endif
 import SideSign
+import MinimuxerCommon
 
 private extension Color {
     static let settingsRowBackground = Color(uiColor: .secondarySystemGroupedBackground)
@@ -26,11 +27,13 @@ struct DeveloperOptionsView: View {
     @State private var isVerboseOperationsLoggingEnabled: Bool = UserDefaults.standard.isVerboseOperationsLoggingEnabled
     @State private var isSideStoreVerboseLoggingEnabled: Bool = UserDefaults.standard.isSideStoreVerboseLoggingEnabled
     @State private var isAltWidgetVerboseLoggingEnabled: Bool = WidgetDataManager.shared.isVerboseLoggingEnabled
-    @State private var isAltSignVerboseLoggingEnabled: Bool = UserDefaults.standard.isAltSignVerboseLoggingEnabled
+    @State private var isSideSignVerboseLoggingEnabled: Bool = UserDefaults.standard.isAltSignVerboseLoggingEnabled
     @State private var isMinimuxerVerboseLoggingEnabled: Bool = UserDefaults.standard.isMinimuxerVerboseLoggingEnabled
     @State private var isRotateLogsOnStartupEnabled: Bool = UserDefaults.standard.isRotateLogsOnStartupEnabled
     @State private var recreateDatabaseOnNextStart: Bool = UserDefaults.standard.recreateDatabaseOnNextStart
     @State private var alwaysShowWireGuardConfig: Bool = UserDefaults.standard.alwaysShowWireGuardConfig
+    @State private var acceptIPv6ConnectionConfig: Bool = UserDefaults.standard.acceptIPv6ConnectionConfig
+    @State private var tcpProbeTimeoutText: String = ""
     
     @State private var isExportingDB: Bool = false
     @State private var showDeleteConfirmation: Bool = false
@@ -38,6 +41,7 @@ struct DeveloperOptionsView: View {
     @State private var showClearKeychainConfirmation: Bool = false
     @State private var showExportPasswordPrompt: Bool = false
     @State private var exportCertPassword: String = ""
+    @State private var showOnboardingSheet: Bool = false
     
     var body: some View {
         ScrollView {
@@ -100,12 +104,12 @@ struct DeveloperOptionsView: View {
                         
                         divider
                         
-                        toggleRow(title: "AltSign Verbose Logging", isOn: Binding(
-                            get: { isAltSignVerboseLoggingEnabled },
+                        toggleRow(title: "SideSign Verbose Logging", isOn: Binding(
+                            get: { isSideSignVerboseLoggingEnabled },
                             set: { newValue in
-                                isAltSignVerboseLoggingEnabled = newValue
+                                isSideSignVerboseLoggingEnabled = newValue
                                 UserDefaults.standard.isAltSignVerboseLoggingEnabled = newValue
-                                AltSign.setLogging(newValue)
+                                SideSignLogging.setLogging(newValue)
                             }
                         ))
                         
@@ -175,7 +179,6 @@ struct DeveloperOptionsView: View {
                     .background(Color.settingsRowBackground)
                     .cornerRadius(14)
                 }
-                
                 // Section: Widget Options
                 VStack(alignment: .leading, spacing: 8) {
                     #if !os(tvOS)
@@ -376,6 +379,84 @@ struct DeveloperOptionsView: View {
                     .cornerRadius(14)
                 }
                 
+                // Section: Device (TCP) Probe Timeout
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("DEVICE (TCP) PROBE TIMEOUT")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Color.white.opacity(0.6))
+                        .padding(.horizontal, 16)
+                    
+                    VStack(spacing: 0) {
+                        HStack(spacing: 12) {
+                            Text("Timeout (ms)")
+                                .font(.system(size: 17, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            Spacer()
+                            
+                            TextField("ms", text: $tcpProbeTimeoutText)
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.trailing)
+                                .foregroundColor(.white)
+                                .font(.system(size: 17))
+                                .frame(width: 90)
+                                .onChange(of: tcpProbeTimeoutText) { newValue in
+                                    let filtered = newValue.filter { "0123456789".contains($0) }
+                                    if filtered != newValue {
+                                        tcpProbeTimeoutText = filtered
+                                    }
+                                    if let timeout = Int(filtered), timeout > 0 {
+                                        minimuxerSetDeviceProbeTimeout(timeout)
+                                    }
+                                }
+                        }
+                        .padding(.horizontal, 16)
+                        .frame(height: 50)
+                        
+                        divider
+                        
+                        SwiftUI.Button(action: {
+                            let defaultTimeout = AppConstants.Minimuxer.defaultTCPProbeTimeoutMs
+                            tcpProbeTimeoutText = String(defaultTimeout)
+                            minimuxerSetDeviceProbeTimeout(defaultTimeout)
+                        }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "arrow.counterclockwise")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Text("Use Default (\(AppConstants.Minimuxer.defaultTCPProbeTimeoutMs) ms)")
+                                    .font(.system(size: 17, weight: .bold))
+                                    .foregroundColor(.white)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 16)
+                            .frame(height: 50)
+                        }
+                    }
+                    .background(Color.settingsRowBackground)
+                    .cornerRadius(14)
+                }
+                
+                // Section: Connection Config
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("CONNECTION CONFIG")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Color.white.opacity(0.6))
+                        .padding(.horizontal, 16)
+                    
+                    VStack(spacing: 0) {
+                        toggleRow(title: "Accept IPv6 Config", isOn: Binding(
+                            get: { acceptIPv6ConnectionConfig },
+                            set: { newValue in
+                                acceptIPv6ConnectionConfig = newValue
+                                UserDefaults.standard.acceptIPv6ConnectionConfig = newValue
+                            }
+                        ))
+                    }
+                    .background(Color.settingsRowBackground)
+                    .cornerRadius(14)
+                }
+                
                 #if DEBUG
                 // Section 3: Account Management
                 VStack(alignment: .leading, spacing: 8) {
@@ -431,6 +512,62 @@ struct DeveloperOptionsView: View {
                     .cornerRadius(14)
                 }
                 #endif
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("ONBOARDING")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Color.white.opacity(0.6))
+                        .padding(.horizontal, 16)
+
+                    VStack(spacing: 0) {
+                        SwiftUI.Button(action: { showOnboardingSheet = true }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Text("Replay Onboarding")
+                                    .font(.system(size: 17, weight: .bold))
+                                    .foregroundColor(.white)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(Color.white.opacity(0.4))
+                            }
+                            .padding(.horizontal, 16)
+                            .frame(height: 50)
+                        }
+                        .sheet(isPresented: $showOnboardingSheet) {
+                            OnboardingView(onFinish: {
+                                showOnboardingSheet = false
+                            })
+                        }
+
+                        divider
+
+                        SwiftUI.Button(action: {
+                            UserDefaults.standard.hasCompletedOnboarding = false
+                            UserDefaults.standard.synchronize()
+                            if let top = UIApplication.shared.topViewController() {
+                                let toastView = ToastView(text: NSLocalizedString("Onboarding reset for next launch", comment: ""), detailText: nil)
+                                toastView.show(in: top)
+                            }
+                        }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "arrow.counterclockwise")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Text("Reset Onboarding State")
+                                    .font(.system(size: 17, weight: .bold))
+                                    .foregroundColor(.white)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 16)
+                            .frame(height: 50)
+                        }
+                    }
+                    .background(Color.settingsRowBackground)
+                    .cornerRadius(14)
+                }
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
@@ -477,6 +614,9 @@ struct DeveloperOptionsView: View {
         } message: {
             Text("Do you want to clear all keychain items related to this SideStore instance?")
         }
+        .onAppear {
+            tcpProbeTimeoutText = String(minimuxerGetDeviceProbeTimeout())
+        }
     }
     
     #if DEBUG
@@ -486,14 +626,16 @@ struct DeveloperOptionsView: View {
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: [UTType(filenameExtension: "sideconf")!, .json], asCopy: false)
         ImportExport.documentPickerHandler = DocumentPickerHandler { selectedURL in
             guard let url = selectedURL else { return }
-            do {
-                try ImportExport.importAccountJSON(from: url)
-                let email = AuthManager.shared.currentAppleID ?? ""
-                let toastView = ToastView(text: NSLocalizedString("Successfully imported '\(email)'!", comment: ""), detailText: NSLocalizedString("SideStore should be fully operational!", comment: ""))
-                toastView.show(in: top)
-            } catch {
-                let toastView = ToastView(text: NSLocalizedString("Failed to import account JSON!", comment: ""), detailText: error.localizedDescription)
-                toastView.show(in: top)
+            Task { @MainActor in
+                do {
+                    try await ImportExport.importAccountJSON(from: url)
+                    let email = AuthManager.shared.currentAppleID ?? ""
+                    let toastView = ToastView(text: NSLocalizedString("Successfully imported '\(email)'!", comment: ""), detailText: NSLocalizedString("SideStore should be fully operational!", comment: ""))
+                    toastView.show(in: top)
+                } catch {
+                    let toastView = ToastView(text: NSLocalizedString("Failed to import account JSON!", comment: ""), detailText: error.localizedDescription)
+                    toastView.show(in: top)
+                }
             }
         }
         picker.delegate = ImportExport.documentPickerHandler
@@ -505,14 +647,16 @@ struct DeveloperOptionsView: View {
             presentingVC: top
         ) { selectedURL in
             guard let url = selectedURL else { return }
-            do {
-                try ImportExport.importAccountJSON(from: url)
-                let email = AuthManager.shared.currentAppleID ?? ""
-                let toastView = ToastView(text: NSLocalizedString("Successfully imported '\(email)'!", comment: ""), detailText: NSLocalizedString("SideStore should be fully operational!", comment: ""))
-                toastView.show(in: top)
-            } catch {
-                let toastView = ToastView(text: NSLocalizedString("Failed to import account JSON!", comment: ""), detailText: error.localizedDescription)
-                toastView.show(in: top)
+            Task { @MainActor in
+                do {
+                    try await ImportExport.importAccountJSON(from: url)
+                    let email = AuthManager.shared.currentAppleID ?? ""
+                    let toastView = ToastView(text: NSLocalizedString("Successfully imported '\(email)'!", comment: ""), detailText: NSLocalizedString("SideStore should be fully operational!", comment: ""))
+                    toastView.show(in: top)
+                } catch {
+                    let toastView = ToastView(text: NSLocalizedString("Failed to import account JSON!", comment: ""), detailText: error.localizedDescription)
+                    toastView.show(in: top)
+                }
             }
         }
         #endif

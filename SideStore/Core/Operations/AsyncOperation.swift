@@ -21,11 +21,7 @@ protocol AsyncOperation<T>: AnyObject, ProgressReporting, OperationLogging {
 class BaseOperation<Context: OperationContext, Result>: NSObject, AsyncOperation, @unchecked Sendable{
     typealias T = Result
 
-    fileprivate var _progress: Progress!
-    private(set) var progress: Progress {
-        get { _progress }
-        set { _progress = newValue }
-    }
+    private(set) var progress: Progress!
     private(set) var context: Context!
     
     private(set) var isCancelled = false

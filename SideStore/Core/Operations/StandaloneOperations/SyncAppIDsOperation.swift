@@ -10,7 +10,7 @@ import Foundation
 import CoreData
 import SideSign
 
-final class SyncAppIDsOperation: BaseStandaloneOperation<AuthenticatedOperationContext, Void>, @unchecked Sendable {
+final class SyncAppIDsOperation: BaseStandaloneOperation<StandaloneOperationContext, Void>, @unchecked Sendable {
     
     override func execute(parentProgress: Progress?) async throws -> Void {
         let startTime = CFAbsoluteTimeGetCurrent()
@@ -20,21 +20,15 @@ final class SyncAppIDsOperation: BaseStandaloneOperation<AuthenticatedOperationC
             debugLog("[SyncAppIDsOperation] execute() took: \(String(format: "%.3fs", elapsed))")
         }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
-        guard
-            let team = self.context.team,
-            let session = self.context.session
-        else {
-            throw OperationError.invalidParameters("SyncAppIDsOperation.main: self.context.team or self.context.session is nil")
-        }
+        
+        let team = try await AuthManager.shared.getAuthenticatedTeam()
         
         self.setProgress(10)
         
-        guard let dbContext = self.context.dbBackgroundContext else {
-            throw OperationError.invalidParameters("SyncAppIDsOperation: context.dbBackgroundContext is nil")
-        }
+        let dbContext = self.context.dbBackgroundContext
         
         let fetchedAppIDs = try await TaskChainCoalescer.shared.coalesce(key: "fetch_app_ids_\(team.identifier)") {
-            try await DeveloperPortal.shared.fetchAppIDs(for: team, session: session)
+            try await DeveloperPortalProxy.shared.fetchAppIDs(team: team)
         }
         self.setProgress(50)
         

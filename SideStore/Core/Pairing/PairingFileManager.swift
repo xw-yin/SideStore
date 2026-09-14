@@ -8,6 +8,7 @@
 
 @preconcurrency import UIKit
 import UniformTypeIdentifiers
+import MinimuxerCommon
 
 final class PairingFileManager: NSObject {
     static let shared = PairingFileManager()
@@ -16,10 +17,22 @@ final class PairingFileManager: NSObject {
     private var completion: ((URL?) -> Void)?
 
     nonisolated var pairingUDID: String? {
-        guard let contents = fetchPairingFile() else { return nil }
-        guard let data = contents.data(using: .utf8) else { return nil }
-        guard let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else { return nil }
-        return plist["UDID"] as? String ?? plist["identifier"] as? String
+        guard let contents = fetchPairingFile() else {
+            debugLog("[PairingFile] pairingUDID: fetchPairingFile() returned nil")
+            return nil
+        }
+        do {
+            let pairing = try PairingFileParser.parse(content: contents)
+            guard let lockdown = pairing as? LockdownPairingFile else {
+                debugLog("[PairingFile] pairingUDID: Remote Pairing files do not contain a hardware UDID")
+                return nil
+            }
+            return lockdown.udid
+        } catch {
+            guard let data = contents.data(using: .utf8) else { return nil }
+            guard let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else { return nil }
+            return plist["UDID"] as? String ?? plist["identifier"] as? String
+        }
     }
 
     nonisolated func fetchPairingFile() -> String? {
@@ -63,7 +76,7 @@ extension PairingFileManager: UIDocumentPickerDelegate {
         
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: NSLocalizedString("Help", comment: ""), style: .default) { _ in
-            if let url = URL(string: "https://docs.sidestore.io/docs/advanced/pairing-file") { UIApplication.shared.open(url) }
+            UIApplication.shared.open(AppConstants.URLs.pairingDocumentation)
             if completion == nil {
                 sleep(2); exit(0)
             } else {
@@ -72,7 +85,7 @@ extension PairingFileManager: UIDocumentPickerDelegate {
         })
         alert.addAction(UIAlertAction(title: NSLocalizedString("Select File", comment: ""), style: .default) { _ in
             var types = UTType.types(tag: "plist", tagClass: .filenameExtension, conformingTo: nil)
-            types.append(contentsOf: UTType.types(tag: "mobiledevicepairing", tagClass: .filenameExtension, conformingTo: .data))
+            types.append(contentsOf: UTType.types(tag: AppConstants.Pairing.fileExtension, tagClass: .filenameExtension, conformingTo: .data))
             types.append(.xml)
             let picker = UIDocumentPickerViewController(forOpeningContentTypes: types)
             picker.delegate = self

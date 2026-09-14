@@ -168,13 +168,20 @@ private extension AuthenticationViewController
         self.authenticationHandler?(emailAddress, password) { (result) in
             switch result
             {
-            case .failure(ALTAppleAPIError.requiresTwoFactorAuthentication):
-                // Ignore
+            case .failure(DeveloperPortalError.userCancelled):
+                debugLog("AuthenticationViewController: Two-factor authentication cancelled by user.")
                 DispatchQueue.main.async {
                     self.signInButton.isIndicatingActivity = false
                 }
-                
+
+            case .failure(DeveloperPortalError.accountRepairRequired):
+                debugLog("AuthenticationViewController: Account repair cancelled by user.")
+                DispatchQueue.main.async {
+                    self.signInButton.isIndicatingActivity = false
+                }
+
             case .failure(let error as NSError):
+                debugLog("AuthenticationViewController: Authentication failed with error: \(error)")
                 DispatchQueue.main.async {
                     let error = error.withLocalizedTitle(NSLocalizedString("Failed to Sign In", comment: ""))
                     let toastView = ToastView(error: error)

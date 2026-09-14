@@ -36,10 +36,8 @@ final class FetchSourceOperation: BaseStandaloneOperation<StandaloneOperationCon
         self.sourceURL = source.sourceURL
         self.session = URLSession.shared
         try super.init(context: context)
-        if let dbContext = context.dbBackgroundContext {
-            dbContext.performAndWait {
-                self.source = dbContext.object(with: source.objectID) as? Source
-            }
+        context.dbBackgroundContext.performAndWait {
+            self.source = context.dbBackgroundContext.object(with: source.objectID) as? Source
         }
     }
     
@@ -58,9 +56,7 @@ final class FetchSourceOperation: BaseStandaloneOperation<StandaloneOperationCon
         }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         
-        guard let dbContext = self.context.dbBackgroundContext else {
-            throw OperationError.invalidParameters("FetchSourceOperation: context.dbBackgroundContext is nil")
-        }
+        let dbContext = self.context.dbBackgroundContext
         
         if let source = self.source {
             // Check if source is blocked before fetching it.
@@ -104,7 +100,7 @@ final class FetchSourceOperation: BaseStandaloneOperation<StandaloneOperationCon
                 } else if let data = data, let response = response {
                     continuation.resume(returning: (data, response))
                 } else {
-                    continuation.resume(throwing: OperationError.unknown())
+                    continuation.resume(throwing: OperationError.invalidResponse(reason: "\(URLError(.badServerResponse).localizedDescription): Server returned no data or response."))
                 }
             }
             dataTask.resume()
@@ -113,10 +109,7 @@ final class FetchSourceOperation: BaseStandaloneOperation<StandaloneOperationCon
     }
     
     private func verifyExistingSource(_ sourceObjectID: NSManagedObjectID) throws {
-        guard let dbContext = self.context.dbBackgroundContext else {
-            throw OperationError.invalidParameters("FetchSourceOperation: context.dbBackgroundContext is nil")
-        }
-        let source = dbContext.object(with: sourceObjectID) as! Source
+        let source = self.context.dbBackgroundContext.object(with: sourceObjectID) as! Source
         try self.verifySourceNotBlocked(source, response: nil)
     }
     

@@ -21,16 +21,16 @@ public final class AppBootManager: @unchecked Sendable {
     private var minimuxerStartup: MinimuxerStartup?
     private var minimuxerStartupGeneration: UInt = 0
     
-    private var _needsPairingPrompt = false
+    private var cachedNeedsPairingPrompt = false
     public var needsPairingPrompt: Bool {
-        get { lock.withLock { _needsPairingPrompt } }
-        set { lock.withLock { _needsPairingPrompt = newValue } }
+        get { lock.withLock { cachedNeedsPairingPrompt } }
+        set { lock.withLock { cachedNeedsPairingPrompt = newValue } }
     }
     
-    private var _needsSideJITPrompt = false
+    private var cachedNeedsSideJITPrompt = false
     public var needsSideJITPrompt: Bool {
-        get { lock.withLock { _needsSideJITPrompt } }
-        set { lock.withLock { _needsSideJITPrompt = newValue } }
+        get { lock.withLock { cachedNeedsSideJITPrompt } }
+        set { lock.withLock { cachedNeedsSideJITPrompt = newValue } }
     }
     
     private init() {}
@@ -81,7 +81,7 @@ public final class AppBootManager: @unchecked Sendable {
             try await minimuxerStart(pairingFile, mountPath: FileManager.default.documentsDirectory.absoluteString)
             lock.withLock {
                 if minimuxerStartup?.generation == generation {
-                    _needsPairingPrompt = false
+                    cachedNeedsPairingPrompt = false
                 }
             }
             debugLog("[AppBootManager] Minimuxer startup task completed")
@@ -138,7 +138,7 @@ public final class AppBootManager: @unchecked Sendable {
 
         guard let pairingFile = getSavedPairingFile() else {
             needsPairingPrompt = true
-            throw OperationError.invalidPairingFile()
+            throw OperationError.invalidPairingFile(reason: "No saved pairing file found")
         }
 
         let startup = makeMinimuxerStartup(pairingFile: pairingFile)

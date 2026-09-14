@@ -21,16 +21,16 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
         }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         
+        let team = try await AuthManager.shared.getAuthenticatedTeam()
         guard
             let appBundle = self.context.targetAppBundle,
             let profiles = self.context.provisioningProfiles,
-            let team = self.context.authenticatedContext.team,
-            let certificate = self.context.overrideCertificate ?? self.context.authenticatedContext.signingCertificate
+            let certificate = self.context.targetSigningCertificate
         else {
             throw OperationError.invalidParameters("ResignAppOperation.main: " +
-                                                   "self.context.authenticatedContext.team or " +
+                                                   "self.context.targetAppBundle or " +
                                                    "self.context.provisioningProfiles or " +
-                                                   "self.context.authenticatedContext.signingCertificate is nil")
+                                                   "self.context.targetSigningCertificate is nil")
         }
         
         debugLog("[ResignAppOperation] Resigning app \(self.context.bundleIdentifier)...")
@@ -38,28 +38,16 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
         self.setProgress(5)
         
         let effectiveBundleId = self.context.targetBundleIdentifier
-        
         let appBundleURL = try await self.prepareAppBundle(for: appBundle, profiles: profiles, appexBundleIds: context.appexBundleIds ?? [:])
         
         self.setProgress(40)
         
-        let resignedURL = try await self.resignAppBundle(at: appBundleURL, team: team, certificate: certificate, profiles: Array(profiles.values))
-        
-        let updatedApp = AnyApp(
-            name: appBundle.name,
-            bundleIdentifier: effectiveBundleId,
-            url: appBundle.fileURL,
-            storeApp: appBundle.storeApp
-        )
-        let destinationURL = InstalledApp.refreshedIPAURL(for: updatedApp)
-        try FileManager.default.copyItem(at: resignedURL, to: destinationURL, shouldReplace: true)
-        self.debugLog("[ResignAppOperation] Successfully resigned app to \(destinationURL.absoluteString)")
-        
-        // Use appBundleURL since we need an app bundle, not .ipa.
-        guard let resignedAppBundle = ALTApplication(fileURL: appBundleURL) else { throw OperationError.invalidApp }
+        let resignedAppURL = try await self.resignAppBundle(at: appBundleURL, team: team, certificate: certificate, profiles: Array(profiles.values))
+        guard let resignedAppBundle = ALTApplication(fileURL: resignedAppURL) else {
+            throw OperationError.invalidApp(reason: "Could not load resigned app bundle at '\(resignedAppURL.lastPathComponent)'")
+        }
         
         self.debugLog("[ResignAppOperation] Resigned app \(self.context.bundleIdentifier) to \(resignedAppBundle.bundleIdentifier).")
-        
         self.setProgress(100)
         
         return resignedAppBundle
@@ -77,7 +65,7 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
         }
         
         // Use customized bundle ID if applicable
-        let openURL = InstalledApp.openAppURL(for: AnyApp(from: targetAppBundle, bundleId: finalBundleIdentifier))
+        let openURL = InstalledApp.openAppURL(targetBundleIdentifier: finalBundleIdentifier)
         let fileURL = targetAppBundle.fileURL
 
         let appBundleURL = self.context.temporaryDirectory.appendingPathComponent("App.app")
@@ -88,8 +76,10 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
             try FileManager.default.copyItem(at: fileURL, to: appBundleURL)
         }
         
-        guard let appBundle = Bundle(url: appBundleURL) else { throw OperationError.missingAppBundle }
-        guard let infoDictionary = appBundle.completeInfoDictionary else { throw OperationError.missingInfoPlist }
+        guard let appBundle = ALTApplication(fileURL: appBundleURL) else {
+            throw OperationError.missingAppBundle(reason: "Could not load bundle at '\(appBundleURL.lastPathComponent)'")
+        }
+        let infoDictionary = appBundle.infoPlist
         
         // replace scheme targets to match the bundle suffix so multiple instances can be correctly routed for helper apps like SideBackup
         var allURLSchemes = infoDictionary[Bundle.Info.urlTypes] as? [[String: Any]] ?? []
@@ -106,64 +96,77 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
         var additionalValues: [String: Any] = [Bundle.Info.urlTypes: allURLSchemes]
 
         if targetAppBundle.isAltStoreApp {
-            guard let udid = try await fetchUDID() else { throw OperationError.unknownUDID }
-            guard Bundle.main.object(forInfoDictionaryKey: Bundle.Info.devicePairingString) is String else { throw OperationError.unknownUDID }
+            let udid: String
+            do {
+                await CellularRefreshManager.shared.turnOffDataIfNeeded()
+                udid = try await fetchUDID()
+            } catch {
+                await CellularRefreshManager.shared.turnOnDataIfNeeded()
+                throw error
+            }
+            guard Bundle.main.object(forInfoDictionaryKey: Bundle.Info.devicePairingString) is String else {
+                throw OperationError.invalidParameters("Bundle.main is missing required Info.plist key '\(Bundle.Info.devicePairingString)'.")
+            }
             additionalValues[Bundle.Info.devicePairingString] = "<insert pairing file here>"
             additionalValues[Bundle.Info.deviceID] = udid
             additionalValues[Bundle.Info.serverID] = UserDefaults.standard.preferredServerID
             
             if let activeCert = CertificateManager.shared.activeCertificate {
                 additionalValues[Bundle.Info.certificateID] = activeCert.serialNumber
-                try activeCert.p12Data.write(to: appBundle.certificateURL, options: .atomic)
+                let certURL = appBundle.fileURL.appendingPathComponent("ALTCertificate.p12")
+                try activeCert.p12Data.write(to: certURL, options: .atomic)
             } else {
                 self.verboseLog("[ResignAppOperation] No activeCertificate found in CertificateManager. Embedded certificate + certificate identifier in app bundle will not be updated.")
             }
-        } else if infoDictionary.keys.contains(Bundle.Info.deviceID), let udid = try await fetchUDID() {
-            // There is an ALTDeviceID entry, so assume the app is using AltKit and replace it with the device's UDID.
-            additionalValues[Bundle.Info.deviceID] = udid
-            additionalValues[Bundle.Info.serverID] = UserDefaults.standard.preferredServerID
+        } else if infoDictionary.keys.contains(Bundle.Info.deviceID) {
+            let udid: String?
+            do {
+                await CellularRefreshManager.shared.turnOffDataIfNeeded()
+                udid = try await fetchUDID()
+            } catch {
+                await CellularRefreshManager.shared.turnOnDataIfNeeded()
+                udid = nil
+            }
+            if let udid {
+                // There is an ALTDeviceID entry, so assume the app is using AltKit and replace it with the device's UDID.
+                additionalValues[Bundle.Info.deviceID] = udid
+                additionalValues[Bundle.Info.serverID] = UserDefaults.standard.preferredServerID
+            }
         }
         
         // Prepare app
         try self.prepare(appBundle, bundleID: bundleIdentifier, additionalInfoDictionaryValues: additionalValues, profiles: profiles, appexBundleIds: appexBundleIds)
         try self.removeMissingAppExtensionReferences(from: appBundle)
         
-        if let directory = appBundle.builtInPlugInsURL,
-           let enumerator = FileManager.default.enumerator(at: directory, includingPropertiesForKeys: nil, options: [.skipsSubdirectoryDescendants]) {
-            while let fileURL = enumerator.nextObject() as? URL {
-                // for both sim and device, in debug mode builds, remove the tests bundles (if any)
-                #if DEBUG
-                guard !fileURL.lastPathComponent.lowercased().contains(".xctest") else {
-                    // Remove embedded XCTest (+ dSYM) bundle from copied app bundle.
-                    try FileManager.default.removeItem(at: fileURL)
-                    continue
-                }
-                #endif
-                
-                guard let appExtension = Bundle(url: fileURL) else { throw OperationError.missingAppBundle }
-                let updatedAppExBundleId = appExtension.bundleIdentifier?.replacingOccurrences(of: targetAppBundle.bundleIdentifier, with: bundleIdentifier)
-                try self.prepare(appExtension, bundleID: updatedAppExBundleId, profiles: profiles, appexBundleIds: appexBundleIds)
-            }
+        for appExtension in appBundle.appExtensions {
+            let updatedAppExBundleId = appExtension.bundleIdentifier.replacingOccurrences(of: targetAppBundle.bundleIdentifier, with: bundleIdentifier)
+            try self.prepare(appExtension, bundleID: updatedAppExBundleId, profiles: profiles, appexBundleIds: appexBundleIds)
         }
         
         return appBundleURL
     }
     
-    private func prepare(_ bundle: Bundle, bundleID identifier: String?, additionalInfoDictionaryValues: [String: Any] = [:], profiles: [String: ALTProvisioningProfile], appexBundleIds: [String: String]) throws {
+    private func prepare(_ appBundle: ALTApplication, bundleID identifier: String?, additionalInfoDictionaryValues: [String: Any] = [:], profiles: [String: ALTProvisioningProfile], appexBundleIds: [String: String]) throws {
         guard let identifier else {
-            throw OperationError.missingAppBundle
+            throw OperationError.invalidParameters("Bundle is missing bundle identifier.")
         }
         guard let profile = context.useMainProfile ? profiles.values.first : profiles[identifier] else {
-            throw OperationError.missingProvisioningProfile
+            throw OperationError.missingProvisioningProfile(reason: "No provisioning profile found for identifier '\(identifier)'.")
         }
-        guard var infoDictionary = bundle.completeInfoDictionary else {
-            throw OperationError.missingInfoPlist
+        guard var parser = try? InfoPlistParser(plistURL: appBundle.infoPlistURL) else {
+            throw OperationError.missingInfoPlist(reason: "Could not read Info.plist for bundle '\(identifier)'.")
         }
+        var infoDictionary = parser.rawDictionary as [String: Any]
         
-        if let forcedBundleIdentifier = appexBundleIds[identifier] {
-            infoDictionary[kCFBundleIdentifierKey as String] = forcedBundleIdentifier
-        } else {
-            infoDictionary[kCFBundleIdentifierKey as String] = profile.bundleIdentifier
+        let newBundleID = appexBundleIds[identifier] ?? profile.bundleIdentifier
+        infoDictionary[kCFBundleIdentifierKey as String] = newBundleID
+
+        // Fix-up BGTaskScheduler identifiers so they stay under the new bundle ID.
+        // Otherwise bg register() and submit() both succeed and the handler is never
+        // called, with no error surfaced to the app.
+        if identifier != newBundleID, let taskIDs = infoDictionary["BGTaskSchedulerPermittedIdentifiers"] as? [String] {
+            let taskIDs = self.rewrittenTaskSchedulerIdentifiers(taskIDs, from: identifier, to: newBundleID)
+            infoDictionary["BGTaskSchedulerPermittedIdentifiers"] = taskIDs
         }
 
         infoDictionary[Bundle.Info.altBundleID] = identifier
@@ -173,6 +176,15 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
 
         for (key, value) in additionalInfoDictionaryValues {
             infoDictionary[key] = value
+        }
+
+        if let customPlist = context.customInfoPlistByBundleID[identifier] {
+            for (key, value) in customPlist {
+                if key == (kCFBundleIdentifierKey as String) || key == "CFBundleIdentifier" {
+                    continue
+                }
+                infoDictionary[key] = value
+            }
         }
 
         if let appGroups = profile.entitlements[.appGroups] as? [String] {
@@ -198,43 +210,64 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
         exportedUTIs.append(installedAppUTI)
         infoDictionary[Bundle.Info.exportedUTIs] = exportedUTIs
         
-        try (infoDictionary as NSDictionary).write(to: bundle.infoPlistURL)
+        try InfoPlistParser(dictionary: infoDictionary).write(to: appBundle.infoPlistURL)
         
         // Remove _CodeSignature folder (if it exists) because it will be added when resigning and it may have files that aren't overwritten when resigning
         // These files might be the cause of some ApplicationVerificationFailed errors
-        let codeSignaturePath = bundle.bundleURL.appendingPathComponent("_CodeSignature").absoluteString.replacingOccurrences(of: "file://", with: "")
-        if FileManager.default.fileExists(atPath: codeSignaturePath) {
-            try FileManager.default.removeItem(atPath: codeSignaturePath)
-            self.verboseLog("[ResignAppOperation] Removed _CodeSignature folder at \(codeSignaturePath)")
+        let codeSignatureURL = appBundle.fileURL.appendingPathComponent("_CodeSignature")
+        if FileManager.default.fileExists(atPath: codeSignatureURL.path) {
+            try FileManager.default.removeItem(at: codeSignatureURL)
+            self.verboseLog("[ResignAppOperation] Removed _CodeSignature folder at \(codeSignatureURL.path)")
         }
     }
     
     private func resignAppBundle(at fileURL: URL, team: ALTTeam, certificate: ALTCertificate, profiles: [ALTProvisioningProfile]) async throws -> URL {
         let signer = ALTSigner(team: team, certificate: certificate)
-        try await signer.signApp(at: fileURL, provisioningProfiles: profiles, progress: self.progress)
-        return try FileManager.default.zipAppBundle(at: fileURL)
+        try await signer.signApp(at: fileURL, provisioningProfiles: profiles, progress: nil)
+        return fileURL
     }
     
-    private func removeMissingAppExtensionReferences(from bundle: Bundle) throws {
+    private func removeMissingAppExtensionReferences(from appBundle: ALTApplication) throws {
         // If app extensions have been removed from an app (either by AltStore or the developer),
         // we must remove all references to them from SC_Info/Manifest.plist (if it exists).
         
-        let scInfoURL = bundle.bundleURL.appendingPathComponent("SC_Info")
+        let scInfoURL = appBundle.fileURL.appendingPathComponent("SC_Info")
         let manifestPlistURL = scInfoURL.appendingPathComponent("Manifest.plist")
         
-        guard let manifestPlist = NSMutableDictionary(contentsOf: manifestPlistURL), let sinfReplicationPaths = manifestPlist["SinfReplicationPaths"] as? [String] else { return }
+        guard let manifestPlist = try? InfoPlistParser(plistURL: manifestPlistURL),
+              let sinfReplicationPaths = manifestPlist.rawDictionary["SinfReplicationPaths"] as? [String] else { return }
         
         // Remove references to missing files.
         let filteredReplicationPaths = sinfReplicationPaths.filter { path in
-            guard let fileURL = URL(string: path, relativeTo: bundle.bundleURL) else { return false }
+            guard let fileURL = URL(string: path, relativeTo: appBundle.fileURL) else { return false }
             
             let fileExists = FileManager.default.fileExists(atPath: fileURL.path)
             return fileExists
         }
         
-        manifestPlist["SinfReplicationPaths"] = filteredReplicationPaths
+        var updatedManifest = manifestPlist.rawDictionary
+        updatedManifest["SinfReplicationPaths"] = filteredReplicationPaths
         
         // Save updated Manifest.plist to disk.
-        try manifestPlist.write(to: manifestPlistURL)
+        try InfoPlistParser(dictionary: updatedManifest).write(to: manifestPlistURL)
+    }
+
+    private func rewrittenTaskSchedulerIdentifiers(_ taskIDs: [String], from originalBundleID: String, to newBundleID: String) -> [String] {
+        var seen = Set<String>()
+        var rewrittenTaskIDs = [String]()
+        for taskID in taskIDs {
+            let rewritten: String
+            if taskID == newBundleID || taskID.hasPrefix(newBundleID + ".") {
+                rewritten = taskID
+            } else if taskID == originalBundleID || taskID.hasPrefix(originalBundleID + ".") {
+                rewritten = newBundleID + taskID.dropFirst(originalBundleID.count)
+            } else {
+                rewritten = taskID
+            }
+            if seen.insert(rewritten).inserted {
+                rewrittenTaskIDs.append(rewritten)
+            }
+        }
+        return rewrittenTaskIDs
     }
 }

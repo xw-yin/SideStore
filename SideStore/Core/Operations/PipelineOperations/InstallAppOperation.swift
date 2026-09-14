@@ -7,20 +7,14 @@
 //
 
 import UserNotifications
+import UIKit
 import Foundation
 import Network
 import CoreData
 import SideSign
 
-let shortcutURLonDelay = URL(string: "shortcuts://run-shortcut?name=TurnOnDataDelay")!
-
 final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContext, InstalledApp>, @unchecked Sendable {
-    private static let selfInstallSuspendDelayNs: UInt64 = 2_000_000_000
-
     let storeApp: StoreApp?
-    var backgroundContext: NSManagedObjectContext?
-    
-    private var didCleanUp = false
     
     init(context: InstallAppOperationContext, app: any AppProtocol) throws {
         self.storeApp = app as? StoreApp
@@ -37,59 +31,60 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
         }
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         
-        defer{
-            self.cleanUp()
+        defer {
             self.removeRefreshedIPA()
         }
         
         guard
-            let certificate = context.overrideCertificate ?? context.authenticatedContext.signingCertificate,
+            let certificate = context.targetSigningCertificate,
             let resignedAppBundle = context.resignedAppBundle,
             let provisioningProfiles = context.provisioningProfiles
         else {
             throw OperationError.invalidParameters(
-                "InstallAppOperation.execute: self.context.authenticatedContext.signingCertificate or self.context.resignedAppBundle or self.context.provisioningProfiles is nil"
+                "InstallAppOperation.execute: self.context.targetSigningCertificate or self.context.resignedAppBundle or self.context.provisioningProfiles is nil"
             )
         }
 
         #if !targetEnvironment(simulator)
         guard resignedAppBundle.provisioningProfile != nil else {
-            throw OperationError.invalidApp
+            throw OperationError.missingProvisioningProfile(reason: "Resigned app bundle '\(resignedAppBundle.bundleIdentifier)' is missing its embedded provisioning profile.")
         }
         #endif
 
         @Managed var appVersion = context.appVersion
         let storeBuildVersion = $appVersion.buildVersion
         
-        guard let backgroundContext = self.context.dbBackgroundContext else {
-            throw OperationError.invalidParameters("InstallAppOperation: context.dbBackgroundContext is nil")
-        }
-        self.backgroundContext = backgroundContext
+        let backgroundContext = self.context.dbBackgroundContext
         
         self.setProgress(10)
-        let installedApp = try await installApp(
-            in: backgroundContext,
-            certificate: certificate,
-            resignedAppBundle: resignedAppBundle,
-            provisioningProfiles: provisioningProfiles,
-            storeBuildVersion: storeBuildVersion
-        )
-        
-        return installedApp
+        let authTeam = try await AuthManager.shared.getAuthenticatedTeam()
+        do {
+            let installedApp = try await installApp(
+                in: backgroundContext,
+                certificate: certificate,
+                resignedAppBundle: resignedAppBundle,
+                provisioningProfiles: provisioningProfiles,
+                storeBuildVersion: storeBuildVersion,
+                authTeam: authTeam
+            )
+            self.context.installedApp = installedApp
+            await CellularRefreshManager.shared.turnOnDataIfNeeded()
+            return installedApp
+        } catch {
+            await CellularRefreshManager.shared.turnOnDataIfNeeded()
+            throw error
+        }
     }
     
     private func removeRefreshedIPA() {
-        if let appBundle = context.targetAppBundle {
-            let updatedApp = AnyApp(from: appBundle, bundleId: self.context.targetBundleIdentifier)
-            let fileURL = InstalledApp.refreshedIPAURL(for: updatedApp)
-            
-            if FileManager.default.fileExists(atPath: fileURL.path) {
-                do {
-                    try FileManager.default.removeItem(at: fileURL)
-                    debugLog("[InstallAppOperation] Removed refreshed IPA")
-                } catch {
-                    debugLog("[InstallAppOperation] Failed to remove refreshed .ipa: \(error)")
-                }
+        guard let fileURL = self.context.installedApp?.refreshedIPAURL else { return }
+        
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            do {
+                try FileManager.default.removeItem(at: fileURL)
+                debugLog("[InstallAppOperation] Removed refreshed IPA")
+            } catch {
+                debugLog("[InstallAppOperation] Failed to remove refreshed .ipa: \(error)")
             }
         }
     }
@@ -98,7 +93,8 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
                             certificate: ALTCertificate,
                             resignedAppBundle: ALTApplication,
                             provisioningProfiles: [String: ALTProvisioningProfile],
-                            storeBuildVersion: String?) async throws -> InstalledApp
+                            storeBuildVersion: String?,
+                            authTeam: ALTTeam) async throws -> InstalledApp
     {
         let (installedApp, isDifferentSideStore, bundleID, isSelfReinstall) = try await backgroundContext.perform {
             /* App */
@@ -106,7 +102,8 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
                 in: backgroundContext,
                 certificate: certificate,
                 resignedAppBundle: resignedAppBundle,
-                storeBuildVersion: storeBuildVersion
+                storeBuildVersion: storeBuildVersion,
+                authTeam: authTeam
             )
             
             let isDifferentSideStore = Self.isDifferentSideStoreContainer(installedApp, resignedAppBundle)
@@ -166,16 +163,17 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
         
         self.setProgress(30)
         
-        // Temporary directory and resigned .ipa no longer needed — delete now before AltStore quits.
-        cleanUp()
-        
         // Self-reinstall background suspension
         if isSelfReinstall {
             self.handleSelfReinstallation(for: installedApp)
         }
         
-        // Phase 2: IPA installation
-        try await installIPA(bundleID)
+        // Phase 2: App installation
+        if UserDefaults.standard.preferResignedIPA {
+            try await installIPA(bundleID)
+        } else {
+            try await installAppBundle(bundleID, appName: resignedAppBundle.fileURL.lastPathComponent)
+        }
         
         self.setProgress(90)
         
@@ -197,34 +195,43 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
 
     private func fetchOrCreateApp(in backgroundContext: NSManagedObjectContext,
                                   certificate: ALTCertificate,
-                                  resignedAppBundle: ALTApplication, storeBuildVersion: String?) throws -> InstalledApp
+                                  resignedAppBundle: ALTApplication,
+                                  storeBuildVersion: String?,
+                                  authTeam: ALTTeam) throws -> InstalledApp
     {
+        guard let appBundleFingerprint = self.context.appBundleFingerprint else {
+            throw OperationError.invalidParameters("InstallAppOperation: context.appBundleFingerprint is nil. CacheAppOperation must guarantee a fingerprint reference.")
+        }
+        
         let target = self.context.targetBundleIdentifier
         let predicate = NSPredicate(
             format: "(%K == %@) OR (%K == %@)",
             #keyPath(InstalledApp.customBundleIdentifier), target,
             #keyPath(InstalledApp.resignedBundleIdentifier), resignedAppBundle.bundleIdentifier
         )
+        let customCertSerial = self.context.overrideSigningCertificate?.serialNumber
         let installedApp = try InstalledApp.first(
                                 satisfying: predicate,
                                 in: backgroundContext
                             ) ?? InstalledApp(
                                 resignedAppBundle: resignedAppBundle,
                                 originalBundleIdentifier: self.context.bundleIdentifier,
-                                certificateSerialNumber: certificate.serialNumber,
+                                certificateSerialNumber: customCertSerial,
                                 storeBuildVersion: storeBuildVersion,
                                 context: backgroundContext
                             )
         if !Self.isDifferentSideStoreContainer(installedApp, resignedAppBundle) {
             installedApp.update(
                 resignedAppBundle: resignedAppBundle,
-                certificateSerialNumber: certificate.serialNumber,
+                certificateSerialNumber: customCertSerial,
                 storeBuildVersion: storeBuildVersion
             )
             installedApp.certificateStatus = self.context.targetCertStatus ?? installedApp.certificateStatus
             installedApp.customBundleIdentifier = context.customBundleIdentifier
             installedApp.useMainProfile = context.useMainProfile
-            if let team = DatabaseManager.shared.activeTeam(in: backgroundContext) {
+            installedApp.appBundleFingerprint = appBundleFingerprint
+            let teamPredicate = NSPredicate(format: "%K == %@", #keyPath(Team.identifier), authTeam.identifier)
+            if let team = Team.first(satisfying: teamPredicate, in: backgroundContext) {
                 installedApp.team = team
             }
             if let storeApp {
@@ -263,6 +270,11 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
                 case .preserve:
                     break
             }
+
+            if let overrideProfile = self.context.overrideProvisioningProfile {
+                ProfileManager.shared.assignProfile(uuid: overrideProfile.uuid, for: installedApp.bundleIdentifier)
+                self.debugLog("[InstallAppOperation] Assigned profile '\(overrideProfile.name)' to installed app '\(installedApp.bundleIdentifier)'")
+            }
         }
 
         return installedApp
@@ -283,52 +295,41 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
 
         var installedExtensions = Set<InstalledExtension>()
         
-        if let bundle = Bundle(url: resignedAppBundle.fileURL),
-            let directory = bundle.builtInPlugInsURL,
-            let enumerator = FileManager.default.enumerator(
-                at: directory,
-                includingPropertiesForKeys: nil,
-                options: [.skipsSubdirectoryDescendants])
-        {
-            for case let fileURL as URL in enumerator {
-                guard let appExtensionBundle = Bundle(url: fileURL) else { continue }
-                guard let resignedAppExtensionBundle = ALTApplication(fileURL: appExtensionBundle.bundleURL) else { continue }
-                
-                let filename = fileURL.lastPathComponent
-                guard let originalExtension = originalExtensionsByFilename[filename] else {
-                    throw OperationError.invalidParameters("InstallAppOperation: extension '\(filename)' not found in targetAppBundle.")
-                }
-                
-                let targetParentBundleID = context.targetBundleIdentifier
-                let resignedParentBundleID = resignedAppBundle.bundleIdentifier
-                
-                let originalAppExBundleID = originalExtension.bundleIdentifier
-                let resignedBundleID = resignedAppExtensionBundle.bundleIdentifier
-                var customAppExBundleID: String? = nil
-                if context.customBundleIdentifier != nil {
-                    customAppExBundleID = resignedBundleID.replacingOccurrences(of: resignedParentBundleID, with: targetParentBundleID)
-                }
-                
-                self.debugLog("""
-                [InstallAppOperation] Extension Bundle Mapping:
-                  • targetParentBundleID   : \(targetParentBundleID)
-                  • resignedParentBundleID : \(resignedParentBundleID)
-                  • originalAppExBundleID  : \(originalAppExBundleID)
-                  • customAppExBundleID    : \(customAppExBundleID ?? "nil")
-                  • resignedAppExBundleID  : \(resignedBundleID)
-                """)
-                
-                let installedExtension = try installedApp.appExtensions
-                                                .first(where: { $0.resignedBundleIdentifier == resignedBundleID })
-                                            ?? InstalledExtension(
-                                                resignedAppExtensionBundle: resignedAppExtensionBundle,
-                                                originalBundleIdentifier: originalAppExBundleID,
-                                                context: backgroundContext
-                                            )
-                installedExtension.customBundleIdentifier = customAppExBundleID
-                installedExtension.update(resignedAppExtensionBundle: resignedAppExtensionBundle)
-                installedExtensions.insert(installedExtension)
+        for resignedAppExtensionBundle in resignedAppBundle.appExtensions {
+            let filename = resignedAppExtensionBundle.fileURL.lastPathComponent
+            guard let originalExtension = originalExtensionsByFilename[filename] else {
+                throw OperationError.invalidParameters("InstallAppOperation: extension '\(filename)' not found in targetAppBundle.")
             }
+            
+            let targetParentBundleID = context.targetBundleIdentifier
+            let resignedParentBundleID = resignedAppBundle.bundleIdentifier
+            
+            let originalAppExBundleID = originalExtension.bundleIdentifier
+            let resignedBundleID = resignedAppExtensionBundle.bundleIdentifier
+            var customAppExBundleID: String? = nil
+            if context.customBundleIdentifier != nil {
+                customAppExBundleID = resignedBundleID.replacingOccurrences(of: resignedParentBundleID, with: targetParentBundleID)
+            }
+            
+            self.debugLog("""
+            [InstallAppOperation] Extension Bundle Mapping:
+              • targetParentBundleID   : \(targetParentBundleID)
+              • resignedParentBundleID : \(resignedParentBundleID)
+              • originalAppExBundleID  : \(originalAppExBundleID)
+              • customAppExBundleID    : \(customAppExBundleID ?? "nil")
+              • resignedAppExBundleID  : \(resignedBundleID)
+            """)
+            
+            let installedExtension = try installedApp.appExtensions
+                                            .first(where: { $0.resignedBundleIdentifier == resignedBundleID })
+                                        ?? InstalledExtension(
+                                            resignedAppExtensionBundle: resignedAppExtensionBundle,
+                                            originalBundleIdentifier: originalAppExBundleID,
+                                            context: backgroundContext
+                                        )
+            installedExtension.customBundleIdentifier = customAppExBundleID
+            installedExtension.update(resignedAppExtensionBundle: resignedAppExtensionBundle)
+            installedExtensions.insert(installedExtension)
         }
 
         return installedExtensions
@@ -367,63 +368,68 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
         }
     }
         
-    private func suspendToHomeScreen() {
+    private func suspendToHomeScreen() async {
         let handler = self.context.handler.installAppHandler
-        handler.suspendToHomeScreen(shouldTurnOffData: self.context.shouldTurnOffData)
+        await handler.suspendToHomeScreen()
     }
 
     private func handleSelfReinstallation(for installedApp: InstalledApp) {
         // Reinstalling ourself will hang until we leave the app, so we need to exit it without force closing
         Task.detached {
-            try? await Task.sleep(nanoseconds: Self.selfInstallSuspendDelayNs)
+            let bgTaskID = await MainActor.run {
+                UIApplication.shared.beginBackgroundTask(withName: "SelfReinstall", expirationHandler: nil)
+            }
+            defer {
+                if bgTaskID != .invalid {
+                    Task { @MainActor in UIApplication.shared.endBackgroundTask(bgTaskID) }
+                }
+            }
+
+            try? await Task.sleep(nanoseconds: AppConstants.Installation.selfInstallSuspendDelayNs)
 
             let handler = self.context.handler.installAppHandler
-            guard handler.isAppInForeground else {
+            guard await handler.isAppInForeground() else {
                 self.debugLog("[InstallAppOperation] We are not in the foreground, let's not do anything")
                 return
             }
-                
-            let delaySeconds = Self.selfInstallSuspendDelayNs / 1_000_000_000
+            
+            let delaySeconds = AppConstants.Installation.selfInstallSuspendDelayNs / 1_000_000_000
             self.debugLog("[InstallAppOperation] We are still installing after \(delaySeconds) seconds")
             
-            #if !os(tvOS)
-            let settings = await UNUserNotificationCenter.current().notificationSettings()
-            switch settings.authorizationStatus {
-                case .authorized, .ephemeral, .provisional:
-                    self.verboseLog("[InstallAppOperation] Notifications are enabled")
+            await self.suspendToHomeScreen()
 
-                    let content = UNMutableNotificationContent()
-                    content.title = "Refreshing..."
-                    content.body = "SideStore will automatically move to the homescreen to finish refreshing!"
-                    let notification = UNNotificationRequest(identifier: Bundle.Info.appbundleIdentifier + ".FinishRefreshNotification", content: content, trigger: UNTimeIntervalNotificationTrigger(timeInterval: 3, repeats: false))
-                    try await UNUserNotificationCenter.current().add(notification)
-                    
-                    self.suspendToHomeScreen()
-
-                default:
-                    self.verboseLog("[InstallAppOperation] Notifications are not enabled")
-
-                    handler.requestBackgroundSuspension {
-                        self.suspendToHomeScreen()
-                    }
-                }
-            #else
-            NotificationCenter.default.post(name: NSNotification.Name("TVTopShelfItemsDidChangeNotification"), object: nil)
-            handler.requestBackgroundSuspension {
-                self.suspendToHomeScreen()
-            }
-            #endif
+            // #if !os(tvOS)
+            // let settings = await UNUserNotificationCenter.current().notificationSettings()
+            // switch settings.authorizationStatus {
+            //     case .authorized, .ephemeral, .provisional:
+            //         self.verboseLog("[InstallAppOperation] Notifications are enabled")
+            //
+            //         let content = UNMutableNotificationContent()
+            //         content.title = "Refreshing..."
+            //         content.body = "SideStore will automatically move to the homescreen to finish refreshing!"
+            //         let notification = UNNotificationRequest(identifier: Bundle.Info.appbundleIdentifier + ".FinishRefreshNotification", content: content, trigger: UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false))
+            //         try? await UNUserNotificationCenter.current().add(notification)
+            //         
+            //         await self.suspendToHomeScreen()
+            //
+            //     default:
+            //         self.verboseLog("[InstallAppOperation] Notifications are not enabled")
+            //
+            //         await withTaskGroup(of: Void.self) { group in
+            //             group.addTask { await handler.requestBackgroundSuspension() }
+            //             group.addTask { try? await Task.sleep(nanoseconds: 5_000_000_000) }
+            //             _ = await group.next()
+            //             group.cancelAll()
+            //         }
+            //         await self.suspendToHomeScreen()
+            //     }
+            // #else
+            // NotificationCenter.default.post(name: NSNotification.Name("TVTopShelfItemsDidChangeNotification"), object: nil)
+            // await handler.requestBackgroundSuspension()
+            // await self.suspendToHomeScreen()
+            // #endif
         }
     }
     
-    private func cleanUp() {
-        guard !didCleanUp else { return }
-        didCleanUp = true
-        
-        do {
-            try FileManager.default.removeItem(at: context.temporaryDirectory)
-        } catch {
-            debugLog("[InstallAppOperation] Failed to remove temporary directory. \(error)")
-        }
-    }
+
 }

@@ -11,12 +11,13 @@ import SideSign
 
 final class ResignAltStoreViewController: UIViewController
 {
-    var context: AuthenticatedOperationContext!
+    var context: StandaloneOperationContext!
     var mismatchReason: CodeSignValidationReason?
+    var isFreeTeam: Bool = false
     
     var completionHandler: ((Result<Void, Error>) -> Void)?
     
-    @IBOutlet private var placeholderView: RSTPlaceholderView!
+    @IBOutlet private var placeholderView: PlaceholderView!
     @IBOutlet private var reinstallButton: PillButton!
     
     override func viewDidLoad()
@@ -28,7 +29,8 @@ final class ResignAltStoreViewController: UIViewController
         self.placeholderView.detailTextLabel.textAlignment = .left
         self.placeholderView.detailTextLabel.textColor = .secondaryLabel
         
-        let reason = self.mismatchReason ?? (self.context?.team?.type == .free ? .freeAccountLimitRevoked : .revoked)
+        let isFreeTeam = self.isFreeTeam
+        let reason = self.mismatchReason ?? (isFreeTeam ? .freeAccountLimitRevoked : .revoked)
         debugLog("[ResignAltStoreViewController] Displaying Resign SideStore Now screen (mismatchReason: \(reason)).")
         let reasonText: String
         
@@ -134,7 +136,7 @@ private extension ResignAltStoreViewController
             }
                         
             // Install, _not_ refresh, to ensure we are installing with a non-revoked certificate.
-            let group = AppManager.shared.install(altStore, presentingViewController: self, context: self.context) { (result) in
+            let group = AppManager.shared.install(.app(altStore), presentingViewController: self, context: self.context) { (result) in
                 switch result
                 {
                 case .success: self.completionHandler?(.success(()))

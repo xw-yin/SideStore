@@ -9,7 +9,7 @@
 import Foundation
 import SideSign
 
-final class EmbedSigningCertOperation: BasePipelineOperation<AppOperationContext, Void>, @unchecked Sendable {
+final class EmbedSigningCertOperation: BasePipelineOperation<InstallAppOperationContext, Void>, @unchecked Sendable {
     override func execute(parentProgress: Progress?) async throws {
         let startTime = CFAbsoluteTimeGetCurrent()
         debugLog("[EmbedSigningCertOperation] execute() started")
@@ -20,7 +20,7 @@ final class EmbedSigningCertOperation: BasePipelineOperation<AppOperationContext
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         
         // 1. Resolve the certificate used for signing this app
-        guard let cert = self.context.overrideCertificate ?? self.context.authenticatedContext.signingCertificate else
+        guard let cert = self.context.targetSigningCertificate else
         {
             throw OperationError.invalidParameters("EmbedSigningCertOperation: No signing certificate found in context.")
         }

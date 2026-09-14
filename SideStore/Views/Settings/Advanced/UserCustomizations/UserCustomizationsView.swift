@@ -17,9 +17,19 @@ private extension Color {
 struct UserCustomizationsView: View {
     @State private var selectedBackend: GatewayBackend = selectedGatewayBackendCache
     @State private var useOnDeviceAnisette: Bool = UserDefaults.standard.useOnDeviceAnisette
+    @State private var showAnisetteRestartConfirmation: Bool = false
+    @State private var customizeInfoPlist: Bool = UserDefaults.standard.customizeInfoPlist
+    @State private var preferSheetForInfoPlistCustomization: Bool = UserDefaults.standard.preferSheetForInfoPlistCustomization
+    @State private var customizeEntitlements: Bool = UserDefaults.standard.customizeEntitlements
+    @State private var preferSheetForEntitlementsCustomization: Bool = UserDefaults.standard.preferSheetForEntitlementsCustomization
     @State private var customizeAppId: Bool = UserDefaults.standard.customizeAppId
-    @State private var customizeAppExtensions: Bool = UserDefaults.standard.customizeAppExtensions
+    @State private var customizeAppIcon: Bool = UserDefaults.standard.customizeAppIcon
+    @State private var customizeProvisioningProfile: Bool = UserDefaults.standard.customizeProvisioningProfile
+    @State private var customizeAppExtensions: AppExtensionCustomization = UserDefaults.standard.customizeAppExtensions
     @State private var autoFixAppGroupIDs: Bool = UserDefaults.standard.autoFixAppGroupIDs
+    @State private var preferResignedIPA: Bool = UserDefaults.standard.preferResignedIPA
+    @State private var pendingPreferIPAOngoing: Bool = false
+    @State private var showPreferIPAToggleAlert: Bool = false
     @State private var isExportResignedAppEnabled: Bool = UserDefaults.standard.isExportResignedAppEnabled
     @State private var enableEMPforWireguard: Bool = UserDefaults.standard.enableEMPforWireguard
     @State private var pendingEMPOption: Bool = false
@@ -34,10 +44,31 @@ struct UserCustomizationsView: View {
     @State private var isChecksumVerificationEnabled: Bool = UserDefaults.standard.isChecksumVerificationEnabled
     @State private var isFileSizeVerificationEnabled: Bool = UserDefaults.standard.isFileSizeVerificationEnabled
     @State private var permissionCheckingDisabled: Bool = UserDefaults.standard.permissionCheckingDisabled
+    @State private var turnOnDataShortcutName: String = UserDefaults.standard.turnOnDataShortcutName
+    @State private var turnOffDataShortcutName: String = UserDefaults.standard.turnOffDataShortcutName
+    @State private var turnOnBaseDelayText: String = {
+        let delay = CellularRefreshManager.shared.turnOnDataBaseDelayOverride ?? AppConstants.Shortcuts.defaultTurnOnDataBaseDelay
+        return String(delay)
+    }()
+    @State private var turnOffBaseDelayText: String = {
+        let delay = CellularRefreshManager.shared.turnOffDataBaseDelayOverride ?? AppConstants.Shortcuts.defaultTurnOffDataBaseDelay
+        return String(delay)
+    }()
+    @State private var wireGuardExportURL: URL? = nil
 
-    private var isFreeAccount: Bool {
-        DatabaseManager.shared.activeTeam()?.type == .free
+    @State private var isFreeAccount: Bool = false
+
+    struct EditDialogState: Identifiable {
+        let id = UUID()
+        let title: String
+        let message: String
+        let placeholder: String
+        let keyboardType: UIKeyboardType
+        let onSave: (String) -> Void
     }
+
+    @State private var editDialog: EditDialogState? = nil
+    @State private var editingValueText: String = ""
 
     var body: some View {
         ScrollView {
@@ -86,80 +117,82 @@ struct UserCustomizationsView: View {
                                 get: { useOnDeviceAnisette },
                                 set: { newValue in
                                     useOnDeviceAnisette = newValue
-                                    UserDefaults.standard.useOnDeviceAnisette = newValue
+                                    showAnisetteRestartConfirmation = true
                                 }
                             )
                         )
+                        
+                        divider
+                        
+                        NavigationLink(destination: AnisetteDataView()) {
+                            HStack {
+                                Text("Anisette Client Configuration")
+                                    .font(.system(size: 17, weight: .bold))
+                                    .foregroundColor(.primary)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.horizontal, 16)
+                            .frame(height: 50)
+                        }
+                        
+                        divider
+                        
+                        SwiftUI.Button(role: .destructive) {
+                            presentResetAdiDialog()
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Reset adi.pb")
+                                        .font(.system(size: 17, weight: .bold))
+                                        .foregroundColor(.red)
+                                    Text("Clear local Anisette provisioning data from Keychain")
+                                        .font(.system(size: 12, weight: .regular))
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "trash")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.red)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .frame(minHeight: 50)
+                        }
                     }
                     .background(Color.settingsRowBackground)
                     .cornerRadius(14)
                 }
 
-                // Section 2: GENERAL
+                // Section: SIDESIGN
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("GENERAL")
+                    Text("SIDESIGN")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
-                        toggleRow(title: "Customize AppID", isOn: Binding(
-                            get: { customizeAppId },
-                            set: { newValue in
-                                customizeAppId = newValue
-                                UserDefaults.standard.customizeAppId = newValue
+                        NavigationLink(destination: SideSignConfigurationView()) {
+                            HStack {
+                                Text("SideSign Client Configuration")
+                                    .font(.system(size: 17, weight: .bold))
+                                    .foregroundColor(.primary)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.secondary)
                             }
-                        ))
-                        
-                        divider
-                        
-                        toggleRow(title: "Customize App Extensions", isOn: Binding(
-                            get: { customizeAppExtensions },
-                            set: { newValue in
-                                customizeAppExtensions = newValue
-                                UserDefaults.standard.customizeAppExtensions = newValue
-                            }
-                        ))
-                        
-                        divider
-                        
-                        toggleRow(
-                            title: "Auto-Fix AppGroup IDs",
-                            subtitle: isFreeAccount ? "Required for free developer accounts" : "Automatically fix App Group casing mismatches",
-                            isOn: Binding(
-                                get: { isFreeAccount ? true : autoFixAppGroupIDs },
-                                set: { newValue in
-                                    guard !isFreeAccount else { return }
-                                    autoFixAppGroupIDs = newValue
-                                    UserDefaults.standard.autoFixAppGroupIDs = newValue
-                                }
-                            )
-                        )
-                        .disabled(isFreeAccount)
-                        
-                        divider
-                        
-                        toggleRow(title: "Export Resigned Apps", isOn: Binding(
-                            get: { isExportResignedAppEnabled },
-                            set: { newValue in
-                                isExportResignedAppEnabled = newValue
-                                UserDefaults.standard.isExportResignedAppEnabled = newValue
-                            }
-                        ))
-                        
-                        divider
-                        
-                        toggleRow(title: "Skip Uncopyable Backup Files", isOn: Binding(
-                            get: { skipNonCopyableFiles },
-                            set: { newValue in
-                                skipNonCopyableFiles = newValue
-                                UserDefaults.standard.skipNonCopyableBackupFiles = newValue
-                            }
-                        ))
+                            .padding(.horizontal, 16)
+                            .frame(height: 50)
+                        }
                     }
                     .background(Color.settingsRowBackground)
                     .cornerRadius(14)
                 }
+
+                generalSection
 
                 // Section 2: APP VERIFICATION
                 VStack(alignment: .leading, spacing: 8) {
@@ -296,6 +329,9 @@ struct UserCustomizationsView: View {
                     .cornerRadius(14)
                 }
 
+                // Section 4: CELLULAR REFRESH SHORTCUTS
+                cellularRefreshShortcutsSection
+
                 // Section 5: MINIMUXER BACKEND
                 VStack(alignment: .leading, spacing: 8) {
                     Text("MINIMUXER BACKEND")
@@ -343,6 +379,20 @@ struct UserCustomizationsView: View {
         #if !os(tvOS)
         .navigationBarTitleDisplayMode(.large)
         #endif
+        .alert("Restart Required", isPresented: $showAnisetteRestartConfirmation) {
+            SwiftUI.Button("Restart Now", role: .destructive) {
+                Task {
+                    await AuthManager.shared.signOut(keepCertificate: true, keepAnisetteData: false)
+                    UserDefaults.standard.useOnDeviceAnisette = useOnDeviceAnisette
+                    exit(0)
+                }
+            }
+            SwiftUI.Button("Cancel", role: .cancel) {
+                useOnDeviceAnisette = UserDefaults.standard.useOnDeviceAnisette
+            }
+        } message: {
+            Text("Changing Anisette config will invalidate your current provisioned Anisette data and you will be signed out.\n\nThis action will require a restart, do you want to proceed?")
+        }
         .alert("Restart Required", isPresented: $showEMPRestartConfirmation) {
             SwiftUI.Button("Restart Now", role: .destructive) {
                 enableEMPforWireguard = pendingEMPOption
@@ -359,6 +409,7 @@ struct UserCustomizationsView: View {
                     selectedBackend = newBackend
                     selectedGatewayBackendCache = newBackend
                     UserDefaults.standard.minimuxerGatewayBackend = newBackend.rawValue
+                    UserDefaults.standard.synchronize()
                     exit(0)
                 }
             }
@@ -367,6 +418,55 @@ struct UserCustomizationsView: View {
             }
         } message: {
             Text("Changing the Minimuxer backend requires restarting SideStore. If canceled, changes will not be saved.")
+        }
+        .alert(pendingPreferIPAOngoing ? "Prefer Resigned IPA" : "Prefer App Bundle", isPresented: $showPreferIPAToggleAlert) {
+            SwiftUI.Button("Switch") {
+                preferResignedIPA = pendingPreferIPAOngoing
+                UserDefaults.standard.preferResignedIPA = pendingPreferIPAOngoing
+            }
+            SwiftUI.Button("Cancel", role: .cancel) {
+                pendingPreferIPAOngoing = preferResignedIPA
+            }
+        } message: {
+            if pendingPreferIPAOngoing {
+                Text("Switching to Resigned IPA prioritizes install speed (~40% faster) by packaging an uncompressed IPA for fast transfer, but temporarily uses additional disk space during packaging.")
+            } else {
+                Text("Switching to App Bundle prioritizes storage efficiency by transferring the app bundle directly without packaging a temporary IPA, but transfer speeds will be noticeably slower.")
+            }
+        }
+        .sheet(isPresented: Binding<Bool>(
+            get: { wireGuardExportURL != nil },
+            set: { if !$0 { wireGuardExportURL = nil } }
+        )) {
+            if let url = wireGuardExportURL {
+                ActivityViewController(activityItems: [url])
+            }
+        }
+        .alert(
+            editDialog?.title ?? "",
+            isPresented: Binding<Bool>(
+                get: { editDialog != nil },
+                set: { if !$0 { editDialog = nil } }
+            )
+        ) {
+            TextField(editDialog?.placeholder ?? "", text: $editingValueText)
+                #if !os(tvOS)
+                .keyboardType(editDialog?.keyboardType ?? .default)
+                #endif
+            SwiftUI.Button("OK") {
+                if let dialog = editDialog {
+                    dialog.onSave(editingValueText)
+                }
+                editDialog = nil
+            }
+            SwiftUI.Button("Cancel", role: .cancel) {
+                editDialog = nil
+            }
+        } message: {
+            Text(editDialog?.message ?? "")
+        }
+        .task {
+            isFreeAccount = (try? await AuthManager.shared.getAuthenticatedTeam())?.type == .free
         }
     }
 
@@ -394,6 +494,379 @@ struct UserCustomizationsView: View {
         .frame(minHeight: 50)
     }
 
+    private func textFieldRow(
+        title: String,
+        subtitle: String? = nil,
+        placeholder: String,
+        value: String,
+        unit: String? = nil,
+        onTap: @escaping () -> Void
+    ) -> some View {
+        SwiftUI.Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let subtitle = subtitle {
+                        Text(subtitle)
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                HStack {
+                    Text(value.isEmpty ? placeholder : (unit != nil ? "\(value) \(unit!)" : value))
+                        .font(.system(size: 15))
+                        .foregroundColor(value.isEmpty ? .secondary : .primary)
+                    Spacer()
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(uiColor: .tertiarySystemGroupedBackground))
+                .cornerRadius(8)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+        }
+    }
+
+    @ViewBuilder
+    private var cellularRefreshShortcutsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("CELLULAR REFRESH SHORTCUTS")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.secondary)
+                .padding(.horizontal, 16)
+
+            VStack(spacing: 0) {
+                textFieldRow(
+                    title: "Turn On Cellular Shortcut",
+                    subtitle: "Name of the shortcut in Apple Shortcuts app",
+                    placeholder: AppConstants.Shortcuts.defaultTurnOnDataShortcutName,
+                    value: turnOnDataShortcutName,
+                    onTap: openTurnOnShortcutDialog
+                )
+
+                divider
+
+                textFieldRow(
+                    title: "Turn Off Cellular Shortcut",
+                    subtitle: "Name of the shortcut in Apple Shortcuts app",
+                    placeholder: AppConstants.Shortcuts.defaultTurnOffDataShortcutName,
+                    value: turnOffDataShortcutName,
+                    onTap: openTurnOffShortcutDialog
+                )
+
+                divider
+
+                textFieldRow(
+                    title: "Turn On Base Delay",
+                    subtitle: "Base wait time after turning on data (seconds, ≥ 0)",
+                    placeholder: String(AppConstants.Shortcuts.defaultTurnOnDataBaseDelay),
+                    value: turnOnBaseDelayText,
+                    unit: "s",
+                    onTap: openTurnOnBaseDelayDialog
+                )
+
+                divider
+
+                textFieldRow(
+                    title: "Turn Off Base Delay",
+                    subtitle: "Base wait time after turning off data (seconds, ≥ 0)",
+                    placeholder: String(AppConstants.Shortcuts.defaultTurnOffDataBaseDelay),
+                    value: turnOffBaseDelayText,
+                    unit: "s",
+                    onTap: openTurnOffBaseDelayDialog
+                )
+
+                divider
+
+                SwiftUI.Button(action: resetCellularDefaults) {
+                    HStack {
+                        Spacer()
+                        Text("Reset to Defaults")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.red)
+                        Spacer()
+                    }
+                    .padding(.vertical, 12)
+                }
+            }
+            .background(Color.settingsRowBackground)
+            .cornerRadius(14)
+        }
+    }
+
+    private func openTurnOnShortcutDialog() {
+        editingValueText = turnOnDataShortcutName
+        editDialog = EditDialogState(
+            title: "Turn On Cellular Shortcut",
+            message: "Name of the shortcut in Apple Shortcuts app",
+            placeholder: AppConstants.Shortcuts.defaultTurnOnDataShortcutName,
+            keyboardType: .default,
+            onSave: { newValue in
+                let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                let resolved = trimmed.isEmpty ? AppConstants.Shortcuts.defaultTurnOnDataShortcutName : trimmed
+                let sanitized = CellularRefreshManager.sanitizeShortcutName(resolved, fallback: AppConstants.Shortcuts.defaultTurnOnDataShortcutName)
+                turnOnDataShortcutName = sanitized
+                CellularRefreshManager.shared.setTurnOnDataShortcutName(sanitized)
+            }
+        )
+    }
+
+    private func openTurnOffShortcutDialog() {
+        editingValueText = turnOffDataShortcutName
+        editDialog = EditDialogState(
+            title: "Turn Off Cellular Shortcut",
+            message: "Name of the shortcut in Apple Shortcuts app",
+            placeholder: AppConstants.Shortcuts.defaultTurnOffDataShortcutName,
+            keyboardType: .default,
+            onSave: { newValue in
+                let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                let resolved = trimmed.isEmpty ? AppConstants.Shortcuts.defaultTurnOffDataShortcutName : trimmed
+                let sanitized = CellularRefreshManager.sanitizeShortcutName(resolved, fallback: AppConstants.Shortcuts.defaultTurnOffDataShortcutName)
+                turnOffDataShortcutName = sanitized
+                CellularRefreshManager.shared.setTurnOffDataShortcutName(sanitized)
+            }
+        )
+    }
+
+    private func openTurnOnBaseDelayDialog() {
+        editingValueText = turnOnBaseDelayText
+        editDialog = EditDialogState(
+            title: "Turn On Base Delay",
+            message: "Base wait time after turning on data (seconds, ≥ 0)",
+            placeholder: String(AppConstants.Shortcuts.defaultTurnOnDataBaseDelay),
+            keyboardType: .decimalPad,
+            onSave: { newValue in
+                let filtered = newValue.filter { "0123456789.".contains($0) }
+                if let delay = Double(filtered), delay >= 0 {
+                    turnOnBaseDelayText = String(delay)
+                    CellularRefreshManager.shared.setTurnOnDataBaseDelayOverride(delay)
+                } else {
+                    turnOnBaseDelayText = String(AppConstants.Shortcuts.defaultTurnOnDataBaseDelay)
+                    CellularRefreshManager.shared.setTurnOnDataBaseDelayOverride(nil)
+                }
+            }
+        )
+    }
+
+    private func openTurnOffBaseDelayDialog() {
+        editingValueText = turnOffBaseDelayText
+        editDialog = EditDialogState(
+            title: "Turn Off Base Delay",
+            message: "Base wait time after turning off data (seconds, ≥ 0)",
+            placeholder: String(AppConstants.Shortcuts.defaultTurnOffDataBaseDelay),
+            keyboardType: .decimalPad,
+            onSave: { newValue in
+                let filtered = newValue.filter { "0123456789.".contains($0) }
+                if let delay = Double(filtered), delay >= 0 {
+                    turnOffBaseDelayText = String(delay)
+                    CellularRefreshManager.shared.setTurnOffDataBaseDelayOverride(delay)
+                } else {
+                    turnOffBaseDelayText = String(AppConstants.Shortcuts.defaultTurnOffDataBaseDelay)
+                    CellularRefreshManager.shared.setTurnOffDataBaseDelayOverride(nil)
+                }
+            }
+        )
+    }
+
+    private func resetCellularDefaults() {
+        CellularRefreshManager.shared.resetToDefaults()
+        turnOnDataShortcutName = AppConstants.Shortcuts.defaultTurnOnDataShortcutName
+        turnOffDataShortcutName = AppConstants.Shortcuts.defaultTurnOffDataShortcutName
+        turnOnBaseDelayText = String(AppConstants.Shortcuts.defaultTurnOnDataBaseDelay)
+        turnOffBaseDelayText = String(AppConstants.Shortcuts.defaultTurnOffDataBaseDelay)
+    }
+
+    private var customizeAppExtensionsBinding: Binding<AppExtensionCustomization> {
+        Binding<AppExtensionCustomization>(
+            get: { customizeAppExtensions },
+            set: { newValue in
+                customizeAppExtensions = newValue
+                UserDefaults.standard.customizeAppExtensions = newValue
+            }
+        )
+    }
+
+    @ViewBuilder
+    private var generalSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("GENERAL")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.secondary)
+                .padding(.horizontal, 16)
+            
+            VStack(spacing: 0) {
+                toggleRow(title: "Customize Info.plist", isOn: Binding(
+                    get: { customizeInfoPlist },
+                    set: { newValue in
+                        customizeInfoPlist = newValue
+                        UserDefaults.standard.customizeInfoPlist = newValue
+                    }
+                ))
+                
+                divider
+                
+                toggleRow(title: "Customize AppID", isOn: Binding(
+                    get: { customizeInfoPlist ? true : customizeAppId },
+                    set: { newValue in
+                        customizeAppId = newValue
+                        UserDefaults.standard.customizeAppId = newValue
+                    }
+                ))
+                .disabled(customizeInfoPlist)
+                .opacity(customizeInfoPlist ? 0.4 : 1.0)
+                
+                divider
+                
+                HStack {
+                    Text("Customize Extensions")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Picker("", selection: customizeAppExtensionsBinding) {
+                        ForEach(AppExtensionCustomization.allCases) { (option: AppExtensionCustomization) in
+                            Text(option.displayName).tag(option)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .tint(.secondary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .frame(minHeight: 50)
+                
+                divider
+                
+                toggleRow(title: "Customize Entitlements", isOn: Binding(
+                    get: { customizeEntitlements },
+                    set: { newValue in
+                        customizeEntitlements = newValue
+                        UserDefaults.standard.customizeEntitlements = newValue
+                    }
+                ))
+                
+                divider
+                
+                toggleRow(
+                    title: "Auto-Fix AppGroup IDs",
+                    subtitle: isFreeAccount ? "Required for free developer accounts" : "Automatically fix App Group casing mismatches",
+                    isOn: Binding(
+                        get: { isFreeAccount ? true : autoFixAppGroupIDs },
+                        set: { newValue in
+                            guard !isFreeAccount else { return }
+                            autoFixAppGroupIDs = newValue
+                            UserDefaults.standard.autoFixAppGroupIDs = newValue
+                        }
+                    )
+                )
+                .disabled(isFreeAccount)
+
+                divider
+
+                toggleRow(
+                    title: "Customize App Icon",
+                    subtitle: "Prompt to choose a custom icon before installing",
+                    isOn: Binding(
+                        get: { customizeAppIcon },
+                        set: { newValue in
+                            customizeAppIcon = newValue
+                            UserDefaults.standard.customizeAppIcon = newValue
+                        }
+                    )
+                )
+
+                divider
+
+                toggleRow(
+                    title: "Customize Provisioning Profile",
+                    subtitle: "Prompt to select a provisioning profile before installing",
+                    isOn: Binding(
+                        get: { customizeProvisioningProfile },
+                        set: { newValue in
+                            customizeProvisioningProfile = newValue
+                            UserDefaults.standard.customizeProvisioningProfile = newValue
+                        }
+                    )
+                )
+                
+                divider
+                
+                toggleRow(
+                    title: "Prefer Resigned IPA",
+                    subtitle: "Prefer IPA (speed) vs App (storage) efficiency",
+                    isOn: Binding(
+                        get: { preferResignedIPA },
+                        set: { newValue in
+                            pendingPreferIPAOngoing = newValue
+                            showPreferIPAToggleAlert = true
+                        }
+                    )
+                )
+                
+                divider
+                
+                toggleRow(title: "Export Resigned IPAs", isOn: Binding(
+                    get: { isExportResignedAppEnabled },
+                    set: { newValue in
+                        isExportResignedAppEnabled = newValue
+                        UserDefaults.standard.isExportResignedAppEnabled = newValue
+                    }
+                ))
+                
+                divider
+                
+                toggleRow(title: "Skip Uncopyable Backup Files", isOn: Binding(
+                    get: { skipNonCopyableFiles },
+                    set: { newValue in
+                        skipNonCopyableFiles = newValue
+                        UserDefaults.standard.skipNonCopyableBackupFiles = newValue
+                    }
+                ))
+                
+                divider
+                
+                toggleRow(
+                    title: "Prefer Sheet for Info.plist",
+                    subtitle: "Use sheet instead of dialog",
+                    isOn: Binding(
+                        get: { preferSheetForInfoPlistCustomization },
+                        set: { newValue in
+                            preferSheetForInfoPlistCustomization = newValue
+                            UserDefaults.standard.preferSheetForInfoPlistCustomization = newValue
+                        }
+                    )
+                )
+                .disabled(!customizeInfoPlist)
+                .opacity(!customizeInfoPlist ? 0.4 : 1.0)
+                
+                divider
+                
+                toggleRow(
+                    title: "Prefer Sheet for Entitlements",
+                    subtitle: "Use sheet instead of dialog",
+                    isOn: Binding(
+                        get: { preferSheetForEntitlementsCustomization },
+                        set: { newValue in
+                            preferSheetForEntitlementsCustomization = newValue
+                            UserDefaults.standard.preferSheetForEntitlementsCustomization = newValue
+                        }
+                    )
+                )
+                .disabled(!customizeEntitlements)
+                .opacity(!customizeEntitlements ? 0.4 : 1.0)
+            }
+            .background(Color.settingsRowBackground)
+            .cornerRadius(14)
+        }
+    }
+
+
+
     private var divider: some View {
         Rectangle()
             .fill(Color.settingsDivider)
@@ -402,17 +875,46 @@ struct UserCustomizationsView: View {
     }
 
     private func exportWireGuardConfig() {
-        guard let top = UIApplication.shared.topViewController() else { return }
         guard let url = Bundle.main.url(forResource: "SideStore", withExtension: "conf") else {
-            let toastView = ToastView(text: NSLocalizedString("SideStore.conf missing!", comment: ""), detailText: "Unable to locate SideStore.conf in bundle resources.")
-            toastView.show(in: top)
+            if let top = UIApplication.shared.topViewController() {
+                let toastView = ToastView(text: NSLocalizedString("SideStore.conf missing!", comment: ""), detailText: "Unable to locate SideStore.conf in bundle resources.")
+                toastView.show(in: top)
+            }
             return
         }
-        #if !os(tvOS)
-        let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-        top.present(activityVC, animated: true)
-        #else
-        TVWebFileTransferManager.shared.startExport(fileURL: url, title: "Export SideStore.conf", presentingVC: top)
-        #endif
+        wireGuardExportURL = url
+    }
+
+    private func presentResetAdiDialog() {
+        guard let top = UIApplication.shared.topViewController() else { return }
+        let alertController = UIAlertController(
+            title: NSLocalizedString("Reset adi.pb", comment: ""),
+            message: NSLocalizedString("This will sign you out of Apple ID in SideStore and clear the provisioned adi.pb data from your Keychain. Your active signing certificate will be preserved.", comment: ""),
+            preferredStyle: .alert
+        )
+        let contentVC = ResetAdiAlertViewController()
+        alertController.setValue(contentVC, forKey: "contentViewController")
+        
+        let cancelAction = UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel, handler: nil)
+        let resetAction = UIAlertAction(title: NSLocalizedString("Reset & Sign Out", comment: ""), style: .destructive) { _ in
+            let keepHeaders = contentVC.isKeepHeadersChecked
+            Task {
+                await AuthManager.shared.signOut(keepCertificate: true, keepAnisetteData: false, keepAnisetteHeaders: keepHeaders)
+                debugLog("Reset adi.pb (keepAnisetteHeaders: \(keepHeaders)) and signed out")
+                if let topVC = UIApplication.shared.topViewController() {
+                    let detail = keepHeaders
+                        ? NSLocalizedString("Signed out of Apple ID. You can now sign back in with fresh provisioning.", comment: "")
+                        : NSLocalizedString("Signed out of Apple ID. Reset adi.pb and header configs to defaults.", comment: "")
+                    ToastView(
+                        text: NSLocalizedString("Cleared adi.pb!", comment: ""),
+                        detailText: detail
+                    ).show(in: topVC)
+                }
+            }
+        }
+        
+        alertController.addAction(cancelAction)
+        alertController.addAction(resetAction)
+        top.present(alertController, animated: true, completion: nil)
     }
 }

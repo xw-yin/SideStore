@@ -82,6 +82,9 @@ public class Keychain
     @KeychainItem(key: "adiPb")
     public var adiPb: String?
 
+    @KeychainItem(key: "deviceUDID")
+    public var deviceUDID: String?
+
     // MARK: - Dynamic Imported Certificates Storage
 
     public subscript(certificateSerial serial: String) -> Data? {
@@ -133,28 +136,28 @@ public class Keychain
         }
     }
     
-    public func reset(keepCertificate: Bool = false, keepAnisetteData: Bool = true)
+    public func clearCertificates()
     {
-        debugLog("[Keychain] Resetting Keychain items (keepCertificate: \(keepCertificate), keepAnisetteData: \(keepAnisetteData))...")
+        // Legacy
+        self.signingCertificatePrivateKey = nil
+        self.signingCertificateSerialNumber = nil
+
+        self.signingCertificate = nil
+        self.signingCertificatePassword = nil
+        
+        debugLog("[Keychain] Cleared signing certificate & private key from Keychain.")
+    }
+    
+    public func clearSignInInfo(keepAnisetteData: Bool = true)
+    {
+        debugLog("[Keychain] Clearing sign-in info from Keychain (keepAnisetteData: \(keepAnisetteData))...")
         
         self.appleIDEmailAddress = nil
         self.appleIDPassword = nil
         self.appleIDAdsid = nil
         self.appleIDXcodeToken = nil
         debugLog("[Keychain] Cleared Apple ID credentials & tokens (email, password, adsid, xcodeToken).")
-        
-        if !keepCertificate {
-            // Legacy
-            self.signingCertificatePrivateKey = nil
-            self.signingCertificateSerialNumber = nil
 
-            self.signingCertificate = nil
-            self.signingCertificatePassword = nil
-            debugLog("[Keychain] Cleared signing certificate & private key.")
-        } else {
-            debugLog("[Keychain] Preserved signing certificate.")
-        }
-        
         if !keepAnisetteData {
             self.adiPb = nil
             debugLog("[Keychain] Cleared Anisette ADI data (adiPb).")
@@ -162,13 +165,13 @@ public class Keychain
             debugLog("[Keychain] Preserved Anisette ADI data (adiPb).")
         }
         
-        debugLog("[Keychain] Cleared in-memory session, certificate, and team instances.")
+        debugLog("[Keychain] Cleared sign-in info from Keychain.")
     }
 
     public func clearAll()
     {
         debugLog("[Keychain] Clearing all Keychain items related to this instance...")
         try? self.keychain.removeAll()
-        debugLog("[Keychain] All Keychain items and in-memory session/team cleared.")
+        debugLog("[Keychain] All Keychain items cleared.")
     }
 }

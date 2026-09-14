@@ -11,10 +11,10 @@ import Foundation
 import CoreData
 import SideSign
 
-final class VerifyCertificateOperation: BasePipelineOperation<AppOperationContext, Void>, @unchecked Sendable {
+final class VerifyCertificateOperation: BasePipelineOperation<InstallAppOperationContext, Void>, @unchecked Sendable {
     private let willResign: Bool
     
-    init(context: AppOperationContext, willResign: Bool = true) throws {
+    init(context: InstallAppOperationContext, willResign: Bool = true) throws {
         self.willResign = willResign
         try super.init(context: context)
     }
@@ -29,39 +29,27 @@ final class VerifyCertificateOperation: BasePipelineOperation<AppOperationContex
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         self.setProgress(10)
         
-        guard let team = self.context.authenticatedContext.team, let session = self.context.authenticatedContext.session else {
-            debugLog("[VerifyCertificateOperation] Skipping certificate verification: team or session missing in context.")
-            self.setProgress(100)
-            throw OperationError.notAuthenticated
-        }
+        let team = try await AuthManager.shared.getAuthenticatedTeam()
         
         let bundleID = self.context.targetBundleIdentifier
         let (appName, installedAppSerial, initialStatus) = await self.fetchInstalledAppInitialState(bundleID: bundleID)
         var finalStatus = initialStatus
         
         do {
-            // 2. Obtain active portal certificates (auth context or direct fetch as fallback)
-            let portalCertificates: [ALTX509Certificate]
-            if let cachedPortalCerts = self.context.authenticatedContext.portalCertificates, !cachedPortalCerts.isEmpty {
-                portalCertificates = cachedPortalCerts
-                self.debugLog("[VerifyCertificateOperation] Utilizing \(portalCertificates.count) active certificates cached from Auth context.")
-            } else {
-                self.debugLog("[VerifyCertificateOperation] Active certificates not found in Auth context. Fetching live from Apple Developer Portal...")
-                portalCertificates = try await DeveloperPortalService.shared.fetchCertificates(team: team, session: session)
-                self.context.authenticatedContext.portalCertificates = portalCertificates
-            }
+            // 2. Obtain active portal certificates directly from Apple Developer Portal
+            let portalCertificates = try await DeveloperPortalProxy.shared.fetchCertificates(team: team)
             
             self.setProgress(30)
             
             let portalCertificateSerials = Set(portalCertificates.compactMap { $0.serialNumber })
-            let signingCertificateSerial = self.context.overrideCertificate?.serialNumber ?? CertificateManager.shared.activeCertificate?.serialNumber
+            let signingCertificateSerial = self.context.targetSigningCertificate?.serialNumber
             
             debugLog("""
             [VerifyCertificateOperation] Parameter Accountability for '\(appName)' (\(bundleID)):
               • installedAppSerial           : \(installedAppSerial ?? "nil")
-              • overrideCertSerial           : \(self.context.overrideCertificate?.serialNumber ?? "nil")
-              • authenticatedCertSerial      : \(self.context.authenticatedContext.signingCertificate?.serialNumber ?? "nil")
-              • signingCertificateSerial     : \(signingCertificateSerial ?? "nil")
+              • overrideCertSerial           : \(self.context.overrideSigningCertificate?.serialNumber ?? "nil")
+              • activeCertSerial             : \(self.context.activeSigningCertificate?.serialNumber ?? "nil")
+              • targetSigningCertSerial      : \(signingCertificateSerial ?? "nil")
               • portalCertificateSerials (\(portalCertificateSerials.count))  : \(Array(portalCertificateSerials))
               • willResign                   : \(self.willResign)
             """)
@@ -69,31 +57,31 @@ final class VerifyCertificateOperation: BasePipelineOperation<AppOperationContex
             if !willResign {
                 debugLog("[VerifyCertificateOperation] Running in verification-only mode (!willResign) for '\(appName)'...")
                 
-                guard let appBundle = self.context.targetAppBundle else {
-                    throw OperationError.invalidParameters("VerifyCertificateOperation: targetAppBundle is missing in context.")
+                guard let installedApp = self.context.installedApp else {
+                    throw OperationError.invalidParameters("VerifyCertificateOperation: installedApp is missing in context.")
                 }
-                guard let binaryCert = CertificateManager.shared.getSigningCertificate(at: appBundle.fileURL) else {
+                guard let lastSigningCert = CertificateManager.shared.getSigningCertificate(for: installedApp) else {
                     throw OperationError.invalidParameters("Could not locate signing certificate for '\(appName)'.")
                 }
                 
-                let result = await validateCertificate(binaryCert, portalCertificateSerials: portalCertificateSerials, signingCertificateSerial: signingCertificateSerial)
+                let result = await validateCertificate(lastSigningCert, portalCertificateSerials: portalCertificateSerials, signingCertificateSerial: signingCertificateSerial)
                 finalStatus = result
                 self.context.targetCertStatus = result
-                try processValidationResult(result, description: "Target bundle binary certificate", appName: appName)
+                try processValidationResult(result, description: "Target bundle binary certificate", appName: appName, team: team)
                 
             } else {
                 // resigning branch
                 debugLog("[VerifyCertificateOperation] Running in signing mode (resigning) for '\(appName)'...")
                 
-                let certType = self.context.overrideCertificate != nil ? "Override" : "Active"
-                guard let target = self.context.overrideCertificate ?? CertificateManager.shared.activeCertificate?.certificate else {
+                let certType = self.context.overrideSigningCertificate != nil ? "Override" : "Active"
+                guard let target = self.context.targetSigningCertificate else {
                     throw OperationError.invalidParameters("\(certType) certificate is missing.")
                 }
                 
                 let result = await validateCertificate(target.x509, portalCertificateSerials: portalCertificateSerials, signingCertificateSerial: signingCertificateSerial)
                 finalStatus = result
                 self.context.targetCertStatus = result
-                try processValidationResult(result, description: "Target signing certificate", appName: appName)
+                try processValidationResult(result, description: "Target signing certificate", appName: appName, team: team)
             }
             
             await self.persistStateIfChanged(bundleID: bundleID, status: finalStatus, initialStatus: initialStatus)
@@ -152,8 +140,7 @@ final class VerifyCertificateOperation: BasePipelineOperation<AppOperationContex
     private func persistStateIfChanged(bundleID: String, status: CertificateStatus, initialStatus: CertificateStatus) async {
         guard status != initialStatus else { return }
         
-        if let installContext = self.context as? InstallAppOperationContext,
-           let installedApp = installContext.installedApp {
+        if let installedApp = self.context.installedApp {
             installedApp.certificateStatus = status
         }
         
@@ -177,14 +164,13 @@ final class VerifyCertificateOperation: BasePipelineOperation<AppOperationContex
         }
     }
     
-    private func processValidationResult(_ result: CertificateStatus, description: String, appName: String) throws {
+    private func processValidationResult(_ result: CertificateStatus, description: String, appName: String, team: ALTTeam) throws {
         // Check if there is a team ID mismatch with the active certificate
         var activeTeamID: String? = nil
         var isCustomCertActive = false
         
-        if let team = self.context.authenticatedContext.team {
-            if let activeCert = CertificateManager.shared.activeCertificate?.certificate,
-               let data = activeCert.data {
+        if let activeCert = CertificateManager.shared.activeCertificate?.certificate,
+           let data = activeCert.data {
                 let details = parseCertificate(derData: data)
                 let belongsToAuthenticatedTeam = details.subject.contains(team.identifier) || details.issuer.contains(team.identifier)
                 if !belongsToAuthenticatedTeam {
@@ -196,7 +182,6 @@ final class VerifyCertificateOperation: BasePipelineOperation<AppOperationContex
                     }
                 }
             }
-        }
         
         switch result {
         case .valid(let isCrossSigned):

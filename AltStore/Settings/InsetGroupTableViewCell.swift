@@ -19,7 +19,7 @@ extension InsetGroupTableViewCell
     }
 }
 
-final class InsetGroupTableViewCell: UITableViewCell
+class InsetGroupTableViewCell: UITableViewCell
 {
 #if !TARGET_INTERFACE_BUILDER
     @IBInspectable var style: Style = .single {
@@ -36,10 +36,25 @@ final class InsetGroupTableViewCell: UITableViewCell
     private let separatorView = UIView()
     private let insetView = UIView()
     
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?)
+    {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        self.setup()
+    }
+    
+    required init?(coder: NSCoder)
+    {
+        super.init(coder: coder)
+    }
+
     override func awakeFromNib()
     {
         super.awakeFromNib()
-        
+        self.setup()
+    }
+    
+    private func setup()
+    {
         self.selectionStyle = .none
         self.preservesSuperviewLayoutMargins = false
         self.contentView.preservesSuperviewLayoutMargins = false

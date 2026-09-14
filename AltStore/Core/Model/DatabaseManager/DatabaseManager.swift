@@ -18,33 +18,19 @@ private let ReceivedWillMigrateDatabaseNotification: @convention(c) (CFNotificat
     DatabaseManager.shared.receivedWillMigrateDatabaseNotification()
 }
 
-fileprivate class PersistentContainer: RSTPersistentContainer, @unchecked Sendable
-{
-    override class func defaultDirectoryURL() -> URL
-    {
-        guard let sharedDirectoryURL = FileManager.default.altstoreSharedDirectory else { return super.defaultDirectoryURL() }
-        
-        let databaseDirectoryURL = sharedDirectoryURL.appendingPathComponent("Database")
-        try? FileManager.default.createDirectory(at: databaseDirectoryURL, withIntermediateDirectories: true, attributes: nil)
-
-        return databaseDirectoryURL
-    }
-    
-    class func legacyDirectoryURL() -> URL
-    {
-        return super.defaultDirectoryURL()
-    }
-}
-public class DatabaseManager
+public class DatabaseManager: @unchecked Sendable
 {
     public static private(set) var shared = DatabaseManager()
     
-    public let persistentContainer: RSTPersistentContainer
+    public let persistentContainer: PersistentContainer
     
-    public private(set) var isStarted = false
+    private let lock = NSLock()
+    private var _isStarted = false
+    public var isStarted: Bool {
+        self.lock.withLock { self._isStarted }
+    }
     
-    private var startCompletionHandlers = [(Error?) -> Void]()
-    private let dispatchQueue = DispatchQueue(label: "io.sidestore.DatabaseManager")
+    private var startTask: Task<Void, Error>?
     
     private let coordinator = NSFileCoordinator()
     private let coordinatorQueue = OperationQueue()
@@ -59,7 +45,6 @@ public class DatabaseManager
         let observer = Unmanaged.passUnretained(self).toOpaque()
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), observer, ReceivedWillMigrateDatabaseNotification, CFNotificationName.willMigrateDatabase.rawValue, nil, .deliverImmediately)
     }
-
     private class func loadPersistentStoresSync() {
         let container = Self.shared.persistentContainer
         if !container.persistentStoreCoordinator.persistentStores.isEmpty {
@@ -88,24 +73,7 @@ public class DatabaseManager
             let container = Self.shared.persistentContainer
             
             var databaseStore = container.persistentStoreCoordinator.persistentStores.first
-            if databaseStore == nil{
-                // perform a load before acquiring the databaseStoreURL
-                Self.loadPersistentStoresSync()
-                databaseStore = container.persistentStoreCoordinator.persistentStores.first
-            }
-            
-
-            guard let databaseStore else
-            {
-                debugLog("\nDatabase Delete request FAILED: databaseStore = nil\n")
-                return false
-            }
-
-            guard let databaseStoreURL = databaseStore.url else
-            {
-                debugLog("\nDatabase Delete request FAILED: databaseStoreURL = nil\n")
-                return false
-            }
+            let databaseStoreURL = databaseStore?.url ?? PersistentContainer.defaultDirectoryURL().appendingPathComponent("AltStore.sqlite")
             
             // Reset the managed object context
             Self.shared.persistentContainer.viewContext.reset()
@@ -116,19 +84,18 @@ public class DatabaseManager
             }
 
             // Now destroy the persistent store
-            try Self.shared.persistentContainer.persistentStoreCoordinator.destroyPersistentStore(
-                at: databaseStoreURL,
-                ofType: NSSQLiteStoreType,
-                options: nil
-            )
-            
-            // just be sure
-            try? FileManager.default.removeItem(at: databaseStoreURL)
+            if FileManager.default.fileExists(atPath: databaseStoreURL.path) {
+                try Self.shared.persistentContainer.persistentStoreCoordinator.destroyPersistentStore(
+                    at: databaseStoreURL,
+                    ofType: NSSQLiteStoreType,
+                    options: nil
+                )
+                try? FileManager.default.removeItem(at: databaseStoreURL)
+            }
                 
             debugLog("\nDatabase Delete: SUCCEEDED\n")
-            
             return true
-        }catch{
+        } catch {
             debugLog("\nDatabase Delete request FAILED: \(error)\n")
             return false
         }
@@ -142,103 +109,51 @@ public class DatabaseManager
         Self.shared = DatabaseManager()
     }
 
-    public func start(completionHandler: @escaping (Error?) -> Void)
+    public func start() async throws
     {
+        if self.isStarted { return }
         
-        func finish(_ error: Error?)
+        let task = self.lock.withLock {
+            if let startTask { return startTask }
+            let task = Task<Void, Error>.detached(priority: .userInitiated) { try await self.performStart() }
+            self.startTask = task
+            return task
+        }
+        
+        do {
+            try await task.value
+            self.lock.withLock { self._isStarted = true }
+        } catch {
+            self.lock.withLock { self.startTask = nil }
+            throw error
+        }
+    }
+
+
+    private func performStart() async throws
+    {
+        if self.persistentContainer.isMigrationRequired
         {
-            self.dispatchQueue.async {
-                if error == nil
-                {
-                    self.isStarted = true
-                }
-                
-                self.startCompletionHandlers.forEach { $0(error) }
-                self.startCompletionHandlers.removeAll()
-            }
+            // Quit any other running AltStore processes to prevent concurrent database access during and after migration.
+            self.ignoreWillMigrateDatabaseNotification = true
+            CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), .willMigrateDatabase, nil, nil, true)
         }
-        
-        self.dispatchQueue.async {
-            self.startCompletionHandlers.append(completionHandler)
-            guard self.startCompletionHandlers.count == 1 else { return }
-            
-            guard !self.isStarted else { return finish(nil) }
-            
-            // In simulator, when previews are generated, it initializes the db, in doing so this removal may be required
-            #if DEBUG && targetEnvironment(simulator)
-            // Wrap in #if DEBUG to *ensure* we never accidentally delete production databases.
-            if ProcessInfo.processInfo.isPreview
-            {
-                do
-                {
-                    debugLog("!!! Purging database for preview...")
-                    try FileManager.default.removeItem(at: PersistentContainer.defaultDirectoryURL())
-                }
-                catch
-                {
-                    debugLog("Failed to remove database directory for preview. \(error)")
-                }
-            }
-            #endif
-            
-            if self.persistentContainer.isMigrationRequired
-            {
-                // Quit any other running AltStore processes to prevent concurrent database access during and after migration.
-                self.ignoreWillMigrateDatabaseNotification = true
-                CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), .willMigrateDatabase, nil, nil, true)
-            }
 
-            self.migrateDatabaseToAppGroupIfNeeded { (result) in
-                switch result
-                {
-                case .failure(let error): finish(error)
-                case .success:
-                    if !self.persistentContainer.persistentStoreCoordinator.persistentStores.isEmpty {
-                        self.prepareDatabase() { (result) in
-                            switch result
-                            {
-                            case .failure(let error): finish(error)
-                            case .success: finish(nil)
-                            }
-                        }
-                    } else {
-                        self.persistentContainer.loadPersistentStores { (description, error) in
-                            guard error == nil else { return finish(error!) }
-                            
-                            self.prepareDatabase() { (result) in
-                                switch result
-                                {
-                                case .failure(let error): finish(error)
-                                case .success: finish(nil)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        try await self.migrateDatabaseToAppGroupIfNeeded()
+        try await self.persistentContainer.loadPersistentStores()
+        try await self.prepareDatabase()
     }
 
-    public func purgeLoggedErrors(before date: Date? = nil, completion: @escaping (Result<Void, Error>) -> Void)
+    public func purgeLoggedErrors(before date: Date? = nil) async throws
     {
-        self.persistentContainer.performBackgroundTask { context in
-            do
-            {
-                let predicate = date.map { NSPredicate(format: "%K <= %@", #keyPath(LoggedError.date), $0 as NSDate) }
-                
-                let loggedErrors = LoggedError.all(satisfying: predicate, in: context, requestProperties: [\.returnsObjectsAsFaults: true])
-                loggedErrors.forEach { context.delete($0) }
-                
-                try context.save()
-                
-                completion(.success(()))
-            }
-            catch
-            {
-                completion(.failure(error))
-            }
+        try await self.persistentContainer.performBackgroundTask { context in
+            let predicate = date.map { NSPredicate(format: "%K <= %@", #keyPath(LoggedError.date), $0 as NSDate) }
+            let loggedErrors = LoggedError.all(satisfying: predicate, in: context, requestProperties: [\.returnsObjectsAsFaults: true])
+            loggedErrors.forEach { context.delete($0) }
+            try context.save()
         }
     }
+
     
     public func updateFeaturedSortIDs() async
     {
@@ -283,24 +198,12 @@ public class DatabaseManager
         }
     }
 
-    public func startForPreview()
-    {
-        let semaphore = DispatchSemaphore(value: 0)
-        
-        self.dispatchQueue.async {
-            self.startCompletionHandlers.append { error in
-                semaphore.signal()
-            }
-        }
-        
-        _ = semaphore.wait(timeout: .now() + 2.0)
-    }
 
     public var viewContext: NSManagedObjectContext {
         return self.persistentContainer.viewContext
     }
     
-    public func activeAccount(in context: NSManagedObjectContext = DatabaseManager.shared.viewContext) -> Account?
+    public func activeAccount(in context: NSManagedObjectContext) -> Account?
     {
         let predicate = NSPredicate(format: "%K == YES", #keyPath(Account.isActiveAccount))
         
@@ -308,7 +211,7 @@ public class DatabaseManager
         return activeAccount
     }
     
-    public func activeTeam(in context: NSManagedObjectContext = DatabaseManager.shared.viewContext) -> Team?
+    public func activeTeam(in context: NSManagedObjectContext) -> Team?
     {
         let predicate = NSPredicate(format: "%K == YES", #keyPath(Team.isActiveTeam))
         
@@ -348,253 +251,213 @@ public class DatabaseManager
         }
     }
 
-    private func prepareDatabase(completionHandler: @escaping (Result<Void, Error>) -> Void)
+    private func prepareDatabase() async throws
     {
-        guard !Bundle.isAppExtension() else { return completionHandler(.success(())) }
+        guard !Bundle.isAppExtension() else { return }
         
         let context = self.persistentContainer.newBackgroundContext()
-        context.performAndWait {
-            do
+        try await context.perform {
+            let appBundle = Bundle.realMainBundle
+            let embeddedApplication = self.embeddedLiveContainerApplication(from: appBundle)
+            let localApp = embeddedApplication?.application ?? ALTApplication(fileURL: Bundle.Info.activeBundleURL)
+            defer {
+                if let temporaryBundleURL = embeddedApplication?.temporaryBundleURL {
+                    try? FileManager.default.removeItem(at: temporaryBundleURL)
+                }
+            }
+
+            guard let localAppBundle = localApp else { return }
+            
+            #if !targetEnvironment(simulator)
+            guard localAppBundle.provisioningProfile != nil else {
+                throw ALTError(.invalidApp)
+            }
+            #endif
+            
+            let liveContainerSource: Source? = {
+                guard Bundle.isBundledWithLiveContainer else { return nil }
+                let sourceURL = URL(string: "https://github.com/LiveContainer/LiveContainer/releases/download/1.0/apps_ss_lc.json")!
+                guard let sourceID = try? Source.sourceID(from: sourceURL) else { return nil }
+                return Source.first(satisfying: NSPredicate(format: "%K == %@", #keyPath(Source.identifier), sourceID), in: context)
+                    ?? Source.make(name: "LiveContainer", groupID: Source.altStoreGroupIdentifier, sourceURL: sourceURL, context: context)
+            }()
+
+            let altStoreSource: Source?
+            
+            if let source = Source.first(satisfying: NSPredicate(format: "%K == %@", #keyPath(Source.identifier), Source.altStoreIdentifier), in: context)
             {
-                let appBundle = Bundle.realMainBundle
-                let embeddedApplication = self.embeddedLiveContainerApplication(from: appBundle)
-                let localApp = embeddedApplication?.application ?? ALTApplication(fileURL: Bundle.Info.activeBundleURL)
-                defer {
-                    if let temporaryBundleURL = embeddedApplication?.temporaryBundleURL {
-                        try? FileManager.default.removeItem(at: temporaryBundleURL)
-                    }
-                }
+                altStoreSource = source
+            }
+            else
+            {
+                altStoreSource = UserDefaults.standard.isDefaultSourceRemoved ? nil : Source.makeAltStoreSource(in: context)
+            }
 
-                guard let localAppBundle = localApp else { return }
-                
-                #if !targetEnvironment(simulator)
-                guard localAppBundle.provisioningProfile != nil else {
-                    completionHandler(.failure(ALTError(.invalidApp)))
-                    return
-                }
-                #endif
-                
-                let liveContainerSource: Source? = {
-                    guard Bundle.isBundledWithLiveContainer else { return nil }
-                    let sourceURL = URL(string: "https://github.com/LiveContainer/LiveContainer/releases/download/1.0/apps_ss_lc.json")!
-                    guard let sourceID = try? Source.sourceID(from: sourceURL) else { return nil }
-                    return Source.first(satisfying: NSPredicate(format: "%K == %@", #keyPath(Source.identifier), sourceID), in: context)
-                        ?? Source.make(name: "LiveContainer", groupID: Source.altStoreGroupIdentifier, sourceURL: sourceURL, context: context)
-                }()
+            // Make sure to always update source URL to be current.
+            if let altStoreSource {
+                try! altStoreSource.setSourceURL(Source.altStoreSourceURL)
+            }
+            
+            let storeApp: StoreApp
+            
+            if let app = StoreApp.first(satisfying: NSPredicate(format: "%K == %@", #keyPath(StoreApp.bundleIdentifier), StoreApp.altstoreAppID), in: context)
+            {
+                storeApp = app
+            }
+            else
+            {
+                storeApp = StoreApp.makeAltStoreApp(version: localAppBundle.version, buildVersion: nil, in: context)
+                storeApp.source = altStoreSource ?? liveContainerSource
+            }
 
-                let altStoreSource: Source?
+            if Bundle.isBundledWithLiveContainer {
+                if let liveContainerSource {
+                    storeApp.configureForEmbeddedLiveContainer()
+                    storeApp.source = liveContainerSource
+                } else {
+                    storeApp.configureForEmbeddedLiveContainer()
+                    storeApp.source = altStoreSource
+                }
+            }
+                        
+            let serialNumber = (appBundle.object(forInfoDictionaryKey: Bundle.Info.certificateID) as? String) ?? CertificateManager.shared.getSigningCertificate(at: Bundle.Info.activeBundleURL)?.serialNumber
+            
+            let installedApp: InstalledApp
+            
+            if let app = storeApp.installedApp
+            {
+                installedApp = app
+            }
+            else
+            {
+                //TODO: Support build versions.
+                // For backwards compatibility reasons, we cannot use localApp's buildVersion as storeBuildVersion,
+                // or else the latest update will _always_ be considered new because we don't use buildVersions in our source (yet).
+                installedApp = try InstalledApp(
+                    resignedAppBundle: localAppBundle,
+                    originalBundleIdentifier: StoreApp.altstoreAppID,
+                    certificateSerialNumber: serialNumber,
+                    storeBuildVersion: nil,
+                    context: context
+                )
                 
-                if let source = Source.first(satisfying: NSPredicate(format: "%K == %@", #keyPath(Source.identifier), Source.altStoreIdentifier), in: context)
-                {
-                    altStoreSource = source
-                }
-                else
-                {
-                    altStoreSource = UserDefaults.standard.isDefaultSourceRemoved ? nil : Source.makeAltStoreSource(in: context)
-                }
-
-                // Make sure to always update source URL to be current.
-                if let altStoreSource {
-                    try! altStoreSource.setSourceURL(Source.altStoreSourceURL)
-                }
-                
-                let storeApp: StoreApp
-                
-                if let app = StoreApp.first(satisfying: NSPredicate(format: "%K == %@", #keyPath(StoreApp.bundleIdentifier), StoreApp.altstoreAppID), in: context)
-                {
-                    storeApp = app
-                }
-                else
-                {
-                    storeApp = StoreApp.makeAltStoreApp(version: localAppBundle.version, buildVersion: nil, in: context)
-                    storeApp.source = altStoreSource ?? liveContainerSource
-                }
-
                 if Bundle.isBundledWithLiveContainer {
-                    if let liveContainerSource {
-                        storeApp.configureForEmbeddedLiveContainer()
-                        storeApp.source = liveContainerSource
-                    } else {
-                        storeApp.configureForEmbeddedLiveContainer()
-                        storeApp.source = altStoreSource
-                    }
-                }
-                            
-                let serialNumber = (appBundle.object(forInfoDictionaryKey: Bundle.Info.certificateID) as? String) ?? CertificateManager.shared.getSigningCertificate(at: Bundle.Info.activeBundleURL)?.serialNumber
-                let installedApp: InstalledApp
-                
-                if let app = storeApp.installedApp
-                {
-                    installedApp = app
-                }
-                else
-                {
-                    //TODO: Support build versions.
-                    // For backwards compatibility reasons, we cannot use localApp's buildVersion as storeBuildVersion,
-                    // or else the latest update will _always_ be considered new because we don't use buildVersions in our source (yet).
-                    installedApp = try InstalledApp(
-                        resignedAppBundle: localAppBundle,
-                        originalBundleIdentifier: StoreApp.altstoreAppID,
-                        certificateSerialNumber: serialNumber,
-                        storeBuildVersion: nil,
-                        context: context
-                    )
-                    
-                    if Bundle.isBundledWithLiveContainer {
-                        // LiveContainer owns its widget, which is not part of SideStore's self-refresh bundle.
-                        installedApp.useMainProfile = true
-                    } else {
-                        // figure out if the current AltStoreApp is signed with "Use Main Profie" option
-                        // by checking if the first extension's entitlement's application-identifier matches current one
-                        repeat {
-                            guard let pluginURL = Bundle.main.builtInPlugInsURL else {
-                                installedApp.useMainProfile = true
-                                break
-                            }
-                            guard let pluginFolders = try? FileManager.default.contentsOfDirectory(at: pluginURL, includingPropertiesForKeys: nil) else {
-                                installedApp.useMainProfile = true
-                                break
-                            }
-                            
-                            guard let pluginFolder = pluginFolders.first, let altPluginAppBundle = ALTApplication(fileURL: pluginFolder) else {
-                                installedApp.useMainProfile = true
-                                break
-                            }
-                            
-                            let entitlements = altPluginAppBundle.entitlements
-                            guard let appId = entitlements[ALTEntitlement.applicationIdentifier] as? String else {
-                                installedApp.useMainProfile = false
-                                debugLog("no ALTEntitlementApplicationIdentifier???")
-                                break
-                            }
-                            
-                            if appId.hasSuffix(Bundle.Info.activeBundleIdentifier) {
-                                installedApp.useMainProfile = true
-                            } else {
-                                installedApp.useMainProfile = false
-                            }
-                        } while(false)
-                    }
-                    
-                    installedApp.storeApp = storeApp
-                    // Persist the release track for newly created self-app entries
-                    if installedApp.releaseTrack == nil,
-                       let trackEntity = storeApp.latestSupportedVersion?.releaseTrack {
-                        installedApp.releaseTrack = trackEntity
-                    }
-                }
-                
-                /* App Extensions */
-                var installedExtensions = Set<InstalledExtension>()
-                
-                for appExtension in localAppBundle.appExtensions
-                {
-                    let resignedBundleID = appExtension.bundleIdentifier
-                    let originalBundleID = resignedBundleID.replacingOccurrences(of: localAppBundle.bundleIdentifier, with: StoreApp.altstoreAppID)
-                    
-                    let installedExtension: InstalledExtension
-                    
-                    if let appExtension = installedApp.appExtensions.first(where: { $0.bundleIdentifier == originalBundleID })
-                    {
-                        installedExtension = appExtension
-                    }
-                    else
-                    {
-                        installedExtension = try InstalledExtension(resignedAppExtensionBundle: appExtension, originalBundleIdentifier: originalBundleID, context: context)
-                    }
-                    
-                    installedExtension.update(resignedAppExtensionBundle: appExtension)
-                    
-                    installedExtensions.insert(installedExtension)
-                }
-                
-                installedApp.appExtensions = installedExtensions
-                
-                let fileURL = installedApp.fileURL
-                
-                #if DEBUG
-                let replaceCachedApp = true
-                #else
-                let replaceCachedApp = !FileManager.default.fileExists(atPath: fileURL.path) || installedApp.version != localAppBundle.version || installedApp.buildVersion != localAppBundle.buildVersion
-                #endif
-                
-                if replaceCachedApp
-                {
-                    let fileURL = installedApp.fileURL
-                    let bundleURL = Bundle.isBundledWithLiveContainer ? Bundle.main.bundleURL : Bundle.Info.activeBundleURL
-                    let altstoreAppID = StoreApp.altstoreAppID
-                    let extensionBundleIDMap = installedExtensions.reduce(into: [String: String]()) { dict, ext in
-                        dict[ext.resignedBundleIdentifier] = ext.bundleIdentifier
-                    }
-                    
-                    Task.detached(priority: .background) {
-                        func update(_ bundle: Bundle, bundleID: String) throws
-                        {
-                            let infoPlistURL = bundle.bundleURL.appendingPathComponent("Info.plist")
-                            
-                            guard var infoDictionary = bundle.completeInfoDictionary else { throw ALTError(.missingInfoPlist) }
-                            infoDictionary[kCFBundleIdentifierKey as String] = bundleID
-                            try (infoDictionary as NSDictionary).write(to: infoPlistURL)
+                    // LiveContainer owns its widget, which is not part of SideStore's self-refresh bundle.
+                    installedApp.useMainProfile = true
+                } else {
+                    // figure out if the current AltStoreApp is signed with "Use Main Profie" option
+                    // by checking if the first extension's entitlement's application-identifier matches current one
+                    repeat {
+                        guard let pluginURL = Bundle.main.builtInPlugInsURL else {
+                            installedApp.useMainProfile = true
+                            break
+                        }
+                        guard let pluginFolders = try? FileManager.default.contentsOfDirectory(at: pluginURL, includingPropertiesForKeys: nil) else {
+                            installedApp.useMainProfile = true
+                            break
                         }
                         
-                        FileManager.default.prepareTemporaryURL() { (temporaryFileURL) in
-                            do
-                            {
-                                try FileManager.default.copyItem(at: bundleURL, to: temporaryFileURL)
-                                
-                                guard let appBundle = Bundle(url: temporaryFileURL) else { throw ALTError(.invalidApp) }
-                                try update(appBundle, bundleID: altstoreAppID)
-                                
-                                if let tempAppBundle = ALTApplication(fileURL: temporaryFileURL)
-                                {
-                                    for appExtension in tempAppBundle.appExtensions
-                                    {
-                                        guard let extensionBundle = Bundle(url: appExtension.fileURL) else { throw ALTError(.invalidApp) }
-                                        guard let originalBundleID = extensionBundleIDMap[appExtension.bundleIdentifier] else { throw ALTError(.invalidApp) }
-                                        try update(extensionBundle, bundleID: originalBundleID)
-                                    }
-                                }
-                                
-                                try FileManager.default.copyItem(at: temporaryFileURL, to: fileURL, shouldReplace: true)
-                            }
-                            catch
-                            {
-                                debugLog("Failed to copy SideStore app bundle to its proper location. \(error)")
-                            }
+                        guard let pluginFolder = pluginFolders.first, let altPluginAppBundle = ALTApplication(fileURL: pluginFolder) else {
+                            installedApp.useMainProfile = true
+                            break
                         }
-                    }
+                        
+                        let entitlements = altPluginAppBundle.entitlements
+                        guard let appId = entitlements[ALTEntitlement.applicationIdentifier] as? String else {
+                            installedApp.useMainProfile = false
+                            debugLog("no ALTEntitlementApplicationIdentifier???")
+                            break
+                        }
+                        
+                        if appId.hasSuffix(Bundle.Info.activeBundleIdentifier) {
+                            installedApp.useMainProfile = true
+                        } else {
+                            installedApp.useMainProfile = false
+                        }
+                    } while(false)
                 }
                 
-                let cachedRefreshedDate = installedApp.refreshedDate
-                let cachedExpirationDate = installedApp.expirationDate
-                            
-                // Must go after comparing versions to see if we need to update our cached AltStore app bundle.
-                self.reconcileSelfFromSelfBinary(installedApp: installedApp, localAppBundle: localAppBundle, serialNumber: serialNumber)
-                
-                if installedApp.refreshedDate < cachedRefreshedDate
-                {
-                    // Embedded provisioning profile has a creation date older than our refreshed date.
-                    // This most likely means we've refreshed the app since then, and profile is now outdated,
-                    // so use cached dates instead (i.e. not the dates updated from provisioning profile).
-                    
-                    installedApp.refreshedDate = cachedRefreshedDate
-                    installedApp.expirationDate = cachedExpirationDate
-                }
-
-                self.recoverEmbeddedInstalledAppsFromCache(in: context)
-
-                try context.save()
-                
-                Task(priority: .high) {
-                    await self.updateFeaturedSortIDs()
-                    completionHandler(.success(()))
+                installedApp.storeApp = storeApp
+                // Persist the release track for newly created self-app entries
+                if installedApp.releaseTrack == nil,
+                   let trackEntity = storeApp.latestSupportedVersion?.releaseTrack {
+                    installedApp.releaseTrack = trackEntity
                 }
             }
-            catch
+            
+            /* App Extensions */
+            var installedExtensions = Set<InstalledExtension>()
+            
+            for appExtension in localAppBundle.appExtensions
             {
-                completionHandler(.failure(error))
+                let resignedBundleID = appExtension.bundleIdentifier
+                let originalBundleID = resignedBundleID.replacingOccurrences(of: localAppBundle.bundleIdentifier, with: StoreApp.altstoreAppID)
+                
+                let installedExtension: InstalledExtension
+                
+                if let appExtension = installedApp.appExtensions.first(where: { $0.bundleIdentifier == originalBundleID })
+                {
+                    installedExtension = appExtension
+                }
+                else
+                {
+                    installedExtension = try InstalledExtension(resignedAppExtensionBundle: appExtension, originalBundleIdentifier: originalBundleID, context: context)
+                }
+                
+                installedExtension.update(resignedAppExtensionBundle: appExtension)
+                
+                installedExtensions.insert(installedExtension)
             }
+            
+            installedApp.appExtensions = installedExtensions
+            
+            let bundleURL = Bundle.isBundledWithLiveContainer ? Bundle.main.bundleURL : Bundle.Info.activeBundleURL
+            let altstoreAppID = StoreApp.altstoreAppID
+            let extensionBundleIDMap = installedExtensions.reduce(into: [String: String]()) { dict, ext in
+                dict[ext.resignedBundleIdentifier] = ext.bundleIdentifier
+            }
+            
+            FileManager.default.prepareTemporaryURL { temporaryFileURL in
+                do {
+                    try FileManager.default.copyItem(at: bundleURL, to: temporaryFileURL)
+                    
+                    guard let tempAppBundle = ALTApplication(fileURL: temporaryFileURL) else { throw ALTError(.invalidApp) }
+                    try tempAppBundle.updateInfoPlist(with: [kCFBundleIdentifierKey as String: altstoreAppID])
+                    
+                    for appExtension in tempAppBundle.appExtensions {
+                        guard let originalBundleID = extensionBundleIDMap[appExtension.bundleIdentifier] else { throw ALTError(.invalidApp) }
+                        try appExtension.updateInfoPlist(with: [kCFBundleIdentifierKey as String: originalBundleID])
+                    }
+                    
+                    let (signature, _) = try CacheAppOperation.cachePayload(for: temporaryFileURL)
+                    installedApp.appBundleFingerprint = signature
+                } catch {
+                    debugLog("Failed to cache SideStore app bundle: \(error)")
+                }
+            }
+            
+            let cachedRefreshedDate = installedApp.refreshedDate
+            let cachedExpirationDate = installedApp.expirationDate
+                        
+            // Must go after comparing versions to see if we need to update our cached AltStore app bundle.
+            self.reconcileSelfFromSelfBinary(installedApp: installedApp, localAppBundle: localAppBundle, serialNumber: serialNumber)
+            
+            if installedApp.refreshedDate < cachedRefreshedDate
+            {
+                // Embedded provisioning profile has a creation date older than our refreshed date.
+                // This most likely means we've refreshed the app since then, and profile is now outdated,
+                // so use cached dates instead (i.e. not the dates updated from provisioning profile).
+                
+                installedApp.refreshedDate = cachedRefreshedDate
+                installedApp.expirationDate = cachedExpirationDate
+            }
+
+            self.recoverEmbeddedInstalledAppsFromCache(in: context)
+
+            try context.save()
         }
+        
+        await self.updateFeaturedSortIDs()
     }
 
     private func recoverEmbeddedInstalledAppsFromCache(in context: NSManagedObjectContext)
@@ -704,22 +567,11 @@ public class DatabaseManager
         }
     }
     
-    private func migrateDatabaseToAppGroupIfNeeded(completion: @escaping (Result<Void, Error>) -> Void)
+    private func migrateDatabaseToAppGroupIfNeeded() async throws
     {
         // Only migrate if we haven't migrated yet and there's a valid AltStore app group.
-        guard UserDefaults.standard.requiresAppGroupMigration && Bundle.main.altstoreAppGroup != nil else { return completion(.success(())) }
+        guard UserDefaults.standard.requiresAppGroupMigration && Bundle.main.altstoreAppGroup != nil else { return }
 
-        func finish(_ result: Result<Void, Error>)
-        {
-            switch result
-            {
-            case .failure(let error): completion(.failure(error))
-            case .success:
-                UserDefaults.standard.requiresAppGroupMigration = false
-                completion(.success(()))
-            }
-        }
-        
         let previousDatabaseURL = PersistentContainer.legacyDirectoryURL().appendingPathComponent("AltStore.sqlite")
         let databaseURL = PersistentContainer.defaultDirectoryURL().appendingPathComponent("AltStore.sqlite")
         
@@ -729,54 +581,57 @@ public class DatabaseManager
         let databaseIntent = NSFileAccessIntent.writingIntent(with: databaseURL, options: [.forReplacing])
         let appsIntent = NSFileAccessIntent.writingIntent(with: appsDirectoryURL, options: [.forReplacing])
         
-        self.coordinator.coordinate(with: [databaseIntent, appsIntent], queue: self.coordinatorQueue) { (error) in
-            do
-            {
-                if let error = error
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            self.coordinator.coordinate(with: [databaseIntent, appsIntent], queue: self.coordinatorQueue) { (error) in
+                do
                 {
-                    throw error
-                }
-                
-                let description = NSPersistentStoreDescription(url: previousDatabaseURL)
-                
-                // Disable WAL to remove extra files automatically during migration.
-                description.setOption(["journal_mode": "DELETE"] as NSDictionary, forKey: NSSQLitePragmasOption)
-                
-                let persistentStoreCoordinator = NSPersistentStoreCoordinator(managedObjectModel: self.persistentContainer.managedObjectModel)
-                
-                // Never replace an existing App Group database with a stale legacy database.
-                if FileManager.default.fileExists(atPath: previousDatabaseURL.path),
-                   !FileManager.default.fileExists(atPath: databaseURL.path)
-                {
-                    let previousDatabase = try persistentStoreCoordinator.addPersistentStore(ofType: description.type, configurationName: description.configuration, at: description.url, options: description.options)
-                    
-                    // Pass nil options to prevent later error due to self.persistentContainer using WAL.
-                    try persistentStoreCoordinator.migratePersistentStore(previousDatabase, to: databaseURL, options: nil, withType: NSSQLiteStoreType)
-                    
-                    try FileManager.default.removeItem(at: previousDatabaseURL)
-                }
-                
-                // Only migrate cached apps when the destination has no cached entries.
-                if FileManager.default.fileExists(atPath: previousAppsDirectoryURL.path, isDirectory: nil)
-                {
-                    let destinationContents = (try? FileManager.default.contentsOfDirectory(atPath: appsDirectoryURL.path)) ?? []
-                    if previousAppsDirectoryURL.path != appsDirectoryURL.path && destinationContents.isEmpty
+                    if let error = error
                     {
-                        for item in try FileManager.default.contentsOfDirectory(at: previousAppsDirectoryURL, includingPropertiesForKeys: nil)
+                        throw error
+                    }
+                    
+                    let description = NSPersistentStoreDescription(url: previousDatabaseURL)
+                    
+                    // Disable WAL to remove extra files automatically during migration.
+                    description.setOption(["journal_mode": "DELETE"] as NSDictionary, forKey: NSSQLitePragmasOption)
+                    
+                    let persistentStoreCoordinator = NSPersistentStoreCoordinator(managedObjectModel: self.persistentContainer.managedObjectModel)
+                    
+                    // Never replace an existing App Group database with a stale legacy database.
+                    if FileManager.default.fileExists(atPath: previousDatabaseURL.path),
+                       !FileManager.default.fileExists(atPath: databaseURL.path)
+                    {
+                        let previousDatabase = try persistentStoreCoordinator.addPersistentStore(ofType: description.type, configurationName: description.configuration, at: description.url, options: description.options)
+                        
+                        // Pass nil options to prevent later error due to self.persistentContainer using WAL.
+                        try persistentStoreCoordinator.migratePersistentStore(previousDatabase, to: databaseURL, options: nil, withType: NSSQLiteStoreType)
+                        
+                        try FileManager.default.removeItem(at: previousDatabaseURL)
+                    }
+                    
+                    // Only migrate cached apps when the destination has no cached entries.
+                    if FileManager.default.fileExists(atPath: previousAppsDirectoryURL.path, isDirectory: nil)
+                    {
+                        let destinationContents = (try? FileManager.default.contentsOfDirectory(atPath: appsDirectoryURL.path)) ?? []
+                        if previousAppsDirectoryURL.path != appsDirectoryURL.path && destinationContents.isEmpty
                         {
-                            let destination = appsDirectoryURL.appendingPathComponent(item.lastPathComponent)
-                            guard !FileManager.default.fileExists(atPath: destination.path) else { continue }
-                            try FileManager.default.copyItem(at: item, to: destination)
+                            for item in try FileManager.default.contentsOfDirectory(at: previousAppsDirectoryURL, includingPropertiesForKeys: nil)
+                            {
+                                let destination = appsDirectoryURL.appendingPathComponent(item.lastPathComponent)
+                                guard !FileManager.default.fileExists(atPath: destination.path) else { continue }
+                                try FileManager.default.copyItem(at: item, to: destination)
+                            }
                         }
                     }
+                    
+                    UserDefaults.standard.requiresAppGroupMigration = false
+                    continuation.resume()
                 }
-                
-                finish(.success(()))
-            }
-            catch
-            {
-                debugLog("Failed to migrate database to app group: \(error)")
-                finish(.failure(error))
+                catch
+                {
+                    debugLog("Failed to migrate database to app group: \(error)")
+                    continuation.resume(throwing: error)
+                }
             }
         }
     }

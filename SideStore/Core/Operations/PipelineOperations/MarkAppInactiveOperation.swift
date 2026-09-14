@@ -23,9 +23,7 @@ final class MarkAppInactiveOperation: BasePipelineOperation<InstallAppOperationC
             throw OperationError.invalidParameters("MarkAppInactiveOperation: self.context.installedApp is nil")
         }
         
-        guard let backgroundContext = self.context.dbBackgroundContext else {
-            throw OperationError.invalidParameters("MarkAppInactiveOperation: context.dbBackgroundContext is nil")
-        }
+        let backgroundContext = self.context.dbBackgroundContext
         
         let result = await backgroundContext.perform {
             let installedAppInContext = backgroundContext.object(with: installedApp.objectID) as! InstalledApp

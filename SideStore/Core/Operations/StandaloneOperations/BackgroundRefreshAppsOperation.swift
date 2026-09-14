@@ -56,11 +56,7 @@ final class BackgroundRefreshAppsOperation: BaseStandaloneOperation<OperationCon
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         self.setProgress(10)
         
-        guard let dbContext = self.context.dbBackgroundContext else {
-            let error = OperationError.invalidParameters("BackgroundRefreshAppsOperation: context.dbBackgroundContext is nil")
-            self.scheduleFinishedRefreshingNotification(for: .failure(error), delay: 0)
-            throw error
-        }
+        let dbContext = self.context.dbBackgroundContext
         
         guard !self.installedApps.isEmpty else {
             let error = OperationError.noInstalledApps
@@ -181,18 +177,20 @@ final class BackgroundRefreshAppsOperation: BaseStandaloneOperation<OperationCon
                 
                 content.title = NSLocalizedString("Refreshed Apps", comment: "")
                 content.body = NSLocalizedString("All apps have been refreshed.", comment: "")
-            } catch OperationError.noConnection, OperationError.noVPN, OperationError.noInstalledApps {
-                shouldPresentAlert = false
-            } catch OperationError.serverNotFound where self.ignoresServerNotFoundError {
-                shouldPresentAlert = false
+            } catch let opError as OperationError {
+                switch opError {
+                case .noConnection, .noVPN, .noInstalledApps:
+                    shouldPresentAlert = false
+                default:
+                    self.debugLog("Failed to refresh apps in background: \(opError)")
+                    content.title = NSLocalizedString("Failed to Refresh Apps", comment: "")
+                    content.body = opError.localizedDescription
+                    shouldPresentAlert = true
+                }
             } catch {
-                self.debugLog("Failed to refresh apps in background. \(error)")
-
-                self.debugLog("Failed to refresh apps in background. \(error.localizedDescription)")
-                
+                self.debugLog("Failed to refresh apps in background: \(error)")
                 content.title = NSLocalizedString("Failed to Refresh Apps", comment: "")
                 content.body = error.localizedDescription
- 
                 shouldPresentAlert = true
             }
 
@@ -227,16 +225,15 @@ final class BackgroundRefreshAppsOperation: BaseStandaloneOperation<OperationCon
         }        
         
         // Perform synchronously to ensure app doesn't quit before we've finishing saving to disk.
-        if let dbContext = self.context.dbBackgroundContext {
-            let childContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
-            childContext.parent = dbContext
-            childContext.performAndWait {
-                self.saveRefreshAttempt(result: result, in: childContext)
-            }
-            dbContext.performAndWait {
-                do { try dbContext.save() }
-                catch { debugLog("Failed to save parent context for refresh attempt. \(error.localizedDescription)") }
-            }
+        let dbContext = self.context.dbBackgroundContext
+        let childContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+        childContext.parent = dbContext
+        childContext.performAndWait {
+            self.saveRefreshAttempt(result: result, in: childContext)
+        }
+        dbContext.performAndWait {
+            do { try dbContext.save() }
+            catch { debugLog("Failed to save parent context for refresh attempt. \(error.localizedDescription)") }
         }
     }
     

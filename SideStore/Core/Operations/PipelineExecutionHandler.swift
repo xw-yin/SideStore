@@ -9,7 +9,7 @@
 import Foundation
 import SideSign
 
-protocol PipelineExecutionHandler: AnyObject {
+protocol PipelineExecutionHandler: AnyObject, Sendable {
     var preflightChecksHandler: PreflightChecksHandler { get }
     var entitlementsReviewHandler: EntitlementsReviewHandler { get }
     var extensionRemovalHandler: ExtensionRemovalHandler { get }
@@ -20,12 +20,12 @@ protocol PipelineExecutionHandler: AnyObject {
 
 
 
-protocol PreflightChecksHandler: AnyObject {
+protocol PreflightChecksHandler: AnyObject, Sendable {
     func resolveBundleIDMismatch(targetID: String, activeEffectiveID: String) async -> Bool
     var isResignActive: Bool { get }
 }
 
-protocol EntitlementsReviewHandler: AnyObject {
+protocol EntitlementsReviewHandler: AnyObject, Sendable {
     func reviewPermissions(_ permissions: [ALTEntitlement], for app: AppProtocol, mode: PermissionReviewMode) async throws
 }
 
@@ -36,7 +36,7 @@ enum ExtensionRemovalDecision: Sendable {
     case removeSelected(Set<ALTApplication>)
 }
 
-protocol ExtensionRemovalHandler: AnyObject {
+protocol ExtensionRemovalHandler: AnyObject, Sendable {
     func selectAppExtensionsToRemove(
         appBundle: ALTApplication,
         localAppExtensions: [ALTApplication],
@@ -44,14 +44,14 @@ protocol ExtensionRemovalHandler: AnyObject {
     ) async throws -> ExtensionRemovalDecision
 }
 
-protocol UnsupportedVersionHandler: AnyObject {
+protocol UnsupportedVersionHandler: AnyObject, Sendable {
     func resolveUnsupportediOSVersion(errorDescription: String, appName: String, compatibleVersion: String) async throws -> Bool
 }
 
-protocol InstallAppHandler: AnyObject {
-    func requestBackgroundSuspension(completion: @escaping () -> Void)
-    func suspendToHomeScreen(shouldTurnOffData: Bool)
-    var isAppInForeground: Bool { get }
+protocol InstallAppHandler: AnyObject, Sendable {
+    func requestBackgroundSuspension() async
+    func suspendToHomeScreen() async
+    func isAppInForeground() async -> Bool
 }
 
 enum AppGroupResolution: Sendable {
@@ -59,8 +59,38 @@ enum AppGroupResolution: Sendable {
     case keepOriginal(String)
 }
 
-protocol UserCustomizationHandler: AnyObject {
+enum ProfileCustomizationChoice: Sendable {
+    case defaultProfile
+    case profile(ALTProvisioningProfile)
+}
+
+protocol UserCustomizationHandler: AnyObject, Sendable {
     func resolveBundleIDOverride(initialBundleID: String) async throws -> (customID: String, appendTeamID: Bool)?
+    func resolveInfoPlistCustomization(
+        targets: [InfoPlistTarget],
+        initialBundleID: String,
+        appendTeamID: Bool,
+        installedAppIdentities: [String: String],
+        teamID: String
+    ) async throws -> (modifiedPlists: [String: [String: any Sendable]], appendTeamID: Bool)?
+    func resolveInfoPlistCustomization(
+        initialPlist: [String: any Sendable],
+        initialBundleID: String,
+        appendTeamID: Bool,
+        installedAppIdentities: [String: String],
+        teamID: String
+    ) async throws -> (modifiedPlist: [String: any Sendable], appendTeamID: Bool)?
+    func resolveEntitlementsCustomization(
+        targets: [EntitlementsTarget],
+        teamType: ALTTeamType
+    ) async throws -> [String: [String: any Sendable]]?
+    func resolveEntitlementsCustomization(
+        initialEntitlements: [String: any Sendable],
+        bundleID: String,
+        teamType: ALTTeamType
+    ) async throws -> [String: any Sendable]?
     func resolveAppGroupMismatch(originalGroup: String, correctedGroup: String) async throws -> AppGroupResolution
+    func resolveAppIconCustomization(appName: String) async throws -> URL?
+    func resolveProvisioningProfileCustomization(appName: String, bundleID: String) async throws -> ProfileCustomizationChoice?
 }
 

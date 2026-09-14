@@ -25,16 +25,38 @@ final class RefreshAppOperation: BasePipelineOperation<InstallAppOperationContex
             throw OperationError.invalidParameters("RefreshAppOperation.execute: self.context.provisioningProfiles is nil")
         }
         
-        guard let appBundle = self.context.targetAppBundle else { throw OperationError.appNotFound(name: nil) }
+        guard let appBundle = self.context.targetAppBundle else {
+            throw OperationError.invalidParameters("RefreshAppOperation: context.targetAppBundle is nil")
+        }
         self.setProgress(10)
-        for p in profiles {
-            try await installProvisioningProfiles(p.value.data)
+        
+        if self.context.isCellularRefreshGroup {
+            self.context.sharedContext.addPendingProfileBatch(PendingProfileBatch(
+                bundleID: self.context.bundleIdentifier,
+                profiles: profiles.values.map { $0.data },
+                app: self.context.installedApp,
+                certStatus: self.context.targetCertStatus
+            ))
+            self.setProgress(85)
+            guard let app = self.context.installedApp else {
+                throw OperationError.invalidParameters("RefreshAppOperation: context.installedApp is nil")
+            }
+            return app
+        }
+        
+        do {
+            await CellularRefreshManager.shared.turnOffDataIfNeeded()
+            for p in profiles {
+                try await installProvisioningProfiles(p.value.data)
+            }
+            await CellularRefreshManager.shared.turnOnDataIfNeeded()
+        } catch {
+            await CellularRefreshManager.shared.turnOnDataIfNeeded()
+            throw error
         }
         
         self.setProgress(80)
-        guard let dbContext = self.context.dbBackgroundContext else {
-            throw OperationError.invalidParameters("RefreshAppOperation: context.dbBackgroundContext is nil")
-        }
+        let dbContext = self.context.dbBackgroundContext
         
         let installedApp = try await dbContext.perform {
             try self.updateInstalledApp(for: appBundle, profiles: profiles, in: dbContext)
@@ -49,7 +71,7 @@ final class RefreshAppOperation: BasePipelineOperation<InstallAppOperationContex
         
         guard let mainApp = self.context.installedApp,
               let installedApp = dbContext.object(with: mainApp.objectID) as? InstalledApp else {
-            throw OperationError.appNotFound(name: appBundle.name)
+            throw OperationError.invalidParameters("Could not find installed database record for '\(appBundle.name)'")
         }
         installedApp.update(provisioningProfile: profiles.values.first!)
         

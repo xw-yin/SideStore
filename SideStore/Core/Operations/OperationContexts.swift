@@ -36,18 +36,20 @@ protocol WeightedOperationContext: AnyObject {
 class OperationContext: WeightedOperationContext
 {
     var error: Error?
-    var dbBackgroundContext: NSManagedObjectContext?
+    var dbBackgroundContext: NSManagedObjectContext
+    var operationStartTime: CFAbsoluteTime = CFAbsoluteTimeGetCurrent()
 
     private var stepItems: [OperationStepItem]
     private var currentIndex = 0
     private var remainingReuses: [Int: Int] = [:]
     private var stepProgressSlots: [Int: Progress] = [:]
 
-    fileprivate init(stepItems: [OperationStepItem] = [], error: Error? = nil, dbBackgroundContext: NSManagedObjectContext? = nil)
+    fileprivate init(stepItems: [OperationStepItem] = [], error: Error? = nil, dbBackgroundContext: NSManagedObjectContext)
     {
         self.stepItems = stepItems
         self.error = error
         self.dbBackgroundContext = dbBackgroundContext
+        self.operationStartTime = CFAbsoluteTimeGetCurrent()
     }
 
     fileprivate init(context: OperationContext)
@@ -58,6 +60,7 @@ class OperationContext: WeightedOperationContext
         self.dbBackgroundContext = context.dbBackgroundContext
         self.remainingReuses = context.remainingReuses
         self.stepProgressSlots = context.stepProgressSlots
+        self.operationStartTime = context.operationStartTime
     }
 
     func weightForFirstOccurrence(of step: some OperationStep) -> Int64? {
@@ -154,7 +157,7 @@ class StandaloneOperationContext: OperationContext
 {
     let steps: [StandaloneExecutionStep]
 
-    init(steps: [StandaloneExecutionStep], error: Error? = nil, dbBackgroundContext: NSManagedObjectContext? = nil)
+    init(steps: [StandaloneExecutionStep], error: Error? = nil, dbBackgroundContext: NSManagedObjectContext)
     {
         self.steps = steps
         super.init(stepItems: steps.map { 
@@ -177,38 +180,6 @@ class StandaloneOperationContext: OperationContext
     }
 }
 
-final class AuthenticatedOperationContext: StandaloneOperationContext
-{
-    var session: ALTAppleAPISession?
-    var team: ALTTeam?
-    var signingCertificate: ALTCertificate?
-    var portalCertificates: [ALTX509Certificate]?
-
-    let authenticationHandler: AuthenticationHandler
-    let anisetteServerHandler: AnisetteServerHandler
-
-    init(
-        authenticationHandler: AuthenticationHandler,
-        anisetteServerHandler: AnisetteServerHandler,
-        error: Error? = nil,
-        dbBackgroundContext: NSManagedObjectContext? = nil
-    ) {
-        self.authenticationHandler = authenticationHandler
-        self.anisetteServerHandler = anisetteServerHandler
-        super.init(steps: .authenticate, error: error, dbBackgroundContext: dbBackgroundContext)
-    }
-
-    init(context: AuthenticatedOperationContext) {
-        self.authenticationHandler = context.authenticationHandler
-        self.anisetteServerHandler = context.anisetteServerHandler
-        super.init(context: context)
-        self.session = context.session
-        self.team = context.team
-        self.signingCertificate = context.signingCertificate
-        self.portalCertificates = context.portalCertificates
-    }
-}
-
 class PipelineOperationContext: OperationContext
 {
     let pipelineSteps: [PipelineExecutionStep]
@@ -218,7 +189,7 @@ class PipelineOperationContext: OperationContext
         pipelineSteps: [PipelineExecutionStep],
         handler: PipelineExecutionHandler,
         error: Error? = nil,
-        dbBackgroundContext: NSManagedObjectContext? = nil
+        dbBackgroundContext: NSManagedObjectContext
     ) {
         self.pipelineSteps = pipelineSteps
         self.handler = handler
@@ -243,86 +214,86 @@ class PipelineOperationContext: OperationContext
     }
 }
 
+struct PendingProfileBatch {
+    let bundleID: String
+    let profiles: [Data]
+    let app: InstalledApp?
+    let certStatus: CertificateStatus?
+}
+
 final class SharedPipelineContext: @unchecked Sendable
 {
     private let lock = NSLock()
-    private var _appIDs: [ALTAppID]?
-    private var _appGroups: [ALTAppGroup]?
+    private var rawAppIDs: [ALTAppID]?
+    private var rawAppGroups: [ALTAppGroup]?
+
+    private var rawPendingProfiles: [String: PendingProfileBatch] = [:]
+    private var rawHasInjectedProfiles: Bool = false
+
+    var pendingProfiles: [String: PendingProfileBatch] {
+        get { lock.withLock { rawPendingProfiles } }
+        set { lock.withLock { rawPendingProfiles = newValue } }
+    }
+
+    var hasInjectedProfiles: Bool {
+        get { lock.withLock { rawHasInjectedProfiles } }
+        set { lock.withLock { rawHasInjectedProfiles = newValue } }
+    }
 
     var appIDs: [ALTAppID]? {
-        get { lock.withLock { _appIDs } }
-        set { lock.withLock { _appIDs = newValue } }
+        get { lock.withLock { rawAppIDs } }
+        set { lock.withLock { rawAppIDs = newValue } }
     }
 
     var appGroups: [ALTAppGroup]? {
-        get { lock.withLock { _appGroups } }
-        set { lock.withLock { _appGroups = newValue } }
+        get { lock.withLock { rawAppGroups } }
+        set { lock.withLock { rawAppGroups = newValue } }
     }
 
     func appendAppID(_ appID: ALTAppID) {
-        lock.withLock { _appIDs = (_appIDs ?? []) + [appID] }
+        lock.withLock { rawAppIDs = (rawAppIDs ?? []) + [appID] }
     }
 
     func appendAppGroup(_ appGroup: ALTAppGroup) {
-        lock.withLock { _appGroups = (_appGroups ?? []) + [appGroup] }
+        lock.withLock { rawAppGroups = (rawAppGroups ?? []) + [appGroup] }
+    }
+
+    func addPendingProfileBatch(_ batch: PendingProfileBatch) {
+        lock.withLock { rawPendingProfiles[batch.bundleID] = batch }
     }
 }
 
-class AppOperationContext: PipelineOperationContext
+class InstallAppOperationContext: PipelineOperationContext
 {
     let bundleIdentifier: String
     var customBundleIdentifier: String?
+    var customInfoPlistByBundleID: [String: [String: any Sendable]] = [:]
+    var customEntitlementsByBundleID: [String: [String: any Sendable]] = [:]
+    var isStoreUpdate: Bool = false
     var targetAppBundle: ALTApplication?
 
     var provisioningProfiles: [String: ALTProvisioningProfile]?
     var appexBundleIds: [String: String]?
     var useMainProfile = false
     var isFinished = false
+    var isCellularRefreshGroup: Bool = false
+    var groupOperationsCount: Int = 1
 
-    let authenticatedContext: AuthenticatedOperationContext
-    var sharedContext: SharedPipelineContext?
+    var overrideSigningCertificate: ALTCertificate?
+    var overrideProvisioningProfile: ALTProvisioningProfile?
+    let activeSigningCertificate: ALTCertificate?
 
-    var overrideCertificate: ALTCertificate?
+    var targetSigningCertificate: ALTCertificate? {
+        overrideSigningCertificate ?? activeSigningCertificate
+    }
+
     var targetCertStatus: CertificateStatus?
     var appendTeamID: Bool = true
 
+    let sharedContext: SharedPipelineContext
+
     var targetBundleIdentifier: String { customBundleIdentifier ?? bundleIdentifier }
 
-
-    override var error: Error? {
-        get { _error ?? authenticatedContext.error }
-        set { _error = newValue
-            if authenticatedContext.error == nil
-            {
-                // Assign newValue to authenticatedContext.error if the latter is nil.
-                // This fixes some operations continuing even after an error has occured.
-                authenticatedContext.error = newValue
-            }
-        }
-    }
-    private var _error: Error?
-
-    init(
-        pipelineSteps: [PipelineExecutionStep],
-        bundleIdentifier: String,
-        authenticatedContext: AuthenticatedOperationContext,
-        sharedContext: SharedPipelineContext? = nil,
-        handler: PipelineExecutionHandler
-    ) {
-        self.bundleIdentifier = bundleIdentifier
-        self.authenticatedContext = authenticatedContext
-        self.sharedContext = sharedContext
-        super.init(
-            pipelineSteps: pipelineSteps,
-            handler: handler,
-            error: nil,
-            dbBackgroundContext: authenticatedContext.dbBackgroundContext
-        )
-    }
-}
-
-class InstallAppOperationContext: AppOperationContext
-{
     lazy var temporaryDirectory: URL = {
         let temporaryDirectory = FileManager.default.uniqueTemporaryURL()
         do {
@@ -337,6 +308,7 @@ class InstallAppOperationContext: AppOperationContext
     var ipaURL: URL?
     var resignedAppBundle: ALTApplication?
     var installedApp: InstalledApp?
+    var appBundleFingerprint: String?
     var releaseTrack: ReleaseTrack?
     var additionalEntitlements: [ALTEntitlement: any Sendable] = [:]
     
@@ -358,27 +330,30 @@ class InstallAppOperationContext: AppOperationContext
         }
     }
 
-    var shouldTurnOffData: Bool = false
-
     // Non-nil when installing from a source.
     @AsyncManaged
     var appVersion: AppVersion?
-    
+
     init(
         pipelineSteps: [PipelineExecutionStep],
         bundleIdentifier: String,
-        authenticatedContext: AuthenticatedOperationContext,
-        sharedContext: SharedPipelineContext? = nil,
+        dbBackgroundContext: NSManagedObjectContext,
+        sharedContext: SharedPipelineContext,
         handler: PipelineExecutionHandler,
-        additionalEntitlements: [ALTEntitlement: any Sendable] = [:]
-    ){
+        additionalEntitlements: [ALTEntitlement: any Sendable] = [:],
+        activeSigningCertificate: ALTCertificate? = nil,
+        overrideSigningCertificate: ALTCertificate? = nil
+    ) {
+        self.bundleIdentifier = bundleIdentifier
+        self.sharedContext = sharedContext
+        self.additionalEntitlements = additionalEntitlements
+        self.activeSigningCertificate = activeSigningCertificate
+        self.overrideSigningCertificate = overrideSigningCertificate
         super.init(
             pipelineSteps: pipelineSteps,
-            bundleIdentifier: bundleIdentifier,
-            authenticatedContext: authenticatedContext,
-            sharedContext: sharedContext,
-            handler: handler
+            handler: handler,
+            error: nil,
+            dbBackgroundContext: dbBackgroundContext
         )
     }
-
 }

@@ -23,12 +23,16 @@ final class RemoveAppOperation: BasePipelineOperation<InstallAppOperationContext
             throw OperationError.invalidParameters("RemoveAppOperation: self.context.installedApp is nil")
         }
         
-        guard let backgroundContext = self.context.dbBackgroundContext else {
-            throw OperationError.invalidParameters("RemoveAppOperation: context.dbBackgroundContext is nil")
-        }
+        let backgroundContext = self.context.dbBackgroundContext
         
         await backgroundContext.perform {
             let installedAppInContext = backgroundContext.object(with: installedApp.objectID) as! InstalledApp
+            let bundleID = installedAppInContext.bundleIdentifier
+            let resignedBundleID = installedAppInContext.resignedBundleIdentifier
+            ProfileManager.shared.setAssignedProfile(nil, for: bundleID)
+            if resignedBundleID != bundleID {
+                ProfileManager.shared.setAssignedProfile(nil, for: resignedBundleID)
+            }
             backgroundContext.delete(installedAppInContext)
         }
         
