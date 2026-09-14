@@ -9,7 +9,6 @@ on:
       - '.editorconfig'
       - '.gitignore'
       - '.gitmodules'
-      - '.github/**'
   schedule:
     - cron: "0 0 * * *"
   workflow_dispatch:
@@ -21,6 +20,9 @@ concurrency:
 jobs:
   build:
     runs-on: macos-26
+    permissions:
+      contents: write
+      id-token: write
     env:
       DEPLOY_KEY: ${{ secrets.CROSS_REPO_PUSH_KEY }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
