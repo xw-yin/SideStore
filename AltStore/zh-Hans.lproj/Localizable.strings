@@ -783,6 +783,14 @@
 "MINIMUXER BACKEND" = "MINIMUXER 后端";
 "Changing the Minimuxer backend requires restarting SideStore. If canceled, changes will not be saved." = "更改 Minimuxer 后端需要重启 SideStore。取消后将不会保存更改。";
 
+/* Developer and experimental options */
+"STANDALONE FEATURES" = "独立功能";
+"FEATURE FLAGS" = "特性开关";
+"Free Account AppID Deletion" = "删除免费账户 App ID";
+"Cellular Refresh" = "蜂窝网络刷新";
+"Wireless Pairing" = "无线配对";
+"Cache Management" = "缓存管理";
+
 /* My Apps */
 "EXPIRED" = "已过期";
 "REVOKED" = "已撤销";
