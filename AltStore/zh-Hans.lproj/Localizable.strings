@@ -790,6 +790,7 @@
 "Cellular Refresh" = "蜂窝网络刷新";
 "Wireless Pairing" = "无线配对";
 "Cache Management" = "缓存管理";
+"No Bonjour services are currently advertised in this domain." = "此域中当前没有正在广播的 Bonjour 服务。";
 
 /* My Apps */
 "EXPIRED" = "已过期";

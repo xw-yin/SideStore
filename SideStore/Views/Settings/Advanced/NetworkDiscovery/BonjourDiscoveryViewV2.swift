@@ -412,7 +412,7 @@ struct ServiceDetailViewV2: View {
                 VStack(alignment: .center, spacing: 8) {
                     Image(systemName: "bonjour")
                         .font(.system(size: 36))
-                        .foregroundColor(.accentColor)
+                        .foregroundStyle(.primary)
                     Text(resolved.name)
                         .font(.headline)
                         .multilineTextAlignment(.center)
