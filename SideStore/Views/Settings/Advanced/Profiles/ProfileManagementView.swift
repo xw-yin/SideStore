@@ -53,10 +53,10 @@ struct ProfileManagementView: View {
     var body: some View {
         ZStack {
             List {
-                Section(header: Text("Overview")) {
+                Section(header: Text(NSLocalizedString("Overview", comment: ""))) {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Total")
+                            Text(NSLocalizedString("Total", comment: ""))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Text("\(viewModel.profiles.count)")
@@ -65,7 +65,7 @@ struct ProfileManagementView: View {
                         }
                         Spacer()
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Ready")
+                            Text(NSLocalizedString("Ready", comment: ""))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Text("\(viewModel.readyCount)")
@@ -75,7 +75,7 @@ struct ProfileManagementView: View {
                         }
                         Spacer()
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Portal")
+                            Text(NSLocalizedString("Portal", comment: ""))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Text("\(viewModel.portalCount)")
@@ -85,7 +85,7 @@ struct ProfileManagementView: View {
                         }
                         Spacer()
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Missing Cert")
+                            Text(NSLocalizedString("Missing Cert", comment: ""))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Text("\(viewModel.profiles.count - viewModel.readyCount)")
@@ -98,8 +98,8 @@ struct ProfileManagementView: View {
                 }
 
                 Section(
-                    header: Text("Provisioning Profiles (\(filteredProfiles.count))"),
-                    footer: Text("Provisioning profiles dictate entitlements, device permissions, and expiration dates. Profiles sync automatically with your developer account.")
+                    header: Text(String(format: NSLocalizedString("Provisioning Profiles (%d)", comment: ""), filteredProfiles.count)),
+                    footer: Text(NSLocalizedString("Provisioning profiles dictate entitlements, device permissions, and expiration dates. Profiles sync automatically with your developer account.", comment: ""))
                 ) {
                     if filteredProfiles.isEmpty {
                         if viewModel.isLoading {
@@ -110,7 +110,7 @@ struct ProfileManagementView: View {
                             }
                             .padding(.vertical, 8)
                         } else {
-                            Text(searchText.isEmpty ? "No provisioning profiles installed. Tap '+' to import or pull to refresh." : "No matching provisioning profiles found.")
+                            Text(searchText.isEmpty ? NSLocalizedString("No provisioning profiles installed. Tap '+' to import or pull to refresh.", comment: "") : NSLocalizedString("No matching provisioning profiles found.", comment: ""))
                                 .foregroundColor(.secondary)
                                 .font(.subheadline)
                         }
@@ -124,7 +124,7 @@ struct ProfileManagementView: View {
                                 SwiftUI.Button(role: .destructive) {
                                     promptDelete(profile)
                                 } label: {
-                                    Label("Delete", systemImage: "trash")
+                                    Label(NSLocalizedString("Delete", comment: ""), systemImage: "trash")
                                 }
                                 if viewModel.canEditProfileOnPortal(profile) {
                                     SwiftUI.Button {
@@ -132,7 +132,7 @@ struct ProfileManagementView: View {
                                             profileToEditOnPortal = listed
                                         }
                                     } label: {
-                                        Label("Edit", systemImage: "pencil")
+                                        Label(NSLocalizedString("Edit", comment: ""), systemImage: "pencil")
                                     }
                                     .tint(.purple)
                                 }
@@ -141,7 +141,7 @@ struct ProfileManagementView: View {
                                 SwiftUI.Button {
                                     shareProfile(profile)
                                 } label: {
-                                    Label("Share", systemImage: "square.and.arrow.up")
+                                    Label(NSLocalizedString("Share", comment: ""), systemImage: "square.and.arrow.up")
                                 }
                                 .tint(.blue)
                             }
@@ -153,18 +153,18 @@ struct ProfileManagementView: View {
                                             profileToEditOnPortal = listed
                                         }
                                     } label: {
-                                        Label("Edit on Developer Portal", systemImage: "pencil")
+                                        Label(NSLocalizedString("Edit on Developer Portal", comment: ""), systemImage: "pencil")
                                     }
                                 }
                                 SwiftUI.Button {
                                     shareProfile(profile)
                                 } label: {
-                                    Label("Share Profile", systemImage: "square.and.arrow.up")
+                                    Label(NSLocalizedString("Share Profile", comment: ""), systemImage: "square.and.arrow.up")
                                 }
                                 SwiftUI.Button(role: .destructive) {
                                     promptDelete(profile)
                                 } label: {
-                                    Label("Delete Profile", systemImage: "trash")
+                                    Label(NSLocalizedString("Delete Profile", comment: ""), systemImage: "trash")
                                 }
                             }
                         }
@@ -173,7 +173,7 @@ struct ProfileManagementView: View {
             }
             #if !os(tvOS)
             .listStyle(InsetGroupedListStyle())
-            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search Profiles")
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: Text(NSLocalizedString("Search Profiles", comment: "")))
             #else
             .listStyle(GroupedListStyle())
             #endif
@@ -195,7 +195,7 @@ struct ProfileManagementView: View {
                 .animation(.easeInOut, value: viewModel.toastMessage)
             }
         }
-        .navigationTitle("Profile Management")
+        .navigationTitle(NSLocalizedString("Profile Management", comment: ""))
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 SwiftUI.Button {
@@ -203,7 +203,7 @@ struct ProfileManagementView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
-                .accessibilityLabel("Add Provisioning Profile")
+                .accessibilityLabel(NSLocalizedString("Add Provisioning Profile", comment: ""))
             }
         }
         .onAppear {
@@ -225,7 +225,7 @@ struct ProfileManagementView: View {
                 defer { url.stopAccessingSecurityScopedResource() }
                 handleFileSelected(at: url)
             case .failure(let error):
-                viewModel.showToast("Import canceled: \(error.localizedDescription)")
+                viewModel.showToast(String(format: NSLocalizedString("Import canceled: %@", comment: ""), error.localizedDescription))
             }
         }
         .sheet(isPresented: Binding<Bool>(
@@ -242,7 +242,7 @@ struct ProfileManagementView: View {
                 ProfilePortalDetailView(profile: listed, viewModel: devServicesViewModel, presentingViewController: presentingViewController)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            SwiftUI.Button("Done") {
+                            SwiftUI.Button(NSLocalizedString("Done", comment: "")) {
                                 profileToEditOnPortal = nil
                                 viewModel.loadProfiles(isPullToRefresh: true)
                             }
@@ -254,27 +254,27 @@ struct ProfileManagementView: View {
             switch pending.analysis {
             case .signable(let certName, _):
                 return Alert(
-                    title: Text("Link Signing Certificate?"),
-                    message: Text("Found matching signing certificate '\(certName)' with private key in SideStore.\n\nWould you like to link and save this profile?"),
-                    primaryButton: .default(Text("Link & Save")) {
+                    title: Text(NSLocalizedString("Link Signing Certificate?", comment: "")),
+                    message: Text(String(format: NSLocalizedString("Found matching signing certificate '%@' with private key in SideStore.\n\nWould you like to link and save this profile?", comment: ""), certName)),
+                    primaryButton: .default(Text(NSLocalizedString("Link & Save", comment: ""))) {
                         commitImport(pending.profile)
                     },
                     secondaryButton: .cancel()
                 )
             case .publicOnly(let certName, _):
                 return Alert(
-                    title: Text("Missing Private Key"),
-                    message: Text("Found certificate '\(certName)' in this profile, but no matching private key (.p12) was found in SideStore.\n\nContinuing means this profile will not be usable for signing apps until a matching signing certificate with private key is imported."),
-                    primaryButton: .destructive(Text("Import Anyway")) {
+                    title: Text(NSLocalizedString("Missing Private Key", comment: "")),
+                    message: Text(String(format: NSLocalizedString("Found certificate '%@' in this profile, but no matching private key (.p12) was found in SideStore.\n\nContinuing means this profile will not be usable for signing apps until a matching signing certificate with private key is imported.", comment: ""), certName)),
+                    primaryButton: .destructive(Text(NSLocalizedString("Import Anyway", comment: ""))) {
                         commitImport(pending.profile)
                     },
                     secondaryButton: .cancel()
                 )
             case .noMatch(let count):
                 return Alert(
-                    title: Text("No Matching Signing Certificate"),
-                    message: Text("This provisioning profile contains \(count) developer certificate(s), but none match any signing certificates in SideStore.\n\nContinuing means this profile will not be usable for signing apps until a matching signing certificate with private key is imported."),
-                    primaryButton: .destructive(Text("Import Anyway")) {
+                    title: Text(NSLocalizedString("No Matching Signing Certificate", comment: "")),
+                    message: Text(String(format: NSLocalizedString("This provisioning profile contains %d developer certificate(s), but none match any signing certificates in SideStore.\n\nContinuing means this profile will not be usable for signing apps until a matching signing certificate with private key is imported.", comment: ""), count)),
+                    primaryButton: .destructive(Text(NSLocalizedString("Import Anyway", comment: ""))) {
                         commitImport(pending.profile)
                     },
                     secondaryButton: .cancel()
@@ -283,9 +283,9 @@ struct ProfileManagementView: View {
         }
         .alert(isPresented: $showDeleteConfirmation) {
             Alert(
-                title: Text("Delete Local Profile?"),
-                message: Text("Are you sure you want to delete '\(profileToDelete?.name ?? "this profile")' from local storage? Any apps assigned to this profile will revert to default."),
-                primaryButton: .destructive(Text("Delete")) {
+                title: Text(NSLocalizedString("Delete Local Profile?", comment: "")),
+                message: Text(String(format: NSLocalizedString("Are you sure you want to delete '%@' from local storage? Any apps assigned to this profile will revert to default.", comment: ""), profileToDelete?.name ?? NSLocalizedString("this profile", comment: ""))),
+                primaryButton: .destructive(Text(NSLocalizedString("Delete", comment: ""))) {
                     if let target = profileToDelete {
                         Task {
                             await viewModel.deleteProfile(target, alsoDeleteFromPortal: false)
@@ -295,41 +295,41 @@ struct ProfileManagementView: View {
                 secondaryButton: .cancel()
             )
         }
-        .alert("Delete Portal Profile?", isPresented: $showPortalDeleteConfirmation) {
-            SwiftUI.Button("Delete from Portal & Locally", role: .destructive) {
+        .alert(NSLocalizedString("Delete Portal Profile?", comment: ""), isPresented: $showPortalDeleteConfirmation) {
+            SwiftUI.Button(NSLocalizedString("Delete from Portal & Locally", comment: ""), role: .destructive) {
                 if let target = profileToDelete {
                     Task {
                         await viewModel.deleteProfile(target, alsoDeleteFromPortal: true)
                     }
                 }
             }
-            SwiftUI.Button("Delete Locally Only") {
+            SwiftUI.Button(NSLocalizedString("Delete Locally Only", comment: "")) {
                 if let target = profileToDelete {
                     Task {
                         await viewModel.deleteProfile(target, alsoDeleteFromPortal: false)
                     }
                 }
             }
-            SwiftUI.Button("Cancel", role: .cancel) {}
+            SwiftUI.Button(NSLocalizedString("Cancel", comment: ""), role: .cancel) {}
         } message: {
-            Text("'\((profileToDelete?.name ?? "This profile"))' exists on the Apple Developer Portal. Do you want to delete it from Apple's servers as well, or only delete the local cache?")
+            Text(String(format: NSLocalizedString("'%@' exists on the Apple Developer Portal. Do you want to delete it from Apple's servers as well, or only delete the local cache?", comment: ""), profileToDelete?.name ?? NSLocalizedString("This profile", comment: "")))
         }
-        .alert("Error", isPresented: $viewModel.showErrorAlert) {
-            SwiftUI.Button("OK", role: .cancel) { viewModel.errorMessage = nil }
+        .alert(NSLocalizedString("Error", comment: ""), isPresented: $viewModel.showErrorAlert) {
+            SwiftUI.Button(NSLocalizedString("OK", comment: ""), role: .cancel) { viewModel.errorMessage = nil }
         } message: {
-            Text(viewModel.errorMessage ?? "An unknown error occurred.")
+            Text(viewModel.errorMessage ?? NSLocalizedString("An unknown error occurred.", comment: ""))
         }
-        .confirmationDialog("Add Provisioning Profile", isPresented: $showAddOptions, titleVisibility: .visible) {
-            SwiftUI.Button("Import from Files") {
+        .confirmationDialog(NSLocalizedString("Add Provisioning Profile", comment: ""), isPresented: $showAddOptions, titleVisibility: .visible) {
+            SwiftUI.Button(NSLocalizedString("Import from Files", comment: "")) {
                 importProfileAction()
             }
-            SwiftUI.Button("Create on Developer Portal") {
+            SwiftUI.Button(NSLocalizedString("Create on Developer Portal", comment: "")) {
                 Task {
                     await devServicesViewModel.loadAll(presentingViewController: presentingViewController)
                 }
                 navigateToPortalProfiles = true
             }
-            SwiftUI.Button("Cancel", role: .cancel) {}
+            SwiftUI.Button(NSLocalizedString("Cancel", comment: ""), role: .cancel) {}
         }
         .onChange(of: navigateToPortalProfiles) { isActive in
             if !isActive {
@@ -354,7 +354,7 @@ struct ProfileManagementView: View {
             let analysis = ProfileManager.shared.analyzeCertificates(for: profile)
             self.pendingImport = PendingProfileImport(profile: profile, analysis: analysis)
         } catch {
-            viewModel.showToast("Invalid provisioning profile: \(error.localizedDescription)")
+            viewModel.showToast(String(format: NSLocalizedString("Invalid provisioning profile: %@", comment: ""), error.localizedDescription))
         }
     }
 
@@ -362,9 +362,9 @@ struct ProfileManagementView: View {
         do {
             _ = try ProfileManager.shared.importProfile(data: profile.data)
             viewModel.loadProfiles(isPullToRefresh: false)
-            viewModel.showToast("Imported '\(profile.name)' successfully")
+            viewModel.showToast(String(format: NSLocalizedString("Imported '%@' successfully", comment: ""), profile.name))
         } catch {
-            viewModel.showToast("Failed to import profile: \(error.localizedDescription)")
+            viewModel.showToast(String(format: NSLocalizedString("Failed to import profile: %@", comment: ""), error.localizedDescription))
         }
     }
 
@@ -444,7 +444,7 @@ private struct ProfileManagementRowView: View {
                     HStack(spacing: 3) {
                         Image(systemName: "cloud.fill")
                             .font(.system(size: 8))
-                        Text("Portal")
+                        Text(NSLocalizedString("Portal", comment: ""))
                             .fontWeight(.medium)
                     }
                     .font(.caption2)
@@ -457,7 +457,7 @@ private struct ProfileManagementRowView: View {
                     HStack(spacing: 3) {
                         Image(systemName: "internaldrive")
                             .font(.system(size: 8))
-                        Text("Local")
+                        Text(NSLocalizedString("Local", comment: ""))
                             .fontWeight(.medium)
                     }
                     .font(.caption2)
@@ -469,7 +469,7 @@ private struct ProfileManagementRowView: View {
                 }
 
                 if isExpired {
-                    Text("Expired")
+                    Text(NSLocalizedString("Expired", comment: ""))
                         .font(.caption2)
                         .fontWeight(.medium)
                         .padding(.horizontal, 6)
@@ -478,7 +478,7 @@ private struct ProfileManagementRowView: View {
                         .foregroundColor(.red)
                         .cornerRadius(6)
                 } else if matchingCert != nil {
-                    Text("Ready")
+                    Text(NSLocalizedString("Ready", comment: ""))
                         .font(.caption2)
                         .fontWeight(.medium)
                         .padding(.horizontal, 6)
@@ -487,7 +487,7 @@ private struct ProfileManagementRowView: View {
                         .foregroundColor(.green)
                         .cornerRadius(6)
                 } else {
-                    Text("No Key")
+                    Text(NSLocalizedString("No Key", comment: ""))
                         .font(.caption2)
                         .fontWeight(.medium)
                         .padding(.horizontal, 6)
@@ -496,7 +496,7 @@ private struct ProfileManagementRowView: View {
                         .foregroundColor(.orange)
                         .cornerRadius(6)
                 }
-                Text("Expires: \(formatDate(profile.expirationDate))")
+                Text(String(format: NSLocalizedString("Expires: %@", comment: ""), formatDate(profile.expirationDate)))
                     .font(.caption)
                     .foregroundColor(isExpired ? .red : .secondary)
             }
@@ -516,7 +516,7 @@ private struct ProfileManagementRowView: View {
                     Image(systemName: "key.fill")
                         .font(.system(size: 9))
                         .foregroundColor(.secondary)
-                    Text("Signer: \(cert.name)")
+                    Text(String(format: NSLocalizedString("Signer: %@", comment: ""), cert.name))
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
                         .lineLimit(1)
@@ -528,7 +528,7 @@ private struct ProfileManagementRowView: View {
                     Image(systemName: "app.badge.checkmark")
                         .font(.system(size: 9))
                         .foregroundColor(.blue)
-                    Text("Assigned: \(assignedApps.joined(separator: ", "))")
+                    Text(String(format: NSLocalizedString("Assigned: %@", comment: ""), assignedApps.joined(separator: ", ")))
                         .font(.system(size: 10))
                         .foregroundColor(.blue)
                         .lineLimit(1)

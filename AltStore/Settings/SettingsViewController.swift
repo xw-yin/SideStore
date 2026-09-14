@@ -1299,11 +1299,15 @@ extension SettingsViewController
             case .profileManagement:
                 let profileManagementView = ProfileManagementView(presentingViewController: self)
                 let vc = UIHostingController(rootView: profileManagementView)
+                vc.view.backgroundColor = .systemGroupedBackground
+                vc.title = NSLocalizedString("Profile Management", comment: "")
                 self.prepare(for: UIStoryboardSegue(identifier: "profileManagement", source: self, destination: vc), sender: nil)
 
             case .certificateManagement:
                 let certificateManagementView = CertificatesView(presentingViewController: self)
                 let vc = UIHostingController(rootView: certificateManagementView)
+                vc.view.backgroundColor = .systemGroupedBackground
+                vc.title = NSLocalizedString("Certificate Management", comment: "")
                 self.prepare(for: UIStoryboardSegue(identifier: "certificateManagement", source: self, destination: vc), sender: nil)
                 
             case .backupAndRestore:

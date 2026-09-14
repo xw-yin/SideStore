@@ -342,7 +342,7 @@ struct ProvisioningProfileDetailView: View {
     
     var body: some View {
         List {
-            Section(header: Text("Profile Metadata")) {
+            Section(header: Text(NSLocalizedString("Profile Metadata", comment: ""))) {
                 ProfileInfoRow(label: "Name", value: profile.name)
                 ProfileInfoRow(label: "UUID", value: profile.uuid.uuidString)
                 if let identifier = profile.identifier {
@@ -353,17 +353,17 @@ struct ProvisioningProfileDetailView: View {
                 ProfileInfoRow(label: "App Bundle ID", value: profile.bundleIdentifier)
                 ProfileInfoRow(label: "Created", value: formatDate(profile.creationDate))
                 ProfileInfoRow(label: "Expires", value: formatDate(profile.expirationDate))
-                ProfileInfoRow(label: "Free Developer Profile", value: profile.isFreeProvisioningProfile ? "Yes" : "No")
+                ProfileInfoRow(label: "Free Developer Profile", value: profile.isFreeProvisioningProfile ? NSLocalizedString("Yes", comment: "") : NSLocalizedString("No", comment: ""))
             }
             
             if !profile.certificates.isEmpty {
-                Section(header: Text("Developer Certificates (\(profile.certificates.count))")) {
+                Section(header: Text(String(format: NSLocalizedString("Developer Certificates (%d)", comment: ""), profile.certificates.count))) {
                     ForEach(profile.certificates, id: \.serialNumber) { cert in
                         NavigationLink(destination: CertificateDetailView(certificate: cert, viewModel: certificatesViewModel)) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(cert.name)
                                     .font(.subheadline)
-                                Text("Serial: \(cert.serialNumber)")
+                                Text(String(format: NSLocalizedString("Serial: %@", comment: ""), cert.serialNumber))
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -373,14 +373,14 @@ struct ProvisioningProfileDetailView: View {
             }
             
             if !profile.deviceIDs.isEmpty {
-                Section(header: Text("Provisioned Devices (\(profile.deviceIDs.count))")) {
+                Section(header: Text(String(format: NSLocalizedString("Provisioned Devices (%d)", comment: ""), profile.deviceIDs.count))) {
                     NavigationLink(destination: DeviceIDsView(devices: profile.deviceIDs)) {
-                        Text("View Provisioned Devices")
+                        Text(NSLocalizedString("View Provisioned Devices", comment: ""))
                     }
                 }
             }
             
-            Section(header: Text("Entitlements (\(profile.entitlements.count))")) {
+            Section(header: Text(String(format: NSLocalizedString("Entitlements (%d)", comment: ""), profile.entitlements.count))) {
                 let sortedEntitlements = profile.entitlements.sorted { $0.key < $1.key }
                 ForEach(sortedEntitlements, id: \.key) { entitlement, value in
                     EntitlementRow(key: entitlement, value: value)
@@ -406,7 +406,7 @@ struct ProvisioningProfileDetailView: View {
         #else
         .listStyle(GroupedListStyle())
         #endif
-        .navigationTitle("Profile Details")
+        .navigationTitle(NSLocalizedString("Profile Details", comment: ""))
         .interactiveDismissDisabled(true)
     }
     
@@ -481,7 +481,7 @@ struct ProfileInfoRow: View {
     
     var body: some View {
         HStack {
-            Text(label)
+            Text(NSLocalizedString(label, comment: ""))
                 .font(.subheadline)
                 .foregroundColor(.secondary)
             Spacer()
@@ -495,7 +495,7 @@ struct ProfileInfoRow: View {
             SwiftUI.Button {
                 UIPasteboard.general.string = value
             } label: {
-                Label("Copy", systemImage: "doc.on.doc")
+                Label(NSLocalizedString("Copy", comment: ""), systemImage: "doc.on.doc")
             }
         }
         #endif

@@ -55,22 +55,22 @@ struct ProfileRowItemView: View {
 
             HStack(spacing: 8) {
                 if isExpired {
-                    Label("Expired", systemImage: "xmark.octagon.fill")
+                    Label(NSLocalizedString("Expired", comment: ""), systemImage: "xmark.octagon.fill")
                         .font(.caption2)
                         .foregroundColor(.red)
                 } else if matchingCert != nil {
-                    Label("Ready to Sign", systemImage: "checkmark.seal.fill")
+                    Label(NSLocalizedString("Ready to Sign", comment: ""), systemImage: "checkmark.seal.fill")
                         .font(.caption2)
                         .foregroundColor(.green)
                 } else {
-                    Label("Missing .p12", systemImage: "exclamationmark.triangle.fill")
+                    Label(NSLocalizedString("Missing .p12", comment: ""), systemImage: "exclamationmark.triangle.fill")
                         .font(.caption2)
                         .foregroundColor(.orange)
                 }
 
                 Spacer()
 
-                Text("Expires: \(expirationString)")
+                Text(String(format: NSLocalizedString("Expires: %@", comment: ""), expirationString))
                     .font(.caption2)
                     .foregroundColor(isExpired ? .red : .secondary)
             }
@@ -80,7 +80,7 @@ struct ProfileRowItemView: View {
                     Image(systemName: "key.fill")
                         .font(.system(size: 9))
                         .foregroundColor(.secondary)
-                    Text("Cert: \(cert.name)")
+                    Text(String(format: NSLocalizedString("Cert: %@", comment: ""), cert.name))
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
                         .lineLimit(1)
