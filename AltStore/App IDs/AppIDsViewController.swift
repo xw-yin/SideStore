@@ -712,9 +712,10 @@ struct DeleteOverlayView: View
                     }
                     
                 case .success:
-                    VStack(spacing: 20)
-                    {
-                        AnimatedCheckmarkView()
+                    VStack(spacing: 20) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 60))
+                            .foregroundColor(.green)
                             .padding(.top, 10)
                         
                         Text(NSLocalizedString("App IDs Deleted", comment: ""))
