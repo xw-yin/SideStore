@@ -199,8 +199,22 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
                                   storeBuildVersion: String?,
                                   authTeam: ALTTeam) throws -> InstalledApp
     {
-        guard let appBundleFingerprint = self.context.appBundleFingerprint else {
-            throw OperationError.invalidParameters("InstallAppOperation: context.appBundleFingerprint is nil. CacheAppOperation must guarantee a fingerprint reference.")
+        var resolvedFingerprint = self.context.appBundleFingerprint
+        if resolvedFingerprint == nil {
+            if let targetBundle = self.context.targetAppBundle {
+                if let (signature, _) = try? CacheAppOperation.cachePayload(for: targetBundle.fileURL) {
+                    resolvedFingerprint = signature
+                } else {
+                    resolvedFingerprint = AppBundleFingerprint.compute(for: targetBundle.fileURL)
+                }
+            } else {
+                resolvedFingerprint = AppBundleFingerprint.compute(for: resignedAppBundle.fileURL)
+            }
+            self.context.appBundleFingerprint = resolvedFingerprint
+        }
+        
+        guard let appBundleFingerprint = resolvedFingerprint else {
+            throw OperationError.invalidParameters("InstallAppOperation: context.appBundleFingerprint is nil and could not be determined.")
         }
         
         let target = self.context.targetBundleIdentifier

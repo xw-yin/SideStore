@@ -73,6 +73,15 @@ final class StageAppOperation: BasePipelineOperation<InstallAppOperationContext,
         }
         
         self.context.targetAppBundle = stagedAppBundle
+        
+        if self.context.appBundleFingerprint == nil {
+            if let (signature, _) = try? CacheAppOperation.cachePayload(for: stagedAppBundle.fileURL) {
+                self.context.appBundleFingerprint = signature
+            } else if let signature = AppBundleFingerprint.compute(for: stagedAppBundle.fileURL) {
+                self.context.appBundleFingerprint = signature
+            }
+        }
+        
         self.setProgress(100)
         return stagedAppBundle
     }

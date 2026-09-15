@@ -344,6 +344,9 @@ final class PipelineRunner: Sendable
                 let hostURL = Bundle.isBundledWithLiveContainer ? Bundle.realMainBundle.bundleURL : Bundle.Info.activeBundleURL
                 context.targetAppBundle = ALTApplication(fileURL: hostURL)
             }
+            if context.appBundleFingerprint == nil, let target = context.targetAppBundle {
+                context.appBundleFingerprint = AppBundleFingerprint.compute(for: target.fileURL)
+            }
         }
         
         context.beginInstallationHandler = { (installedApp) in
