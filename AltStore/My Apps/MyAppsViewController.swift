@@ -1888,6 +1888,7 @@ extension MyAppsViewController
             
         case .activeApps, .inactiveApps:
             let footerView = collectionView.dequeueReusableSupplementaryView(ofKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: "InstalledAppsFooter", for: indexPath) as! InstalledAppsCollectionFooterView
+            footerView.button.setTitle(NSLocalizedString("View App IDs", comment: ""), for: .normal)
             
             guard let team = self.activeTeam else { return footerView }
             switch team.type

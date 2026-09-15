@@ -69,6 +69,12 @@ final class InstalledAppsCollectionFooterView: UICollectionReusableView
 {
     @IBOutlet var textLabel: UILabel!
     @IBOutlet var button: UIButton!
+    
+    override func awakeFromNib()
+    {
+        super.awakeFromNib()
+        self.button?.setTitle(NSLocalizedString("View App IDs", comment: ""), for: .normal)
+    }
 }
 
 final class NoUpdatesCollectionViewCell: UICollectionViewCell
