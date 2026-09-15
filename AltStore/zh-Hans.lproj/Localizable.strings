@@ -550,6 +550,9 @@
 "WireGuard Server Parameters" = "WireGuard 服务端参数";
 "Configures the local UDP loopback host and port bound by EMProxy." = "配置 EMProxy 绑定的本地 UDP 回环主机与端口。";
 "Changes saved" = "更改已保存";
+"Invalid Configuration" = "配置无效";
+"Please check your configuration settings." = "请检查您的配置设置。";
+"Connection configuration has been updated." = "连接配置已更新。";
 "Device IP" = "设备 IP";
 "Port" = "端口";
 "Subnet Mask" = "子网掩码";

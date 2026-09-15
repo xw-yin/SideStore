@@ -18,42 +18,6 @@ enum ActiveState: String {
     case no = "No"
 }
 
-struct AnimatedCheckmarkView: View {
-    @State private var outerCircleTrim: CGFloat = 0.0
-    @State private var checkmarkTrim: CGFloat = 0.0
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .stroke(Color.green.opacity(0.2), lineWidth: 4)
-                .frame(width: 70, height: 70)
-            
-            Circle()
-                .trim(from: 0.0, to: outerCircleTrim)
-                .stroke(Color.green, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                .frame(width: 70, height: 70)
-                .rotationEffect(.degrees(-90))
-            
-            Path { path in
-                path.move(to: CGPoint(x: 21, y: 35))
-                path.addLine(to: CGPoint(x: 30, y: 44))
-                path.addLine(to: CGPoint(x: 49, y: 25))
-            }
-            .trim(from: 0.0, to: checkmarkTrim)
-            .stroke(Color.green, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
-            .frame(width: 70, height: 70)
-        }
-        .onAppear {
-            withAnimation(.easeIn(duration: 0.4)) {
-                outerCircleTrim = 1.0
-            }
-            withAnimation(.easeIn(duration: 0.3).delay(0.4)) {
-                checkmarkTrim = 1.0
-            }
-        }
-    }
-}
-
 struct ConnectionConfigView: View {
     @Environment(\.presentationMode) var presentationMode
     @ObservedObject private var config = ConnectionConfig.shared
@@ -177,15 +141,14 @@ struct ConnectionConfigView: View {
                     }
                 }
             }
-            .navigationTitle("Connection Config")
+            .navigationTitle(NSLocalizedString("Connection Config", comment: ""))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    SButton("Confirm") {
+                    SButton(NSLocalizedString("Confirm", comment: "")) {
                         Task { await commitChanges() }
                     }
                 }
             }
-            .disabled(showConfirmDialog)
             .onAppear {
                 draftUseLocalVPN = config.useLocalVPN
                 draftOverrideTunnelPeerIp = config.overrideTunnelPeerIp
@@ -197,52 +160,17 @@ struct ConnectionConfigView: View {
                 alwaysShowWireGuardConfig = UserDefaults.standard.alwaysShowWireGuardConfig
                 acceptIPv6ConnectionConfig = UserDefaults.standard.acceptIPv6ConnectionConfig
             }
-            .alert("Invalid Configuration", isPresented: $showValidationErrorAlert) {
-                SwiftUI.Button("OK", role: .cancel) {}
+            .alert(NSLocalizedString("Invalid Configuration", comment: ""), isPresented: $showValidationErrorAlert) {
+                SwiftUI.Button(NSLocalizedString("OK", comment: ""), role: .cancel) {}
             } message: {
-                Text(validationError ?? "Please check your configuration settings.")
+                Text(validationError ?? NSLocalizedString("Please check your configuration settings.", comment: ""))
             }
-            
-            if showConfirmDialog {
-                Color.black.opacity(0.3)
-                    .ignoresSafeArea()
-                    #if !os(tvOS)
-                    .onTapGesture {
-                        showConfirmDialog = false
-                    }
-                    #endif
-                
-                VStack(spacing: 24) {
-                    AnimatedCheckmarkView()
-                        .padding(.top, 10)
-                    
-                    Text("Changes saved")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.primary)
-                    
-                    SwiftUI.Button(action: {
-                        showConfirmDialog = false
-                    }) {
-                        Text("OK")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.primary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(Color(uiColor: .secondarySystemFill))
-                            .clipShape(Capsule())
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-                .padding(24)
-                .frame(width: 320)
-                .background(.ultraThinMaterial)
-                .environment(\.colorScheme, .dark)
-                .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-                .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
-                .transition(.scale.combined(with: .opacity))
+            .alert(NSLocalizedString("Changes saved", comment: ""), isPresented: $showConfirmDialog) {
+                SwiftUI.Button(NSLocalizedString("OK", comment: ""), role: .cancel) {}
+            } message: {
+                Text(NSLocalizedString("Connection configuration has been updated.", comment: ""))
             }
         }
-        .animation(.easeInOut, value: showConfirmDialog)
     }
 
     private func isIPv6Address(_ value: String) -> Bool {
