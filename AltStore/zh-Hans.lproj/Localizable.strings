@@ -1523,3 +1523,15 @@
 "Almost there…" = "马上就好…";
 "Unable to Launch SideStore" = "无法启动 SideStore";
 "“%@” Blocked" = "“%@” 已被阻止";
+
+/* Install App Dialog */
+"Choose from Files" = "从“文件”中选取";
+"Install from URL" = "通过 URL 安装";
+"Choose an installation method:" = "选择安装方式：";
+"Upload via Web" = "通过网页上传";
+"Enter the URL of the .ipa file to install." = "输入要安装的 .ipa 文件的 URL。";
+"Invalid URL" = "URL 无效";
+"Please enter a valid HTTP or HTTPS URL." = "请输入有效的 HTTP 或 HTTPS URL。";
+"Do you want to continue? This will install \"%@\"." = "是否要继续？这将安装“%@”。";
+"Do you want to continue? This will download and install from:\n%@" = "是否要继续？将从此地址下载并安装：\n%@";
+
