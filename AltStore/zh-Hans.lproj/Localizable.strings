@@ -1496,4 +1496,23 @@
 "Provisioned (%d B)" = "已生成（%d B）";
 "Not Provisioned" = "未生成";
 
+/* Install & Pipeline Alerts */
+"Install App" = "安装 App";
+"Bundle ID Mismatch" = "Bundle ID 不匹配";
+"App Group Discrepancy" = "App Group 差异";
+"Correct & Proceed" = "更正并继续";
+"Keep Original" = "保留原始";
+"“%@” will be automatically given these permissions once installed." = "安装后，“%@”将自动获得这些权限。";
+"This version of “%@” requires additional permissions." = "此版本的“%@”需要额外权限。";
+"Finish Refresh" = "完成刷新";
+"To finish refreshing, SideStore must be moved to the background. To do this, you can either go to the Home Screen manually or by hitting Continue. Please reopen SideStore after doing this." = "为完成刷新，SideStore 必须切换至后台。你可以手动返回主屏幕或点按“继续”。完成此操作后请重新打开 SideStore。";
+"Refreshing..." = "正在刷新...";
+"SideStore will automatically move to the homescreen to finish refreshing!" = "SideStore 将自动退回主屏幕以完成刷新！";
+
+/* App IDs Modal */
+"Each app and app extension installed with SideStore must register an App ID with Apple. Apple limits non-developer Apple IDs to 10 App IDs at a time.\n\n**App IDs can't be deleted**, but they do expire after one week. SideStore will automatically renew App IDs for all active apps once they've expired." = "使用 SideStore 安装的每个 App 和 App 扩展都必须向 Apple 注册一个 App ID。Apple 限制非开发者 Apple ID 一次最多只能拥有 10 个 App ID。\n\n**App ID 无法被删除**，但会在一周后过期。一旦过期，SideStore 将自动为所有活跃的 App 续订 App ID。";
+"Each app and app extension installed with SideStore must register an App ID with Apple.\n\nApp IDs for paid developer accounts never expire, and there is no limit to how many you can create." = "使用 SideStore 安装的每个 App 和 App 扩展都必须向 Apple 注册一个 App ID。\n\n付费开发者账户的 App ID 永不过期，且创建数量没有限制。";
+"App IDs Deleted" = "已删除 App ID";
+
+
 

@@ -303,22 +303,14 @@ extension AppIDsViewController: UICollectionViewDelegateFlowLayout
             
             if let activeTeam = self.activeTeam, activeTeam.type == .free
             {
-                let text = NSLocalizedString("""
-                Each app and app extension installed with SideStore must register an App ID with Apple. Apple limits non-developer Apple IDs to 10 App IDs at a time.
-
-                **App IDs can't be deleted**, but they do expire after one week. SideStore will automatically renew App IDs for all active apps once they've expired.
-                """, comment: "")
+                let text = NSLocalizedString("Each app and app extension installed with SideStore must register an App ID with Apple. Apple limits non-developer Apple IDs to 10 App IDs at a time.\n\n**App IDs can't be deleted**, but they do expire after one week. SideStore will automatically renew App IDs for all active apps once they've expired.", comment: "")
                 
                 let attributedText = NSAttributedString(markdownRepresentation: text, attributes: [.font: headerView.textLabel.font as Any])
                 headerView.textLabel.attributedText = attributedText
             }
             else
             {
-                headerView.textLabel.text = NSLocalizedString("""
-                Each app and app extension installed with SideStore must register an App ID with Apple.
-                
-                App IDs for paid developer accounts never expire, and there is no limit to how many you can create.
-                """, comment: "")
+                headerView.textLabel.text = NSLocalizedString("Each app and app extension installed with SideStore must register an App ID with Apple.\n\nApp IDs for paid developer accounts never expire, and there is no limit to how many you can create.", comment: "")
             }
             
             return headerView
