@@ -1517,5 +1517,9 @@
 "Each app and app extension installed with SideStore must register an App ID with Apple.\n\nApp IDs for paid developer accounts never expire, and there is no limit to how many you can create." = "使用 SideStore 安装的每个 App 和 App 扩展都必须向 Apple 注册一个 App ID。\n\n付费开发者账户的 App ID 永不过期，且创建数量没有限制。";
 "App IDs Deleted" = "已删除 App ID";
 
-
-
+/* Launch & Sources */
+"Some sources were unable to load" = "部分软件源无法加载";
+"Loading apps…" = "正在加载应用…";
+"Almost there…" = "马上就好…";
+"Unable to Launch SideStore" = "无法启动 SideStore";
+"“%@” Blocked" = "“%@” 已被阻止";
