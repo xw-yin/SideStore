@@ -26,10 +26,10 @@ struct HealthCheckView: View {
                             Text("SideStore Ready")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                            Text(viewModel.connectionMode == .localVPN
+                            Text(LocalizedStringKey(viewModel.connectionMode == .localVPN
                                  ? "All requirements met. Local device pairing & VPN tunnel active."
                                  : "All requirements met. Local device pairing & Remote server connection active."
-                            )
+                            ))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -107,7 +107,7 @@ struct HealthCheckView: View {
                 HStack {
                     Text("Connection Mode")
                     Spacer()
-                    Text(viewModel.connectionMode == .localVPN ? "Local VPN" : "Remote Server")
+                    Text(LocalizedStringKey(viewModel.connectionMode == .localVPN ? "Local VPN" : "Remote Server"))
                         .foregroundColor(.secondary)
                 }
                 
@@ -118,13 +118,13 @@ struct HealthCheckView: View {
                     HStack {
                         Text("Override Status")
                         Spacer()
-                        Text(viewModel.overrideTunnelPeerEffective ? "Active" : "Inactive")
+                        Text(LocalizedStringKey(viewModel.overrideTunnelPeerEffective ? "Active" : "Inactive"))
                             .foregroundColor(viewModel.overrideTunnelPeerEffective ? .green : .secondary)
                     }
                     HStack {
                         Text("Active Protocol")
                         Spacer()
-                        Text(viewModel.activeProtocol)
+                        Text(LocalizedStringKey(viewModel.activeProtocol))
                             .foregroundColor(.secondary)
                     }
                 } else {
@@ -132,7 +132,7 @@ struct HealthCheckView: View {
                     HStack {
                         Text("Active Protocol")
                         Spacer()
-                        Text(viewModel.activeProtocol)
+                        Text(LocalizedStringKey(viewModel.activeProtocol))
                             .foregroundColor(.secondary)
                     }
                 }
@@ -181,9 +181,9 @@ struct DependencyRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.body)
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -217,7 +217,7 @@ struct ConfigRow: View {
     
     var body: some View {
         HStack {
-            Text(label)
+            Text(LocalizedStringKey(label))
             Spacer()
             Text(value ?? "N/A")
                 .foregroundColor(.secondary)
@@ -253,10 +253,10 @@ struct InterfaceRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
-                Text("Iface:")
+                Text(LocalizedStringKey("Iface:"))
                     .font(.caption)
                     .foregroundColor(.secondary)
-                    .frame(width: 36, alignment: .leading)
+                    .frame(width: 44, alignment: .leading)
                 
                 Text(iface.name)
                     .fontWeight(.semibold)
