@@ -75,8 +75,44 @@ public extension InstalledAppProtocol {
             if FileManager.default.fileExists(atPath: payloadURL.path) {
                 return payloadURL
             }
+
+            let payloadDir = InstalledApp.payloadDirectoryURL(forSignature: signature)
+            if let contents = try? FileManager.default.contentsOfDirectory(at: payloadDir, includingPropertiesForKeys: nil),
+               let appURL = contents.first(where: { $0.pathExtension == "app" }) {
+                return appURL
+            }
         }
-        return self.directoryURL.appendingPathComponent("App.app")
+        
+        let standardAppURL = self.directoryURL.appendingPathComponent("App.app")
+        if FileManager.default.fileExists(atPath: standardAppURL.path) {
+            return standardAppURL
+        }
+
+        if let contents = try? FileManager.default.contentsOfDirectory(at: self.directoryURL, includingPropertiesForKeys: nil),
+           let appURL = contents.first(where: { $0.pathExtension == "app" }) {
+            return appURL
+        }
+
+        let legacyResignedURL = InstalledApp.legacyAppsDirectoryURL.appendingPathComponent(self.resignedBundleIdentifier).appendingPathComponent("App.app")
+        if FileManager.default.fileExists(atPath: legacyResignedURL.path) {
+            return legacyResignedURL
+        }
+
+        let legacyBundleURL = InstalledApp.legacyAppsDirectoryURL.appendingPathComponent(self.bundleIdentifier).appendingPathComponent("App.app")
+        if FileManager.default.fileExists(atPath: legacyBundleURL.path) {
+            return legacyBundleURL
+        }
+
+        let appIDURL = InstalledApp.appsDirectoryURL.appendingPathComponent(self.bundleIdentifier).appendingPathComponent("App.app")
+        if FileManager.default.fileExists(atPath: appIDURL.path) {
+            return appIDURL
+        }
+
+        if self.bundleIdentifier == StoreApp.altstoreAppID || self.bundleIdentifier.isAltStoreAppID {
+            return Bundle.isBundledWithLiveContainer ? Bundle.realMainBundle.bundleURL : Bundle.Info.activeBundleURL
+        }
+
+        return standardAppURL
     }
     
     var refreshedIPAURL: URL {

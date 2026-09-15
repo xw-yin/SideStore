@@ -411,17 +411,19 @@ public class DatabaseManager: @unchecked Sendable
             
             installedApp.appExtensions = installedExtensions
             
-            let bundleURL = Bundle.isBundledWithLiveContainer ? Bundle.main.bundleURL : Bundle.Info.activeBundleURL
+            let bundleURL = Bundle.isBundledWithLiveContainer ? Bundle.realMainBundle.bundleURL : Bundle.Info.activeBundleURL
             let altstoreAppID = StoreApp.altstoreAppID
             let extensionBundleIDMap = installedExtensions.reduce(into: [String: String]()) { dict, ext in
                 dict[ext.resignedBundleIdentifier] = ext.bundleIdentifier
             }
             
-            FileManager.default.prepareTemporaryURL { temporaryFileURL in
+            FileManager.default.prepareTemporaryURL { temporaryDirectory in
                 do {
-                    try FileManager.default.copyItem(at: bundleURL, to: temporaryFileURL)
+                    let temporaryAppURL = temporaryDirectory.appendingPathComponent(bundleURL.lastPathComponent)
+                    try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
+                    try FileManager.default.copyItem(at: bundleURL, to: temporaryAppURL)
                     
-                    guard let tempAppBundle = ALTApplication(fileURL: temporaryFileURL) else { throw ALTError(.invalidApp) }
+                    guard let tempAppBundle = ALTApplication(fileURL: temporaryAppURL) else { throw ALTError(.invalidApp) }
                     try tempAppBundle.updateInfoPlist(with: [kCFBundleIdentifierKey as String: altstoreAppID])
                     
                     for appExtension in tempAppBundle.appExtensions {
@@ -429,7 +431,7 @@ public class DatabaseManager: @unchecked Sendable
                         try appExtension.updateInfoPlist(with: [kCFBundleIdentifierKey as String: originalBundleID])
                     }
                     
-                    let (signature, _) = try CacheAppOperation.cachePayload(for: temporaryFileURL)
+                    let (signature, _) = try CacheAppOperation.cachePayload(for: temporaryAppURL)
                     installedApp.appBundleFingerprint = signature
                 } catch {
                     debugLog("Failed to cache SideStore app bundle: \(error)")

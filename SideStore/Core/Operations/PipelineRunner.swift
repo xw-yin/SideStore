@@ -340,6 +340,10 @@ final class PipelineRunner: Sendable
             context.useMainProfile = app.useMainProfile
             context.customBundleIdentifier = app.customBundleIdentifier
             context.targetAppBundle = ALTApplication(fileURL: app.fileURL)
+            if context.targetAppBundle == nil && (app.bundleIdentifier == StoreApp.altstoreAppID || app.bundleIdentifier.isAltStoreAppID) {
+                let hostURL = Bundle.isBundledWithLiveContainer ? Bundle.realMainBundle.bundleURL : Bundle.Info.activeBundleURL
+                context.targetAppBundle = ALTApplication(fileURL: hostURL)
+            }
         }
         
         context.beginInstallationHandler = { (installedApp) in

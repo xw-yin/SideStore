@@ -25,15 +25,19 @@ final class StageAppOperation: BasePipelineOperation<InstallAppOperationContext,
         if let appBundle = self.context.targetAppBundle,
            appBundle.bundle.bundleURL.path.contains("SideBackup") || appBundle.bundle.bundleURL.path.contains("AltBackup"),
            let installedApp = self.context.installedApp {
-            self.context.targetAppBundle = ALTApplication(fileURL: installedApp.fileURL)
+            self.context.targetAppBundle = self.resolveAppBundle(for: installedApp)
         }
         
         if self.context.targetAppBundle == nil, let installedApp = self.context.installedApp {
-            self.context.targetAppBundle = ALTApplication(fileURL: installedApp.fileURL)
+            self.context.targetAppBundle = self.resolveAppBundle(for: installedApp)
         }
         
         guard let appBundle = self.context.targetAppBundle else {
-            throw OperationError.invalidParameters("StageAppOperation: context.appBundle is nil")
+            if let installedApp = self.context.installedApp {
+                throw OperationError.missingAppBundle(reason: "Could not find or load app bundle for '\(installedApp.name)'. Please reinstall or refresh the app.")
+            } else {
+                throw OperationError.invalidParameters("StageAppOperation: context.appBundle is nil")
+            }
         }
         
         let fileURL = appBundle.fileURL
@@ -71,5 +75,59 @@ final class StageAppOperation: BasePipelineOperation<InstallAppOperationContext,
         self.context.targetAppBundle = stagedAppBundle
         self.setProgress(100)
         return stagedAppBundle
+    }
+    
+    private func resolveAppBundle(for installedApp: InstalledApp) -> ALTApplication? {
+        if let appBundle = ALTApplication(fileURL: installedApp.fileURL) {
+            return appBundle
+        }
+        
+        if installedApp.bundleIdentifier == StoreApp.altstoreAppID || installedApp.bundleIdentifier.isAltStoreAppID {
+            let hostURL = Bundle.isBundledWithLiveContainer ? Bundle.realMainBundle.bundleURL : Bundle.Info.activeBundleURL
+            if let appBundle = ALTApplication(fileURL: hostURL) {
+                return appBundle
+            }
+        }
+        
+        if let contents = try? FileManager.default.contentsOfDirectory(at: installedApp.directoryURL, includingPropertiesForKeys: nil),
+           let appURL = contents.first(where: { $0.pathExtension == "app" }),
+           let appBundle = ALTApplication(fileURL: appURL) {
+            return appBundle
+        }
+        
+        let legacyCandidates = [
+            InstalledApp.legacyAppsDirectoryURL.appendingPathComponent(installedApp.resignedBundleIdentifier).appendingPathComponent("App.app"),
+            InstalledApp.legacyAppsDirectoryURL.appendingPathComponent(installedApp.bundleIdentifier).appendingPathComponent("App.app"),
+            InstalledApp.appsDirectoryURL.appendingPathComponent(installedApp.bundleIdentifier).appendingPathComponent("App.app")
+        ]
+        for candidate in legacyCandidates where FileManager.default.fileExists(atPath: candidate.path) {
+            if let appBundle = ALTApplication(fileURL: candidate) {
+                return appBundle
+            }
+        }
+        
+        let candidateIPAs: [URL] = [
+            installedApp.refreshedIPAURL,
+            installedApp.directoryURL.appendingPathComponent("\(installedApp.bundleIdentifier).ipa"),
+            installedApp.directoryURL.appendingPathComponent("\(installedApp.resignedBundleIdentifier).ipa")
+        ] + ((try? FileManager.default.contentsOfDirectory(at: installedApp.directoryURL, includingPropertiesForKeys: nil).filter { $0.pathExtension == "ipa" }) ?? [])
+        
+        let tempDir = self.context.temporaryDirectory
+        for ipaURL in candidateIPAs where FileManager.default.fileExists(atPath: ipaURL.path) {
+            do {
+                if !FileManager.default.fileExists(atPath: tempDir.path) {
+                    try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true, attributes: nil)
+                }
+                let unzippedURL = try FileManager.default.unzipAppBundle(at: ipaURL, toDirectory: tempDir)
+                if let appBundle = ALTApplication(fileURL: unzippedURL) {
+                    debugLog("[StageAppOperation] Recovered app bundle by unzipping \(ipaURL.lastPathComponent)")
+                    return appBundle
+                }
+            } catch {
+                debugLog("[StageAppOperation] Failed to unzip IPA at \(ipaURL.path): \(error)")
+            }
+        }
+        
+        return nil
     }
 }
