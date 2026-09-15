@@ -1535,3 +1535,14 @@
 "Do you want to continue? This will install \"%@\"." = "是否要继续？这将安装“%@”。";
 "Do you want to continue? This will download and install from:\n%@" = "是否要继续？将从此地址下载并安装：\n%@";
 
+/* My Apps Context Menu & Actions */
+"Delete App" = "删除应用";
+"Delete “%@”?" = "删除“%@”？";
+"Backup" = "备份";
+"Create Backup" = "创建备份";
+"Delete Backup" = "删除备份";
+"Delete Backup for “%@”?" = "删除“%@”的备份？";
+"Are you sure you want to delete the backup for this app? This action cannot be undone." = "确定要删除此 App 的备份吗？此操作无法撤销。";
+"Remove Icon" = "移除图标";
+
+
