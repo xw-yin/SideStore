@@ -1574,4 +1574,62 @@
 "Are you sure you want to delete the backup for this app? This action cannot be undone." = "确定要删除此 App 的备份吗？此操作无法撤销。";
 "Remove Icon" = "移除图标";
 
+/* Storage Explorer */
+"App Storage Containers" = "App 存储容器";
+"Private Documents" = "专用文稿";
+"App Group Container (%@)" = "App Group 容器 (%@)";
+"App Backups Directory" = "App 备份目录";
+"Temporary Directory (tmp)" = "临时目录 (tmp)";
+"App Storage Used:" = "App 已用存储：";
+"Available Space:" = "可用空间：";
+"Total Space:" = "总空间：";
+"Calculating..." = "正在计算…";
+"Paste “%@”" = "粘贴“%@”";
+"Paste %d Items" = "粘贴 %d 个项目";
+"Paste" = "粘贴";
+"Date Modified" = "修改日期";
+"Size" = "大小";
+"Loading directory contents..." = "正在加载目录内容…";
+"Empty Directory" = "空目录";
+"No files or subfolders found in this directory." = "此目录下未找到文件或子文件夹。";
+"Search files & folders" = "搜索文件和文件夹";
+"0 items (Zero KB)" = "0 个项目 (0 KB)";
+"1 Folder" = "1 个文件夹";
+"%d Folders" = "%d 个文件夹";
+"1 File" = "1 个文件";
+"%d Files" = "%d 个文件";
+"Folders (%d)" = "文件夹 (%d)";
+"Files (%d)" = "文件 (%d)";
+"Select All" = "全选";
+"Deselect All" = "取消全选";
+"Copy (%d)" = "拷贝 (%d)";
+"Rename (%d)" = "重命名 (%d)";
+"Delete (%d)" = "删除 (%d)";
+"Done Selecting" = "完成选择";
+"Rename" = "重命名";
+"Delete All" = "全部删除";
+"Available Space: %@" = "可用空间：%@";
+"Ascending" = "升序";
+"Descending" = "降序";
+"Folders First" = "文件夹排在前面";
+"Wrap File Names" = "文件名换行显示";
+"Don't Group Folders First" = "不优先排列文件夹";
+"Disable Text Wrap" = "停用换行显示";
+"This item will be permanently removed." = "此项目将被永久删除。";
+"Delete %d Selected Items?" = "删除 %d 个所选项目？";
+"Are you sure you want to permanently delete these %d items?" = "确定要永久删除这 %d 个项目吗？";
+"Rename “%@”" = "重命名“%@”";
+"Enter a new name for this item:" = "输入此项目的新名称：";
+"Rename Item" = "重命名项目";
+"Bulk Rename %d Items" = "批量重命名 %d 个项目";
+"Enter a new name:" = "输入新名称：";
+"Enter a base name (items will be renamed Name_1, Name_2...):" = "输入基本名称（项目将被重命名为 名称_1、名称_2…）：";
+"File Already Exists" = "文件已存在";
+"An item named “%@” already exists in this folder. Enter a new name to copy:" = "此文件夹中已存在名为“%@”的项目。输入新名称以拷贝：";
+"Copy as New Name" = "拷贝为新名称";
+"Cancel All" = "全部取消";
+"Storage Explorer Error" = "存储管理器错误";
+"%d items" = "%d 个项目";
+
+
 

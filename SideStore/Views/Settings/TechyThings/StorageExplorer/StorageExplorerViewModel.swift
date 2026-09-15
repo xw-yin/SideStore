@@ -25,11 +25,11 @@ public final class StorageExplorerClipboard: ObservableObject {
     
     public var pasteLabelText: String {
         if copiedURLs.count == 1, let first = copiedURLs.first {
-            return "Paste “\(first.lastPathComponent)”"
+            return String(format: NSLocalizedString("Paste “%@”", comment: ""), first.lastPathComponent)
         } else if copiedURLs.count > 1 {
-            return "Paste \(copiedURLs.count) Items"
+            return String(format: NSLocalizedString("Paste %d Items", comment: ""), copiedURLs.count)
         }
-        return "Paste"
+        return NSLocalizedString("Paste", comment: "")
     }
     
     public func setCopied(urls: [URL]) {
@@ -92,6 +92,15 @@ public enum StorageSortOption: String, CaseIterable, Identifiable {
     case type = "Type"
     
     public var id: String { rawValue }
+    
+    public var localizedName: String {
+        switch self {
+        case .name: return NSLocalizedString("Name", comment: "")
+        case .date: return NSLocalizedString("Date Modified", comment: "")
+        case .size: return NSLocalizedString("Size", comment: "")
+        case .type: return NSLocalizedString("Type", comment: "")
+        }
+    }
 }
 
 // MARK: - Directory Explorer ViewModel

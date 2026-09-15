@@ -44,6 +44,8 @@ final class ErrorLogViewController: UITableViewController
     override func viewDidLoad()
     {
         super.viewDidLoad()
+        self.title = NSLocalizedString("Error Log", comment: "")
+        self.navigationItem.title = NSLocalizedString("Error Log", comment: "")
         
         let appearance = UINavigationBarAppearance()
         appearance.configureWithDefaultBackground()
