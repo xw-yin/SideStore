@@ -32,11 +32,7 @@ class FetchProvisioningProfilesOperation: BasePipelineOperation<InstallAppOperat
 
         let effectiveBundleId = self.context.targetBundleIdentifier
 
-        let appExtensions = self.context.installedApp.map { app in
-            targetAppBundle.appExtensions.filter { ext in
-                app.appExtensions.contains { $0.bundleIdentifier == ext.bundleIdentifier }
-            }
-        } ?? targetAppBundle.appExtensions
+        let appExtensions = targetAppBundle.appExtensions
 
         if let overrideProfile = self.context.overrideProvisioningProfile {
             self.debugLog("[FetchProvisioningProfiles] Using override provisioning profile '\(overrideProfile.name)' (\(overrideProfile.uuid)) for \(effectiveBundleId)")

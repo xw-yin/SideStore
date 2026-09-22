@@ -156,6 +156,21 @@ public final class CellularRefreshManager: @unchecked Sendable {
         try? await Task.sleep(nanoseconds: UInt64(totalDelay * 1_000_000_000))
     }
 
+    private func waitForMinimuxerReady(timeout: TimeInterval) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        debugLog("[CellularRefreshManager] Waiting for minimuxer endpoint to become ready (timeout: \(timeout)s)...")
+        while Date() < deadline {
+            await minimuxer.network.refreshEndpoint()
+            if case .success(true) = await minimuxer.core.isReady(withNetworkCheck: false) {
+                debugLog("[CellularRefreshManager] Minimuxer is ready.")
+                return true
+            }
+            try? await Task.sleep(nanoseconds: 200_000_000)
+        }
+        debugLog("[CellularRefreshManager] Timed out waiting for minimuxer to become ready.")
+        return false
+    }
+
     // public apis
     @discardableResult
     public func turnOffDataIfNeeded(addOnDelay: TimeInterval = 0) async -> Bool {
@@ -173,6 +188,7 @@ public final class CellularRefreshManager: @unchecked Sendable {
             didTurnOffData = true
             let effectiveBaseDelay = turnOffDataBaseDelayOverride ?? AppConstants.Shortcuts.defaultTurnOffDataBaseDelay
             await sleep(baseDelay: effectiveBaseDelay, addOnDelay: addOnDelay)
+            _ = await waitForMinimuxerReady(timeout: 2.0)
         }
         return success
     }

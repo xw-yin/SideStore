@@ -96,7 +96,23 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
                             storeBuildVersion: String?,
                             authTeam: ALTTeam) async throws -> InstalledApp
     {
-        let (installedApp, isDifferentSideStore, bundleID, isSelfReinstall) = try await backgroundContext.perform {
+        let (installedApp, isDifferentSideStore, bundleID, isSelfReinstall, isSideBackup) = try await backgroundContext.perform {
+            let utis = resignedAppBundle.infoPlist[Bundle.Info.exportedUTIs] as? [[String: Any]]
+            let isSideBackup = utis?.first?["UTTypeDescription"] as? String == "SideStore Backup App"
+            
+            if isSideBackup {
+                let installedApp = try self.context.installedApp.flatMap { app in
+                    backgroundContext.object(with: app.objectID) as? InstalledApp
+                } ?? self.fetchOrCreateApp(
+                    in: backgroundContext,
+                    certificate: certificate,
+                    resignedAppBundle: resignedAppBundle,
+                    storeBuildVersion: storeBuildVersion,
+                    authTeam: authTeam
+                )
+                return (installedApp, false, self.context.targetBundleIdentifier, false, true)
+            }
+
             /* App */
             let installedApp = try self.fetchOrCreateApp(
                 in: backgroundContext,
@@ -158,7 +174,7 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
                 }
             }
             
-            return (installedApp, isDifferentSideStore, self.context.targetBundleIdentifier, isSelfReinstall)
+            return (installedApp, isDifferentSideStore, self.context.targetBundleIdentifier, isSelfReinstall, false)
         }
         
         self.setProgress(30)
@@ -178,7 +194,7 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
         self.setProgress(90)
         
         // Phase 3: Post-install CoreData write — update refreshedDate
-        if !isDifferentSideStore && !isSelfReinstall {
+        if !isDifferentSideStore && !isSelfReinstall && !isSideBackup {
             await backgroundContext.perform {
                 installedApp.refreshedDate = Date()
             }

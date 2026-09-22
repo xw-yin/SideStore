@@ -96,41 +96,12 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
         var additionalValues: [String: Any] = [Bundle.Info.urlTypes: allURLSchemes]
 
         if targetAppBundle.isAltStoreApp {
-            let udid: String
-            do {
-                await CellularRefreshManager.shared.turnOffDataIfNeeded()
-                udid = try await fetchUDID()
-            } catch {
-                await CellularRefreshManager.shared.turnOnDataIfNeeded()
-                throw error
-            }
-            guard Bundle.main.object(forInfoDictionaryKey: Bundle.Info.devicePairingString) is String else {
-                throw OperationError.invalidParameters("Bundle.main is missing required Info.plist key '\(Bundle.Info.devicePairingString)'.")
-            }
-            additionalValues[Bundle.Info.devicePairingString] = "<insert pairing file here>"
-            additionalValues[Bundle.Info.deviceID] = udid
-            additionalValues[Bundle.Info.serverID] = UserDefaults.standard.preferredServerID
-            
             if let activeCert = CertificateManager.shared.activeCertificate {
                 additionalValues[Bundle.Info.certificateID] = activeCert.serialNumber
                 let certURL = appBundle.fileURL.appendingPathComponent("ALTCertificate.p12")
                 try activeCert.p12Data.write(to: certURL, options: .atomic)
             } else {
                 self.verboseLog("[ResignAppOperation] No activeCertificate found in CertificateManager. Embedded certificate + certificate identifier in app bundle will not be updated.")
-            }
-        } else if infoDictionary.keys.contains(Bundle.Info.deviceID) {
-            let udid: String?
-            do {
-                await CellularRefreshManager.shared.turnOffDataIfNeeded()
-                udid = try await fetchUDID()
-            } catch {
-                await CellularRefreshManager.shared.turnOnDataIfNeeded()
-                udid = nil
-            }
-            if let udid {
-                // There is an ALTDeviceID entry, so assume the app is using AltKit and replace it with the device's UDID.
-                additionalValues[Bundle.Info.deviceID] = udid
-                additionalValues[Bundle.Info.serverID] = UserDefaults.standard.preferredServerID
             }
         }
         
@@ -169,8 +140,6 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
             infoDictionary["BGTaskSchedulerPermittedIdentifiers"] = taskIDs
         }
 
-        infoDictionary[Bundle.Info.altBundleID] = identifier
-        infoDictionary[Bundle.Info.devicePairingString] = "<insert pairing file here>"
         infoDictionary.removeValue(forKey: "DTXcode")
         infoDictionary.removeValue(forKey: "DTXcodeBuild")
 
@@ -188,8 +157,6 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
         }
 
         if let appGroups = profile.entitlements[.appGroups] as? [String] {
-            infoDictionary[Bundle.Info.appGroups] = appGroups
-
             // To keep file providers working, remap the NSExtensionFileProviderDocumentGroup, if there is one.
             if var extensionInfo = infoDictionary["NSExtension"] as? [String: Any],
                 let appGroup = extensionInfo["NSExtensionFileProviderDocumentGroup"] as? String,

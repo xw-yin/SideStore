@@ -16,6 +16,13 @@ public enum AppConstants {
         .appGroups
     ]
 
+    public enum Database {
+        public static let name           = "SideStore"
+        public static let legacyName     = "AltStore"
+        public static let fileName       = "\(name).sqlite"
+        public static let legacyFileName = "\(legacyName).sqlite"
+    }
+
     public enum Proxy {
         public static let address             = MinimuxerConstants.empServerHost
         public static let defaultPort: UInt16 = MinimuxerConstants.empServerPort

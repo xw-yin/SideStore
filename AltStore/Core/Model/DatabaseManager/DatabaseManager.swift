@@ -39,7 +39,7 @@ public class DatabaseManager: @unchecked Sendable
 
     private init()
     {
-        self.persistentContainer = PersistentContainer(name: "AltStore", bundle: Bundle(for: DatabaseManager.self))
+        self.persistentContainer = PersistentContainer(name: AppConstants.Database.name, bundle: Bundle(for: DatabaseManager.self))
         self.persistentContainer.preferredMergePolicy = MergePolicy()
         
         let observer = Unmanaged.passUnretained(self).toOpaque()
@@ -73,7 +73,7 @@ public class DatabaseManager: @unchecked Sendable
             let container = Self.shared.persistentContainer
             
             var databaseStore = container.persistentStoreCoordinator.persistentStores.first
-            let databaseStoreURL = databaseStore?.url ?? PersistentContainer.defaultDirectoryURL().appendingPathComponent("AltStore.sqlite")
+            let databaseStoreURL = databaseStore?.url ?? PersistentContainer.defaultDirectoryURL().appendingPathComponent(AppConstants.Database.fileName)
             
             // Reset the managed object context
             Self.shared.persistentContainer.viewContext.reset()
@@ -139,7 +139,6 @@ public class DatabaseManager: @unchecked Sendable
             CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), .willMigrateDatabase, nil, nil, true)
         }
 
-        try await self.migrateDatabaseToAppGroupIfNeeded()
         try await self.persistentContainer.loadPersistentStores()
         try await self.prepareDatabase()
     }
@@ -568,7 +567,7 @@ public class DatabaseManager: @unchecked Sendable
             installedApp.expirationDate = provisioningProfile.expirationDate
         }
     }
-    
+
     private func migrateDatabaseToAppGroupIfNeeded() async throws
     {
         // Only migrate if we haven't migrated yet and there's a valid AltStore app group.
@@ -637,7 +636,7 @@ public class DatabaseManager: @unchecked Sendable
             }
         }
     }
-    
+
     fileprivate func receivedWillMigrateDatabaseNotification()
     {
         defer { self.ignoreWillMigrateDatabaseNotification = false }

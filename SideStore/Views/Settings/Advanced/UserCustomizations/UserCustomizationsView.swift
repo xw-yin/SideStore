@@ -16,6 +16,8 @@ private extension Color {
 
 struct UserCustomizationsView: View {
     @State private var selectedBackend: GatewayBackend = selectedGatewayBackendCache
+    @State private var isBackgroundServiceEnabled: Bool = UserDefaults.standard.isBackgroundServiceEnabled
+    @State private var selectedBackgroundServiceMode: BackgroundServiceMode = UserDefaults.standard.backgroundServiceMode
     @State private var useOnDeviceAnisette: Bool = UserDefaults.standard.useOnDeviceAnisette
     @State private var showAnisetteRestartConfirmation: Bool = false
     @State private var customizeInfoPlist: Bool = UserDefaults.standard.customizeInfoPlist
@@ -44,6 +46,7 @@ struct UserCustomizationsView: View {
     @State private var isChecksumVerificationEnabled: Bool = UserDefaults.standard.isChecksumVerificationEnabled
     @State private var isFileSizeVerificationEnabled: Bool = UserDefaults.standard.isFileSizeVerificationEnabled
     @State private var permissionCheckingDisabled: Bool = UserDefaults.standard.permissionCheckingDisabled
+    @State private var isCellularRefreshEnabled: Bool = UserDefaults.standard.isCellularRefreshEnabled
     @State private var turnOnDataShortcutName: String = UserDefaults.standard.turnOnDataShortcutName
     @State private var turnOffDataShortcutName: String = UserDefaults.standard.turnOffDataShortcutName
     @State private var turnOnBaseDelayText: String = {
@@ -384,7 +387,7 @@ struct UserCustomizationsView: View {
                     .cornerRadius(14)
                 }
 
-                // Section 4: CELLULAR REFRESH SHORTCUTS
+                // Section 4: CELLULAR REFRESH
                 cellularRefreshShortcutsSection
 
                 // Section 5: MINIMUXER BACKEND
@@ -417,6 +420,59 @@ struct UserCustomizationsView: View {
                                 .padding(.vertical, 14)
                             }
                             if backend != GatewayBackend.allCases.last {
+                                divider
+                            }
+                        }
+                    }
+                    .background(Color.settingsRowBackground)
+                    .cornerRadius(14)
+                }
+
+                // Section 6: BACKGROUND SERVICE
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("BACKGROUND SERVICE")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 16)
+                    
+                    VStack(spacing: 0) {
+                        toggleRow(title: "Enable Background Keepalive", isOn: Binding(
+                            get: { isBackgroundServiceEnabled },
+                            set: { newValue in
+                                isBackgroundServiceEnabled = newValue
+                                BackgroundServiceManager.setEnabled(newValue)
+                            }
+                        ))
+                        
+                        divider
+                        
+                        ForEach(BackgroundServiceMode.allCases, id: \.self) { mode in
+                            SwiftUI.Button(action: {
+                                selectedBackgroundServiceMode = mode
+                                BackgroundServiceManager.switchTo(mode: mode)
+                            }) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(mode.displayName)
+                                            .font(.system(size: 17, weight: .bold))
+                                            .foregroundColor(isBackgroundServiceEnabled ? .primary : .secondary)
+                                        Text(mode.subtitle)
+                                            .font(.system(size: 13))
+                                            .foregroundColor(.secondary)
+                                    }
+                                    Spacer()
+                                    if selectedBackgroundServiceMode == mode {
+                                        Image(systemName: "checkmark")
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundColor(isBackgroundServiceEnabled ? Color(uiColor: ThemeManager.shared.primaryColor) : .secondary)
+                                    }
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                            }
+                            .disabled(!isBackgroundServiceEnabled)
+                            
+                            if mode != BackgroundServiceMode.allCases.last {
                                 divider
                             }
                         }
@@ -603,12 +659,26 @@ struct UserCustomizationsView: View {
     @ViewBuilder
     private var cellularRefreshShortcutsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("CELLULAR REFRESH SHORTCUTS")
+            Text("CELLULAR REFRESH")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 16)
 
             VStack(spacing: 0) {
+                toggleRow(
+                    title: "Cellular Refresh",
+                    subtitle: "Automatically toggle cellular data via Shortcuts during refresh",
+                    isOn: Binding(
+                        get: { isCellularRefreshEnabled },
+                        set: { newValue in
+                            isCellularRefreshEnabled = newValue
+                            CellularRefreshManager.shared.setEnabled(newValue)
+                        }
+                    )
+                )
+
+                divider
+
                 textFieldRow(
                     title: "Turn On Cellular Shortcut",
                     subtitle: "Name of the shortcut in Apple Shortcuts app",

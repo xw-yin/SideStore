@@ -188,6 +188,18 @@ enum MinimuxerStatus: Equatable {
     }
 }
 
+public func ensureMinimuxerReady() async throws {
+    if CellularRefreshManager.shared.isEnabled && UserDefaults.standard.enableEMPforWireguard {
+        throw OperationError.invalidVPN(
+            reason: "WireGuard VPN is not supported with Cellular Refresh because iOS pauses the WireGuard tunnel when cellular data is toggled off."
+        )
+    }
+    if !CellularRefreshManager.shared.isEnabled,
+       case .failure(let error) = await isMinimuxerReady() {
+        throw error.asOperationError
+    }
+}
+
 extension MinimuxerError {
     var asOperationError: OperationError {
         switch self {
@@ -364,6 +376,12 @@ func fetchUDID(forceLive: Bool = false) async throws -> String {
     #endif
 }
 
+@discardableResult
+func safeFetchUDID(forceLive: Bool = false) async throws -> String {
+    try await ensureMinimuxerReady()
+    return try await fetchUDID(forceLive: forceLive)
+}
+
 func debugApp(_ appId: String) async throws {
     defer { debugLog("[SideStore] debugApp(appId) completed") }
     #if targetEnvironment(simulator)
@@ -374,6 +392,11 @@ func debugApp(_ appId: String) async throws {
         try await minimuxer.core.debugApp(appId: appId)
     }
     #endif
+}
+
+func safeDebugApp(_ appId: String) async throws {
+    try await ensureMinimuxerReady()
+    try await debugApp(appId)
 }
 
 func attachDebugger(_ pid: UInt32) async throws {
@@ -388,6 +411,10 @@ func attachDebugger(_ pid: UInt32) async throws {
     #endif
 }
 
+func safeAttachDebugger(_ pid: UInt32) async throws {
+    try await ensureMinimuxerReady()
+    try await attachDebugger(pid)
+}
 
 func dumpProfiles(_ docsPath: String) async throws -> String {
     defer { debugLog("[SideStore] dumpProfiles(docsPath) completed") }
@@ -400,6 +427,11 @@ func dumpProfiles(_ docsPath: String) async throws -> String {
         try await minimuxer.core.dumpProfiles(docsPath: docsPath)
     }
     #endif
+}
+
+func safeDumpProfiles(_ docsPath: String) async throws -> String {
+    try await ensureMinimuxerReady()
+    return try await dumpProfiles(docsPath)
 }
 
 func minimuxerSetLogging(_ enabled: Bool) {

@@ -74,7 +74,6 @@ final class StageBackupAppOperation: BasePipelineOperation<InstallAppOperationCo
         }
 
         // replace sidebackup app's entitlements with target app's entilements (for appgroup!)
-        updates[Bundle.Info.appGroups] = targetAppGroups
         context.additionalEntitlements[.appGroups] = targetAppGroups
 
         let installedAppUTI: [String: any Sendable] = [

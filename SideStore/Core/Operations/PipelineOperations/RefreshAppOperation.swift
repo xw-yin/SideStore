@@ -31,6 +31,7 @@ final class RefreshAppOperation: BasePipelineOperation<InstallAppOperationContex
         self.setProgress(10)
         
         if self.context.isCellularRefreshGroup {
+            debugLog("[RefreshAppOperation] Queueing \(self.context.bundleIdentifier) into batch profile injection (isCellularRefreshGroup = true)")
             self.context.sharedContext.addPendingProfileBatch(PendingProfileBatch(
                 bundleID: self.context.bundleIdentifier,
                 profiles: profiles.values.map { $0.data },
