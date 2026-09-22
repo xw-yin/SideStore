@@ -107,10 +107,10 @@ struct CreateManualProfileView: View {
 
                 if isManualConfiguration {
                     Section(header: HStack {
-                        Text("Certificates (\(selectedCertificateIDs.count)/\(viewModel.certificates.count))")
+                        Text(String(format: NSLocalizedString("Certificates (%d/%d)", comment: ""), selectedCertificateIDs.count, viewModel.certificates.count))
                         Spacer()
                         if !viewModel.certificates.isEmpty {
-                            SwiftUI.Button(selectedCertificateIDs.count == viewModel.certificates.count ? "Deselect All" : "Select All") {
+                            SwiftUI.Button(selectedCertificateIDs.count == viewModel.certificates.count ? NSLocalizedString("Deselect All", comment: "") : NSLocalizedString("Select All", comment: "")) {
                                 if selectedCertificateIDs.count == viewModel.certificates.count {
                                     selectedCertificateIDs.removeAll()
                                 } else {
@@ -152,7 +152,7 @@ struct CreateManualProfileView: View {
                                                 .foregroundColor(.secondary)
                                             let hasKey = ProfileManager.shared.hasPrivateKey(for: cert)
                                             HStack(spacing: 4) {
-                                                Text("Type: \(hasKey ? "public + private" : "public only")")
+                                                Text(hasKey ? NSLocalizedString("Type: public + private", comment: "") : NSLocalizedString("Type: public only", comment: ""))
                                                     .font(.caption2)
                                                     .foregroundColor(hasKey ? .green : .secondary)
                                                 if hasKey {
@@ -176,10 +176,10 @@ struct CreateManualProfileView: View {
 
                     if selectedProfileType.acceptedDeviceTypes != .none {
                         Section(header: HStack {
-                            Text("Devices (\(selectedDeviceIDs.count)/\(filteredDevices.count))")
+                            Text(String(format: NSLocalizedString("Devices (%d/%d)", comment: ""), selectedDeviceIDs.count, filteredDevices.count))
                             Spacer()
                             if !filteredDevices.isEmpty {
-                                SwiftUI.Button(selectedDeviceIDs.count == filteredDevices.count ? "Deselect All" : "Select All") {
+                                SwiftUI.Button(selectedDeviceIDs.count == filteredDevices.count ? NSLocalizedString("Deselect All", comment: "") : NSLocalizedString("Select All", comment: "")) {
                                     if selectedDeviceIDs.count == filteredDevices.count {
                                         selectedDeviceIDs.removeAll()
                                     } else {
@@ -197,7 +197,7 @@ struct CreateManualProfileView: View {
                                         Spacer()
                                     }
                                 } else {
-                                    Text("No registered \(selectedProfileType.displayName) devices found on this team.")
+                                    Text(String(format: NSLocalizedString("No registered %@ devices found on this team.", comment: ""), selectedProfileType.displayName))
                                         .foregroundColor(.secondary)
                                         .font(.subheadline)
                                 }

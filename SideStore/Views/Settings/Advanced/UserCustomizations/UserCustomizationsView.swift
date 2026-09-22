@@ -430,7 +430,7 @@ struct UserCustomizationsView: View {
 
                 // Section 6: BACKGROUND SERVICE
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("BACKGROUND SERVICE")
+                    Text(LocalizedStringKey("BACKGROUND SERVICE"))
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
@@ -453,10 +453,10 @@ struct UserCustomizationsView: View {
                             }) {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 3) {
-                                        Text(mode.displayName)
+                                        Text(LocalizedStringKey(mode.displayName))
                                             .font(.system(size: 17, weight: .bold))
                                             .foregroundColor(isBackgroundServiceEnabled ? .primary : .secondary)
-                                        Text(mode.subtitle)
+                                        Text(LocalizedStringKey(mode.subtitle))
                                             .font(.system(size: 13))
                                             .foregroundColor(.secondary)
                                     }

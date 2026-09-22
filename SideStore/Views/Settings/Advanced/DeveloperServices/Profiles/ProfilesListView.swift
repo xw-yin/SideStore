@@ -171,7 +171,7 @@ private struct ProfileRow: View {
                         .foregroundColor(.red)
                         .cornerRadius(6)
                 }
-                Text("Expires: \(formatDate(profile.dateExpire))")
+                Text(String(format: NSLocalizedString("Expires: %@", comment: ""), formatDate(profile.dateExpire)))
                     .font(.caption)
                     .foregroundColor(isExpired ? .red : .secondary)
             }
@@ -194,7 +194,7 @@ private struct ProfileRow: View {
                         .cornerRadius(6)
                 }
                 if let isTeam = profile.isTeamProfile {
-                    Text(isTeam ? "Xcode Managed" : "Manual")
+                    Text(LocalizedStringKey(isTeam ? "Xcode Managed" : "Manual"))
                         .font(.caption2)
                         .fontWeight(.medium)
                         .padding(.horizontal, 6)

@@ -36,7 +36,7 @@ struct CertificatePortalDetailView: View {
                     InfoRow(label: "Type Name", value: typeName)
                 }
                 if let managed = certificate.isManaged {
-                    InfoRow(label: "Managed", value: managed ? "Yes (Xcode Cloud)" : "No")
+                    InfoRow(label: "Managed", value: managed ? NSLocalizedString("Yes (Xcode Cloud)", comment: "") : NSLocalizedString("No", comment: ""))
                 }
                 if let platform = certificate.platform {
                     InfoRow(label: "Platform", value: platform)
@@ -61,7 +61,7 @@ struct CertificatePortalDetailView: View {
                 }
                 InfoRow(label: "Created Date", value: formatDate(certificate.creationDate))
                 InfoRow(label: "Expiration Date", value: formatDate(certificate.expiryDate), valueColor: isExpired ? .red : .primary)
-                InfoRow(label: "Status", value: isExpired ? "Expired" : "Active", valueColor: isExpired ? .red : .green)
+                InfoRow(label: "Status", value: isExpired ? NSLocalizedString("Expired", comment: "") : NSLocalizedString("Active", comment: ""), valueColor: isExpired ? .red : .green)
             }
 
             Section(footer: Text("Revoking a certificate permanently invalidates it on Apple's servers. Any provisioning profiles tied exclusively to this certificate may need to be re-generated.")) {
@@ -89,9 +89,9 @@ struct CertificatePortalDetailView: View {
         }
         .alert(isPresented: $showRevokeAlert) {
             Alert(
-                title: Text("Revoke Certificate?"),
-                message: Text("Are you sure you want to revoke '\(certificate.name)' on the Apple Developer Portal? This action cannot be undone."),
-                primaryButton: .destructive(Text("Revoke")) {
+                title: Text(NSLocalizedString("Revoke Certificate?", comment: "")),
+                message: Text(String(format: NSLocalizedString("Are you sure you want to revoke '%@' on the Apple Developer Portal? This action cannot be undone.", comment: ""), certificate.name)),
+                primaryButton: .destructive(Text(NSLocalizedString("Revoke", comment: ""))) {
                     Task {
                         let success = await viewModel.revokeCertificate(certificate, presentingViewController: presentingViewController)
                         if success {

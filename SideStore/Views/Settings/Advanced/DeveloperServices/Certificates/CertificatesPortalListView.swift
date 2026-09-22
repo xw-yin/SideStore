@@ -31,7 +31,7 @@ struct CertificatesPortalListView: View {
 
     var body: some View {
         List {
-            Section(header: Text("Certificates (\(viewModel.certificates.count))"), footer: Text("Certificates registered on your Apple Developer team. Revoking invalidates the certificate on Apple's portal.")) {
+            Section(header: Text(String(format: NSLocalizedString("Certificates (%d)", comment: ""), viewModel.certificates.count)), footer: Text("Certificates registered on your Apple Developer team. Revoking invalidates the certificate on Apple's portal.")) {
                 if filteredCertificates.isEmpty {
                     if viewModel.isLoading {
                         HStack {
@@ -84,8 +84,8 @@ struct CertificatesPortalListView: View {
         }
         .alert(isPresented: $showRevokeConfirmation) {
             Alert(
-                title: Text("Revoke Certificate?"),
-                message: Text("Are you sure you want to revoke '\(certificateToRevoke?.name ?? "this certificate")' on the Apple Developer Portal? This action cannot be undone."),
+                title: Text(NSLocalizedString("Revoke Certificate?", comment: "")),
+                message: Text(String(format: NSLocalizedString("Are you sure you want to revoke '%@' on the Apple Developer Portal? This action cannot be undone.", comment: ""), certificateToRevoke?.name ?? NSLocalizedString("this certificate", comment: ""))),
                 primaryButton: .destructive(Text("Revoke")) {
                     if let cert = certificateToRevoke {
                         Task {
@@ -139,7 +139,7 @@ private struct CertificatePortalRow: View {
                         .foregroundColor(.green)
                         .cornerRadius(6)
                 }
-                Text("Expires: \(formatDate(certificate.expiryDate))")
+                Text(String(format: NSLocalizedString("Expires: %@", comment: ""), formatDate(certificate.expiryDate)))
                     .font(.caption)
                     .foregroundColor(isExpired ? .red : .secondary)
             }
@@ -161,7 +161,7 @@ private struct CertificatePortalRow: View {
                     .foregroundColor(.secondary)
             }
 
-            Text("Serial: \(certificate.serialNumber)")
+            Text(String(format: NSLocalizedString("Serial: %@", comment: ""), certificate.serialNumber))
                 .font(.system(.caption2, design: .monospaced))
                 .foregroundColor(.secondary.opacity(0.8))
         }

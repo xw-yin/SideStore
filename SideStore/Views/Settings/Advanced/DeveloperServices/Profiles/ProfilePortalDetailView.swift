@@ -67,9 +67,9 @@ struct ProfilePortalDetailView: View {
                     InfoRow(label: "Type", value: rawType)
                 }
                 if let isTeam = profile.isTeamProfile {
-                    InfoRow(label: "Managed By", value: isTeam ? "Xcode (Team Profile)" : "Manual (Portal)")
+                    InfoRow(label: "Managed By", value: isTeam ? NSLocalizedString("Xcode (Team Profile)", comment: "") : NSLocalizedString("Manual (Portal)", comment: ""))
                 }
-                InfoRow(label: "Status", value: isExpired ? "Expired" : (profile.status ?? "Active"), valueColor: isExpired ? .red : .primary)
+                InfoRow(label: "Status", value: isExpired ? NSLocalizedString("Expired", comment: "") : (profile.status ?? NSLocalizedString("Active", comment: "")), valueColor: isExpired ? .red : .primary)
                 InfoRow(label: "Expiration Date", value: formatDate(profile.dateExpire), valueColor: isExpired ? .red : .primary)
             }
 
@@ -92,7 +92,7 @@ struct ProfilePortalDetailView: View {
                 }
             }
 
-            Section(header: Text("Associated Certificates (\(selectedCertificateIDs.count))"), footer: Text("Select which certificates are authorized to sign with this profile, or add custom certificate IDs.")) {
+            Section(header: Text(String(format: NSLocalizedString("Associated Certificates (%d)", comment: ""), selectedCertificateIDs.count)), footer: Text("Select which certificates are authorized to sign with this profile, or add custom certificate IDs.")) {
                 if viewModel.certificates.isEmpty {
                     Text("No certificates found on this team.")
                         .foregroundColor(.secondary)
@@ -117,7 +117,7 @@ struct ProfilePortalDetailView: View {
                                         .foregroundColor(.secondary)
                                     let hasKey = ProfileManager.shared.hasPrivateKey(for: cert)
                                     HStack(spacing: 4) {
-                                        Text("Type: \(hasKey ? "public + private" : "public only")")
+                                        Text(hasKey ? NSLocalizedString("Type: public + private", comment: "") : NSLocalizedString("Type: public only", comment: ""))
                                             .font(.caption2)
                                             .foregroundColor(hasKey ? .green : .secondary)
                                         if hasKey {
@@ -153,10 +153,10 @@ struct ProfilePortalDetailView: View {
             }
 
             Section(header: HStack {
-                Text("Associated Devices (\(selectedDeviceIDs.count))")
+                Text(String(format: NSLocalizedString("Associated Devices (%d)", comment: ""), selectedDeviceIDs.count))
                 Spacer()
                 if !viewModel.devices.isEmpty {
-                    SwiftUI.Button(selectedDeviceIDs.count >= viewModel.devices.count ? "Deselect All" : "Select All") {
+                    SwiftUI.Button(selectedDeviceIDs.count >= viewModel.devices.count ? NSLocalizedString("Deselect All", comment: "") : NSLocalizedString("Select All", comment: "")) {
                         if selectedDeviceIDs.count >= viewModel.devices.count {
                             selectedDeviceIDs.removeAll()
                         } else {

@@ -380,9 +380,9 @@ struct DeveloperOptionsView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("BACKGROUND SERVICE")
+                    Text(LocalizedStringKey("BACKGROUND SERVICE"))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {
@@ -390,10 +390,10 @@ struct DeveloperOptionsView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "play.circle")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Text("Start Background Service")
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                             }
                             .padding(.horizontal, 16)
@@ -406,10 +406,10 @@ struct DeveloperOptionsView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "stop.circle")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Text("Stop Background Service")
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                             }
                             .padding(.horizontal, 16)
@@ -828,10 +828,11 @@ struct DeveloperOptionsView: View {
         let started = BackgroundServiceManager.ensureBackgroundServicesStarted()
         let modeName = UserDefaults.standard.backgroundServiceMode.displayName
         if started {
-            let toastView = ToastView(text: NSLocalizedString("Started Background Service", comment: ""), detailText: "\(modeName) keepalive is running.")
+            let detail = String(format: NSLocalizedString("%@ keepalive is running.", comment: ""), NSLocalizedString(modeName, comment: ""))
+            let toastView = ToastView(text: NSLocalizedString("Started Background Service", comment: ""), detailText: detail)
             toastView.show(in: top)
         } else {
-            let toastView = ToastView(text: NSLocalizedString("Background Service Disabled", comment: ""), detailText: "Enable background service in User Customizations.")
+            let toastView = ToastView(text: NSLocalizedString("Background Service Disabled", comment: ""), detailText: NSLocalizedString("Enable background service in User Customizations.", comment: ""))
             toastView.show(in: top)
         }
     }
@@ -839,7 +840,7 @@ struct DeveloperOptionsView: View {
     private func triggerStopBackgroundService() {
         guard let top = UIApplication.shared.topViewController() else { return }
         BackgroundServiceManager.stop()
-        let toastView = ToastView(text: NSLocalizedString("Stopped Background Service", comment: ""), detailText: "Background keepalive service stopped.")
+        let toastView = ToastView(text: NSLocalizedString("Stopped Background Service", comment: ""), detailText: NSLocalizedString("Background keepalive service stopped.", comment: ""))
         toastView.show(in: top)
     }
     

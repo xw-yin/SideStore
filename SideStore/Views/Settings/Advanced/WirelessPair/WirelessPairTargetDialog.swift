@@ -43,9 +43,15 @@ struct WirelessPairTargetDialog: View {
                     } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 13, weight: .bold))
+                            #if !os(tvOS)
+                            .foregroundColor(.secondary)
+                            .frame(width: 30, height: 30)
+                            .background(Color(uiColor: .secondarySystemFill))
+                            #else
                             .foregroundColor(.white)
                             .frame(width: 30, height: 30)
                             .background(Color.white.opacity(0.18))
+                            #endif
                             .clipShape(Circle())
                     }
                 }
@@ -286,7 +292,7 @@ struct WirelessPairTargetDialog: View {
                     
                     if (target.ipv4 == nil || target.ipv4?.isEmpty == true) && (target.ipv6 == nil || target.ipv6?.isEmpty == true) {
                         if !portString.isEmpty {
-                            Text("Port: \(portString)")
+                            Text(String(format: NSLocalizedString("Port: %@", comment: ""), portString))
                                 .font(.caption.monospaced())
                                 .foregroundColor(.secondary)
                         } else if viewModel.isScanning {
