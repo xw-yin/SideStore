@@ -3,9 +3,7 @@ name: Trigger LiveContainer Build
 on:
   push:
     branches:
-      - feat/sidesign-migration
       - develop
-      - main
 
 jobs:
   trigger-livecontainer:

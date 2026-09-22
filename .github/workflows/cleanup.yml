@@ -1,0 +1,50 @@
+name: Cleanup old runs and releases
+
+# Keeps the Actions page tidy: retains only the latest workflow run and the
+# live nightly release. Runs weekly; can also be triggered manually.
+# Draft releases are deleted by ID (never by tag), because they share the
+# `nightly` tag with the live release.
+
+on:
+  schedule:
+    - cron: '0 3 * * 0' # Sundays 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+    steps:
+      - name: Delete old workflow runs (keep latest)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KEEP_RUNS: 1
+        run: |
+          mapfile -t ids < <(gh run list --limit 500 --json databaseId,createdAt,status \
+            --jq '[.[] | select(.status == "completed")] | sort_by(.createdAt) | reverse | .[].databaseId')
+          total=${#ids[@]}
+          if [ "$total" -le "$KEEP_RUNS" ]; then
+            echo "Only $total completed run(s), nothing to delete."
+            exit 0
+          fi
+          for ((i=KEEP_RUNS; i<total; i++)); do
+            echo "Deleting run ${ids[$i]}"
+            gh run delete "${ids[$i]}" || true
+          done
+          echo "Kept $KEEP_RUNS latest, deleted $((total - KEEP_RUNS)). In-progress runs are never touched."
+
+      - name: Delete draft releases (keep published ones)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ids=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq '.[] | select(.draft == true) | .id')
+          if [ -z "$ids" ]; then
+            echo "No draft releases."
+            exit 0
+          fi
+          echo "$ids" | while read -r id; do
+            echo "Deleting draft release $id"
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$id" --silent || true
+          done
