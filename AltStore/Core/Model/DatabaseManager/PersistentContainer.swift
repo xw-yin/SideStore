@@ -37,6 +37,10 @@ open class PersistentContainer: NSPersistentContainer, @unchecked Sendable {
         return databaseDirectoryURL
     }
     
+    open class func legacyDirectoryURL() -> URL {
+        return super.defaultDirectoryURL()
+    }
+    
     public init(name: String, bundle: Bundle) {
         let models = [bundle]
         let managedObjectModel = NSManagedObjectModel.mergedModel(from: models)!

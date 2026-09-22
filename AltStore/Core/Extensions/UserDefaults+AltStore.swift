@@ -112,6 +112,23 @@ public extension UserDefaults
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
+    @objc var isBackgroundServiceEnabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    var backgroundServiceMode: BackgroundServiceMode {
+        get {
+            let mode = _backgroundServiceMode.flatMap { BackgroundServiceMode(rawValue: $0) } ?? .audio
+            return mode
+        }
+        set {
+            _backgroundServiceMode = newValue.rawValue
+        }
+    }
+    @objc(backgroundServiceMode) private var _backgroundServiceMode: String? {
+        get { self.string(forKey: "backgroundServiceMode") }
+        set { self.set(newValue, forKey: "backgroundServiceMode") }
+    }
     @objc var enableEMPforWireguard: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
@@ -466,6 +483,7 @@ public extension UserDefaults
             #keyPath(UserDefaults.keepAnisetteHeadersAfterLogout): true,
             #keyPath(UserDefaults.keepSideSignHeadersAfterLogout): true,
             #keyPath(UserDefaults.isBackgroundRefreshEnabled): true,
+            #keyPath(UserDefaults.isBackgroundServiceEnabled): true,
             #keyPath(UserDefaults.isBetaUpdatesEnabled): false,
             #keyPath(UserDefaults.permissionCheckingDisabled): true,
             #keyPath(UserDefaults.isBundleIDVerificationEnabled): true,

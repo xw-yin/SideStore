@@ -527,6 +527,12 @@ public extension InstalledApp
         catch { debugLog("Creating App Directory Error: \(error)") }
         return appsDirectoryURL
     }
+
+    public class var legacyAppsDirectoryURL: URL {
+        let baseDirectory = FileManager.default.applicationSupportDirectory
+        let appsDirectoryURL = baseDirectory.appendingPathComponent("Apps")
+        return appsDirectoryURL
+    }
     
     class func payloadDirectoryURL(forSignature signature: String) -> URL {
         return InstalledApp.appsDirectoryURL.appendingPathComponent("Payloads").appendingPathComponent(signature)
