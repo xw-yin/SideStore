@@ -32,7 +32,7 @@
 "cac-Mn-lbl.text" = "缓存管理";
 "crt-Mg-lbl.text" = "证书管理";
 "wrl-Pr-lbl.text" = "无线配对";
-"nDc-Bj-lbl.text" = "网络发现";
+"ntw-Dsc-lbl.text" = "网络发现";
 "d5F-bf-6kB.text" = "导出已重签 App";
 "ZH7-ZA-Epf.text" = "为 WireGuard 启用 EMP";
 "Fq4-2u-Lgd.text" = "启用 App ID 自定义";

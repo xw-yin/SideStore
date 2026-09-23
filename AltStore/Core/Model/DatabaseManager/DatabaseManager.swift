@@ -153,6 +153,15 @@ public class DatabaseManager: @unchecked Sendable
         }
     }
 
+    public func purgeRefreshAttempts() async throws
+    {
+        try await self.persistentContainer.performBackgroundTask { context in
+            let refreshAttempts = RefreshAttempt.all(in: context, requestProperties: [\.returnsObjectsAsFaults: true])
+            refreshAttempts.forEach { context.delete($0) }
+            try context.save()
+        }
+    }
+
     
     public func updateFeaturedSortIDs() async
     {

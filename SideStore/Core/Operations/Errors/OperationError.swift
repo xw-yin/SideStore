@@ -78,7 +78,7 @@ public enum OperationError: LocalizedError, CustomNSError, Sendable, Equatable {
         case .invalidApp(let reason):
             return "The app is in an invalid format: \(reason)"
         case .invalidPairingFile(let reason):
-            return "The current pairing file is invalid or missing. Reason: \(reason)\n\nPlease make sure to input a valid pairing file! If the issue persists, replace your pairing with iloader."
+            return "The current pairing file is invalid. Reason: \(reason)\n\nPlease make sure to input a valid pairing file! If the issue persists, replace your pairing with iloader or idevice_pair."
         case .invalidParameters(let msg):
             return "Invalid parameters: \n\(msg)"
         case .invalidResponse(let reason):
@@ -114,7 +114,7 @@ public enum OperationError: LocalizedError, CustomNSError, Sendable, Equatable {
         case .SideJITIssue(let error):
             return "An error occurred while using SideJIT: \(error)"
         case .unknownUDID(let reason):
-            return "SideStore could not determine this device's UDID: \(reason)\n\nPlease replace your pairing using iloader."
+            return "SideStore could not determine this device's UDID: \(reason)\n\nPlease replace your pairing using iloader or idevice_pair."
         }
     }
 
@@ -123,7 +123,76 @@ public enum OperationError: LocalizedError, CustomNSError, Sendable, Equatable {
     }
 
     public var failureReason: String? {
-        return NSLocalizedString(self.rawDescription, comment: "")
+        // Use static format keys so the template localizes; only the
+        // interpolated detail (reason/app name) stays in its source language.
+        switch self {
+        case .noInstalledApps:
+            return NSLocalizedString("There are no active sideloaded apps to refresh.", comment: "")
+        case .noSources:
+            return NSLocalizedString("There are no SideStore sources.", comment: "")
+        case .notAuthenticated:
+            return NSLocalizedString("You are not signed in.", comment: "")
+        case .timedOut:
+            return NSLocalizedString("The operation timed out.", comment: "")
+        case .unableToConnectSideJIT:
+            return NSLocalizedString("Unable to connect to SideJITServer. Please check that you are on the same Wi-Fi of and your Firewall has been set correctly on your server.", comment: "")
+        case .unableToRespondSideJITDevice:
+            return NSLocalizedString("SideJITServer is unable to connect to your iDevice. Please make sure you have paired your iDevice by running 'SideJITServer -y', or try refreshing SideJITServer from Settings.", comment: "")
+        case .unknownResult:
+            return NSLocalizedString("The operation returned an unknown result.", comment: "")
+        case .cacheClearError(let errors):
+            return String(format: NSLocalizedString("An error occurred while clearing the cache:\n%@", comment: ""), errors.joined(separator: "\n"))
+        case .certificateExpired(let appName):
+            return String(format: NSLocalizedString("The signing certificate used to install “%@” has expired. Please re-sign or reinstall the app.", comment: ""), appName)
+        case .certificateRevoked(let appName):
+            return String(format: NSLocalizedString("The signing certificate used to install “%@” was revoked on the Apple Developer portal. Please re-sign or reinstall the app.", comment: ""), appName)
+        case .customCertificateExpired(_, let activeTeam):
+            return String(format: NSLocalizedString("Your active custom/third-party signing certificate (Team: %@) has expired.\n\nIf you did not intend to use a custom certificate, please reset it in Settings -> Advanced -> Certificates.", comment: ""), activeTeam)
+        case .customCertificateRevoked(_, let activeTeam):
+            return String(format: NSLocalizedString("Your active custom/third-party signing certificate (Team: %@) was revoked on the Developer Portal.\n\nIf you did not intend to use a custom certificate, please reset it in Settings -> Advanced -> Certificates.", comment: ""), activeTeam)
+        case .forbidden(let reason, _, _):
+            return reason
+        case .invalidApp(let reason):
+            return String(format: NSLocalizedString("The app is in an invalid format: %@", comment: ""), reason)
+        case .invalidPairingFile(let reason):
+            return String(format: NSLocalizedString("The current pairing file is invalid. Reason: %@\n\nPlease make sure to input a valid pairing file! If the issue persists, replace your pairing with iloader or idevice_pair.", comment: ""), reason)
+        case .invalidParameters(let msg):
+            return String(format: NSLocalizedString("Invalid parameters:\n%@", comment: ""), msg)
+        case .invalidResponse(let reason):
+            return String(format: NSLocalizedString("Invalid server response: %@", comment: ""), reason)
+        case .invalidVPN(let reason):
+            return String(format: NSLocalizedString("VPN Connection Error:\n%@\n\nPlease make sure LocalDevVPN is connected and running properly.", comment: ""), reason)
+        case .minimuxerNotStarted(let reason):
+            return String(format: NSLocalizedString("Minimuxer has not been started yet: %@\n\nPlease complete pairing or start minimuxer before performing operations.", comment: ""), reason)
+        case .missingAppBundle(let reason):
+            return String(format: NSLocalizedString("The app bundle could not be found: %@", comment: ""), reason)
+        case .missingAppGroup(let name):
+            return String(format: NSLocalizedString("SideStore's shared app group “%@” could not be accessed.", comment: ""), name)
+        case .missingInfoPlist(let reason):
+            return String(format: NSLocalizedString("The app's Info.plist could not be found: %@", comment: ""), reason)
+        case .missingProvisioningProfile(let reason):
+            return String(format: NSLocalizedString("A provisioning profile for the app could not be found: %@", comment: ""), reason)
+        case .missingUpdate(let appName):
+            return String(format: NSLocalizedString("No supported update could be found for “%@”.", comment: ""), appName)
+        case .noConnection(let reason):
+            return String(format: NSLocalizedString("Network Connection Error:\n%@\n\nPlease connect to Wi-Fi before attempting further operations.", comment: ""), reason)
+        case .noDevice(let reason):
+            return String(format: NSLocalizedString("SideStore is unable to reach the device endpoint:\n%@\n\nPlease check your Connection Configuration in Settings.", comment: ""), reason)
+        case .noVPN(let reason):
+            return String(format: NSLocalizedString("VPN Connection Error:\n%@\n\nPlease make sure LocalDevVPN is connected and running properly.", comment: ""), reason)
+        case .notReachable(let reason):
+            return reason.isEmpty ? NSLocalizedString("Device is not reachable at the specified IP or Endpoint.", comment: "") : reason
+        case .openAppFailed(let name):
+            return String(format: NSLocalizedString("SideStore was denied permission to launch %@.", comment: ""), name)
+        case .pairingNotComplete(let reason):
+            return String(format: NSLocalizedString("Pairing Required: %@\n\nWithout a valid pairing file, SideStore operations cannot connect to your device. Please pair your device or import a valid pairing file.", comment: ""), reason)
+        case .pledgeInactive(let appName):
+            return String(format: NSLocalizedString("Your pledge is no longer active. Please renew it to continue using %@ normally.", comment: ""), appName)
+        case .SideJITIssue(let error):
+            return String(format: NSLocalizedString("An error occurred while using SideJIT: %@", comment: ""), error)
+        case .unknownUDID(let reason):
+            return String(format: NSLocalizedString("SideStore could not determine this device's UDID: %@\n\nPlease replace your pairing using iloader or idevice_pair.", comment: ""), reason)
+        }
     }
 
     public var recoverySuggestion: String? {

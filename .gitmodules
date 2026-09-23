@@ -3,7 +3,7 @@
 [submodule "Dependencies/minimuxer"]
     path = Dependencies/minimuxer
     url = https://github.com/xw-yin/minimuxer
-    branch = codex/minimuxer-startup
+	branch = livecontainer/rebase-12be70dc
 [submodule "Dependencies/SideSign"]
 	path = Dependencies/SideSign
 	url = https://github.com/SideStore/SideSign.git

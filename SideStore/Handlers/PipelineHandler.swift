@@ -347,16 +347,7 @@ final class PipelineHandler: PipelineExecutionHandler,
         guard let presenter = self.activePresenter else {
             return (initialBundleID, true)
         }
-        
-        let titleText = NSLocalizedString("AppID Customization", comment: "")
-        let messageText = NSLocalizedString("Customize the AppID if required and press 'Confirm' to proceed.", comment: "")
-        
-        let alert = UIAlertController(
-            title: titleText,
-            message: messageText,
-            preferredStyle: .alert
-        )
-        
+
         let team = try await AuthManager.shared.getAuthenticatedTeam()
         debugLog("[PipelineHandler] resolveBundleIDOverride: initialBundleID='\(initialBundleID)', teamID='\(team.identifier)', isAuthenticated=\(AuthManager.shared.isAuthenticated)")
         let teamID = team.identifier
@@ -372,84 +363,20 @@ final class PipelineHandler: PipelineExecutionHandler,
             } else {
                 base = trimmed
             }
-            let sanitized = InfoPlistParser.sanitizeBundleID(base)
-            verboseLog("[PipelineHandler] cleanInitialID: trimmed='\(trimmed)', base='\(base)', sanitized='\(sanitized)'")
-            return sanitized
+            return InfoPlistParser.sanitizeBundleID(base)
         }()
+        let initialText = !teamID.isEmpty ? "\(cleanInitialID).\(teamID)" : cleanInitialID
 
-        let checkboxView = AppendTeamIDCheckboxView(isChecked: true, teamID: teamID)
-        checkboxView.translatesAutoresizingMaskIntoConstraints = false
-
-        alert.addTextField { textField in
-            let initialText = !teamID.isEmpty ? "\(cleanInitialID).\(teamID)" : cleanInitialID
-            verboseLog("[PipelineHandler] resolveBundleIDOverride: setting textField.text='\(initialText)'")
-            textField.text = initialText
-            textField.autocapitalizationType = .none
-            textField.autocorrectionType = .no
-            textField.clearButtonMode = .whileEditing
-            checkboxView.attach(to: textField, teamID: teamID)
-        }
-        
-        alert.addTextField { textField in
-            textField.isUserInteractionEnabled = false
-        }
-        
-        _ = alert.view
-        if let tf1 = alert.textFields?.first, let tf1View = tf1.superview {
-            tf1View.layer.cornerRadius = 20
-            tf1View.layer.cornerCurve = .continuous
-            tf1View.layer.maskedCorners = [
-                .layerMinXMinYCorner,
-                .layerMaxXMinYCorner,
-                .layerMinXMaxYCorner,
-                .layerMaxXMaxYCorner
-            ]
-            tf1View.layer.masksToBounds = true
-            tf1View.clipsToBounds = true
-            
-            // Clear outer table grouping container so it doesn't draw flat bottom edges
-            tf1View.superview?.backgroundColor = .clear
-            tf1View.superview?.layer.borderWidth = 0
-            tf1View.superview?.layer.borderColor = UIColor.clear.cgColor
-        }
-        
-        if (alert.textFields?.count ?? 0) >= 2,
-           let tf1 = alert.textFields?.first,
-           let tf2 = alert.textFields?[1],
-           let container = tf2.superview {
-            tf2.isHidden = true
-            container.backgroundColor = .clear
-            container.layer.borderWidth = 0
-            container.layer.borderColor = UIColor.clear.cgColor
-            
-            for subview in container.subviews where subview !== checkboxView && subview !== tf2 {
-                subview.isHidden = true
-                subview.alpha = 0
-            }
-            
-            container.addSubview(checkboxView)
-            NSLayoutConstraint.activate([
-                checkboxView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
-                checkboxView.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -16),
-                checkboxView.centerYAnchor.constraint(equalTo: container.centerYAnchor)
-            ])
-        }
-        
         return await withCheckedContinuation { continuation in
-            let okAction = UIAlertAction(title: NSLocalizedString("Confirm", comment: ""), style: .default) { _ in
-                let baseID = checkboxView.cleanBaseID()
-                let customID = InfoPlistParser.sanitizeBundleID(!baseID.isEmpty ? baseID : cleanInitialID)
-                let appendTeamID = checkboxView.isChecked
-                debugLog("[PipelineHandler] resolveBundleIDOverride confirmed: baseID='\(baseID)', customID='\(customID)', appendTeamID=\(appendTeamID)")
-                continuation.resume(returning: (customID, appendTeamID))
+            let alertVC = AppIDCustomizationAlertViewController(
+                initialText: initialText,
+                fallbackBaseID: cleanInitialID,
+                teamID: teamID
+            )
+            alertVC.onComplete = { result in
+                continuation.resume(returning: result)
             }
-            
-            let cancelAction = UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel) { _ in
-                continuation.resume(returning: nil)
-            }
-            alert.addAction(cancelAction)
-            alert.addAction(okAction)
-            presenter.present(alert, animated: true)
+            presenter.present(alertVC, animated: true)
         }
     }
 

@@ -33,6 +33,7 @@ struct DeveloperOptionsView: View {
     @State private var recreateDatabaseOnNextStart: Bool = UserDefaults.standard.recreateDatabaseOnNextStart
     @State private var alwaysShowWireGuardConfig: Bool = UserDefaults.standard.alwaysShowWireGuardConfig
     @State private var acceptIPv6ConnectionConfig: Bool = UserDefaults.standard.acceptIPv6ConnectionConfig
+    @State private var isAutoRetryRemotePairingPortEnabled: Bool = UserDefaults.standard.isAutoRetryRemotePairingPortEnabled
     @State private var tcpProbeTimeoutText: String = ""
     
     @State private var isExportingDB: Bool = false
@@ -42,6 +43,9 @@ struct DeveloperOptionsView: View {
     @State private var showExportPasswordPrompt: Bool = false
     @State private var exportCertPassword: String = ""
     @State private var showOnboardingSheet: Bool = false
+    @State private var isDumpingProfiles: Bool = false
+    @State private var showDumpProfilesAlert: Bool = false
+    @State private var dumpProfilesAlertMessage: String = ""
     
     var body: some View {
         ScrollView {
@@ -154,31 +158,6 @@ struct DeveloperOptionsView: View {
                     .cornerRadius(14)
                 }
                 
-                // Section: Bonjour
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("BONJOUR")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 16)
-                    
-                    VStack(spacing: 0) {
-                        NavigationLink(destination: BonjourDiscoveryView()) {
-                            HStack {
-                                Text("Network Discovery")
-                                    .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.primary)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.horizontal, 16)
-                            .frame(height: 50)
-                        }
-                    }
-                    .background(Color.settingsRowBackground)
-                    .cornerRadius(14)
-                }
                 // Section: Widget Options
                 VStack(alignment: .leading, spacing: 8) {
                     #if !os(tvOS)
@@ -257,7 +236,7 @@ struct DeveloperOptionsView: View {
                                 Spacer()
                                 if isExportingDB {
                                     ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .primary))
                                 }
                             }
                             .padding(.horizontal, 16)
@@ -465,7 +444,7 @@ struct DeveloperOptionsView: View {
                                 Image(systemName: "arrow.counterclockwise")
                                     .font(.system(size: 18, weight: .semibold))
                                     .foregroundColor(.primary)
-                                Text("Use Default (\(AppConstants.Minimuxer.defaultTCPProbeTimeoutMs) ms)")
+                                Text(String(format: NSLocalizedString("Use Default (%d ms)", comment: ""), AppConstants.Minimuxer.defaultTCPProbeTimeoutMs))
                                     .font(.system(size: 17, weight: .bold))
                                     .foregroundColor(.primary)
                                 Spacer()
@@ -491,6 +470,16 @@ struct DeveloperOptionsView: View {
                             set: { newValue in
                                 acceptIPv6ConnectionConfig = newValue
                                 UserDefaults.standard.acceptIPv6ConnectionConfig = newValue
+                            }
+                        ))
+                        
+                        divider
+                        
+                        toggleRow(title: "Auto Retry RemotePairing Port", isOn: Binding(
+                            get: { isAutoRetryRemotePairingPortEnabled },
+                            set: { newValue in
+                                isAutoRetryRemotePairingPortEnabled = newValue
+                                UserDefaults.standard.isAutoRetryRemotePairingPortEnabled = newValue
                             }
                         ))
                     }
@@ -555,7 +544,42 @@ struct DeveloperOptionsView: View {
                 #endif
                 
                 VStack(alignment: .leading, spacing: 8) {
+                    Text(NSLocalizedString("PROVISIONING PROFILES", comment: ""))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 16)
+
+                    VStack(spacing: 0) {
+                        SwiftUI.Button(action: {
+                            Task {
+                                await dumpProvisioningProfiles()
+                            }
+                        }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "arrow.down.doc")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(.primary)
+                                Text(NSLocalizedString("Dump Provisioning Profiles", comment: ""))
+                                    .font(.system(size: 17, weight: .bold))
+                                    .foregroundColor(.primary)
+                                Spacer()
+                                if isDumpingProfiles {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .primary))
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .frame(height: 50)
+                        }
+                        .disabled(isDumpingProfiles)
+                    }
+                    .background(Color.settingsRowBackground)
+                    .cornerRadius(14)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
                     Text(NSLocalizedString("ONBOARDING", comment: ""))
+
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
@@ -655,8 +679,32 @@ struct DeveloperOptionsView: View {
         } message: {
             Text("Do you want to clear all keychain items related to this SideStore instance?")
         }
+        .alert(NSLocalizedString("Dump Profiles", comment: ""), isPresented: $showDumpProfilesAlert) {
+            SwiftUI.Button("OK", role: .cancel) {}
+        } message: {
+            Text(dumpProfilesAlertMessage)
+        }
         .onAppear {
             tcpProbeTimeoutText = String(minimuxerGetDeviceProbeTimeout())
+        }
+    }
+    
+    private func dumpProvisioningProfiles() async {
+        guard let docsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        isDumpingProfiles = true
+        defer { isDumpingProfiles = false }
+        do {
+            let zipPath = try await safeDumpProfiles(docsURL.path)
+            let fileName = URL(fileURLWithPath: zipPath).lastPathComponent
+            dumpProfilesAlertMessage = String(format: NSLocalizedString("Profiles saved to:\n%@", comment: ""), fileName)
+            showDumpProfilesAlert = true
+        } catch {
+            if (error as? MinimuxerWrapperError) == .noProfilesFound {
+                dumpProfilesAlertMessage = error.localizedDescription
+            } else {
+                dumpProfilesAlertMessage = String(format: NSLocalizedString("Failed to dump profiles:\n%@", comment: ""), error.localizedDescription)
+            }
+            showDumpProfilesAlert = true
         }
     }
     
@@ -869,10 +917,10 @@ struct DeveloperOptionsView: View {
         #endif
         do {
             if let rotatedURL = try WidgetLogManager.rotateLog() {
-                let toastView = ToastView(text: NSLocalizedString("Rotated \(logName) Log", comment: ""), detailText: "Saved to WidgetLogs/\(rotatedURL.lastPathComponent)")
+                let toastView = ToastView(text: String(format: NSLocalizedString("Rotated %@ Log", comment: ""), logName), detailText: "Saved to WidgetLogs/\(rotatedURL.lastPathComponent)")
                 toastView.show(in: top)
             } else {
-                let toastView = ToastView(text: NSLocalizedString("\(logName) Log Empty", comment: ""), detailText: "Nothing to rotate.")
+                let toastView = ToastView(text: String(format: NSLocalizedString("%@ Log Empty", comment: ""), logName), detailText: "Nothing to rotate.")
                 toastView.show(in: top)
             }
         } catch {

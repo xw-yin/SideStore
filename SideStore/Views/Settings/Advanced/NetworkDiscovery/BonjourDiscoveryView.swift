@@ -905,7 +905,7 @@ struct ServiceDetailView: View {
                 
                 if !viewModel.resolvedAddressItems.isEmpty {
                     ForEach(viewModel.resolvedAddressItems) { item in
-                        DetailRow(label: item.label, value: item.address, tag: item.interfaceTag, onCopy: copyWithFeedback)
+                        DetailRow(label: LocalizedStringKey(item.label), value: item.address, tag: item.interfaceTag, onCopy: copyWithFeedback)
                     }
                 }
                 
@@ -916,7 +916,7 @@ struct ServiceDetailView: View {
             
             // Interfaces
             if !service.interfaces.isEmpty {
-                Section(header: Text("Discovered Interfaces (\(service.interfaces.count))")) {
+                Section(header: Text(String(format: NSLocalizedString("Discovered Interfaces (%d)", comment: ""), service.interfaces.count))) {
                     ForEach(service.interfaces, id: \.index) { iface in
                         HStack {
                             Image(systemName: iconForInterfaceType(iface.type))
@@ -964,7 +964,7 @@ struct ServiceDetailView: View {
             
             // TXT Records
             if !resolved.txtRecords.isEmpty {
-                Section(header: Text("TXT Record (\(resolved.txtRecords.count))")) {
+                Section(header: Text(String(format: NSLocalizedString("TXT Record (%d)", comment: ""), resolved.txtRecords.count))) {
                     ForEach(resolved.txtRecords, id: \.key) { record in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(record.key)
@@ -1112,7 +1112,7 @@ struct ServiceDetailView: View {
 
 // A simple key-value row with tap-to-copy and context menu
 private struct DetailRow: View {
-    let label: String
+    let label: LocalizedStringKey
     let value: String
     var tag: String? = nil
     var onCopy: ((String) -> Void)? = nil

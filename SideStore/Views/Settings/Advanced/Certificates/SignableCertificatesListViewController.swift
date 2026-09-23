@@ -43,7 +43,7 @@ struct SignableCertificateRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(cert.machineName ?? cert.name)
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                 
                 let certName = cert.name
                 if cert.machineName != nil {
@@ -51,21 +51,21 @@ struct SignableCertificateRowView: View {
                         Text("Name: ").font(.system(size: 10))
                         + Text(certName).font(.system(size: 10))
                     )
-                    .foregroundColor(Color(uiColor: .lightGray))
+                    .foregroundColor(.secondary)
                 }
                 
                 (
                     Text("Serial: ").font(.system(size: 11))
                     + Text(cert.serialNumber).font(.system(size: 11, design: .monospaced))
                 )
-                .foregroundColor(Color(uiColor: .lightGray))
+                .foregroundColor(.secondary)
                 
                 if let ident = cert.identifier, !ident.isEmpty {
                     (
                         Text("ID: ").font(.system(size: 10))
                         + Text(ident).font(.system(size: 10, design: .monospaced))
                     )
-                    .foregroundColor(Color(uiColor: .lightGray))
+                    .foregroundColor(.secondary)
                 }
                 
                 if let brief = briefInfo {
@@ -73,13 +73,13 @@ struct SignableCertificateRowView: View {
                         Text("Type: ").font(.system(size: 10))
                         + Text(brief.type).font(.system(size: 10))
                     )
-                    .foregroundColor(Color(uiColor: .lightGray))
+                    .foregroundColor(.secondary)
                     
                     (
                         Text("Validity: ").font(.system(size: 10))
                         + Text("\(brief.validFrom) - \(brief.validUntil)").font(.system(size: 10))
                     )
-                    .foregroundColor(Color(uiColor: .lightGray))
+                    .foregroundColor(.secondary)
                 }
                 
                 if let req = cert.requesterEmail, !req.isEmpty {
@@ -87,14 +87,14 @@ struct SignableCertificateRowView: View {
                         Text("Requester: ").font(.system(size: 10))
                         + Text(req).font(.system(size: 10))
                     )
-                    .foregroundColor(Color(uiColor: .lightGray))
+                    .foregroundColor(.secondary)
                 }
                 
                 (
                     Text("Keys: ").font(.system(size: 10))
                     + Text("public + private").font(.system(size: 10))
                 )
-                .foregroundColor(Color(uiColor: .lightGray))
+                .foregroundColor(.secondary)
                 
                 if let status = statusText {
                     (

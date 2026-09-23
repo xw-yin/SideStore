@@ -565,7 +565,7 @@ struct AnisetteDataView: View {
                             DisclosureGroup(isExpanded: $showingServerHeaders) {
                                 VStack(alignment: .leading, spacing: 10) {
                                     HStack {
-                                        Text("Server: \(URL(string: UserDefaults.standard.menuAnisetteURL)?.host ?? "Active Server")")
+                                        Text(String(format: NSLocalizedString("Server: %@", comment: ""), URL(string: UserDefaults.standard.menuAnisetteURL)?.host ?? NSLocalizedString("Active Server", comment: "")))
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                         Spacer()

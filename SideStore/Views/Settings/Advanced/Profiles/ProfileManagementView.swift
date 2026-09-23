@@ -194,16 +194,34 @@ struct ProfileManagementView: View {
                 }
                 .animation(.easeInOut, value: viewModel.toastMessage)
             }
+
         }
         .navigationTitle(NSLocalizedString("Profile Management", comment: ""))
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 SwiftUI.Button {
-                    showAddOptions = true
+                    showAddOptions.toggle()
                 } label: {
                     Image(systemName: "plus")
                 }
                 .accessibilityLabel(NSLocalizedString("Add Provisioning Profile", comment: ""))
+                // Anchor the dialog to the + button so the iPad popover arrow points at it.
+                .confirmationDialog(
+                    NSLocalizedString("Add Provisioning Profile", comment: ""),
+                    isPresented: $showAddOptions,
+                    titleVisibility: .visible
+                ) {
+                    SwiftUI.Button(NSLocalizedString("Import from Files", comment: "")) {
+                        importProfileAction()
+                    }
+                    SwiftUI.Button(NSLocalizedString("Create on Developer Portal", comment: "")) {
+                        Task {
+                            await devServicesViewModel.loadAll(presentingViewController: presentingViewController)
+                        }
+                        navigateToPortalProfiles = true
+                    }
+                    SwiftUI.Button(NSLocalizedString("Cancel", comment: ""), role: .cancel) {}
+                }
             }
         }
         .onAppear {
@@ -318,18 +336,6 @@ struct ProfileManagementView: View {
             SwiftUI.Button(NSLocalizedString("OK", comment: ""), role: .cancel) { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? NSLocalizedString("An unknown error occurred.", comment: ""))
-        }
-        .confirmationDialog(NSLocalizedString("Add Provisioning Profile", comment: ""), isPresented: $showAddOptions, titleVisibility: .visible) {
-            SwiftUI.Button(NSLocalizedString("Import from Files", comment: "")) {
-                importProfileAction()
-            }
-            SwiftUI.Button(NSLocalizedString("Create on Developer Portal", comment: "")) {
-                Task {
-                    await devServicesViewModel.loadAll(presentingViewController: presentingViewController)
-                }
-                navigateToPortalProfiles = true
-            }
-            SwiftUI.Button(NSLocalizedString("Cancel", comment: ""), role: .cancel) {}
         }
         .onChange(of: navigateToPortalProfiles) { isActive in
             if !isActive {
