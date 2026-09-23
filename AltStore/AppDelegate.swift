@@ -7,6 +7,7 @@
 //
 
 @preconcurrency import UIKit
+import BackgroundTasks
 import UserNotifications
 import AVFoundation
 import Intents

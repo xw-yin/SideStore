@@ -160,9 +160,9 @@ final class PipelineRunner: Sendable
         // Hold the transport batch lease for the whole pipeline so the
         // transport is not torn down between operations. Released on every
         // exit path via defer.
-        await minimuxer.beginTransportBatch()
+        await minimuxer.core.beginTransportBatch()
         defer {
-            Task { await minimuxer.endTransportBatch() }
+            Task { await minimuxer.core.endTransportBatch() }
         }
         
         group.progress.totalUnitCount = Int64(operations.count * 100)
