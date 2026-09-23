@@ -113,6 +113,26 @@ public extension UserDefaults
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
+    @objc var isAutomaticRefreshEnabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    /// Interval between automatic refreshes, in hours. 0 = default (24h).
+    @objc var automaticRefreshIntervalHours: Double {
+        get {
+            let value = self.double(forKey: #function)
+            return value > 0 ? value : 24
+        }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var lastAutomaticRefreshDate: Date? {
+        get { self.object(forKey: #function) as? Date }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var lastRefreshVerificationManifest: String? {
+        get { self.string(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
     @objc var isBackgroundServiceEnabled: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
@@ -557,6 +577,7 @@ public extension UserDefaults
             #keyPath(UserDefaults.keepAnisetteHeadersAfterLogout): true,
             #keyPath(UserDefaults.keepSideSignHeadersAfterLogout): true,
             #keyPath(UserDefaults.isBackgroundRefreshEnabled): true,
+            #keyPath(UserDefaults.isAutomaticRefreshEnabled): true,
             #keyPath(UserDefaults.isBackgroundServiceEnabled): true,
             #keyPath(UserDefaults.isBetaUpdatesEnabled): false,
             #keyPath(UserDefaults.permissionCheckingDisabled): true,
