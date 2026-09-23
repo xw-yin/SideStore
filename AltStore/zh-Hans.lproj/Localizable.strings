@@ -433,6 +433,7 @@
 "Certificate Management" = "证书管理";
 "Wireless Pairing" = "无线配对";
 "Network Discovery" = "网络发现";
+"Network Discovery (mDNS)" = "网络发现";
 "Export Resigned Apps" = "导出已重签 App";
 "Enable EMP for wireguard" = "为 WireGuard 启用 EMP";
 "Enable AppId Customization" = "启用 App ID 自定义";
@@ -992,7 +993,6 @@
 "Developer Portal Error" = "开发者门户错误";
 "An unknown error occurred." = "发生未知错误。";
 "Operations Logging Control" = "操作日志控制";
-"Network Discovery" = "网络发现";
 "Show WireGuard Settings" = "显示 WireGuard 设置";
 "Experimental Features" = "实验性功能";
 "Wireless Pairing" = "无线配对";
@@ -1323,7 +1323,6 @@
 "Operations Verbose Logging" = "操作详细日志";
 "Operations Logging Control" = "操作日志控制";
 "BONJOUR" = "BONJOUR 服务发现";
-"Network Discovery" = "网络发现";
 "WIDGET OPTIONS" = "小组件选项";
 "TOP SHELF OPTIONS" = "TOP SHELF 选项";
 "Reload All Widgets" = "重新加载所有小组件";
