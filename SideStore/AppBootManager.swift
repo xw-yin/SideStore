@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import UIKit
 import Minimuxer
 
 public final class AppBootManager: @unchecked Sendable {
