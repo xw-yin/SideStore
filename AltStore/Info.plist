@@ -235,6 +235,10 @@
 		<string>remote-notification</string>
 		<string>processing</string>
 	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.SideStore.SideStore.automatic-refresh</string>
+	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>SideStore uses location updates to keep background operations active.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

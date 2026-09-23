@@ -223,10 +223,26 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         #endif
         
         self.prepareForBackgroundFetch()
+        self.registerAutomaticRefreshTask()
         
         SideStoreClient.shared.notifyFinishedLaunching()
 
         return true
+    }
+    
+    /// Registers the BGProcessingTask for automatic refresh. The identifier
+    /// must also be listed in Info.plist under BGTaskSchedulerPermittedIdentifiers.
+    private func registerAutomaticRefreshTask()
+    {
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: AutomaticRefreshManager.taskIdentifier, using: nil) { task in
+            guard let processingTask = task as? BGProcessingTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            AutomaticRefreshManager.handle(task: processingTask)
+        }
+        // (Re)schedule on every launch so the cadence survives restarts.
+        AutomaticRefreshManager.schedule()
     }
     
     func applicationDidEnterBackground(_ application: UIApplication)
