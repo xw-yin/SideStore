@@ -157,6 +157,14 @@ final class PipelineRunner: Sendable
             throw opError
         }
         
+        // Hold the transport batch lease for the whole pipeline so the
+        // transport is not torn down between operations. Released on every
+        // exit path via defer.
+        await minimuxer.beginTransportBatch()
+        defer {
+            Task { await minimuxer.endTransportBatch() }
+        }
+        
         group.progress.totalUnitCount = Int64(operations.count * 100)
         group.progress.completedUnitCount = 1
         
@@ -204,13 +212,25 @@ final class PipelineRunner: Sendable
         debugLog("[PipelineRunner] Configured pipeline for \(operationsCount) operation(s): isCellularRefreshGroup = \(isCellularRefreshGroup) (isCellularMode = \(CellularRefreshManager.shared.isCellularMode))")
 
         // run the operation pipeline
-        try await withThrowingTaskGroup(of: Void.self) { taskGroup in
-            for operation in operations {
-                taskGroup.addTask {
-                    try await self.performOperation(for: operation, handler: handler, group: group, operationsCount: operationsCount)
+        // The host app (SideStore) is always refreshed last, explicitly split
+        // rather than relying on input order, because resigning the host
+        // invalidates the running process.
+        let isHostOperation: (AppOperation) -> Bool = { operation in
+            (operation.app as? ALTApplication)?.isAltStoreApp == true ||
+            operation.bundleIdentifier.isAltStoreAppID
+        }
+        let hostOperations = operations.filter(isHostOperation)
+        let otherOperations = operations.filter { !isHostOperation($0) }
+        
+        for phase in [otherOperations, hostOperations] where !phase.isEmpty {
+            try await withThrowingTaskGroup(of: Void.self) { taskGroup in
+                for operation in phase {
+                    taskGroup.addTask {
+                        try await self.performOperation(for: operation, handler: handler, group: group, operationsCount: operationsCount)
+                    }
                 }
+                while let _ = try await taskGroup.next() {}
             }
-            while let _ = try await taskGroup.next() {}
         }
 
         // Run standalone batch profile injection if cellular refresh group with at least 2 operations
