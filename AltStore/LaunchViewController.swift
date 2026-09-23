@@ -226,7 +226,7 @@ final class LaunchViewController: UIViewController {
             self.destinationViewController = destinationVC
             
             if AppBootManager.shared.needsPairingPrompt {
-                PairingFileManager.shared.presentPairingFileAlert(on: self, isRetry: false)
+                PairingViewController.shared.presentPairingFileAlert(on: self, isRetry: false)
             }
             
             if AppBootManager.shared.needsSideJITPrompt {

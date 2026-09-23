@@ -638,6 +638,8 @@ extension MinimuxerError {
             return String(format: NSLocalizedString("Minimuxer has not been started: %@", comment: ""), reason)
         case .pairingNotLoaded(let reason):
             return String(format: NSLocalizedString("No pairing file loaded: %@", comment: ""), reason)
+        default:
+            return NSLocalizedString("An unexpected minimuxer error occurred", comment: "")
         }
     }
 
