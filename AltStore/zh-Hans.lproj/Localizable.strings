@@ -2187,3 +2187,7 @@
 "'Device IP' and 'RemotePair Port' are optional and if specified should match exactly as in the target VPN's config or Leave empty to prefer auto-discovery/default port %@." = "“Device IP”和“RemotePair Port”为选填；如填写须与目标 VPN 配置完全一致，留空则优先自动发现/默认端口 %@。";
 "Are you sure you want to delete all refresh attempts?" = "确定要删除全部刷新记录吗？";
 "Failed to Delete Refresh Attempts" = "删除刷新记录失败";
+"Reinstall" = "重新安装";
+"From Cache" = "从缓存";
+"From Source" = "从来源";
+"Append Team ID" = "附加 Team ID";
