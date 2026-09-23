@@ -171,11 +171,15 @@ class DeveloperServicesViewModel: ObservableObject {
         self.isActionLoading = true
         defer { self.isActionLoading = false }
         do {
+            let downloaded: ALTProvisioningProfile
             if let type = type {
-                _ = try await DeveloperPortalProxy.shared.downloadProvisioningProfile(for: appID, type: type)
+                downloaded = try await DeveloperPortalProxy.shared.downloadProvisioningProfile(for: appID, type: type)
             } else {
-                _ = try await DeveloperPortalProxy.shared.downloadProvisioningProfile(for: appID, deviceType: DeveloperPortalProxy.currentDeviceType)
+                downloaded = try await DeveloperPortalProxy.shared.downloadProvisioningProfile(for: appID, deviceType: DeveloperPortalProxy.currentDeviceType)
             }
+            // Import immediately so the profile shows up in Profile Management
+            // instead of relying on the back-navigation sync.
+            try ProfileManager.shared.importProfile(data: downloaded.data)
             await self.fetchProfiles(presentingViewController: presentingViewController)
             self.showToastMessage(String(format: NSLocalizedString("Profile generated for '%@'", comment: ""), appID.name))
             return true
@@ -190,9 +194,12 @@ class DeveloperServicesViewModel: ObservableObject {
         self.isActionLoading = true
         defer { self.isActionLoading = false }
         do {
-            _ = try await DeveloperPortalProxy.shared.createProvisioningProfile(name: name, appID: appID, certificateIDs: certificateIDs, deviceIDs: deviceIDs, type: type)
+            let created = try await DeveloperPortalProxy.shared.createProvisioningProfile(name: name, appID: appID, certificateIDs: certificateIDs, deviceIDs: deviceIDs, type: type)
+            // Import immediately so the profile shows up in Profile Management
+            // instead of relying on the back-navigation sync.
+            try ProfileManager.shared.importProfile(data: created.data)
             await self.fetchProfiles(presentingViewController: presentingViewController)
-            self.showToastMessage("Created profile '\(name)'")
+            self.showToastMessage(String(format: NSLocalizedString("Created profile '%@'", comment: ""), name))
             return true
         } catch {
             debugLog("[DeveloperServices] createManualProfile failed: \(error)")
@@ -228,7 +235,7 @@ class DeveloperServicesViewModel: ObservableObject {
                 )
             }
             await self.fetchProfiles(presentingViewController: presentingViewController)
-            self.showToastMessage("Updated profile '\(name)'")
+            self.showToastMessage(String(format: NSLocalizedString("Updated profile '%@'", comment: ""), name))
             return true
         } catch {
             debugLog("[DeveloperServices] updateProfile failed: \(error)")

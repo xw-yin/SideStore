@@ -2024,6 +2024,8 @@
 "Profile generated for '%@'" = "已为“%@”生成描述文件";
 "Profiles" = "描述文件";
 "Purged %d profile(s)" = "已清除 %d 个描述文件";
+"Created profile '%@'" = "已创建描述文件“%@”;";
+"Updated profile '%@'" = "已更新描述文件“%@”;";
 "Purged %d profile(s) (%d failed)" = "已清除 %d 个描述文件（%d 个失败）";
 "Push Notifications" = "推送通知";
 "Registered App ID '%@'" = "已注册 App ID“%@”";
