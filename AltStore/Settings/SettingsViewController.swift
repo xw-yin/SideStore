@@ -97,6 +97,7 @@ extension SettingsViewController
                 .backupAndRestore,
                 .userCustomizations
             ])
+            return rows
         }
     }
 
