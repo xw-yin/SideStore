@@ -64,14 +64,14 @@ struct ThemePickerView: View {
                         Text("SideStore")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.primary)
-                        Text("v0.6.0 • Installed")
+                        Text("v0.6.0 • \(NSLocalizedString("Installed", comment: ""))")
                             .font(.system(size: 13, weight: .medium))
                             .foregroundColor(.secondary)
                     }
                     Spacer()
                     
                     // Mock Pill Button
-                    Text("7 DAYS")
+                    Text(String(format: NSLocalizedString("%@ DAYS", comment: ""), NSNumber(value: 7)))
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.white)
                         .padding(.horizontal, 16)

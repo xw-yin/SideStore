@@ -40,7 +40,7 @@ struct HealthCheckView: View {
                             Text("Action Required")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                            Text(err.localizedDescription)
+                            Text(err.failureReason ?? err.localizedDescription)
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)

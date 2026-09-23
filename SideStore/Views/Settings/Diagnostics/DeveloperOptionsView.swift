@@ -699,7 +699,11 @@ struct DeveloperOptionsView: View {
             dumpProfilesAlertMessage = String(format: NSLocalizedString("Profiles saved to:\n%@", comment: ""), fileName)
             showDumpProfilesAlert = true
         } catch {
-            dumpProfilesAlertMessage = String(format: NSLocalizedString("Failed to dump profiles:\n%@", comment: ""), error.localizedDescription)
+            if (error as? MinimuxerWrapperError) == .noProfilesFound {
+                dumpProfilesAlertMessage = error.localizedDescription
+            } else {
+                dumpProfilesAlertMessage = String(format: NSLocalizedString("Failed to dump profiles:\n%@", comment: ""), error.localizedDescription)
+            }
             showDumpProfilesAlert = true
         }
     }

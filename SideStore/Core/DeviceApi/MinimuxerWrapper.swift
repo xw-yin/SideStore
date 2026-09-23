@@ -501,10 +501,69 @@ func dumpProfiles(_ docsPath: String, mode: ProfileDumpMode = .zip) async throws
     return ""
     #else
     debugLog("[SideStore] dumpProfiles(docsPath) invoked")
-    return try await withRemotePairingRetry {
+    let zipPath = try await withRemotePairingRetry {
         try await minimuxer.core.dumpProfiles(docsPath: docsPath, mode: mode)
     }
+    // misagent returns success with zero profiles when the device has none;
+    // detect the empty archive so the UI can say so instead of "saved".
+    if mode == .zip, let profileCount = countMobileprovisionEntries(inZipAtPath: zipPath), profileCount == 0 {
+        debugLog("[SideStore] dumpProfiles(docsPath) archive contains no profiles")
+        try? FileManager.default.removeItem(atPath: zipPath)
+        throw MinimuxerWrapperError.noProfilesFound
+    }
+    return zipPath
     #endif
+}
+
+/// Counts `.mobileprovision` entries in a zip file by walking its central directory.
+/// Returns nil when the file is not a readable zip (caller should fail open).
+private func countMobileprovisionEntries(inZipAtPath path: String) -> Int? {
+    guard let handle = try? FileHandle(forReadingFrom: URL(fileURLWithPath: path)) else { return nil }
+    defer { try? handle.close() }
+    guard let fileSize = try? handle.seekToEnd(), fileSize >= 22 else { return nil }
+
+    // End-of-central-directory record lives within the last 64KB + 22 bytes.
+    let tailSize = min(fileSize, UInt64(65579))
+    try? handle.seek(toOffset: fileSize - tailSize)
+    guard let tail = try? handle.read(upToCount: Int(tailSize)), tail.count >= 22 else { return nil }
+
+    // Find EOCD signature (0x06054b50) scanning backwards.
+    var eocd: Int? = nil
+    var i = tail.count - 22
+    while i >= 0 {
+        if tail[i] == 0x50 && tail[i + 1] == 0x4B && tail[i + 2] == 0x05 && tail[i + 3] == 0x06 {
+            eocd = i
+            break
+        }
+        i -= 1
+    }
+    guard let eocd = eocd else { return nil }
+    let entryCount = Int(tail[eocd + 10]) | (Int(tail[eocd + 11]) << 8)
+    let cdSize = Int(tail[eocd + 12]) | (Int(tail[eocd + 13]) << 8) | (Int(tail[eocd + 14]) << 16) | (Int(tail[eocd + 15]) << 24)
+    let cdOffset = Int(tail[eocd + 16]) | (Int(tail[eocd + 17]) << 8) | (Int(tail[eocd + 18]) << 16) | (Int(tail[eocd + 19]) << 24)
+    guard cdSize > 0, cdOffset >= 0, UInt64(cdOffset) + UInt64(cdSize) <= fileSize else { return entryCount == 0 ? 0 : nil }
+
+    try? handle.seek(toOffset: UInt64(cdOffset))
+    guard let cd = try? handle.read(upToCount: cdSize), cd.count == cdSize else { return nil }
+
+    // Walk central-directory file headers (0x02014b50), 46-byte fixed part.
+    var profileCount = 0
+    var offset = 0
+    var remaining = entryCount
+    while remaining > 0 && offset + 46 <= cd.count {
+        guard cd[offset] == 0x50 && cd[offset + 1] == 0x4B && cd[offset + 2] == 0x01 && cd[offset + 3] == 0x02 else { break }
+        let nameLen = Int(cd[offset + 28]) | (Int(cd[offset + 29]) << 8)
+        let extraLen = Int(cd[offset + 30]) | (Int(cd[offset + 31]) << 8)
+        let commentLen = Int(cd[offset + 32]) | (Int(cd[offset + 33]) << 8)
+        if offset + 46 + nameLen <= cd.count,
+           let name = String(data: cd[offset + 46 ..< offset + 46 + nameLen], encoding: .utf8),
+           name.hasSuffix(".mobileprovision") {
+            profileCount += 1
+        }
+        offset += 46 + nameLen + extraLen + commentLen
+        remaining -= 1
+    }
+    return profileCount
 }
 
 func safeDumpProfiles(_ docsPath: String, mode: ProfileDumpMode = .zip) async throws -> String {
@@ -660,6 +719,7 @@ public enum MinimuxerWrapperError: Error, LocalizedError {
     case profileInstall
     case restartAlreadyInProgress
     case pairingFile
+    case noProfilesFound
     
     public var errorDescription: String? {
         switch self {
@@ -669,6 +729,8 @@ public enum MinimuxerWrapperError: Error, LocalizedError {
             return NSLocalizedString("Restart already in progress", comment: "")
         case .pairingFile:
             return NSLocalizedString("Invalid pairing file. Your pairing file either didn't have a UDID, or it wasn't a valid plist. Please use iloader to replace it.", comment: "")
+        case .noProfilesFound:
+            return NSLocalizedString("No provisioning profiles found on this device.", comment: "")
         }
     }
 

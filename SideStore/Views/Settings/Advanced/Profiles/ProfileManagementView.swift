@@ -194,12 +194,74 @@ struct ProfileManagementView: View {
                 }
                 .animation(.easeInOut, value: viewModel.toastMessage)
             }
+
+            if showAddOptions {
+                // Tap outside to dismiss
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.18)) { showAddOptions = false }
+                    }
+                    .zIndex(1)
+                    .transition(.opacity)
+
+                // Dropdown menu directly below the + button, no popover arrow
+                VStack(spacing: 0) {
+                    SwiftUI.Button {
+                        withAnimation(.easeInOut(duration: 0.18)) { showAddOptions = false }
+                        importProfileAction()
+                    } label: {
+                        HStack {
+                            Text(NSLocalizedString("Import from Files", comment: ""))
+                                .font(.system(size: 16))
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Image(systemName: "doc.badge.plus")
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
+                    }
+
+                    Divider().padding(.leading, 16)
+
+                    SwiftUI.Button {
+                        withAnimation(.easeInOut(duration: 0.18)) { showAddOptions = false }
+                        Task {
+                            await devServicesViewModel.loadAll(presentingViewController: presentingViewController)
+                        }
+                        navigateToPortalProfiles = true
+                    } label: {
+                        HStack {
+                            Text(NSLocalizedString("Create on Developer Portal", comment: ""))
+                                .font(.system(size: 16))
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Image(systemName: "globe")
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
+                    }
+                }
+                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                .cornerRadius(12)
+                .shadow(color: Color.black.opacity(0.25), radius: 12, x: 0, y: 6)
+                .padding(.trailing, 12)
+                .padding(.top, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                .zIndex(2)
+                .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)))
+            }
         }
         .navigationTitle(NSLocalizedString("Profile Management", comment: ""))
+        .animation(.easeInOut(duration: 0.18), value: showAddOptions)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 SwiftUI.Button {
-                    showAddOptions = true
+                    withAnimation(.easeInOut(duration: 0.18)) { showAddOptions.toggle() }
                 } label: {
                     Image(systemName: "plus")
                 }
@@ -318,18 +380,6 @@ struct ProfileManagementView: View {
             SwiftUI.Button(NSLocalizedString("OK", comment: ""), role: .cancel) { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? NSLocalizedString("An unknown error occurred.", comment: ""))
-        }
-        .confirmationDialog(NSLocalizedString("Add Provisioning Profile", comment: ""), isPresented: $showAddOptions, titleVisibility: .visible) {
-            SwiftUI.Button(NSLocalizedString("Import from Files", comment: "")) {
-                importProfileAction()
-            }
-            SwiftUI.Button(NSLocalizedString("Create on Developer Portal", comment: "")) {
-                Task {
-                    await devServicesViewModel.loadAll(presentingViewController: presentingViewController)
-                }
-                navigateToPortalProfiles = true
-            }
-            SwiftUI.Button(NSLocalizedString("Cancel", comment: ""), role: .cancel) {}
         }
         .onChange(of: navigateToPortalProfiles) { isActive in
             if !isActive {
