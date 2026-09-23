@@ -349,7 +349,7 @@ struct PairingFileManagementView: View {
 
             Image(systemName: "chevron.right")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.tertiary)
+                .foregroundColor(.secondary)
         }
         .padding(.horizontal, 16)
         .frame(height: 56)
@@ -359,7 +359,7 @@ struct PairingFileManagementView: View {
         HStack(spacing: 12) {
             Image(systemName: proto == .rppairing ? "bolt.horizontal.circle" : "lock.shield")
                 .font(.system(size: 22))
-                .foregroundColor(.tertiary)
+                .foregroundColor(.secondary)
 
             Text(proto == .rppairing ? "Remote Pairing File" : "Lockdown Pairing File")
                 .font(.system(size: 16, weight: .bold))
