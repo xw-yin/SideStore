@@ -490,9 +490,21 @@ extension AppDelegate
         
         guard UserDefaults.standard.isBackgroundRefreshEnabled else { return }
         
-        let context = DatabaseManager.shared.persistentContainer.newBackgroundContext()
-        let installedApps = InstalledApp.fetchAppsForBackgroundRefresh(in: context)
-        _ = try? AppManager.shared.backgroundRefresh(installedApps, completionHandler: refreshAppsCompletionHandler)
+        // Auth preflight: verify team, pairing file, and minimuxer before
+        // spending background time on a refresh that cannot succeed.
+        Task.detached {
+            let manifest = await RefreshVerificationManifest.verify()
+            debugLog("[BackgroundFetch] Verification manifest: \(manifest.summary)")
+            guard manifest.isValid else {
+                debugLog("[BackgroundFetch] Preflight failed, skipping refresh")
+                refreshAppsCompletionHandler(.failure(OperationError.invalidParameters("Background refresh skipped: \(manifest.summary)")))
+                return
+            }
+            
+            let context = DatabaseManager.shared.persistentContainer.newBackgroundContext()
+            let installedApps = InstalledApp.fetchAppsForBackgroundRefresh(in: context)
+            _ = try? AppManager.shared.backgroundRefresh(installedApps, completionHandler: refreshAppsCompletionHandler)
+        }
     }
 }
 
