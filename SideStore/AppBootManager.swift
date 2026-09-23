@@ -217,19 +217,22 @@ public final class AppBootManager: @unchecked Sendable {
         
         async let minimuxerCheck: Void = {
             debugLog("[AppBootManager] performBootSequence(): Minimuxer check starting")
-            defer { debugLog("[AppBootManager] performBootSequence(): Minimuxer check completed") }
-            guard let pf = PairingFileManager.shared.fetchPairingFile() else {
-                #if !targetEnvironment(simulator)
-                self.needsPairingPrompt = true
-                #endif
-                return
+            defer {
+                debugLog("[AppBootManager] performBootSequence(): Minimuxer check completed")
             }
-
+            #if targetEnvironment(simulator)
             do {
-                try await self.startMinimuxer(pairingFile: pf)
+                try await self.startMinimuxer(pairingFile: "ignored-for-sim")
             } catch {
                 debugLog("[AppBootManager] Failed to start minimuxer: \(error)")
             }
+            #else
+            do {
+                try await self.ensureMinimuxerStarted()
+            } catch {
+                debugLog("[AppBootManager] Failed to ensure minimuxer: \(error)")
+            }
+            #endif
         }()
         
         _ = await (jitCheck, minimuxerCheck)

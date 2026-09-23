@@ -89,8 +89,50 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate
     {
         guard let context = URLContexts.first else { return }
         debugLog("[SceneDelegate] scene(_:openURLContexts:) called with URL: \(context.url)")
-        URLHandler.shared.handle(context.url)
+        self.open(context)
     }
 }
+
+private extension SceneDelegate
+{
+    func open(_ context: UIOpenURLContext)
+    {
+        debugLog("[SceneDelegate] open(_:) called with URL: \(context.url)")
+        if context.url.isFileURL
+        {
+            guard context.url.pathExtension.lowercased() == "ipa" else { return }
+
+            // Copy the shared .ipa out of its security-scoped location into a
+            // temporary directory we own, so it stays readable while signing.
+            if !context.url.startAccessingSecurityScopedResource() {
+                debugLog("[SideStore] Failed to access security-scoped resource for imported IPA")
+                return
+            }
+            defer { context.url.stopAccessingSecurityScopedResource() }
+
+            let temporaryDirectory = FileManager.default.uniqueTemporaryURL()
+            do {
+                try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true, attributes: nil)
+            } catch {
+                debugLog("[SideStore] Failed to create temp directory for imported IPA: \(error)")
+                return
+            }
+
+            let ipa = temporaryDirectory.appendingPathComponent(context.url.lastPathComponent)
+
+            do {
+                try FileManager.default.copyItem(at: context.url, to: ipa)
+            } catch {
+                debugLog("[SideStore] Failed to copy imported IPA: \(error)")
+                return
+            }
+
+            AppDelegate.enqueueAppImport(ipa)
+        }
+        else
+        {
+            URLHandler.shared.handle(context.url)
+        }
+    }
 
 

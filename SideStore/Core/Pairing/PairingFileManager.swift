@@ -114,6 +114,19 @@ final class PairingFileManager: NSObject {
         }
         try contents.write(to: destinationURL, atomically: true, encoding: .utf8)
         debugLog("[PairingFile] Saved \(parsed.mode.rawValue) pairing file to: \(destinationURL.path)")
+
+        // Fork: also mirror into the App Group shared container so the
+        // LiveContainer host build can find it.
+        if let sharedDirectory = fm.altstoreSharedDirectory {
+            let sharedPath = sharedDirectory.appendingPathComponent(destinationURL.lastPathComponent)
+            do {
+                try contents.write(to: sharedPath, atomically: true, encoding: .utf8)
+                debugLog("[PairingFile] Successfully copied pairing file to shared container: \(sharedPath.path)")
+            } catch {
+                debugLog("[PairingFile] Unable to copy pairing file to shared container: \(error)")
+            }
+        }
+
         UserDefaults.standard.isPairingReset = false
         return parsed
     }
