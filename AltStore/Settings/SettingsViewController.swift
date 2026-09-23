@@ -37,6 +37,7 @@ extension SettingsViewController
     private enum AppRefreshRow: Int, CaseIterable
     {
         case backgroundRefresh
+        case refreshSchedule
         case noIdleTimeout        
         case addToSiri
         case disableAppLimit
@@ -1095,6 +1096,18 @@ extension SettingsViewController
             switch row
             {
             case .backgroundRefresh: break
+            case .refreshSchedule:
+                let scheduleView = RefreshScheduleView()
+                let vc = UIHostingController(rootView: scheduleView)
+                
+                #if !os(tvOS)
+                let appearance = UINavigationBarAppearance()
+                appearance.configureWithDefaultBackground()
+                vc.navigationItem.scrollEdgeAppearance = appearance
+                vc.navigationItem.standardAppearance = appearance
+                #endif
+                
+                navigationController?.pushViewController(vc, animated: true)
             case .noIdleTimeout: break
             case .disableAppLimit: break
             case .addToSiri:

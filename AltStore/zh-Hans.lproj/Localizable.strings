@@ -2191,3 +2191,14 @@
 "From Cache" = "从缓存";
 "From Source" = "从来源";
 "Append Team ID" = "附加 Team ID";
+"Refresh Schedule" = "刷新计划";
+"Automatic Refresh" = "自动刷新";
+"Refresh Interval" = "刷新间隔";
+"Every %d hours" = "每 %d 小时";
+"Earliest Eligible Refresh" = "最早可刷新时间";
+"Last Automatic Refresh" = "上次自动刷新";
+"Last Verification" = "上次验证";
+"Disabled" = "已关闭";
+"Never" = "从未";
+"Automatically refresh apps in the background when the system allows it." = "在系统允许时于后台自动刷新应用。";
+"The system decides the actual run time. This is only the earliest time a refresh may start." = "实际执行时间由系统决定，此处仅为最早可开始刷新的时间。";
