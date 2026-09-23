@@ -235,7 +235,15 @@ class MyAppsViewController: UICollectionViewController
             guard let self = self else { return }
 
             self.tabBarItem.badgeValue = " "
-            self.tabBarItem.badgeColor = (status == .ready) ? .systemGreen : .systemRed
+            // Unknown (unchecked) transport is gray, not red: it has not failed,
+            // it just has not been verified yet.
+            self.tabBarItem.badgeColor = {
+                switch status {
+                case .ready: return .systemGreen
+                case .unknown: return .systemGray
+                default: return .systemRed
+                }
+            }()
             self.tabBarItem.setBadgeTextAttributes([.foregroundColor: UIColor.clear], for: .normal)
         }
     }

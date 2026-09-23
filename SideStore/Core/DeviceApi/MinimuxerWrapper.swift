@@ -244,8 +244,10 @@ enum MinimuxerStatus: Equatable {
 
     static func from(_ result: Result<Bool, Error>) -> MinimuxerStatus {
         switch result {
-        case .success:
-            return .ready
+        case .success(let checked):
+            // A successful check that did not confirm the transport must not
+            // be reported as ready; it is unknown until verified.
+            return checked ? .ready : .unknown
         case .failure(let error):
             guard let error = error as? MinimuxerError else { return .unknown }
             return MinimuxerStatus(from: error)
