@@ -59,22 +59,6 @@ struct ExperimentalFeaturesView: View {
                             .padding(.horizontal, 16)
                             .frame(height: 50)
                         }
-
-                        divider
-
-                        NavigationLink(destination: BonjourDiscoveryView()) {
-                            HStack {
-                                Text("Network Discovery")
-                                    .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.primary)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.horizontal, 16)
-                            .frame(height: 50)
-                        }
                     }
                     .cornerRadius(14)
                 }
@@ -83,7 +67,7 @@ struct ExperimentalFeaturesView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("MINIMUXER")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                     
                     VStack(spacing: 0) {

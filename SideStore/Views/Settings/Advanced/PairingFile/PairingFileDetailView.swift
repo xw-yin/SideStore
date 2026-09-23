@@ -11,8 +11,8 @@ import MinimuxerCommon
 import CryptoKit
 
 private extension Color {
-    static let settingsRowBackground = Color.white.opacity(0.15)
-    static let settingsDivider = Color.white.opacity(0.15)
+    static let settingsRowBackground = Color(uiColor: .secondarySystemGroupedBackground)
+    static let settingsDivider = Color(uiColor: .separator)
 }
 
 struct PairingFileDetailView: View {
@@ -133,7 +133,7 @@ struct PairingFileDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("FILE INFORMATION")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(Color.white.opacity(0.6))
+                .foregroundColor(.secondary)
                 .padding(.horizontal, 4)
 
             VStack(spacing: 0) {
@@ -163,15 +163,15 @@ struct PairingFileDetailView: View {
     private var xmlContentSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(isEditing ? "EDIT RAW XML" : "RAW XML CONTENT")
+                Text(isEditing ? LocalizedStringKey("EDIT RAW XML") : LocalizedStringKey("RAW XML CONTENT"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color.white.opacity(0.6))
+                    .foregroundColor(.secondary)
                 Spacer()
                 let displayed = isEditing ? editedContent : rawContent
                 if !displayed.isEmpty {
                     Text("\(displayed.count) bytes")
                         .font(.system(size: 12))
-                        .foregroundColor(Color.white.opacity(0.4))
+                        .foregroundColor(.secondary)
                 }
             }
             .padding(.horizontal, 4)
@@ -197,7 +197,7 @@ struct PairingFileDetailView: View {
             } else {
                 Text("No pairing file installed.")
                     .font(.system(size: 14))
-                    .foregroundColor(Color.white.opacity(0.5))
+                    .foregroundColor(.secondary)
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .background(Color.settingsRowBackground)
@@ -206,11 +206,11 @@ struct PairingFileDetailView: View {
         }
     }
 
-    private func metadataRow(label: String, value: String, valueColor: Color = .white) -> some View {
+    private func metadataRow(label: String, value: String, valueColor: Color = .primary) -> some View {
         HStack {
-            Text(label)
+            Text(LocalizedStringKey(label))
                 .font(.system(size: 15))
-                .foregroundColor(Color.white.opacity(0.7))
+                .foregroundColor(.secondary)
             Spacer()
             Text(value)
                 .font(.system(size: 15, weight: .medium))

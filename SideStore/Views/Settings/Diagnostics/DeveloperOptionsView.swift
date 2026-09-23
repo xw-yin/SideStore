@@ -158,31 +158,6 @@ struct DeveloperOptionsView: View {
                     .cornerRadius(14)
                 }
                 
-                // Section: Bonjour
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("BONJOUR")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 16)
-                    
-                    VStack(spacing: 0) {
-                        NavigationLink(destination: BonjourDiscoveryView()) {
-                            HStack {
-                                Text("Network Discovery")
-                                    .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.primary)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.horizontal, 16)
-                            .frame(height: 50)
-                        }
-                    }
-                    .background(Color.settingsRowBackground)
-                    .cornerRadius(14)
-                }
                 // Section: Widget Options
                 VStack(alignment: .leading, spacing: 8) {
                     #if !os(tvOS)
@@ -261,7 +236,7 @@ struct DeveloperOptionsView: View {
                                 Spacer()
                                 if isExportingDB {
                                     ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .primary))
                                 }
                             }
                             .padding(.horizontal, 16)
@@ -571,7 +546,7 @@ struct DeveloperOptionsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(NSLocalizedString("PROVISIONING PROFILES", comment: ""))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.6))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
 
                     VStack(spacing: 0) {
@@ -583,14 +558,14 @@ struct DeveloperOptionsView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "arrow.down.doc")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Text(NSLocalizedString("Dump Provisioning Profiles", comment: ""))
                                     .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Spacer()
                                 if isDumpingProfiles {
                                     ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .primary))
                                 }
                             }
                             .padding(.horizontal, 16)

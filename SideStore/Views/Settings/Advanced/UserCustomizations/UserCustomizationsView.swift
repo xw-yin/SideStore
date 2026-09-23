@@ -896,7 +896,7 @@ struct UserCustomizationsView: View {
                 HStack {
                     Text("Default Import Mode")
                         .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     Spacer()
                     Picker("", selection: appImportSourceModeBinding) {
                         ForEach(AppImportSourceMode.allCases) { (option: AppImportSourceMode) in
@@ -904,7 +904,7 @@ struct UserCustomizationsView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                    .tint(Color.white.opacity(0.7))
+                    .tint(.secondary)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
