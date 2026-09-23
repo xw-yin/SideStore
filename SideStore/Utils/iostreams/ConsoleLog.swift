@@ -34,6 +34,10 @@ class ConsoleLog {
     private static let CONSOLE_LOG_NAME_PREFIX = "console"
     private static let CONSOLE_LOG_EXTN = ".log"
     
+    /// Retention for refresh diagnostics: 2MB per file, 5 files max.
+    private static let MAX_LOG_FILE_SIZE: UInt64 = 2 * 1024 * 1024
+    private static let MAX_LOG_FILE_COUNT = 5
+    
     private var configuredBaseName: String = ConsoleLog.CONSOLE_LOG_NAME_PREFIX
     private var configuredSuffixFormat: SuffixFormat = .timestamp
     
@@ -98,6 +102,19 @@ class ConsoleLog {
         if activeLogInfo == nil {
             activeLogInfo = formatFileName(baseName: configuredBaseName, suffixFormat: configuredSuffixFormat)
         }
+        
+        // Rotate when the active file exceeds the size cap.
+        if let info = activeLogInfo {
+            let url = consoleLogsDir.appendingPathComponent(info.fileName)
+            if let size = try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? UInt64,
+               size >= Self.MAX_LOG_FILE_SIZE {
+                activeLogInfo = formatFileName(baseName: configuredBaseName, suffixFormat: configuredSuffixFormat)
+            }
+        }
+        
+        // Prune old files to the retention count.
+        pruneOldLogFiles()
+        
         let url = logFileURL
         let parentDir = url.deletingLastPathComponent()
         if !FileManager.default.fileExists(atPath: parentDir.path) {
@@ -159,6 +176,30 @@ class ConsoleLog {
     
     func stopCapturing() {
         consoleLogger.stopCapturing()
+    }
+    
+    /// Keeps only the newest MAX_LOG_FILE_COUNT console logs.
+    private func pruneOldLogFiles()
+    {
+        let dir = consoleLogsDir
+        guard let files = try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.contentModificationDateKey], options: .skipsHiddenFiles) else {
+            return
+        }
+        let logs = files
+            .filter { $0.lastPathComponent.hasPrefix(Self.CONSOLE_LOG_NAME_PREFIX) && $0.pathExtension == "log" }
+            .sorted {
+                let d0 = (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+                let d1 = (try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+                return d0 < d1
+            }
+        // Keep the active file plus the newest ones.
+        let activeName = activeLogInfo?.fileName
+        let candidates = logs.filter { $0.lastPathComponent != activeName }
+        let excess = candidates.count - (Self.MAX_LOG_FILE_COUNT - 1)
+        guard excess > 0 else { return }
+        for url in candidates.prefix(excess) {
+            try? FileManager.default.removeItem(at: url)
+        }
     }
 }
 
