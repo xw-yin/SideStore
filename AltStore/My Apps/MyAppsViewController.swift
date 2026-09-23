@@ -670,6 +670,9 @@ private extension MyAppsViewController
     {
         let group = AppManager.shared.refresh(installedApps, presentingViewController: self, group: self.isRefreshingAllApps ? self.refreshGroup : nil)
         group.completionHandler = { (results) in
+            // Record manual refreshes in the persistent refresh history (S5).
+            RefreshHistoryRecorder.recordManualRefresh(results: results)
+            
             DispatchQueue.main.async {
                 let failures = results.compactMapValues { (result) -> Error? in
                     switch result
