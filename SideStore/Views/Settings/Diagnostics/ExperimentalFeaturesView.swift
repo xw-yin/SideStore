@@ -15,6 +15,7 @@ private extension Color {
 
 struct ExperimentalFeaturesView: View {
     @State private var isCellularRefreshEnabled: Bool = UserDefaults.standard.isCellularRefreshEnabled
+    @State private var isMinimuxerBackendHotswapEnabled: Bool = UserDefaults.standard.isMinimuxerBackendHotswapEnabled
 
     var body: some View {
         ScrollView {
@@ -75,11 +76,30 @@ struct ExperimentalFeaturesView: View {
                             .frame(height: 50)
                         }
                     }
+                    .cornerRadius(14)
+                }
+
+                // Section 2: MINIMUXER
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("MINIMUXER")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Color.white.opacity(0.6))
+                        .padding(.horizontal, 16)
+                    
+                    VStack(spacing: 0) {
+                        toggleRow(title: "Enable Minimuxer Backend Hotswap", isOn: Binding(
+                            get: { isMinimuxerBackendHotswapEnabled },
+                            set: { newValue in
+                                isMinimuxerBackendHotswapEnabled = newValue
+                                UserDefaults.standard.isMinimuxerBackendHotswapEnabled = newValue
+                            }
+                        ))
+                    }
                     .background(Color.settingsRowBackground)
                     .cornerRadius(14)
                 }
                 
-                // Section 2: FEATURE FLAGS
+                // Section 3: FEATURE FLAGS
                 VStack(alignment: .leading, spacing: 8) {
                     Text("FEATURE FLAGS")
                         .font(.system(size: 13, weight: .semibold))

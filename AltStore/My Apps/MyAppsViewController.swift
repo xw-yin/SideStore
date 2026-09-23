@@ -1144,6 +1144,76 @@ private extension MyAppsViewController
         }
     }
     
+    func reinstallFromCache(_ installedApp: InstalledApp)
+    {
+        InstallAppDialog.present(installedApp: installedApp, from: self) { [weak self] in
+            guard let self else { return }
+            Task { @MainActor in
+                let previousProgress = AppManager.shared.installationProgress(for: installedApp)
+                guard previousProgress == nil else {
+                    previousProgress?.cancel()
+                    return
+                }
+                
+                AppManager.shared.reinstall(installedApp, presentingViewController: self) { [weak self] (result) in
+                    Task { @MainActor in
+                        switch result
+                        {
+                        case .failure(let error) where error is CancellationError:
+                            debugLog("Reinstall from cache cancelled.")
+                            self?.reconfigureVisibleCells()
+                        case .failure(let error):
+                            debugLog("Failed to reinstall from cache: \(error)")
+                            if let self {
+                                ToastView(error: error, opensLog: true).show(in: self)
+                            }
+                            self?.reconfigureVisibleCells()
+                        case .success(let app):
+                            debugLog("Successfully reinstalled app from cache: \(app.name)")
+                            self?.reconfigureVisibleCells()
+                        }
+                    }
+                }
+                self.reconfigureVisibleCells()
+            }
+        }
+    }
+    
+    func reinstallFromSource(_ storeApp: StoreApp)
+    {
+        InstallAppDialog.present(storeApp: storeApp, from: self) { [weak self] in
+            guard let self else { return }
+            Task { @MainActor in
+                let previousProgress = AppManager.shared.installationProgress(for: storeApp)
+                guard previousProgress == nil else {
+                    previousProgress?.cancel()
+                    return
+                }
+                
+                _ = AppManager.shared.install(.app(storeApp), presentingViewController: self) { [weak self] (result) in
+                    Task { @MainActor in
+                        switch result
+                        {
+                        case .failure(let error) where error is CancellationError:
+                            debugLog("Reinstall from source cancelled.")
+                            self?.reconfigureVisibleCells()
+                        case .failure(let error):
+                            debugLog("Failed to reinstall from source: \(error)")
+                            if let self {
+                                ToastView(error: error, opensLog: true).show(in: self)
+                            }
+                            self?.reconfigureVisibleCells()
+                        case .success(let app):
+                            debugLog("Successfully reinstalled app from source: \(app.name)")
+                            self?.reconfigureVisibleCells()
+                        }
+                    }
+                }
+                self.reconfigureVisibleCells()
+            }
+        }
+    }
+    
     func activate(_ installedApp: InstalledApp)
     {
         Task { @MainActor in
@@ -1437,8 +1507,8 @@ private extension MyAppsViewController
         }
     }
     
-    func importBackup(for installedApp: InstalledApp){
-        ImportExport.importBackup(presentingViewController: self, for: installedApp) { result in
+    func importBackup(for installedApp: InstalledApp, isZip: Bool = false){
+        ImportExport.importBackup(presentingViewController: self, for: installedApp, isZip: isZip) { result in
             var toast: ToastView
             switch(result){
             case .failure(let error):
@@ -1520,12 +1590,26 @@ private extension MyAppsViewController
         }
     }
     
-    func exportBackup(for installedApp: InstalledApp)
+    func exportBackup(for installedApp: InstalledApp, asZip: Bool = false)
     {
         guard let backupURL = FileManager.default.backupDirectoryURL(for: installedApp) else { return }
         
         #if !os(tvOS)
-        let documentPicker = UIDocumentPickerViewController(forExporting: [backupURL], asCopy: true)
+        let exportURL: URL
+        if asZip {
+            let zipURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(installedApp.name) Backup.zip")
+            do {
+                try FileManager.default.zipDirectory(at: backupURL, to: zipURL)
+                exportURL = zipURL
+            } catch {
+                ToastView(error: error, opensLog: true).show(in: self)
+                return
+            }
+        } else {
+            exportURL = backupURL
+        }
+        
+        let documentPicker = UIDocumentPickerViewController(forExporting: [exportURL], asCopy: true)
         
         // Don't set delegate to avoid conflicting with import callbacks.
         // documentPicker.delegate = self
@@ -1953,6 +2037,20 @@ extension MyAppsViewController
             self.resign(installedApp)
         }
         
+        let reinstallFromCacheAction = UIAction(title: NSLocalizedString("From Cache", comment: ""), image: UIImage(systemName: "signature")) { (action) in
+            self.reinstallFromCache(installedApp)
+        }
+        
+        var reinstallSubmenuActions: [UIMenuElement] = [reinstallFromCacheAction]
+        if let storeApp = installedApp.storeApp
+        {
+            let reinstallFromSourceAction = UIAction(title: NSLocalizedString("From Source", comment: ""), image: UIImage(systemName: "icloud.and.arrow.down")) { [weak self] (action) in
+                self?.reinstallFromSource(storeApp)
+            }
+            reinstallSubmenuActions.append(reinstallFromSourceAction)
+        }
+        let reinstallMenu = UIMenu(title: NSLocalizedString("Reinstall", comment: ""), image: UIImage(systemName: "arrow.triangle.2.circlepath"), children: reinstallSubmenuActions)
+        
         let activateAction = UIAction(title: NSLocalizedString("Activate", comment: ""), image: UIImage(systemName: "checkmark.circle")) { (action) in
             self.activate(installedApp)
         }
@@ -1977,13 +2075,25 @@ extension MyAppsViewController
             self.backup(installedApp)
         }
         
-        let exportBackupAction = UIAction(title: NSLocalizedString("Export Backup", comment: ""), image: UIImage(systemName: "arrow.up.doc")) { (action) in
-            self.exportBackup(for: installedApp)
+        let exportRawBackupAction = UIAction(title: NSLocalizedString("Export (Raw)", comment: ""), image: UIImage(systemName: "folder")) { (action) in
+            self.exportBackup(for: installedApp, asZip: false)
         }
         
-        let importBackupAction = UIAction(title: NSLocalizedString("Import Backup", comment: ""), image: UIImage(systemName: "arrow.down.doc")) { (action) in
-            self.importBackup(for: installedApp)
+        let exportZipBackupAction = UIAction(title: NSLocalizedString("Export (ZIP)", comment: ""), image: UIImage(systemName: "doc.zipper") ?? UIImage(systemName: "archivebox")) { (action) in
+            self.exportBackup(for: installedApp, asZip: true)
         }
+        
+        let exportBackupMenu = UIMenu(title: NSLocalizedString("Export Backup", comment: ""), image: UIImage(systemName: "arrow.up.doc"), children: [exportRawBackupAction, exportZipBackupAction])
+        
+        let importRawBackupAction = UIAction(title: NSLocalizedString("Import (Raw)", comment: ""), image: UIImage(systemName: "folder")) { (action) in
+            self.importBackup(for: installedApp, isZip: false)
+        }
+        
+        let importZipBackupAction = UIAction(title: NSLocalizedString("Import (ZIP)", comment: ""), image: UIImage(systemName: "doc.zipper") ?? UIImage(systemName: "archivebox")) { (action) in
+            self.importBackup(for: installedApp, isZip: true)
+        }
+        
+        let importBackupMenu = UIMenu(title: NSLocalizedString("Import Backup", comment: ""), image: UIImage(systemName: "arrow.down.doc"), children: [importRawBackupAction, importZipBackupAction])
         
         let restoreBackupAction = UIAction(title: NSLocalizedString("Restore Backup", comment: "Restores the last or current backup of this app"), image: UIImage(systemName: "arrow.down.doc")) { (action) in
             self.restore(installedApp)
@@ -2048,7 +2158,7 @@ extension MyAppsViewController
             
             if backupExists
             {
-                backupSubmenuActions.append(exportBackupAction)
+                backupSubmenuActions.append(exportBackupMenu)
                 
                 if installedApp.isActive
                 {
@@ -2066,7 +2176,7 @@ extension MyAppsViewController
         if installedApp.isActive
         {
             // import backup into shared backups dir is allowed
-            backupSubmenuActions.append(importBackupAction)
+            backupSubmenuActions.append(importBackupMenu)
         }
         
         // have an option to restore the n-1 backup
@@ -2092,7 +2202,7 @@ extension MyAppsViewController
         
         if installedApp.resignedBundleIdentifier.isAltStoreAppID
         {
-            actions = [refreshAction, resignAction, profileMenu, changeIconMenu]
+            actions = [refreshAction, resignAction, reinstallMenu, profileMenu, changeIconMenu]
         }
         else
         {
@@ -2101,12 +2211,14 @@ extension MyAppsViewController
                 actions.append(openMenu)
                 actions.append(refreshAction)
                 actions.append(resignAction)
+                actions.append(reinstallMenu)
                 actions.append(profileMenu)
             }
             else
             {
                 actions.append(activateAction)
                 actions.append(resignAction)
+                actions.append(reinstallMenu)
                 actions.append(profileMenu)
             }
             
@@ -2160,6 +2272,7 @@ extension MyAppsViewController
             openMenu,
             refreshAction,
             resignAction,
+            reinstallMenu,
             profileMenu,
             activateAction,
             jitAction,

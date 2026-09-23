@@ -8,6 +8,7 @@
 
 import Foundation
 import Minimuxer
+import MinimuxerCommon
 
 public extension UserDefaults
 {
@@ -141,6 +142,32 @@ public extension UserDefaults
         get { self.integer(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
+    @objc var lastDiscoveredRemotePairingPort: Int {
+        get { self.integer(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var isAutoRetryRemotePairingPortEnabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var isInstallConfirmationEnabled: Bool {
+        get {
+            guard self.object(forKey: #function) != nil else { return true }
+            return self.bool(forKey: #function)
+        }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var isClearCustomizationsOnUninstallEnabled: Bool {
+        get {
+            guard self.object(forKey: #function) != nil else { return true }
+            return self.bool(forKey: #function)
+        }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var isAutoLaunchAppAfterInstallEnabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
     @objc var deviceProbeTimeoutOverride: Int {
         get { self.integer(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
@@ -227,6 +254,17 @@ public extension UserDefaults
         get { self.string(forKey: "customizeAppExtensions") }
         set { self.set(newValue, forKey: "customizeAppExtensions") }
     }
+    var appImportSourceMode: AppImportSourceMode {
+        get { _appImportSourceMode.flatMap { AppImportSourceMode(rawValue: $0) } ?? .prompt
+        }
+        set {
+            _appImportSourceMode = newValue.rawValue
+        }
+    }
+    @objc(appImportSourceMode) private var _appImportSourceMode: String? {
+        get { self.string(forKey: "appImportSourceMode") }
+        set { self.set(newValue, forKey: "appImportSourceMode") }
+    }
     var autoFixAppGroupIDs: Bool {
         get {
             if self.object(forKey: "autoFixAppGroupIDs") != nil {
@@ -268,6 +306,42 @@ public extension UserDefaults
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
+
+    @objc var isMinimuxerBackendHotswapEnabled: Bool {
+        get { self.bool(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
+    @objc var pairingFileEditSuppressedSHAs: [String: Bool] {
+        get { (self.dictionary(forKey: #function) as? [String: Bool]) ?? [:] }
+        set { self.set(newValue, forKey: #function) }
+    }
+    func isPairingFileEditSuppressed(forHash sha: String) -> Bool {
+        pairingFileEditSuppressedSHAs[sha] ?? false
+    }
+    func setPairingFileEditSuppressed(_ suppressed: Bool, forHash sha: String) {
+        var map = pairingFileEditSuppressedSHAs
+        map[sha] = suppressed
+        pairingFileEditSuppressedSHAs = map
+    }
+
+    var activePairingProtocol: PairingProtocol? {
+        get { _activePairingProtocol.flatMap { PairingProtocol(rawValue: $0) } }
+        set { _activePairingProtocol = newValue?.rawValue }
+    }
+    @objc(activePairingProtocol) private var _activePairingProtocol: String? {
+        get { self.string(forKey: "activePairingProtocol") }
+        set { self.set(newValue, forKey: "activePairingProtocol") }
+    }
+
+    var preferredPairingProtocol: PairingProtocol? {
+        get { _preferredPairingProtocol.flatMap { PairingProtocol(rawValue: $0) } }
+        set { _preferredPairingProtocol = newValue?.rawValue }
+    }
+    @objc(preferredPairingProtocol) private var _preferredPairingProtocol: String? {
+        get { self.string(forKey: "preferredPairingProtocol") }
+        set { self.set(newValue, forKey: "preferredPairingProtocol") }
+    }
+
     @objc var keepSigningCertsAfterLogout: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
@@ -501,6 +575,7 @@ public extension UserDefaults
             #keyPath(UserDefaults.useOnDeviceAnisette): false,
             #keyPath(UserDefaults.useLocalVPN): true,
             #keyPath(UserDefaults.acceptIPv6ConnectionConfig): false,
+            #keyPath(UserDefaults.isAutoRetryRemotePairingPortEnabled): true,
             #keyPath(UserDefaults.enableEMPforWireguard): false,
             #keyPath(UserDefaults.skipNonCopyableBackupFiles): true,
             
@@ -513,12 +588,18 @@ public extension UserDefaults
             #keyPath(UserDefaults.customizeAppIcon): false,
             #keyPath(UserDefaults.customizeProvisioningProfile): false,
             #keyPath(UserDefaults._customizeAppExtensions): AppExtensionCustomization.promptUser.rawValue,
+            #keyPath(UserDefaults._appImportSourceMode): AppImportSourceMode.prompt.rawValue,
+            #keyPath(UserDefaults.isInstallConfirmationEnabled): true,
+            #keyPath(UserDefaults.isClearCustomizationsOnUninstallEnabled): true,
+            #keyPath(UserDefaults.isAutoLaunchAppAfterInstallEnabled): false,
             #keyPath(UserDefaults.preferResignedIPA): true,
             #keyPath(UserDefaults.isExportResignedAppEnabled): false,
             #keyPath(UserDefaults.isVerboseOperationsLoggingEnabled): false,
             #keyPath(UserDefaults.isSideStoreVerboseLoggingEnabled): false,
             #keyPath(UserDefaults.isAltSignVerboseLoggingEnabled): false,
             #keyPath(UserDefaults.isMinimuxerVerboseLoggingEnabled): false,
+            #keyPath(UserDefaults.isMinimuxerBackendHotswapEnabled): false,
+            #keyPath(UserDefaults.pairingFileEditSuppressedSHAs): [String: Bool](),
             #keyPath(UserDefaults.isRotateLogsOnStartupEnabled): true,
             #keyPath(UserDefaults.recreateDatabaseOnNextStart): false,
             #keyPath(UserDefaults.isCellularRefreshEnabled): false,
