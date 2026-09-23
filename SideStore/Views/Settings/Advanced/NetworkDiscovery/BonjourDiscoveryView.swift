@@ -905,7 +905,7 @@ struct ServiceDetailView: View {
                 
                 if !viewModel.resolvedAddressItems.isEmpty {
                     ForEach(viewModel.resolvedAddressItems) { item in
-                        DetailRow(label: item.label, value: item.address, tag: item.interfaceTag, onCopy: copyWithFeedback)
+                        DetailRow(label: LocalizedStringKey(item.label), value: item.address, tag: item.interfaceTag, onCopy: copyWithFeedback)
                     }
                 }
                 
@@ -1112,7 +1112,7 @@ struct ServiceDetailView: View {
 
 // A simple key-value row with tap-to-copy and context menu
 private struct DetailRow: View {
-    let label: String
+    let label: LocalizedStringKey
     let value: String
     var tag: String? = nil
     var onCopy: ((String) -> Void)? = nil
