@@ -96,7 +96,7 @@ extension SettingsViewController
                 .certificateManagement,
                 .backupAndRestore,
                 .userCustomizations
-            ]
+            ])
         }
     }
 
