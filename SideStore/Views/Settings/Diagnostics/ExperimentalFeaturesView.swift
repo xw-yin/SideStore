@@ -60,6 +60,7 @@ struct ExperimentalFeaturesView: View {
                             .frame(height: 50)
                         }
                     }
+                    .background(Color.settingsRowBackground)
                     .cornerRadius(14)
                 }
 

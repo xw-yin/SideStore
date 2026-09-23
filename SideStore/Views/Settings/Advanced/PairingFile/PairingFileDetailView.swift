@@ -169,7 +169,7 @@ struct PairingFileDetailView: View {
                 Spacer()
                 let displayed = isEditing ? editedContent : rawContent
                 if !displayed.isEmpty {
-                    Text("\(displayed.count) bytes")
+                    Text(String(format: NSLocalizedString("%d bytes", comment: ""), displayed.count))
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
                 }

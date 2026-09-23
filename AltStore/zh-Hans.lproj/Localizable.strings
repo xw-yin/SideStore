@@ -1323,7 +1323,7 @@
 "Operations Verbose Logging" = "操作详细日志";
 "Operations Logging Control" = "操作日志控制";
 "BONJOUR" = "BONJOUR 服务发现";
-"Network Discovery" = "网络服务发现";
+"Network Discovery" = "网络发现";
 "WIDGET OPTIONS" = "小组件选项";
 "TOP SHELF OPTIONS" = "TOP SHELF 选项";
 "Reload All Widgets" = "重新加载所有小组件";
@@ -1362,7 +1362,7 @@
 "STANDALONE FEATURES" = "独立功能";
 "Wireless Pairing" = "无线配对";
 "Cache Management" = "缓存管理";
-"FEATURE FLAGS" = "特性开关";
+"FEATURE FLAGS" = "功能开关";
 "Cellular Refresh" = "蜂窝网络刷新";
 
 /* Account Verification */
@@ -1791,7 +1791,6 @@
 "IPv6: %@" = "IPv6：%@";
 "%@: %@" = "%@：%@";
 "Rotated %@ Log" = "已轮转 %@ 日志";
-"Use Default (%@ ms)" = "使用默认值（%@ 毫秒）";
 "%@ Log Empty" = "%@ 日志为空";
 
 /* ===== metadataRow labels (2026-09-23) ===== */
@@ -1849,7 +1848,6 @@
 "Delete Certificate" = "删除证书";
 "Delete Pairing File" = "删除配对文件";
 "Description" = "描述";
-"Discovered Interfaces (%@)" = "已发现的接口 (%@)";
 "Done" = "完成";
 "Dump Profiles" = "导出描述文件";
 "Enable Minimuxer Backend Hotswap" = "启用 Minimuxer 后端热切换";
@@ -1875,11 +1873,9 @@
 "HostID" = "HostID";
 "ID: " = "ID：";
 "IPv4 Address" = "IPv4 地址";
-"IPv4:" = "IPv4：";
 "IPv6 Address" = "IPv6 地址";
 "IPv6 Address (Link-Local)" = "IPv6 地址（链路本地）";
 "IPv6 Address (Unique-Local)" = "IPv6 地址（唯一本地）";
-"IPv6:" = "IPv6：";
 "If deleted, SideStore will require the original IPA file during reinstall, backup, resign, or refresh procedures. Are you sure you want to delete the cached app bundle for “%@” ?" = "删除后，SideStore 在重新安装、备份、重签名或刷新过程中将需要原始 IPA 文件。确定要删除“%@”的缓存 App 包吗？";
 "Import" = "导入";
 "Import / Replace File" = "导入/替换文件";
@@ -1909,8 +1905,6 @@
 "OS Version" = "系统版本";
 "Open in Safari (%@://)" = "在 Safari 中打开 (%@://)";
 "Options" = "选项";
-"Other / Raw Services (%@)" = "其他/原始服务 (%@)";
-"Other Services (%@)" = "其他服务 (%@)";
 "Owner ID" = "所有者 ID";
 "Owner Name" = "所有者名称";
 "Password" = "密码";
@@ -1919,7 +1913,6 @@
 "Prompt for confirmation before installing or importing an app" = "安装或导入 App 前弹出确认";
 "Public Key" = "公钥";
 "RGB Format" = "RGB 格式";
-"Recognized Services (%@)" = "已识别的服务 (%@)";
 "Register" = "注册";
 "RemotePair Port" = "RemotePair 端口";
 "Remove Imported" = "移除已导入项";
@@ -1941,8 +1934,6 @@
 "Subject" = "主题";
 "Suffix (R) indicates the certificate is registered remotely on Apple's developer portal." = "后缀 (R) 表示该证书已在 Apple 开发者网站远程注册。";
 "SystemBUID" = "SystemBUID";
-"TCP Services (%@)" = "TCP 服务 (%@)";
-"TXT Record (%@)" = "TXT 记录 (%@)";
 "Team App ID" = "团队 App ID";
 "This will clear the locally stored private key of this certificate.\n\nName: %@\nS/N: %@" = "这将清除此证书本地存储的私钥。\n\n名称：%@\n序列号：%@";
 "Toggle Hide Sensitive Information" = "隐藏敏感信息开关";
@@ -1950,7 +1941,6 @@
 "Tunnel IP" = "隧道 IP";
 "Type Name: " = "类型名称：";
 "Type: " = "类型：";
-"UDP Services (%@)" = "UDP 服务 (%@)";
 "Use Local VPN" = "使用本地 VPN";
 "Valid From" = "生效日期";
 "Valid Until" = "到期日期";
@@ -1965,3 +1955,85 @@
 "Resolving IP address…" = "正在解析 IP 地址…";
 "Searching local network for devices…" = "正在局域网中搜索设备…";
 "Successfully imported '%@'!" = "已成功导入“%@”！";
+
+
+/* format-specifier fixes (batch 3) */
+"%@ (%d)" = "%@（%d 个）";
+"TCP Services (%d)" = "TCP 服务（%d 个）";
+"UDP Services (%d)" = "UDP 服务（%d 个）";
+"Other Services (%d)" = "其他服务（%d 个）";
+"Recognized Services (%d)" = "已识别的服务（%d 个）";
+"Other / Raw Services (%d)" = "其他/原始服务（%d 个）";
+"Discovered Interfaces (%d)" = "已发现的接口（%d 个）";
+"TXT Record (%d)" = "TXT 记录（%d 条）";
+"Server: %@" = "服务器：%@";
+"Active Server" = "活动服务器";
+"%d bytes" = "%d 字节";
+
+/* dump profiles alert */
+"Profiles saved to:\n%@" = "描述文件已保存到：\n%@";
+"Failed to dump profiles:\n%@" = "导出描述文件失败：\n%@";
+
+/* developer services (batch 4) */
+"%@ features" = "%@ 项功能";
+"Access WiFi Information" = "访问 WiFi 信息";
+"An account configuration file was found. Enter password to import." = "发现账户配置文件，请输入密码以导入。";
+"App ID (Identifier)" = "App ID（标识符）";
+"Apple TV" = "Apple TV";
+"Apple Watch" = "Apple Watch";
+"Are you sure you want to revoke this certificate? This will permanently delete the certificate on Apple's servers." = "确定要吊销此证书吗？这将永久删除 Apple 服务器上的该证书。";
+"Associated Domains" = "关联域名";
+"AutoFill Credential Provider" = "自动填充凭证提供程序";
+"Bundle Identifier" = "Bundle ID";
+"Capabilities & Features (%@)" = "功能与特性 (%@)";
+"ClassKit" = "ClassKit";
+"Confirm applying this certificate:" = "确认应用此证书：";
+"Confirm applying this provisioning profile:" = "确认应用此描述文件：";
+"Created App Group '%@'" = "已创建 App 群组“%@”";
+"Data Protection" = "数据保护";
+"Deleted App Group '%@'" = "已删除 App 群组“%@”";
+"Deleted App ID '%@'" = "已删除 App ID“%@”";
+"Deleted Device '%@'" = "已删除设备“%@”";
+"Device" = "设备";
+"Device Details" = "设备详情";
+"Device Identifier (UDID)" = "设备标识符 (UDID)";
+"Device Name" = "设备名称";
+"Device Type" = "设备类型";
+"Device UDID" = "设备 UDID";
+"Devices" = "设备";
+"Disabled Device '%@'" = "已停用设备“%@”";
+"Extended Virtual Addressing" = "扩展虚拟寻址";
+"Failed to import account configuration!" = "导入账户配置失败！";
+"Game Center" = "Game Center";
+"Hotspot" = "热点";
+"ID: %@" = "ID：%@";
+"IPv4:" = "IPv4：";
+"IPv6:" = "IPv6：";
+"In-App Purchase" = "App 内购买";
+"Include Account Password" = "包含账户密码";
+"Increased Debugging Memory Limit" = "提高调试内存限制";
+"Increased Memory Limit" = "提高内存限制";
+"Inter-App Audio" = "App 间音频";
+"Keep Local Certificate" = "保留本地证书";
+"Mac" = "Mac";
+"Multipath" = "多路径";
+"NFC Tag Reading" = "NFC 标签读取";
+"Name (e.g. My App)" = "名称（例如 My App）";
+"Network Extensions" = "网络扩展";
+"Not Available" = "不可用";
+"Personal VPN" = "个人 VPN";
+"Profile generated for '%@'" = "已为“%@”生成描述文件";
+"Profiles" = "描述文件";
+"Purged %d profile(s)" = "已清除 %d 个描述文件";
+"Purged %d profile(s) (%d failed)" = "已清除 %d 个描述文件（%d 个失败）";
+"Push Notifications" = "推送通知";
+"Registered App ID '%@'" = "已注册 App ID“%@”";
+"Registered Device '%@'" = "已注册设备“%@”";
+"Renamed Device to '%@'" = "已将设备重命名为“%@”";
+"Set Profile Confirmation" = "设置描述文件确认";
+"Updated App Group '%@'" = "已更新 App 群组“%@”";
+"Updated App Groups for '%@'" = "已更新“%@”的 App 群组";
+"Vision Pro" = "Vision Pro";
+"Wireless Accessory Config" = "无线配件配置";
+"iPad" = "iPad";
+"iPhone" = "iPhone";

@@ -444,7 +444,7 @@ struct DeveloperOptionsView: View {
                                 Image(systemName: "arrow.counterclockwise")
                                     .font(.system(size: 18, weight: .semibold))
                                     .foregroundColor(.primary)
-                                Text("Use Default (\(AppConstants.Minimuxer.defaultTCPProbeTimeoutMs) ms)")
+                                Text(String(format: NSLocalizedString("Use Default (%d ms)", comment: ""), AppConstants.Minimuxer.defaultTCPProbeTimeoutMs))
                                     .font(.system(size: 17, weight: .bold))
                                     .foregroundColor(.primary)
                                 Spacer()
@@ -679,7 +679,7 @@ struct DeveloperOptionsView: View {
         } message: {
             Text("Do you want to clear all keychain items related to this SideStore instance?")
         }
-        .alert("Dump Profiles", isPresented: $showDumpProfilesAlert) {
+        .alert(NSLocalizedString("Dump Profiles", comment: ""), isPresented: $showDumpProfilesAlert) {
             SwiftUI.Button("OK", role: .cancel) {}
         } message: {
             Text(dumpProfilesAlertMessage)
@@ -696,10 +696,10 @@ struct DeveloperOptionsView: View {
         do {
             let zipPath = try await safeDumpProfiles(docsURL.path)
             let fileName = URL(fileURLWithPath: zipPath).lastPathComponent
-            dumpProfilesAlertMessage = "Profiles saved to:\n\(fileName)"
+            dumpProfilesAlertMessage = String(format: NSLocalizedString("Profiles saved to:\n%@", comment: ""), fileName)
             showDumpProfilesAlert = true
         } catch {
-            dumpProfilesAlertMessage = "Failed to dump profiles:\n\(error.localizedDescription)"
+            dumpProfilesAlertMessage = String(format: NSLocalizedString("Failed to dump profiles:\n%@", comment: ""), error.localizedDescription)
             showDumpProfilesAlert = true
         }
     }
@@ -913,10 +913,10 @@ struct DeveloperOptionsView: View {
         #endif
         do {
             if let rotatedURL = try WidgetLogManager.rotateLog() {
-                let toastView = ToastView(text: NSLocalizedString("Rotated \(logName) Log", comment: ""), detailText: "Saved to WidgetLogs/\(rotatedURL.lastPathComponent)")
+                let toastView = ToastView(text: String(format: NSLocalizedString("Rotated %@ Log", comment: ""), logName), detailText: "Saved to WidgetLogs/\(rotatedURL.lastPathComponent)")
                 toastView.show(in: top)
             } else {
-                let toastView = ToastView(text: NSLocalizedString("\(logName) Log Empty", comment: ""), detailText: "Nothing to rotate.")
+                let toastView = ToastView(text: String(format: NSLocalizedString("%@ Log Empty", comment: ""), logName), detailText: "Nothing to rotate.")
                 toastView.show(in: top)
             }
         } catch {
