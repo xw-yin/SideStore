@@ -10,27 +10,25 @@ import SwiftUI
 import UniformTypeIdentifiers
 import MinimuxerCommon
 
-private extension Color {
-    static let settingsRowBackground = Color(uiColor: .secondarySystemGroupedBackground)
-    static let settingsDivider = Color(uiColor: .separator)
-}
-
 struct PairingFileManagementView: View {
     @StateObject private var viewModel = PairingFileManagementViewModel()
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                activeProtocolSection
-                pairingFilesSection
-                pairingMethodsSection
-                managementSection
+        List {
+            activeProtocolSection
+
+            ForEach(Array(viewModel.supportedProtocols.enumerated()), id: \.element.rawValue) { index, proto in
+                pairingFileSection(for: proto, showHeader: index == 0)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 32)
+
+            pairingMethodsSection
+            managementSection
         }
-        .background(Color(uiColor: .settingsBackground).ignoresSafeArea())
+        #if !os(tvOS)
+        .listStyle(InsetGroupedListStyle())
+        #else
+        .listStyle(GroupedListStyle())
+        #endif
         .navigationTitle("Pairing File Management")
         #if !os(tvOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -93,95 +91,49 @@ struct PairingFileManagementView: View {
     }
 
     private var activeProtocolSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("ACTIVE PROTOCOL")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 4)
-
-            VStack(spacing: 0) {
-                HStack {
-                    Text("Active Protocol")
-                        .font(.system(size: 16))
-                        .foregroundColor(.primary)
-
-                    Spacer()
-
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(ledColor(for: viewModel.activeProtocol))
-                            .frame(width: 7, height: 7)
-                            .shadow(color: ledColor(for: viewModel.activeProtocol).opacity(0.8), radius: 3)
-
-                        Text(activeProtocolTagText(for: viewModel.activeProtocol))
-                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                            .foregroundColor(.primary)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Capsule().fill(Color.primary.opacity(0.12)))
+        Section(header: Text("ACTIVE PROTOCOL")) {
+            HStack {
+                Text("Active Protocol")
+                Spacer()
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(ledColor(for: viewModel.activeProtocol))
+                        .frame(width: 7, height: 7)
+                    Text(activeProtocolTagText(for: viewModel.activeProtocol))
+                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
                 }
-                .padding(.horizontal, 16)
-                .frame(height: 50)
-
-                Divider()
-                    .background(Color.settingsDivider)
-                    .padding(.horizontal, 16)
-
-                HStack {
-                    Text("Preferred Protocol")
-                        .font(.system(size: 16))
-                        .foregroundColor(.primary)
-
-                    Spacer()
-
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(viewModel.preferredProtocol != nil ? ledColor(for: viewModel.preferredProtocol!) : Color.gray)
-                            .frame(width: 7, height: 7)
-                            .shadow(color: (viewModel.preferredProtocol != nil ? ledColor(for: viewModel.preferredProtocol!) : Color.gray).opacity(0.8), radius: 3)
-
-                        Text(viewModel.preferredProtocol != nil ? activeProtocolTagText(for: viewModel.preferredProtocol!) : "None")
-                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                            .foregroundColor(.primary)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Capsule().fill(Color.primary.opacity(0.12)))
-                }
-                .padding(.horizontal, 16)
-                .frame(height: 50)
-                .contextMenu {
-                    if viewModel.preferredProtocol != nil {
-                        SwiftUI.Button(role: .destructive) {
-                            viewModel.clearPreferred()
-                        } label: {
-                            Label("Clear Preferred Protocol", systemImage: "star.slash")
-                        }
-                    }
-                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Capsule().fill(Color.primary.opacity(0.12)))
             }
-            .background(Color.settingsRowBackground)
-            .cornerRadius(14)
-        }
-    }
 
-    private var pairingFilesSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("PAIRING FILES")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 4)
-
-            VStack(spacing: 12) {
-                ForEach(viewModel.supportedProtocols, id: \.rawValue) { proto in
-                    pairingFileCard(for: proto)
+            HStack {
+                Text("Preferred Protocol")
+                Spacer()
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(viewModel.preferredProtocol != nil ? ledColor(for: viewModel.preferredProtocol!) : Color.gray)
+                        .frame(width: 7, height: 7)
+                    Text(viewModel.preferredProtocol != nil ? activeProtocolTagText(for: viewModel.preferredProtocol!) : "None")
+                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Capsule().fill(Color.primary.opacity(0.12)))
+            }
+            .contextMenu {
+                if viewModel.preferredProtocol != nil {
+                    SwiftUI.Button(role: .destructive) {
+                        viewModel.clearPreferred()
+                    } label: {
+                        Label("Clear Preferred Protocol", systemImage: "star.slash")
+                    }
                 }
             }
         }
     }
 
-    private func pairingFileCard(for proto: PairingProtocol) -> some View {
+    private func pairingFileSection(for proto: PairingProtocol, showHeader: Bool) -> some View {
         let fileURL = PairingFileManager.shared.pairingFileURL(for: proto)
         let metadata = PairingFileManager.shared.metadata(for: proto)
         let isInstalled = metadata.exists
@@ -192,14 +144,22 @@ struct PairingFileManagementView: View {
         let lockdown = parsed as? LockdownPairingFile
         let isValid = parsed != nil
 
-        let fileSize = metadata.size
-        let creationDate = metadata.creationDate
-        let modDate = metadata.modificationDate
-
-        return VStack(alignment: .leading, spacing: 0) {
+        return Section {
             if isInstalled {
                 NavigationLink(destination: PairingFileDetailView(mode: proto)) {
-                    installedCardHeader(for: proto, isValid: isValid)
+                    HStack(spacing: 12) {
+                        Image(systemName: proto == .rppairing ? "bolt.horizontal.circle.fill" : "lock.shield.fill")
+                            .font(.system(size: 22))
+                            .foregroundColor(proto == .rppairing ? .cyan : .green)
+
+                        Text(proto == .rppairing ? "Remote Pairing File" : "Lockdown Pairing File")
+                            .font(.headline)
+
+                        Spacer()
+
+                        statusBadge(text: isValid ? "Configured" : "Invalid", color: isValid ? .green : .orange)
+                    }
+                    .padding(.vertical, 4)
                 }
                 .contextMenu {
                     if isValid {
@@ -248,60 +208,61 @@ struct PairingFileManagementView: View {
                     }
                 }
 
-                divider
+                infoRow(label: "File Name", value: fileURL.lastPathComponent, isMonospaced: true)
 
-                VStack(spacing: 0) {
-                    infoRow(label: "File Name", value: fileURL.lastPathComponent, isMonospaced: true)
-                    divider
-                    if proto == viewModel.activeProtocol || proto == viewModel.preferredProtocol {
-                        protocolStatusRow(for: proto)
-                        divider
-                    }
-                    if proto == .rppairing {
-                        if let id = remoteRP?.identifier, !id.isEmpty {
-                            identifierRow(label: "Identifier", value: id, fieldKey: "rp_identifier")
-                            divider
-                        }
-                        infoRow(label: "Key Material", value: (remoteRP?.publicKey != nil && remoteRP?.privateKey != nil) ? "Public & Private Keys OK" : "Incomplete Keys")
-                        divider
-                    } else {
-                        if let sysBUID = lockdown?.systemBUID, !sysBUID.isEmpty {
-                            identifierRow(label: "SystemBUID", value: sysBUID, fieldKey: "lockdown_sysbuid")
-                            divider
-                        }
-                        if let hostID = lockdown?.hostID, !hostID.isEmpty {
-                            identifierRow(label: "HostID", value: hostID, fieldKey: "lockdown_hostid")
-                            divider
-                        }
-                        if let udid = lockdown?.udid, !udid.isEmpty {
-                            identifierRow(label: "Hardware UDID", value: udid, fieldKey: "lockdown_udid")
-                            divider
-                        }
-                        if let wifi = lockdown?.wifiMACAddress, !wifi.isEmpty {
-                            identifierRow(label: "WiFi MAC", value: wifi, fieldKey: "lockdown_wifi")
-                            divider
-                        }
-                    }
+                if proto == viewModel.activeProtocol || proto == viewModel.preferredProtocol {
+                    protocolStatusRow(for: proto)
+                }
 
-                    infoRow(label: "File Size", value: ByteCountFormatter.string(fromByteCount: fileSize, countStyle: .file))
-                    if let created = creationDate {
-                        divider
-                        infoRow(label: "Date Created", value: formatDate(created))
+                if proto == .rppairing {
+                    if let id = remoteRP?.identifier, !id.isEmpty {
+                        identifierRow(label: "Identifier", value: id, fieldKey: "rp_identifier")
                     }
-                    if let mod = modDate {
-                        divider
-                        infoRow(label: "Date Modified", value: formatDate(mod))
+                    infoRow(label: "Key Material", value: (remoteRP?.publicKey != nil && remoteRP?.privateKey != nil) ? "Public & Private Keys OK" : "Incomplete Keys")
+                } else {
+                    if let sysBUID = lockdown?.systemBUID, !sysBUID.isEmpty {
+                        identifierRow(label: "SystemBUID", value: sysBUID, fieldKey: "lockdown_sysbuid")
                     }
+                    if let hostID = lockdown?.hostID, !hostID.isEmpty {
+                        identifierRow(label: "HostID", value: hostID, fieldKey: "lockdown_hostid")
+                    }
+                    if let udid = lockdown?.udid, !udid.isEmpty {
+                        identifierRow(label: "Hardware UDID", value: udid, fieldKey: "lockdown_udid")
+                    }
+                    if let wifi = lockdown?.wifiMACAddress, !wifi.isEmpty {
+                        identifierRow(label: "WiFi MAC", value: wifi, fieldKey: "lockdown_wifi")
+                    }
+                }
+
+                infoRow(label: "File Size", value: ByteCountFormatter.string(fromByteCount: metadata.size, countStyle: .file))
+                if let created = metadata.creationDate {
+                    infoRow(label: "Date Created", value: formatDate(created))
+                }
+                if let mod = metadata.modificationDate {
+                    infoRow(label: "Date Modified", value: formatDate(mod))
                 }
             } else {
                 SwiftUI.Button {
                     viewModel.promptImport(for: proto)
                 } label: {
-                    VStack(spacing: 0) {
-                        missingCardHeader(for: proto)
-                        divider
-                        infoRow(label: "File Name", value: fileURL.lastPathComponent, isMonospaced: true)
+                    HStack(spacing: 12) {
+                        Image(systemName: proto == .rppairing ? "bolt.horizontal.circle" : "lock.shield")
+                            .font(.system(size: 22))
+                            .foregroundColor(.secondary)
+
+                        Text(proto == .rppairing ? "Remote Pairing File" : "Lockdown Pairing File")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+
+                        Spacer()
+
+                        statusBadge(text: "Missing", color: .red)
+
+                        Image(systemName: "square.and.arrow.down")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.accentColor)
                     }
+                    .padding(.vertical, 4)
                 }
                 .buttonStyle(.plain)
                 .contextMenu {
@@ -311,76 +272,24 @@ struct PairingFileManagementView: View {
                         Label("Import Pairing File", systemImage: "square.and.arrow.down")
                     }
                 }
+
+                infoRow(label: "File Name", value: fileURL.lastPathComponent, isMonospaced: true)
+            }
+        } header: {
+            if showHeader {
+                Text("PAIRING FILES")
             }
         }
-        .background(Color.settingsRowBackground)
-        .cornerRadius(14)
     }
 
-    private func installedCardHeader(for proto: PairingProtocol, isValid: Bool) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: proto == .rppairing ? "bolt.horizontal.circle.fill" : "lock.shield.fill")
-                .font(.system(size: 22))
-                .foregroundColor(proto == .rppairing ? .cyan : .green)
-
-            Text(proto == .rppairing ? "Remote Pairing File" : "Lockdown Pairing File")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.primary)
-
-            Spacer()
-
-            if isValid {
-                Text("Configured")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.green)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color.green.opacity(0.15))
-                    .cornerRadius(6)
-            } else {
-                Text("Invalid")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.orange)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color.orange.opacity(0.15))
-                    .cornerRadius(6)
-            }
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.secondary)
-        }
-        .padding(.horizontal, 16)
-        .frame(height: 56)
-    }
-
-    private func missingCardHeader(for proto: PairingProtocol) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: proto == .rppairing ? "bolt.horizontal.circle" : "lock.shield")
-                .font(.system(size: 22))
-                .foregroundColor(.secondary)
-
-            Text(proto == .rppairing ? "Remote Pairing File" : "Lockdown Pairing File")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.primary)
-
-            Spacer()
-
-            Text("Missing")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.red)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(Color.red.opacity(0.15))
-                .cornerRadius(6)
-
-            Image(systemName: "square.and.arrow.down")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.accentColor)
-        }
-        .padding(.horizontal, 16)
-        .frame(height: 56)
+    private func statusBadge(text: LocalizedStringKey, color: Color) -> some View {
+        Text(text)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundColor(color)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(color.opacity(0.15))
+            .cornerRadius(6)
     }
 
     private func identifierRow(label: LocalizedStringKey, value: String, fieldKey: String) -> some View {
@@ -392,15 +301,12 @@ struct PairingFileManagementView: View {
         } label: {
             HStack {
                 Text(label)
-                    .font(.system(size: 14))
                     .foregroundColor(.secondary)
                 Spacer()
                 Text(displayValue)
                     .font(.system(size: 13, weight: .medium, design: isRevealed ? .monospaced : .default))
                     .foregroundColor(.primary)
             }
-            .padding(.horizontal, 16)
-            .frame(height: 40)
         }
         .buttonStyle(.plain)
     }
@@ -408,7 +314,6 @@ struct PairingFileManagementView: View {
     private func infoRow(label: LocalizedStringKey, value: String, isMonospaced: Bool = false) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: 14))
                 .foregroundColor(.secondary)
             Spacer()
             Text(value)
@@ -417,15 +322,12 @@ struct PairingFileManagementView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
-        .padding(.horizontal, 16)
-        .frame(height: 40)
     }
 
     @ViewBuilder
     private func protocolStatusRow(for proto: PairingProtocol) -> some View {
         HStack {
             Text("Status")
-                .font(.system(size: 14))
                 .foregroundColor(.secondary)
 
             Spacer()
@@ -436,11 +338,8 @@ struct PairingFileManagementView: View {
                         Circle()
                             .fill(ledColor(for: proto))
                             .frame(width: 7, height: 7)
-                            .shadow(color: ledColor(for: proto).opacity(0.8), radius: 3)
-
                         Text("Active")
                             .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                            .foregroundColor(.primary)
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
@@ -452,11 +351,8 @@ struct PairingFileManagementView: View {
                         Circle()
                             .fill(Color.yellow)
                             .frame(width: 7, height: 7)
-                            .shadow(color: Color.yellow.opacity(0.8), radius: 3)
-
                         Text("Preferred")
                             .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                            .foregroundColor(.primary)
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
@@ -464,80 +360,40 @@ struct PairingFileManagementView: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .frame(height: 40)
     }
 
     private var pairingMethodsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("PAIRING METHODS")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 4)
-
-            VStack(spacing: 0) {
-                NavigationLink(destination: WirelessPairView()) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "antenna.radiowaves.left.and.right")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.primary)
-                        Text("Wireless Pairing")
-                            .font(.system(size: 17, weight: .bold))
-                            .foregroundColor(.primary)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.horizontal, 16)
-                    .frame(height: 50)
+        Section(header: Text("PAIRING METHODS")) {
+            NavigationLink(destination: WirelessPairView()) {
+                HStack(spacing: 12) {
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        .font(.system(size: 18, weight: .semibold))
+                    Text("Wireless Pairing")
+                        .font(.headline)
                 }
+                .padding(.vertical, 4)
             }
-            .background(Color.settingsRowBackground)
-            .cornerRadius(14)
         }
     }
 
     private var managementSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("MANAGEMENT")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 4)
-
-            VStack(spacing: 0) {
-                SwiftUI.Button(action: {
-                    viewModel.confirmReset()
-                }) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "arrow.counterclockwise.circle")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.red)
-                        Text("Reset Pairing Files")
-                            .font(.system(size: 17, weight: .bold))
-                            .foregroundColor(.red)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 16)
-                    .frame(height: 50)
+        Section(
+            header: Text("MANAGEMENT"),
+            footer: Text("Resetting pairing files removes stored Lockdown and Remote Pairing credentials. You will need to re-pair or re-import a pairing file and restart SideStore.")
+                .font(.footnote)
+        ) {
+            SwiftUI.Button(role: .destructive, action: {
+                viewModel.confirmReset()
+            }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "arrow.counterclockwise.circle")
+                        .font(.system(size: 18, weight: .semibold))
+                    Text("Reset Pairing Files")
+                        .font(.headline)
                 }
+                .padding(.vertical, 4)
             }
-            .background(Color.settingsRowBackground)
-            .cornerRadius(14)
-
-            Text("Resetting pairing files removes stored Lockdown and Remote Pairing credentials. You will need to re-pair or re-import a pairing file and restart SideStore.")
-                .font(.system(size: 12))
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 4)
-                .padding(.top, 4)
         }
-    }
-
-    private var divider: some View {
-        Rectangle()
-            .fill(Color.settingsDivider)
-            .frame(height: 1)
-            .padding(.leading, 16)
     }
 
     private func ledColor(for proto: PairingProtocol) -> Color {
