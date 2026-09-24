@@ -78,7 +78,7 @@ public final class PairingFileManagementViewModel: ObservableObject {
     public func handleImportResult(_ result: Result<URL, Error>) {
         switch result {
         case .success(let url):
-            guard let (_, parsed) = try? PairingFileManager.shared.inspectPairingFile(from: url) else {
+            guard let (content, parsed) = try? PairingFileManager.shared.inspectPairingFile(from: url) else {
                 do {
                     try PairingFileManager.shared.importPairingFile(from: url, preferred: targetImportMode)
                     targetImportMode = nil
@@ -86,6 +86,14 @@ public final class PairingFileManagementViewModel: ObservableObject {
                 } catch {
                     activeAlert = .importError("Failed to import pairing file: \(error.localizedDescription)")
                 }
+                return
+            }
+
+            // Composite (dual-protocol) file: let the user pick which
+            // protocols to import instead of silently choosing one.
+            let compositeModes = PairingFileManager.shared.compositeModes(in: content)
+            if compositeModes.count > 1 {
+                presentCompositeImportPicker(modes: compositeModes, content: content)
                 return
             }
 
@@ -121,6 +129,41 @@ public final class PairingFileManagementViewModel: ObservableObject {
     public func importOnly(url: URL, mode: PairingProtocol) {
         do {
             try PairingFileManager.shared.importPairingFile(from: url, preferred: mode)
+            targetImportMode = nil
+            refresh()
+        } catch {
+            activeAlert = .importError("Failed to import pairing file: \(error.localizedDescription)")
+        }
+    }
+
+    public func cancelCompositeImport() {
+        targetImportMode = nil
+    }
+
+    @MainActor
+    public func presentCompositeImportPicker(modes: [PairingProtocol], content: String) {
+        guard let topVC = UIApplication.shared.topViewController() else {
+            // Fallback: import everything if we cannot ask.
+            confirmCompositeImport(content: content, modes: modes)
+            return
+        }
+        let picker = CompositeImportPickerViewController(modes: modes)
+        picker.onConfirm = { [weak self] selected in
+            self?.confirmCompositeImport(content: content, modes: selected)
+        }
+        picker.onCancel = { [weak self] in
+            self?.cancelCompositeImport()
+        }
+        topVC.present(picker, animated: true)
+    }
+
+    private func confirmCompositeImport(content: String, modes: [PairingProtocol]) {
+        guard !modes.isEmpty else {
+            targetImportMode = nil
+            return
+        }
+        do {
+            try PairingFileManager.shared.importComposite(content: content, modes: modes)
             targetImportMode = nil
             refresh()
         } catch {

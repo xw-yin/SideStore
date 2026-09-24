@@ -2202,3 +2202,8 @@
 "Never" = "从未";
 "Automatically refresh apps in the background when the system allows it." = "在系统允许时于后台自动刷新应用。";
 "The system decides the actual run time. This is only the earliest time a refresh may start." = "实际执行时间由系统决定，此处仅为最早可开始刷新的时间。";
+"Select Protocols to Import" = "选择要导入的协议";
+"This pairing file contains both Lockdown and Remote Pairing records. Choose which ones to import." = "此配对文件同时包含 Lockdown 与 Remote Pairing 两种配对记录，请选择要导入的。";
+"Import Selected" = "导入所选";
+"Remote Pairing File" = "Remote Pairing 配对文件";
+"Lockdown Pairing File" = "Lockdown 配对文件";
