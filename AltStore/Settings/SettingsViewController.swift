@@ -43,7 +43,7 @@ extension SettingsViewController
         case disableAppLimit
         
         static var allCases: [AppRefreshRow] {
-            var c: [AppRefreshRow] = [.backgroundRefresh, .noIdleTimeout, .addToSiri]
+            var c: [AppRefreshRow] = [.backgroundRefresh, .refreshSchedule, .noIdleTimeout, .addToSiri]
 
             // conditional entries go at the last to preserve ordering
             if UserDefaults.standard.isCowExploitSupported || !ProcessInfo().sparseRestorePatched
