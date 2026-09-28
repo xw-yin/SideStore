@@ -9,6 +9,7 @@
 import Foundation
 private import KeychainAccess
 import SideSign
+import Security
 
 @propertyWrapper
 public struct KeychainItem<Value>
@@ -44,9 +45,19 @@ public class Keychain
 {
     public static let shared = Keychain()
     
-    fileprivate let keychain = KeychainAccess.Keychain(service: Bundle.Info.appbundleIdentifier)
-                                            .accessibility(.afterFirstUnlock)
-                                            .synchronizable(true)
+    fileprivate let keychain: KeychainAccess.Keychain = {
+        var keychain = KeychainAccess.Keychain(service: Bundle.Info.appbundleIdentifier)
+            .accessibility(.afterFirstUnlock)
+            .synchronizable(true)
+        // LiveContainer+SideStore: the "Refresh All Apps" shortcut launches SideStore inside
+        // LiveProcess.appex, whose default keychain access group differs from the main app
+        // process where the user signed in. Point the appex at the host app's keychain group
+        // so both share the same login state instead of reporting "not signed in".
+        if let hostGroup = Keychain.liveContainerHostKeychainGroup {
+            keychain = keychain.accessGroup(hostGroup)
+        }
+        return keychain
+    }()
     
     @KeychainItem(key: "appleIDEmailAddress")
     public var appleIDEmailAddress: String?
@@ -173,5 +184,44 @@ public class Keychain
         debugLog("[Keychain] Clearing all Keychain items related to this instance...")
         try? self.keychain.removeAll()
         debugLog("[Keychain] All Keychain items cleared.")
+    }
+}
+
+// MARK: - LiveContainer Host Keychain Sharing
+
+extension Keychain
+{
+    /// Returns the LiveContainer host app's keychain access group when SideStore is running
+    /// inside LiveProcess.appex (the "Refresh All Apps" shortcut flow), nil otherwise.
+    ///
+    /// The interactive SideStore runs in the main app process and stores the Apple ID login
+    /// under the main app's default keychain group. The shortcut flow runs in the appex
+    /// process, whose default group is different, so without this it cannot see the login
+    /// and refresh fails with "not signed in". Needs proper testing on-device: the appex
+    /// must be signed with "Use Main Profile" so its entitlements grant the host's group.
+    fileprivate static var liveContainerHostKeychainGroup: String?
+    {
+        // 1. Only when hosted by LiveProcess.appex.
+        let appexURL = Bundle.main.bundleURL
+        guard appexURL.path.contains("LiveProcess.appex") else { return nil }
+
+        // 2. Host app bundle ID, read from disk (robust against user re-signed bundle IDs).
+        let hostAppURL = appexURL.deletingLastPathComponent().deletingLastPathComponent()
+        guard let hostBundleID = Bundle(url: hostAppURL)?.bundleIdentifier, !hostBundleID.isEmpty else { return nil }
+
+        // 3. Team ID from our own application-identifier entitlement ("TEAMID.bundle.id").
+        guard let task = SecTaskCreateFromSelf(nil) else { return nil }
+        var error: Unmanaged<CFError>?
+        guard let applicationID = SecTaskCopyValueForEntitlement(task, "application-identifier" as CFString, &error) as? String else { return nil }
+        let teamID = applicationID.split(separator: ".", maxSplits: 1).first.map(String.init) ?? ""
+        guard !teamID.isEmpty else { return nil }
+
+        let group = "\(teamID).\(hostBundleID)"
+
+        // 4. Only use it when our entitlements actually grant this group.
+        guard let allowedGroups = SecTaskCopyValueForEntitlement(task, "keychain-access-groups" as CFString, &error) as? [String],
+              allowedGroups.contains(group) else { return nil }
+
+        return group
     }
 }
