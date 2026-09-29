@@ -9,7 +9,6 @@
 import Foundation
 private import KeychainAccess
 import SideSign
-import Security
 
 @propertyWrapper
 public struct KeychainItem<Value>
@@ -46,17 +45,14 @@ public class Keychain
     public static let shared = Keychain()
     
     fileprivate let keychain: KeychainAccess.Keychain = {
-        var keychain = KeychainAccess.Keychain(service: Bundle.Info.appbundleIdentifier)
-            .accessibility(.afterFirstUnlock)
-            .synchronizable(true)
         // LiveContainer+SideStore: the "Refresh All Apps" shortcut launches SideStore inside
         // LiveProcess.appex, whose default keychain access group differs from the main app
         // process where the user signed in. Point the appex at the host app's keychain group
         // so both share the same login state instead of reporting "not signed in".
-        if let hostGroup = Keychain.liveContainerHostKeychainGroup {
-            keychain = keychain.accessGroup(hostGroup)
-        }
-        return keychain
+        KeychainAccess.Keychain(service: Bundle.Info.appbundleIdentifier,
+                                accessGroup: Keychain.liveContainerHostKeychainGroup)
+            .accessibility(.afterFirstUnlock)
+            .synchronizable(true)
     }()
     
     @KeychainItem(key: "appleIDEmailAddress")
@@ -209,19 +205,31 @@ extension Keychain
         let hostAppURL = appexURL.deletingLastPathComponent().deletingLastPathComponent()
         guard let hostBundleID = Bundle(url: hostAppURL)?.bundleIdentifier, !hostBundleID.isEmpty else { return nil }
 
-        // 3. Team ID from our own application-identifier entitlement ("TEAMID.bundle.id").
-        guard let task = SecTaskCreateFromSelf(nil) else { return nil }
-        var error: Unmanaged<CFError>?
-        guard let applicationID = SecTaskCopyValueForEntitlement(task, "application-identifier" as CFString, &error) as? String else { return nil }
-        let teamID = applicationID.split(separator: ".", maxSplits: 1).first.map(String.init) ?? ""
-        guard !teamID.isEmpty else { return nil }
+        // 3. Team ID from the host app's embedded provisioning profile.
+        guard let hostPlist = mobileProvisionPlist(for: hostAppURL),
+              let teamIDs = hostPlist["TeamIdentifier"] as? [String],
+              let teamID = teamIDs.first, !teamID.isEmpty else { return nil }
 
         let group = "\(teamID).\(hostBundleID)"
 
-        // 4. Only use it when our entitlements actually grant this group.
-        guard let allowedGroups = SecTaskCopyValueForEntitlement(task, "keychain-access-groups" as CFString, &error) as? [String],
+        // 4. Only use it when the appex's own profile grants this keychain group,
+        //    i.e. it was signed with "Use Main Profile".
+        guard let appexPlist = mobileProvisionPlist(for: appexURL),
+              let entitlements = appexPlist["Entitlements"] as? [String: Any],
+              let allowedGroups = entitlements["keychain-access-groups"] as? [String],
               allowedGroups.contains(group) else { return nil }
 
         return group
     }
-}
+
+    /// Reads a bundle's embedded.mobileprovision (a CMS blob wrapping a plist)
+    /// and returns the plist dictionary, or nil when absent/unparseable.
+    fileprivate static func mobileProvisionPlist(for bundleURL: URL) -> [String: Any]?
+    {
+        let url = bundleURL.appendingPathComponent("embedded.mobileprovision")
+        guard let data = try? Data(contentsOf: url),
+              let start = data.range(of: Data("<plist".utf8)),
+              let end = data.range(of: Data("</plist>".utf8), in: start.upperBound..<data.endIndex) else { return nil }
+        let plistData = data[start.lowerBound..<end.upperBound]
+        return (try? PropertyListSerialization.propertyList(from: plistData, format: nil)) as? [String: Any]
+    }
