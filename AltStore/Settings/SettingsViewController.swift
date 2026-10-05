@@ -83,6 +83,8 @@ extension SettingsViewController
         case certificateManagement  // row 9 - Certificate Management
         case backupAndRestore       // row 10 - Backup & Restore
         case userCustomizations     // row 11 - User Customizations
+        case pairThisDevice         // row 12 - Pair This Device (Enterprise)
+        case enterpriseSigning      // row 13 - Enterprise Signing
 
         static var allCases: [AdvancedSettingsRow] {
             var rows: [AdvancedSettingsRow] = [.sendFeedback, .refreshAttempts, .refreshSideJITServer, .pairingFileManagement]
@@ -96,7 +98,9 @@ extension SettingsViewController
                 .profileManagement,
                 .certificateManagement,
                 .backupAndRestore,
-                .userCustomizations
+                .userCustomizations,
+                .pairThisDevice,
+                .enterpriseSigning
             ])
             return rows
         }
@@ -463,6 +467,26 @@ private extension SettingsViewController
             await AccountVerificationRow.resolvePendingActions(for: self.accountStatus, team: team, presentingViewController: self)
             self.startAccountVerification(for: team)
         }
+    }
+    
+    /// Enterprise: builds the programmatic rows for Pair This Device / Signing Method,
+    /// which have no prototype in Settings.storyboard.
+    private func makeEnterpriseSettingsCell(for row: AdvancedSettingsRow) -> UITableViewCell
+    {
+        let cell = InsetGroupTableViewCell(style: .default, reuseIdentifier: "EnterpriseSettingsCell")
+        switch row
+        {
+        case .pairThisDevice:
+            cell.textLabel?.text = NSLocalizedString("Pair This Device", comment: "")
+            cell.imageView?.image = UIImage(systemName: "cable.connector")
+        case .enterpriseSigning:
+            cell.textLabel?.text = NSLocalizedString("Signing Method", comment: "")
+            cell.imageView?.image = UIImage(systemName: "signature")
+        default:
+            break
+        }
+        cell.accessoryType = .disclosureIndicator
+        return cell
     }
     
     private func prepare(_ settingsHeaderFooterView: SettingsHeaderFooterView, for section: Section, isHeader: Bool)
@@ -901,6 +925,13 @@ extension SettingsViewController
         if Section.allCases[indexPath.section] == .account && indexPath.row == 3 {
             return AccountVerificationRow.preferredHeight
         }
+        // Enterprise: programmatic rows have no storyboard prototype; use the standard row height.
+        if Section.allCases[indexPath.section] == .advancedSettings {
+            let advRow = AdvancedSettingsRow.allCases[indexPath.row]
+            if advRow == .pairThisDevice || advRow == .enterpriseSigning {
+                return 51
+            }
+        }
         let effectiveIndexPath: IndexPath
         if Section.allCases[indexPath.section] == .advancedSettings {
             let row = AdvancedSettingsRow.allCases[indexPath.row]
@@ -923,6 +954,19 @@ extension SettingsViewController
                 actionCell.backgroundConfiguration = .clear()
             }
         }
+        // Enterprise: the programmatic rows extend the Advanced Settings group,
+        // so re-assign the top/middle/bottom styles for the new tail.
+        if Section.allCases[indexPath.section] == .advancedSettings,
+           let insetCell = cell as? InsetGroupTableViewCell {
+            switch AdvancedSettingsRow.allCases[indexPath.row] {
+            case .userCustomizations, .pairThisDevice:
+                insetCell.style = .middle
+            case .enterpriseSigning:
+                insetCell.style = .bottom
+            default:
+                break
+            }
+        }
         self.localizeSettingsControls(in: cell)
     }
 
@@ -930,6 +974,13 @@ extension SettingsViewController
     {
         if Section.allCases[indexPath.section] == .account && indexPath.row == 3 {
             return 0
+        }
+        // Enterprise: programmatic rows have no storyboard prototype.
+        if Section.allCases[indexPath.section] == .advancedSettings {
+            let advRow = AdvancedSettingsRow.allCases[indexPath.row]
+            if advRow == .pairThisDevice || advRow == .enterpriseSigning {
+                return 0
+            }
         }
         let effectiveIndexPath: IndexPath
         if Section.allCases[indexPath.section] == .advancedSettings {
@@ -963,6 +1014,14 @@ extension SettingsViewController
             cell.configure(with: self.accountStatus)
             cell.style = .bottom
             return cell
+        }
+        
+        // Enterprise: the Pair This Device / Enterprise Signing rows have no storyboard prototype.
+        if Section.allCases[indexPath.section] == .advancedSettings {
+            let advRow = AdvancedSettingsRow.allCases[indexPath.row]
+            if advRow == .pairThisDevice || advRow == .enterpriseSigning {
+                return self.makeEnterpriseSettingsCell(for: advRow)
+            }
         }
         
         let effectiveIndexPath: IndexPath
@@ -1332,6 +1391,20 @@ extension SettingsViewController
                 let vc = UIHostingController(rootView: userCustomizationsView)
                 vc.view.backgroundColor = .systemGroupedBackground
                 vc.title = NSLocalizedString("User Customizations", comment: "")
+                self.prepare(for: UIStoryboardSegue(identifier: "diagnostics", source: self, destination: vc), sender: nil)
+            
+            case .pairThisDevice:
+                // Enterprise: on-device pairing, works with Apple ID / Enterprise / Ad Hoc signing.
+                let vc = UIHostingController(rootView: PairThisDeviceView())
+                vc.view.backgroundColor = .settingsBackground
+                vc.title = NSLocalizedString("Pair This Device", comment: "")
+                self.prepare(for: UIStoryboardSegue(identifier: "diagnostics", source: self, destination: vc), sender: nil)
+                
+            case .enterpriseSigning:
+                let enterpriseSigningView = EnterpriseSigningView(presentingViewController: self)
+                let vc = UIHostingController(rootView: enterpriseSigningView)
+                vc.view.backgroundColor = .settingsBackground
+                vc.title = NSLocalizedString("Signing Method", comment: "")
                 self.prepare(for: UIStoryboardSegue(identifier: "diagnostics", source: self, destination: vc), sender: nil)
                 
             case .refreshAttempts: break

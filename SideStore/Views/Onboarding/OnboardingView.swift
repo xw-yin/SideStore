@@ -650,7 +650,7 @@ private struct CompleteStep: View {
     }
 
     private var isAuthenticated: Bool {
-        AuthManager.shared.isAuthenticated
+        AuthManager.shared.isAuthenticated || EnterpriseSigningManager.shared.identity != nil
     }
 
     var body: some View {
@@ -688,9 +688,9 @@ private struct CompleteStep: View {
                 Divider()
 
                 summaryRow(
-                    title: NSLocalizedString("Apple ID", comment: ""),
+                    title: NSLocalizedString("Apple ID or Enterprise", comment: ""),
                     isConfigured: isAuthenticated,
-                    warning: NSLocalizedString("Can be added anytime in Settings", comment: "")
+                    warning: NSLocalizedString("Sign in, or import an enterprise certificate in Settings › Advanced › Enterprise Signing", comment: "")
                 )
             }
             .padding(16)

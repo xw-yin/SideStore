@@ -29,6 +29,19 @@ final class ScheduleExpirationWarningNotificationOperation: BaseStandaloneOperat
         self.setProgress(10)
 
         let center = UNUserNotificationCenter.current()
+
+        // Enterprise: no 7-day expiry warnings when the app itself is enterprise-signed.
+        var isEnterpriseSigned = false
+        installedApp.managedObjectContext?.performAndWait {
+            isEnterpriseSigned = installedApp.hidesExpirationCountdown
+        }
+        if isEnterpriseSigned {
+            center.removePendingNotificationRequests(withIdentifiers: ["24h", "6h", "0h"].map { "\(AppManager.expirationWarningNotificationID).\($0)" })
+            debugLog("[ScheduleExpirationWarningNotificationOperation] Enterprise-signed, skipping expiry warnings.")
+            self.setProgress(100)
+            return true
+        }
+
         let now = Date()
         var storedExpirationDate = Date()
         self.setProgress(30)
@@ -40,7 +53,10 @@ final class ScheduleExpirationWarningNotificationOperation: BaseStandaloneOperat
             ? Bundle.realMainBundle.bundleURL
             : Bundle.Info.activeBundleURL
         let runningExpirationDate = ALTApplication(fileURL: runningBundleURL)?.provisioningProfile?.expirationDate
-        let expirationDate = runningExpirationDate ?? storedExpirationDate
+        // After a self-refresh the running process is still the old binary, so the
+        // running profile date is stale while CoreData already has the new date.
+        // Take the later of the two so a refresh doesn't leave stale warnings scheduled.
+        let expirationDate = max(storedExpirationDate, runningExpirationDate ?? .distantPast)
 
         debugLog("[ScheduleExpirationWarningNotificationOperation] Scheduling for expiration date: \(expirationDate) (running profile: \(runningExpirationDate != nil))")
 

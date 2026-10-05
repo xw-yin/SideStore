@@ -16,6 +16,7 @@ final class PipelineHandler: PipelineExecutionHandler,
                              UnsupportedVersionHandler, 
                              InstallAppHandler, 
                              UserCustomizationHandler,
+                             SigningChoiceHandler,
                              Sendable
 {
     var preflightChecksHandler: PreflightChecksHandler { self }
@@ -24,6 +25,7 @@ final class PipelineHandler: PipelineExecutionHandler,
     var unsupportedVersionHandler: UnsupportedVersionHandler { self }
     var installAppHandler: InstallAppHandler { self }
     var userCustomizationHandler: UserCustomizationHandler { self }
+    var signingChoiceHandler: SigningChoiceHandler { self }
     
     let isResignActive: Bool
     private let presenterProvider: PresenterProvider?
@@ -50,6 +52,36 @@ final class PipelineHandler: PipelineExecutionHandler,
             return topVC.presentedViewController ?? topVC
         }
         return nil
+    }
+    
+    /// Enterprise: asks whether to sign with the Apple ID or the Enterprise certificate.
+    @MainActor
+    func chooseSigningCertificate(appName: String, enterpriseTeamName: String) async -> SigningCertificateChoice {
+        guard let presenter = self.activePresenter else {
+            return .appleID
+        }
+        
+        let title = String(format: NSLocalizedString("Sign “%@” with…", comment: ""), appName)
+        let message = NSLocalizedString("Apple ID apps need a refresh every 7 days. Enterprise apps don't, but stop working if the certificate is revoked.", comment: "")
+        
+        return await withCheckedContinuation { continuation in
+            let alertController = UIAlertController(title: title, message: message, preferredStyle: .actionSheet)
+            alertController.addAction(UIAlertAction(title: NSLocalizedString("Apple ID Certificate", comment: ""), style: .default) { _ in
+                continuation.resume(returning: .appleID)
+            })
+            alertController.addAction(UIAlertAction(title: String(format: NSLocalizedString("Enterprise Certificate (%@)", comment: ""), enterpriseTeamName), style: .default) { _ in
+                continuation.resume(returning: .enterprise)
+            })
+            alertController.addAction(UIAlertAction(title: UIAlertAction.cancel.title, style: .cancel) { _ in
+                continuation.resume(returning: .cancel)
+            })
+            if let popover = alertController.popoverPresentationController {
+                popover.sourceView = presenter.view
+                popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+            presenter.present(alertController, animated: true)
+        }
     }
     
     @MainActor
@@ -348,7 +380,7 @@ final class PipelineHandler: PipelineExecutionHandler,
             return (initialBundleID, true)
         }
 
-        let team = try await AuthManager.shared.getAuthenticatedTeam()
+        let team = try await AuthManager.shared.getSigningTeam()
         debugLog("[PipelineHandler] resolveBundleIDOverride: initialBundleID='\(initialBundleID)', teamID='\(team.identifier)', isAuthenticated=\(AuthManager.shared.isAuthenticated)")
         let teamID = team.identifier
         guard !teamID.isEmpty else {
