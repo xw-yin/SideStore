@@ -27,8 +27,6 @@ final class PairThisDeviceViewModel: ObservableObject {
         case failed(String)
     }
 
-    static let hostName = "SideStore"
-
     @Published var phase: Phase = .idle
     @Published var keepAliveInBackground = true
     @Published var exportURL: URL?
@@ -87,12 +85,11 @@ final class PairThisDeviceViewModel: ObservableObject {
 
         let docsPath = FileManager.default.documentsDirectory.path
         wirelessPairing.start(
-            hostName: Self.hostName,
             outPath: docsPath,
             resolveFileName: { name, model in
                 WirelessPairViewModel.pairingFileName(for: name, model: model)
             }
-        ) { [weak self] result in
+        ) { [weak self] (result: Result<MinimuxerPairedDevice, Swift.Error>) in
             Task { @MainActor in
                 guard let self else { return }
                 self.stopKeepAlive()
