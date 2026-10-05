@@ -70,8 +70,8 @@ final class PairThisDeviceViewModel: ObservableObject {
     }
 
     private func startHost() {
-        wirelessPairing.onReadyToPair = { _, _ in
-            debugLog("[PairThisDevice] Advertising as '\(PairThisDeviceViewModel.hostName)'")
+        wirelessPairing.onReadyToPair = { serviceID, port in
+            debugLog("[PairThisDevice] Advertising service '\(serviceID)' on port \(port)")
         }
         wirelessPairing.onPinReceived = { [weak self] pin in
             Task { @MainActor in
