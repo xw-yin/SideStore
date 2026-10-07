@@ -23,14 +23,17 @@ final class LocalNetworkPermissionChecker: NSObject {
     
     /// Checks if Local Network permission is granted by publishing a dummy NetService.
     /// If not determined, this triggers the system permission alert.
+    /// Uses the same Bonjour service type as wireless pairing
+    /// (_remotepairing-pairable-host._tcp.) so the check validates exactly what
+    /// pairing needs; it must be declared in the host app's Info.plist
+    /// (NSBonjourServices) or the publish fails even when permission is granted.
     func checkPermission() async -> Bool {
         debugLog("[LocalNetworkCheck] Checking local network permission via NetService publication...")
         
         // If there's an ongoing check, fail it first to avoid hanging
         cleanup(returning: false)
         
-        // We use '_altserver._tcp.' which is already defined in Info.plist
-        let netService = NetService(domain: "local.", type: "_altserver._tcp.", name: "LocalNetworkPrivacy", port: 1100)
+        let netService = NetService(domain: "local.", type: "_remotepairing-pairable-host._tcp.", name: "LocalNetworkPrivacy", port: 1100)
         self.service = netService
         netService.delegate = self
         
