@@ -49,9 +49,18 @@ final class PairThisDeviceViewModel: ObservableObject {
         phase = .checkingPermission
         exportURL = nil
 
+        // The host app name differs when running inside LiveContainer.
+        let hostAppName = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+            ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
+            ?? "SideStore"
+
         Task { @MainActor in
             guard await LocalNetworkPermissionChecker.shared.checkPermission() else {
-                self.phase = .failed(NSLocalizedString("Local Network access is required. Turn it on in Settings › SideStore › Local Network, then try again.", comment: ""))
+                let message = String(
+                    format: NSLocalizedString("Local Network access is required. Turn it on in Settings › %@ › Local Network, then try again.", comment: ""),
+                    hostAppName
+                )
+                self.phase = .failed(message)
                 return
             }
             _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
