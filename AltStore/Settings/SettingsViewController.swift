@@ -469,8 +469,8 @@ private extension SettingsViewController
         }
     }
     
-    /// Enterprise: builds the programmatic rows for Pair This Device / Signing Method,
-    /// which have no prototype in Settings.storyboard.
+    #if os(tvOS)
+    /// Enterprise: tvOS storyboard has no prototypes for these rows; build programmatically.
     private func makeEnterpriseSettingsCell(for row: AdvancedSettingsRow) -> UITableViewCell
     {
         let cell = InsetGroupTableViewCell(style: .default, reuseIdentifier: "EnterpriseSettingsCell")
@@ -488,6 +488,7 @@ private extension SettingsViewController
         cell.accessoryType = .disclosureIndicator
         return cell
     }
+    #endif
     
     private func prepare(_ settingsHeaderFooterView: SettingsHeaderFooterView, for section: Section, isHeader: Bool)
     {
@@ -925,13 +926,6 @@ extension SettingsViewController
         if Section.allCases[indexPath.section] == .account && indexPath.row == 3 {
             return AccountVerificationRow.preferredHeight
         }
-        // Enterprise: programmatic rows have no storyboard prototype; use the standard row height.
-        if Section.allCases[indexPath.section] == .advancedSettings {
-            let advRow = AdvancedSettingsRow.allCases[indexPath.row]
-            if advRow == .pairThisDevice || advRow == .enterpriseSigning {
-                return 51
-            }
-        }
         let effectiveIndexPath: IndexPath
         if Section.allCases[indexPath.section] == .advancedSettings {
             let row = AdvancedSettingsRow.allCases[indexPath.row]
@@ -954,8 +948,10 @@ extension SettingsViewController
                 actionCell.backgroundConfiguration = .clear()
             }
         }
-        // Enterprise: the programmatic rows extend the Advanced Settings group,
-        // so re-assign the top/middle/bottom styles for the new tail.
+        // Enterprise: Pair This Device / Signing Method are storyboard prototype cells now;
+        // their top/middle/bottom styles are set in Interface Builder.
+        #if os(tvOS)
+        // tvOS has no storyboard prototypes; fix up the programmatic cells' styles.
         if Section.allCases[indexPath.section] == .advancedSettings,
            let insetCell = cell as? InsetGroupTableViewCell {
             switch AdvancedSettingsRow.allCases[indexPath.row] {
@@ -967,6 +963,7 @@ extension SettingsViewController
                 break
             }
         }
+        #endif
         self.localizeSettingsControls(in: cell)
     }
 
@@ -974,13 +971,6 @@ extension SettingsViewController
     {
         if Section.allCases[indexPath.section] == .account && indexPath.row == 3 {
             return 0
-        }
-        // Enterprise: programmatic rows have no storyboard prototype.
-        if Section.allCases[indexPath.section] == .advancedSettings {
-            let advRow = AdvancedSettingsRow.allCases[indexPath.row]
-            if advRow == .pairThisDevice || advRow == .enterpriseSigning {
-                return 0
-            }
         }
         let effectiveIndexPath: IndexPath
         if Section.allCases[indexPath.section] == .advancedSettings {
@@ -1016,13 +1006,15 @@ extension SettingsViewController
             return cell
         }
         
-        // Enterprise: the Pair This Device / Enterprise Signing rows have no storyboard prototype.
+        #if os(tvOS)
+        // Enterprise: tvOS storyboard has no prototypes for these rows.
         if Section.allCases[indexPath.section] == .advancedSettings {
             let advRow = AdvancedSettingsRow.allCases[indexPath.row]
             if advRow == .pairThisDevice || advRow == .enterpriseSigning {
                 return self.makeEnterpriseSettingsCell(for: advRow)
             }
         }
+        #endif
         
         let effectiveIndexPath: IndexPath
         if Section.allCases[indexPath.section] == .advancedSettings {
