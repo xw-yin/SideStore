@@ -174,13 +174,13 @@ struct PairThisDeviceView: View {
                     .padding(.top, 6)
                 Text(statusTitle)
                     .font(.system(size: 17, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(SettingsRowStyle.primaryText)
                     .multilineTextAlignment(.center)
                 if case .pin(let pin) = viewModel.phase {
                     Text(pin)
                         .font(.system(size: 40, weight: .heavy, design: .monospaced))
                         .kerning(6)
-                        .foregroundColor(.white)
+                        .foregroundColor(SettingsRowStyle.primaryText)
                         .textSelection(.enabled)
                 }
                 Text(statusDetail)
@@ -223,7 +223,7 @@ struct PairThisDeviceView: View {
             Toggle(isOn: $viewModel.keepAliveInBackground) {
                 Text(NSLocalizedString("Keep Running in Background", comment: ""))
                     .font(.system(size: 17, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(SettingsRowStyle.primaryText)
             }
             .tint(.accentColor)
             .disabled(viewModel.isRunning)
@@ -283,7 +283,7 @@ struct PairThisDeviceView: View {
                 .background(Circle().fill(Color.accentColor.opacity(0.7)))
             Text(text)
                 .font(.system(size: 15))
-                .foregroundColor(.white)
+                .foregroundColor(SettingsRowStyle.primaryText)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }

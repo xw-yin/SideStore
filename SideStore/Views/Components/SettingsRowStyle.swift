@@ -9,10 +9,31 @@
 import SwiftUI
 
 enum SettingsRowStyle {
-    static let rowBackground = Color.white.opacity(0.15)
-    static let divider = Color.white.opacity(0.15)
-    static let secondaryText = Color.white.opacity(0.6)
+    /// Card background: translucent white in dark mode, subtle gray in light mode.
+    static let rowBackground = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor.white.withAlphaComponent(0.15)
+            : UIColor.black.withAlphaComponent(0.05)
+    })
+    static let divider = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor.white.withAlphaComponent(0.15)
+            : UIColor.black.withAlphaComponent(0.12)
+    })
+    /// Primary text: white in dark mode, near-black in light mode.
+    static let primaryText = Color(uiColor: .label)
+    /// Secondary text (adaptive).
+    static let secondaryText = Color(uiColor: .secondaryLabel)
+    /// Faint decorative elements like chevrons (adaptive).
+    static let tertiaryText = Color(uiColor: .tertiaryLabel)
     static let background = Color(uiColor: .settingsBackground)
+    /// Toast bubble: light translucent in dark mode, dark translucent in light mode.
+    /// White text stays readable on both.
+    static let toastBackground = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor.white.withAlphaComponent(0.18)
+            : UIColor.black.withAlphaComponent(0.72)
+    })
 }
 
 struct SettingsRowSection<Content: View>: View {
@@ -60,14 +81,14 @@ struct SettingsRow: View {
     var value: String? = nil
     var showsChevron = false
     var isChecked = false
-    var titleColor: Color = .white
+    var titleColor: Color = SettingsRowStyle.primaryText
 
     var body: some View {
         HStack(spacing: 12) {
             if let icon {
                 Image(systemName: icon)
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(SettingsRowStyle.primaryText)
                     .frame(width: 24)
             }
             Text(title)
@@ -91,7 +112,7 @@ struct SettingsRow: View {
             if showsChevron {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color.white.opacity(0.4))
+                    .foregroundColor(SettingsRowStyle.tertiaryText)
             }
         }
         .padding(.horizontal, 16)

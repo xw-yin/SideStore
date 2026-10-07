@@ -157,7 +157,7 @@ struct EnterpriseSigningView: View {
                     .foregroundColor(.white)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(Capsule().fill(Color.white.opacity(0.18)))
+                    .background(Capsule().fill(SettingsRowStyle.toastBackground))
                     .padding(.bottom, 24)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -221,7 +221,7 @@ struct EnterpriseSigningView: View {
                     SettingsRow(title: option.displayName,
                                         icon: option.systemImage,
                                         isChecked: viewModel.preference == option && isAvailable,
-                                        titleColor: isAvailable ? .white : SettingsRowStyle.secondaryText)
+                                        titleColor: isAvailable ? SettingsRowStyle.primaryText : SettingsRowStyle.secondaryText)
                 }
                 .buttonStyle(.plain)
             }
@@ -296,11 +296,11 @@ struct EnterpriseSigningView: View {
             HStack(spacing: 12) {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(SettingsRowStyle.primaryText)
                     .frame(width: 24)
                 SecureField(NSLocalizedString("Certificate Password", comment: ""), text: $viewModel.password)
                     .font(.system(size: 17))
-                    .foregroundColor(.white)
+                    .foregroundColor(SettingsRowStyle.primaryText)
                     .textContentType(.password)
                     .autocorrectionDisabled()
             }
@@ -380,11 +380,11 @@ struct EnterpriseSigningView: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(.white)
+                .foregroundColor(SettingsRowStyle.primaryText)
                 .frame(width: 24)
             Text(text)
                 .font(.system(size: 14))
-                .foregroundColor(Color.white.opacity(0.8))
+                .foregroundColor(SettingsRowStyle.primaryText)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
