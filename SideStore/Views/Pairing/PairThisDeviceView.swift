@@ -99,8 +99,18 @@ final class PairThisDeviceViewModel: ObservableObject {
                 case .success(let device):
                     let url = URL(fileURLWithPath: device.pairingFilePath)
                     do {
+                        // Match the project's pairing-file convention: the wireless pairing
+                        // writes a descriptively-named intermediate file; inspect it to learn
+                        // the protocol, import it into the canonical protocol-specific
+                        // location, then remove the intermediate so Documents doesn't
+                        // accumulate duplicates.
+                        let (_, parsed) = try PairingFileManager.shared.inspectPairingFile(from: url)
                         try PairingFileManager.shared.importPairingFile(from: url)
-                        self.exportURL = url
+                        let canonicalURL = PairingFileManager.shared.pairingFileURL(for: parsed.mode)
+                        if url.lastPathComponent != canonicalURL.lastPathComponent {
+                            try? FileManager.default.removeItem(at: url)
+                        }
+                        self.exportURL = canonicalURL
                         self.phase = .success(deviceName: device.name)
                         self.refresh()
                         Self.notify(id: "catalyst.pairing.done",
