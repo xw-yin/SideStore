@@ -291,6 +291,7 @@
 "SideStore will expire in 24 hours. Open the app and refresh it to prevent it from expiring." = "SideStore 将在 24 小时内到期。请打开并刷新以避免失效。";
 "SideStore's shared app group could not be accessed." = "无法访问 SideStore 的共享 App Group。";
 "Sign in with your Apple ID to download apps from SideStore." = "使用 Apple ID 登录以从 SideStore 下载 App。";
+"Sign in, or import an enterprise certificate in Settings › Advanced › Enterprise Signing" = "登录，或在\"设置 -> 高级 -> 企业签名\"中导入企业证书";
 "Sign Out" = "退出登录";
 "SIGNING" = "签名";
 "Signing certificate mismatch detected." = "检测到签名证书不匹配。";
@@ -1740,6 +1741,7 @@
 
 /* ===== Test merge: new feature strings (2026-09-23) ===== */
 "Apple ID" = "Apple ID";
+"Apple ID or Enterprise" = "Apple ID 或企业证书";
 "Delete Cached App?" = "删除已缓存的应用？";
 "Error" = "出错";
 "Editing manually may corrupt the pairing file. Are you sure you know what you are doing and want to continue?" = "手动编辑可能损坏配对文件。确定要继续吗？";
