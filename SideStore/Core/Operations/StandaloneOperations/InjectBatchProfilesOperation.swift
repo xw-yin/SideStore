@@ -43,9 +43,7 @@ final class InjectBatchProfilesOperation: BaseStandaloneOperation<StandaloneOper
         await CellularRefreshManager.shared.turnOffDataIfNeeded()
         for batch in self.batches {
             debugLog("[InjectBatchProfilesOperation] Installing \(batch.profiles.count) profile(s) for \(batch.bundleID)...")
-            for profileData in batch.profiles {
-                try await installProvisioningProfiles(profileData)
-            }
+            try await installProvisioningProfiles(batch.profiles)
 
             if let installedApp = batch.app, let dbContext = installedApp.managedObjectContext {
                 debugLog("[InjectBatchProfilesOperation] Updating database record for \(batch.bundleID)...")

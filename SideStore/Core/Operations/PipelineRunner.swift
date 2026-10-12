@@ -153,6 +153,15 @@ final class PipelineRunner: Sendable
         }
         
         try await AppBootManager.shared.ensureMinimuxerStarted()
+        
+        // Hold the transport batch lease for the whole pipeline (including
+        // ensureMinimuxerReady) so isReady() verifies the active transport and
+        // does not tear it down after fetchUDID(). Released on every exit path via defer.
+        await minimuxer.core.beginTransportBatch()
+        defer {
+            Task { await minimuxer.core.endTransportBatch() }
+        }
+        
         /* Minimuxer Readiness Check */
         do {
             try await ensureMinimuxerReady()
@@ -164,14 +173,6 @@ final class PipelineRunner: Sendable
                 operation.logSummary(status: "FAILED", elapsed: elapsed, error: opError)
             }
             throw opError
-        }
-        
-        // Hold the transport batch lease for the whole pipeline so the
-        // transport is not torn down between operations. Released on every
-        // exit path via defer.
-        await minimuxer.core.beginTransportBatch()
-        defer {
-            Task { await minimuxer.core.endTransportBatch() }
         }
         
         group.progress.totalUnitCount = Int64(operations.count * 100)

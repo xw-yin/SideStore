@@ -82,14 +82,14 @@ private func resolveDiscoveredRemotePairingPort() async -> UInt16? {
 private var lastRemotePairingPortResolveTime: Date = .distantPast
 private var activeRemotePairingPortResolveTask: Task<UInt16?, Never>?
 
-private func resolveDiscoveredRemotePairingPortThrottled() async -> UInt16? {
+private func resolveDiscoveredRemotePairingPortThrottled(force: Bool = false) async -> UInt16? {
     let overridePort = UserDefaults.standard.remotePairingPortOverride
     if overridePort > 0 && overridePort <= 65535 {
         return UInt16(overridePort)
     }
 
     let now = Date()
-    guard now.timeIntervalSince(lastRemotePairingPortResolveTime) > 5.0 else {
+    guard force || now.timeIntervalSince(lastRemotePairingPortResolveTime) > 5.0 else {
         return nil
     }
 
@@ -111,7 +111,7 @@ private func resolveDiscoveredRemotePairingPortThrottled() async -> UInt16? {
 private func isRetriableRemotePairingError(_ error: Error) -> Bool {
     if let minErr = error as? MinimuxerError {
         switch minErr {
-        case .noDevice, .notReachable:
+        case .noDevice, .notReachable, .invalidVPN, .createMisagent, .profileInstall, .connect:
             return true
         default:
             return false
@@ -119,7 +119,7 @@ private func isRetriableRemotePairingError(_ error: Error) -> Bool {
     }
     if let opErr = error as? OperationError {
         switch opErr {
-        case .noDevice, .notReachable, .unknownUDID:
+        case .noDevice, .notReachable, .unknownUDID, .invalidVPN:
             return true
         default:
             return false
@@ -139,10 +139,14 @@ private func withRemotePairingRetry<T>(_ operation: () async throws -> T) async 
             throw error
         }
 
-        if let newPort = await resolveDiscoveredRemotePairingPortThrottled(), newPort != remotePairingPortCache {
-            debugLog("[SideStore] Operation failed with retriable error (\(error)), updating RemotePairing port from \(remotePairingPortCache) -> \(newPort) and retrying...")
-            remotePairingPortCache = newPort
-            minimuxer.set(MinimuxerParams(remotePairingPort: newPort))
+        if let newPort = await resolveDiscoveredRemotePairingPortThrottled(force: true) {
+            if newPort != remotePairingPortCache {
+                debugLog("[SideStore] Operation failed with retriable error (\(error)), updating RemotePairing port from \(remotePairingPortCache) -> \(newPort) and retrying...")
+                remotePairingPortCache = newPort
+                minimuxer.set(MinimuxerParams(remotePairingPort: newPort))
+            } else {
+                debugLog("[SideStore] Operation failed with retriable error (\(error)), retrying on RemotePairing port \(newPort)...")
+            }
             return try await operation()
         }
         throw error
@@ -349,13 +353,18 @@ func minimuxerStop() async throws {
 }
 
 func installProvisioningProfiles(_ profileData: Data) async throws {
-    defer { debugLog("[SideStore] installProvisioningProfiles(profileData) completed") }
+    try await installProvisioningProfiles([profileData])
+}
+
+func installProvisioningProfiles(_ profiles: [Data]) async throws {
+    defer { debugLog("[SideStore] installProvisioningProfiles(profiles: \(profiles.count)) completed") }
     #if targetEnvironment(simulator)
-    debugLog("[SideStore] installProvisioningProfiles(profileData) is no-op on simulator")
+    debugLog("[SideStore] installProvisioningProfiles(profiles) is no-op on simulator")
     #else
-    debugLog("[SideStore] installProvisioningProfiles(profileData) invoked")
+    guard !profiles.isEmpty else { return }
+    debugLog("[SideStore] installProvisioningProfiles(profiles: \(profiles.count)) invoked")
     try await withRemotePairingRetry {
-        try await minimuxer.core.installProvisioningProfile(profile: profileData)
+        try await minimuxer.core.installProvisioningProfiles(profiles: profiles)
     }
     #endif
 }
