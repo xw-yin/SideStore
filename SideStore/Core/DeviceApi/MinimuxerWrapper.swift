@@ -369,7 +369,12 @@ func installProvisioningProfiles(_ profiles: [Data]) async throws {
     guard !profiles.isEmpty else { return }
     debugLog("[SideStore] installProvisioningProfiles(profiles: \(profiles.count)) invoked")
     try await withRemotePairingRetry {
-        try await minimuxer.core.installProvisioningProfiles(profiles: profiles)
+        // Note: minimuxer has no batch install API (submodule is reset by CI,
+        // so it can't be added there); loop over the singular API. The
+        // transport batch is held by the pipeline across the whole loop.
+        for profile in profiles {
+            try await minimuxer.core.installProvisioningProfile(profile: profile)
+        }
     }
     #endif
 }
