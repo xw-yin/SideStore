@@ -2977,6 +2977,7 @@ extension MyAppsViewController {
             installedApp.certificateSerialNumber = matchingCert?.serialNumber
             try? context.save()
         }
+        EnterpriseSigningDetector.invalidate()
         self.resign(installedApp)
     }
 
@@ -2987,6 +2988,7 @@ extension MyAppsViewController {
             installedApp.certificateSerialNumber = nil
             try? context.save()
         }
+        EnterpriseSigningDetector.invalidate()
         self.resign(installedApp)
     }
 }

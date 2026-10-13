@@ -24,18 +24,37 @@ final class UpdateAppCertificateOperation: BasePipelineOperation<InstallAppOpera
         
         let targetBundleID = self.context.installedApp?.bundleIdentifier ?? self.context.targetBundleIdentifier
         var profileToUse = self.context.overrideProvisioningProfile ?? ProfileManager.shared.getAssignedProfile(for: targetBundleID)
+        var didSwitchFromEnterpriseToAppleID = false
 
-        // Enterprise: Enterprise signing. Apps without an assigned profile are signed with the
-        // imported enterprise identity when Enterprise mode is on. Only for pipelines that
-        // re-sign the bundle; a profile-only refresh must keep the app's original identity.
-        var enterpriseIdentity: EnterpriseSigningIdentity? = nil
-        if profileToUse == nil, self.context.resignsAppBundle {
-            enterpriseIdentity = try await self.resolveEnterpriseIdentity()
-        }
-        if let identity = enterpriseIdentity {
-            debugLog("[UpdateAppCertificateOperation] Enterprise signing. Using profile '\(identity.profile.name)' (\(identity.profile.uuid)) for '\(targetBundleID)'")
-            profileToUse = identity.profile
-            self.context.overrideSigningCertificate = identity.certificate
+        if self.context.resignsAppBundle {
+            if self.context.overrideProvisioningProfile == nil {
+                if let identity = try await self.resolveEnterpriseIdentity() {
+                    if profileToUse == nil || EnterpriseSigningManager.shared.isEnterpriseIdentityProfile(profileToUse!) {
+                        debugLog("[UpdateAppCertificateOperation] Enterprise signing. Using profile '\(identity.profile.name)' (\(identity.profile.uuid)) for '\(targetBundleID)'")
+                        profileToUse = identity.profile
+                        self.context.overrideSigningCertificate = identity.certificate
+                    }
+                } else {
+                    if let existingProfile = profileToUse,
+                       EnterpriseSigningManager.shared.isEnterpriseIdentityProfile(existingProfile) {
+                        debugLog("[UpdateAppCertificateOperation] Switching '\(targetBundleID)' from Enterprise profile '\(existingProfile.name)' back to Apple ID signing.")
+                        profileToUse = nil
+                        ProfileManager.shared.setAssignedProfile(nil, for: targetBundleID)
+                        didSwitchFromEnterpriseToAppleID = true
+                    } else if let serial = self.context.installedApp?.certificateSerialNumber,
+                              serial == EnterpriseSigningManager.shared.identitySerialNumber {
+                        didSwitchFromEnterpriseToAppleID = true
+                    }
+                }
+            }
+        } else if profileToUse == nil, self.context.installedApp?.isEnterpriseSigned == true {
+            // Profile-only refresh on an enterprise-signed app whose ProfileManager binding was cleared or external:
+            if let customProfile = self.context.installedApp?.customProvisioningProfile {
+                profileToUse = customProfile
+            } else if let identity = EnterpriseSigningManager.shared.usableIdentity {
+                profileToUse = identity.profile
+                self.context.overrideSigningCertificate = identity.certificate
+            }
         }
 
         if let assignedProfile = profileToUse {
@@ -51,7 +70,9 @@ final class UpdateAppCertificateOperation: BasePipelineOperation<InstallAppOpera
                       let customCert = CertificateManager.shared.getSignableCertificate(for: serialNumber) {
                 self.context.overrideSigningCertificate = customCert
             }
-        } else if let installedApp = self.context.installedApp, let serialNumber = installedApp.certificateSerialNumber {
+        } else if !didSwitchFromEnterpriseToAppleID,
+                  let installedApp = self.context.installedApp,
+                  let serialNumber = installedApp.certificateSerialNumber {
             debugLog("[UpdateAppCertificateOperation] InstalledApp '\(installedApp.name)' has custom certificate serial: '\(serialNumber)'")
             if let customCert = CertificateManager.shared.getSignableCertificate(for: serialNumber) {
                 debugLog("[UpdateAppCertificateOperation] Loaded custom certificate '\(customCert.serialNumber)' for app '\(installedApp.name)'. Setting context.overrideSigningCertificate.")

@@ -202,7 +202,8 @@ final class PipelineRunner: Sendable
             let validateOp = try PreflightChecksOperation(
                 operations: unhandledOperations,
                 handler: handler.preflightChecksHandler,
-                context: preflightContext
+                context: preflightContext,
+                signingChoice: group.sharedContext.signingChoice
             )
             try await validateOp.execute()
         } catch {
@@ -278,21 +279,45 @@ final class PipelineRunner: Sendable
             group.sharedContext.signingChoice = .appleID
             return
         }
-        
+
+        // Container/lifecycle maintenance operations (backup/restore/activate/deactivate) must
+        // preserve the target app's existing signing identity so SideBackup shares the same
+        // Team ID and App Group container as the target app.
+        let userInitiatedResigning = resigning.filter { operation in
+            switch operation {
+            case .backup, .restore, .activate, .deactivate:
+                return false
+            default:
+                return true
+            }
+        }
+
         let choice: SigningCertificateChoice
-        switch manager.preference {
-        case .enterprise:
-            choice = .enterprise
-        case .appleID:
-            choice = .appleID
-        case .ask:
-            let appName = resigning.count == 1
-                ? resigning[0].app.name
-                : String(format: NSLocalizedString("%d apps", comment: ""), resigning.count)
-            choice = await handler.signingChoiceHandler.chooseSigningCertificate(
-                appName: appName,
-                enterpriseTeamName: identity.team.name
-            )
+        if userInitiatedResigning.isEmpty {
+            let isEnterpriseTarget = resigning.contains { operation in
+                switch operation {
+                case .backup(let app), .restore(let app), .activate(let app), .deactivate(let app):
+                    return app.isEnterpriseSigned
+                default:
+                    return false
+                }
+            }
+            choice = isEnterpriseTarget ? .enterprise : .appleID
+        } else {
+            switch manager.preference {
+            case .enterprise:
+                choice = .enterprise
+            case .appleID:
+                choice = .appleID
+            case .ask:
+                let appName = userInitiatedResigning.count == 1
+                    ? userInitiatedResigning[0].app.name
+                    : String(format: NSLocalizedString("%d apps", comment: ""), userInitiatedResigning.count)
+                choice = await handler.signingChoiceHandler.chooseSigningCertificate(
+                    appName: appName,
+                    enterpriseTeamName: identity.team.name
+                )
+            }
         }
         
         switch choice {

@@ -442,8 +442,10 @@ public extension InstalledApp
         var installedApps = InstalledApp.all(satisfying: predicate,
                                              sortedBy: [NSSortDescriptor(keyPath: \InstalledApp.expirationDate, ascending: true)],
                                              in: context)
+        // Enterprise: enterprise-signed apps don't need the 7-day refresh.
+        installedApps.removeAll { $0.hidesExpirationCountdown }
         
-        if let altStoreApp = InstalledApp.fetchAltStore(in: context)
+        if let altStoreApp = InstalledApp.fetchAltStore(in: context), !altStoreApp.hidesExpirationCountdown
         {
             // Refresh AltStore last since it causes app to quit.
             

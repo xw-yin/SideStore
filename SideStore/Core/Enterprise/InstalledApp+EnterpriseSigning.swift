@@ -65,14 +65,31 @@ extension InstalledApp {
         }
 
         // Cache per install/refresh so collection view cells don't re-read profiles on every reload.
-        let key = "\(self.resignedBundleIdentifier)|\(self.refreshedDate.timeIntervalSince1970)"
+        let hasCustomCertSerial = (self.certificateSerialNumber != nil)
+        let key = "\(self.resignedBundleIdentifier)|\(self.refreshedDate.timeIntervalSince1970)|\(self.certificateSerialNumber ?? "")"
         let customProfileURL = self.customProvisioningProfileURL
         let bundleIdentifier = self.bundleIdentifier
         let embeddedProfileURL = self.directoryURL.appendingPathComponent("App.app").appendingPathComponent("embedded.mobileprovision")
 
         return EnterpriseSigningDetector.cachedValue(for: key) {
+            if let assigned = ProfileManager.shared.getAssignedProfile(for: bundleIdentifier) {
+                if EnterpriseSigningManager.shared.isEnterpriseIdentityProfile(assigned) {
+                    return true
+                }
+                if hasCustomCertSerial && assigned.expirationDate.timeIntervalSince(assigned.creationDate) > 14 * 24 * 60 * 60 {
+                    return true
+                }
+            }
             if let customProfileURL {
-                return EnterpriseSigningDetector.isEnterpriseProfile(at: customProfileURL)
+                if EnterpriseSigningDetector.isEnterpriseProfile(at: customProfileURL) {
+                    return true
+                }
+                if hasCustomCertSerial,
+                   let customProfile = try? ALTProvisioningProfile(url: customProfileURL),
+                   customProfile.expirationDate.timeIntervalSince(customProfile.creationDate) > 14 * 24 * 60 * 60 {
+                    return true
+                }
+                return false
             }
             if let assigned = ProfileManager.shared.getAssignedProfile(for: bundleIdentifier) {
                 return EnterpriseSigningDetector.isEnterpriseProfile(assigned.data)

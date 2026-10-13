@@ -26,6 +26,10 @@ final class StageAppOperation: BasePipelineOperation<InstallAppOperationContext,
            appBundle.bundle.bundleURL.path.contains("SideBackup") || appBundle.bundle.bundleURL.path.contains("AltBackup"),
            let installedApp = self.context.installedApp {
             self.context.targetAppBundle = self.resolveAppBundle(for: installedApp)
+            self.context.overrideProvisioningProfile = nil
+            self.context.overrideSigningCertificate = nil
+            self.context.provisioningProfiles = nil
+            self.context.additionalEntitlements.removeAll()
         }
         
         if self.context.targetAppBundle == nil, let installedApp = self.context.installedApp {

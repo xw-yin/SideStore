@@ -19,11 +19,15 @@ final class PrepareAppExtensionBundleIDsOperation: BasePipelineOperation<Install
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         
         if self.context.useMainProfile {
-            if let appBundle = self.context.targetAppBundle, let profile = self.context.provisioningProfiles?[self.context.bundleIdentifier] {
+            if let appBundle = self.context.targetAppBundle,
+               let profile = self.context.provisioningProfiles?[self.context.targetBundleIdentifier] ?? self.context.provisioningProfiles?[self.context.bundleIdentifier] {
+                let resolvedMainID = profile.resolvedBundleIdentifier(for: self.context.targetBundleIdentifier)
                 var appexBundleIds: [String: String] = [:]
                 for appex in appBundle.appExtensions {
-                    appexBundleIds[appex.bundleIdentifier] = appex.bundleIdentifier
-                        .replacingOccurrences(of: appBundle.bundleIdentifier, with: profile.resolvedBundleIdentifier(for: self.context.targetBundleIdentifier))
+                    let updatedAppExBundleId = appex.bundleIdentifier.replacingOccurrences(of: appBundle.bundleIdentifier, with: self.context.targetBundleIdentifier)
+                    let resolvedAppExID = appex.bundleIdentifier.replacingOccurrences(of: appBundle.bundleIdentifier, with: resolvedMainID)
+                    appexBundleIds[appex.bundleIdentifier] = resolvedAppExID
+                    appexBundleIds[updatedAppExBundleId] = resolvedAppExID
                 }
                 self.context.appexBundleIds = appexBundleIds
             }

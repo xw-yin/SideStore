@@ -130,7 +130,14 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
         }
         var infoDictionary = parser.rawDictionary as [String: Any]
         
-        let newBundleID = appexBundleIds[identifier] ?? profile.resolvedBundleIdentifier(for: identifier)
+        let newBundleID: String
+        if let mappedAppExID = appexBundleIds[identifier] {
+            newBundleID = mappedAppExID
+        } else if appBundle.isExtension && !profile.isWildcard && profile.bundleIdentifier != identifier {
+            newBundleID = identifier
+        } else {
+            newBundleID = profile.resolvedBundleIdentifier(for: identifier)
+        }
         infoDictionary[kCFBundleIdentifierKey as String] = newBundleID
 
         // Fix-up BGTaskScheduler identifiers so they stay under the new bundle ID.
@@ -190,10 +197,11 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
     }
     
     private func resignAppBundle(at fileURL: URL, team: ALTTeam, certificate: ALTCertificate, profiles: [ALTProvisioningProfile]) async throws -> URL {
-        if profiles.contains(where: { $0.isWildcard }) {
-            // Enterprise: wildcard profiles need per-bundle application-identifier resolution.
-            self.debugLog("[ResignAppOperation] Using EnterpriseAppSigner for wildcard profile(s) (team \(team.identifier))")
-            let signer = EnterpriseAppSigner(certificate: certificate)
+        let isImportedIdentity = await self.context.isSigningWithImportedIdentity()
+        if profiles.contains(where: { $0.isWildcard }) || (isImportedIdentity && self.context.useMainProfile) {
+            // Enterprise: wildcard profiles (or imported single-profile with extensions) need per-bundle resolution.
+            self.debugLog("[ResignAppOperation] Using EnterpriseAppSigner for wildcard/imported profile(s) (team \(team.identifier))")
+            let signer = EnterpriseAppSigner(certificate: certificate, additionalEntitlements: self.context.additionalEntitlements)
             try await signer.signApp(at: fileURL, provisioningProfiles: profiles)
             return fileURL
         }

@@ -376,13 +376,23 @@ final class PipelineHandler: PipelineExecutionHandler,
 
     @MainActor
     func resolveBundleIDOverride(initialBundleID: String) async throws -> (customID: String, appendTeamID: Bool)? {
+        try await resolveBundleIDOverride(initialBundleID: initialBundleID, team: nil, isWildcardEnterprise: false)
+    }
+
+    @MainActor
+    func resolveBundleIDOverride(initialBundleID: String, team: ALTTeam?, isWildcardEnterprise: Bool) async throws -> (customID: String, appendTeamID: Bool)? {
         guard let presenter = self.activePresenter else {
-            return (initialBundleID, true)
+            return (initialBundleID, !isWildcardEnterprise)
         }
 
-        let team = try await AuthManager.shared.getSigningTeam()
-        debugLog("[PipelineHandler] resolveBundleIDOverride: initialBundleID='\(initialBundleID)', teamID='\(team.identifier)', isAuthenticated=\(AuthManager.shared.isAuthenticated)")
-        let teamID = team.identifier
+        let resolvedTeam: ALTTeam
+        if let team {
+            resolvedTeam = team
+        } else {
+            resolvedTeam = try await AuthManager.shared.getSigningTeam()
+        }
+        debugLog("[PipelineHandler] resolveBundleIDOverride: initialBundleID='\(initialBundleID)', teamID='\(resolvedTeam.identifier)', isWildcardEnterprise=\(isWildcardEnterprise), isAuthenticated=\(AuthManager.shared.isAuthenticated)")
+        let teamID = resolvedTeam.identifier
         guard !teamID.isEmpty else {
             debugLog("[PipelineHandler] resolveBundleIDOverride FAILED: teamID is empty")
             throw OperationError.invalidParameters("Active developer team identifier is empty.")
@@ -397,7 +407,7 @@ final class PipelineHandler: PipelineExecutionHandler,
             }
             return InfoPlistParser.sanitizeBundleID(base)
         }()
-        let initialText = !teamID.isEmpty ? "\(cleanInitialID).\(teamID)" : cleanInitialID
+        let initialText = (!isWildcardEnterprise && !teamID.isEmpty) ? "\(cleanInitialID).\(teamID)" : cleanInitialID
 
         return await withCheckedContinuation { continuation in
             let alertVC = AppIDCustomizationAlertViewController(

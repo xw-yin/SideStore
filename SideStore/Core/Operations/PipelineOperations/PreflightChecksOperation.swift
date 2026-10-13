@@ -13,10 +13,12 @@ import SideSign
 final class PreflightChecksOperation: BasePipelineOperation<StandaloneOperationContext, Bool>, @unchecked Sendable {
     let operations: [AppOperation]
     let handler: PreflightChecksHandler?
+    let signingChoice: SigningCertificateChoice?
 
-    init(operations: [AppOperation], handler: PreflightChecksHandler?, context: StandaloneOperationContext) throws {
+    init(operations: [AppOperation], handler: PreflightChecksHandler?, context: StandaloneOperationContext, signingChoice: SigningCertificateChoice? = nil) throws {
         self.operations = operations
         self.handler = handler
+        self.signingChoice = signingChoice
         try super.init(context: context)
     }
 
@@ -30,8 +32,18 @@ final class PreflightChecksOperation: BasePipelineOperation<StandaloneOperationC
         try await super.executePreconditionCheck(parentProgress: parentProgress)
         self.setProgress(10)
 
-        let currentTeam = try await AuthManager.shared.getSigningTeam()
+        let currentTeam = try await AuthManager.shared.getSigningTeam(for: self.signingChoice)
         let currentTeamID = currentTeam.identifier
+        let isWildcardEnterprise: Bool = {
+            switch self.signingChoice {
+            case .enterprise?:
+                return EnterpriseSigningManager.shared.usableIdentity?.profile.isWildcard == true
+            case .appleID?:
+                return false
+            default:
+                return EnterpriseSigningManager.shared.activeIdentity?.profile.isWildcard == true
+            }
+        }()
 
         let startProgress = self.progress.completedUnitCount
         let endProgress: Int64 = 90
@@ -57,6 +69,8 @@ final class PreflightChecksOperation: BasePipelineOperation<StandaloneOperationC
                 case .install(let app, let customBundleIdentifier), .update(let app, let customBundleIdentifier), .reinstall(let app, let customBundleIdentifier):
                     if let customBundleIdentifier = customBundleIdentifier, !customBundleIdentifier.isEmpty {
                         incomingTargetID = customBundleIdentifier
+                    } else if isWildcardEnterprise {
+                        incomingTargetID = StoreApp.altstoreAppID
                     } else if !currentTeamID.isEmpty {
                         incomingTargetID = "\(StoreApp.altstoreAppID).\(currentTeamID)"
                     } else if let installedApp = app as? InstalledApp {
@@ -68,7 +82,9 @@ final class PreflightChecksOperation: BasePipelineOperation<StandaloneOperationC
                      .backup(let installedApp),     .restore(let installedApp),     .resign(let installedApp, _),
                      .removeApp(let installedApp),  .removeDeactivatedApp(let installedApp):
                     
-                    if !currentTeamID.isEmpty && installedApp.bundleIdentifier == StoreApp.altstoreAppID {
+                    if isWildcardEnterprise && installedApp.bundleIdentifier == StoreApp.altstoreAppID {
+                        incomingTargetID = installedApp.customBundleIdentifier ?? StoreApp.altstoreAppID
+                    } else if !currentTeamID.isEmpty && installedApp.bundleIdentifier == StoreApp.altstoreAppID {
                         incomingTargetID = installedApp.customBundleIdentifier ?? "\(StoreApp.altstoreAppID).\(currentTeamID)"
                     } else {
                         incomingTargetID = installedApp.customBundleIdentifier ?? installedApp.resignedBundleIdentifier

@@ -81,6 +81,9 @@ final class RemoveAppExtensionsOperation: BasePipelineOperation<InstallAppOperat
         let decision: ExtensionRemovalDecision
         if let preset = UserDefaults.standard.customizeAppExtensions.fixedDecision {
             decision = preset
+        } else if await self.context.isSigningWithImportedIdentity() {
+            let isWildcard = self.context.isSigningWithEnterpriseWildcard
+            decision = .keepAll(useMainProfile: !isWildcard)
         } else {
             self.setProgress(50)
             decision = try await handler.selectAppExtensionsToRemove(

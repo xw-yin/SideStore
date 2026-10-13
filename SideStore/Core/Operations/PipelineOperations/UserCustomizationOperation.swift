@@ -87,11 +87,13 @@ final class UserCustomizationOperation: BasePipelineOperation<InstallAppOperatio
             }
 
             self.setProgress(40)
+            let isWildcardEnterprise = context.isSigningWithEnterpriseWildcard
+            let defaultAppendTeamID = isWildcardEnterprise ? false : context.appendTeamID
 
             guard let result = try await handler.resolveInfoPlistCustomization(
                 targets: targets,
                 initialBundleID: initialBundleID,
-                appendTeamID: context.appendTeamID,
+                appendTeamID: defaultAppendTeamID,
                 installedAppIdentities: installedAppIdentities,
                 teamID: teamID
             ) else {
@@ -116,8 +118,8 @@ final class UserCustomizationOperation: BasePipelineOperation<InstallAppOperatio
             // Dynamically link existing installed app if bundle ID matches
             let effectiveCustomID = customID ?? initialBundleID
             let resolvedID = result.appendTeamID && !teamID.isEmpty ? "\(effectiveCustomID).\(teamID)" : effectiveCustomID
-            if let matchingApp = installedApps.first(where: { $0.bundleIdentifier == resolvedID }) {
-                debugLog("[UserCustomizationOperation] Matched existing installed app: \(matchingApp.name) (\(resolvedID))")
+            if let matchingApp = installedApps.first(where: { $0.bundleIdentifier == resolvedID || $0.bundleIdentifier == effectiveCustomID }) {
+                debugLog("[UserCustomizationOperation] Matched existing installed app: \(matchingApp.name) (\(matchingApp.bundleIdentifier))")
                 context.installedApp = matchingApp
             } else {
                 debugLog("[UserCustomizationOperation] No matching installed app for \(resolvedID); treating as new install/clone.")
@@ -125,9 +127,15 @@ final class UserCustomizationOperation: BasePipelineOperation<InstallAppOperatio
             }
         } else if UserDefaults.standard.customizeAppId {
             let initialBundleID = context.targetBundleIdentifier
+            let authTeam = try await context.preferredSigningTeam()
+            let isWildcardEnterprise = context.isSigningWithEnterpriseWildcard
             self.setProgress(40)
             
-            guard let result = try await handler.resolveBundleIDOverride(initialBundleID: initialBundleID) else {
+            guard let result = try await handler.resolveBundleIDOverride(
+                initialBundleID: initialBundleID,
+                team: authTeam,
+                isWildcardEnterprise: isWildcardEnterprise
+            ) else {
                 throw OperationError.cancelled
             }
             

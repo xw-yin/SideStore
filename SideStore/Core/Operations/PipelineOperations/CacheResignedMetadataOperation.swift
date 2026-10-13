@@ -37,7 +37,8 @@ final class CacheResignedMetadataOperation: BasePipelineOperation<InstallAppOper
         
         try cacheProvisioningProfiles(for: installedApp)
         try cacheInfoPlist(for: installedApp, targetAppBundle: targetAppBundle)
-        try cacheEntitlements(for: installedApp)
+        try cacheEntitlements(for: installedApp, targetAppBundle: targetAppBundle)
+        EnterpriseSigningDetector.invalidate()
         
         self.setProgress(100)
     }
@@ -78,7 +79,7 @@ final class CacheResignedMetadataOperation: BasePipelineOperation<InstallAppOper
         }
     }
     
-    private func cacheEntitlements(for app: InstalledApp) throws {
+    private func cacheEntitlements(for app: InstalledApp, targetAppBundle: ALTApplication) throws {
         guard let profiles = self.context.provisioningProfiles else { return }
         let entitlementsDirectory = app.directoryURL.appendingPathComponent("Entitlements")
         try FileManager.default.createDirectory(at: entitlementsDirectory, withIntermediateDirectories: true, attributes: nil)
@@ -86,10 +87,26 @@ final class CacheResignedMetadataOperation: BasePipelineOperation<InstallAppOper
         let validEntitlementIDs = Set(profiles.map { $1.resolvedBundleIdentifier(for: $0) })
         cleanupStaleFiles(in: entitlementsDirectory, matchingExtension: "plist", validIDs: validEntitlementIDs, description: "Entitlements")
         
+        let bundlesByID = Dictionary(
+            targetAppBundle.allAppBundles.map { ($0.bundleIdentifier, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        
         for (bundleID, profile) in profiles {
             let resignedID = profile.resolvedBundleIdentifier(for: bundleID)
             let fileURL = entitlementsDirectory.appendingPathComponent("\(resignedID).plist")
-            let entitlements = self.context.customEntitlementsByBundleID[resignedID] ?? profile.resolvedEntitlements(for: resignedID)
+            let entitlements: [String: any Sendable]
+            if let custom = self.context.customEntitlementsByBundleID[resignedID] ?? self.context.customEntitlementsByBundleID[bundleID] {
+                entitlements = custom
+            } else if profile.isWildcard, let matchingBundle = bundlesByID[resignedID] ?? bundlesByID[bundleID] {
+                entitlements = EnterpriseAppSigner.resolvedEntitlements(
+                    for: matchingBundle,
+                    profile: profile,
+                    additionalEntitlements: matchingBundle.isExtension ? [:] : self.context.additionalEntitlements
+                )
+            } else {
+                entitlements = profile.resolvedEntitlements(for: resignedID)
+            }
             
             if let plistData = try? PropertyListSerialization.data(fromPropertyList: entitlements, format: .xml, options: 0) {
                 try? plistData.write(to: fileURL, options: .atomic)
@@ -125,5 +142,6 @@ final class CacheResignedMetadataOperation: BasePipelineOperation<InstallAppOper
             try? FileManager.default.removeItem(at: appDirectoryURL)
             SideStore.debugLog("[CacheResignedMetadataOperation] Cleared cached app directory: \(appDirectoryURL.path)")
         }
+        EnterpriseSigningDetector.invalidate()
     }
 }

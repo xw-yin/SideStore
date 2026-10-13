@@ -15,6 +15,45 @@ import CodeSignKit
 
 struct EnterpriseAppSigner: Sendable {
     let certificate: ALTCertificate
+    var additionalEntitlements: [ALTEntitlement: any Sendable] = [:]
+
+    static func resolvedEntitlements(
+        for app: ALTApplication,
+        profile: ALTProvisioningProfile,
+        additionalEntitlements: [ALTEntitlement: any Sendable] = [:]
+    ) -> [String: any Sendable] {
+        var entitlements = profile.resolvedEntitlements(for: app.bundleIdentifier)
+        var requestedEntitlements: [String: any Sendable] = app.entitlements
+        for (k, v) in additionalEntitlements {
+            requestedEntitlements[k.rawValue] = v
+        }
+
+        // Same filtering as SideSign: keep only what the app asks for, plus identity keys.
+        for key in Array(entitlements.keys) {
+            if let appValue = requestedEntitlements[key] {
+                if key == "keychain-access-groups", let groups = appValue as? [String] {
+                    entitlements[key] = groups.map { group -> String in
+                        guard let dot = group.firstIndex(of: ".") else { return "\(profile.teamIdentifier).\(group)" }
+                        return profile.teamIdentifier + group[dot...]
+                    }
+                } else if key == ALTEntitlement.appGroups.rawValue, let groups = appValue as? [String], !groups.isEmpty {
+                    if let profileGroups = entitlements[key] as? [String], !profileGroups.isEmpty {
+                        let matching = groups.filter { profileGroups.contains($0) }
+                        if !matching.isEmpty {
+                            entitlements[key] = matching
+                        }
+                    } else {
+                        entitlements[key] = groups
+                    }
+                }
+            } else if key != "application-identifier"
+                        && key != "com.apple.developer.team-identifier"
+                        && key != "get-task-allow" {
+                entitlements.removeValue(forKey: key)
+            }
+        }
+        return entitlements
+    }
 
     func signApp(at appURL: URL, provisioningProfiles profiles: [ALTProvisioningProfile]) async throws {
         guard let appBundle = ALTApplication(fileURL: appURL) else {
@@ -37,24 +76,11 @@ struct EnterpriseAppSigner: Sendable {
                 debugLog("[EnterpriseAppSigner] WARNING: '\(app.bundleIdentifier)' is outside wildcard App ID '\(matchedProfile.bundleIdentifier)'. Installation will likely fail.")
             }
 
-            var entitlements = matchedProfile.resolvedEntitlements(for: app.bundleIdentifier)
-            let appEntitlements = app.entitlements
-
-            // Same filtering as SideSign: keep only what the app asks for, plus identity keys.
-            for key in Array(entitlements.keys) {
-                if let appValue = appEntitlements[key] {
-                    if key == "keychain-access-groups", let groups = appValue as? [String] {
-                        entitlements[key] = groups.map { group -> String in
-                            guard let dot = group.firstIndex(of: ".") else { return "\(matchedProfile.teamIdentifier).\(group)" }
-                            return matchedProfile.teamIdentifier + group[dot...]
-                        }
-                    }
-                } else if key != "application-identifier"
-                            && key != "com.apple.developer.team-identifier"
-                            && key != "get-task-allow" {
-                    entitlements.removeValue(forKey: key)
-                }
-            }
+            let entitlements = Self.resolvedEntitlements(
+                for: app,
+                profile: matchedProfile,
+                additionalEntitlements: app.isExtension ? [:] : self.additionalEntitlements
+            )
 
             let plist = try PropertyListSerialization.data(fromPropertyList: entitlements, format: .xml, options: 0)
             guard let xml = String(data: plist, encoding: .utf8) else {

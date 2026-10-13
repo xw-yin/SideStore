@@ -234,13 +234,27 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
         }
         
         let target = self.context.targetBundleIdentifier
-        let predicate = NSPredicate(
-            format: "(%K == %@) OR (%K == %@)",
-            #keyPath(InstalledApp.customBundleIdentifier), target,
-            #keyPath(InstalledApp.resignedBundleIdentifier), resignedAppBundle.bundleIdentifier
-        )
+        let predicate: NSPredicate
+        if self.context.customBundleIdentifier != nil {
+            predicate = NSPredicate(
+                format: "(%K == %@) OR (%K == %@)",
+                #keyPath(InstalledApp.customBundleIdentifier), target,
+                #keyPath(InstalledApp.resignedBundleIdentifier), resignedAppBundle.bundleIdentifier
+            )
+        } else {
+            predicate = NSPredicate(
+                format: "(%K == %@) OR (%K == %@) OR (%K == %@ AND %K == nil)",
+                #keyPath(InstalledApp.customBundleIdentifier), target,
+                #keyPath(InstalledApp.resignedBundleIdentifier), resignedAppBundle.bundleIdentifier,
+                #keyPath(InstalledApp.bundleIdentifier), self.context.bundleIdentifier,
+                #keyPath(InstalledApp.customBundleIdentifier)
+            )
+        }
         let customCertSerial = self.context.overrideSigningCertificate?.serialNumber
-        let installedApp = try InstalledApp.first(
+        let existingContextApp = self.context.installedApp.flatMap { app in
+            backgroundContext.object(with: app.objectID) as? InstalledApp
+        }
+        let installedApp = try existingContextApp ?? InstalledApp.first(
                                 satisfying: predicate,
                                 in: backgroundContext
                             ) ?? InstalledApp(
@@ -251,11 +265,24 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
                                 context: backgroundContext
                             )
         if !Self.isDifferentSideStoreContainer(installedApp, resignedAppBundle) {
+            let previousDirectoryURL = installedApp.directoryURL
             installedApp.update(
                 resignedAppBundle: resignedAppBundle,
                 certificateSerialNumber: customCertSerial,
                 storeBuildVersion: storeBuildVersion
             )
+            let newDirectoryURL = installedApp.directoryURL
+            if previousDirectoryURL != newDirectoryURL,
+               FileManager.default.fileExists(atPath: previousDirectoryURL.path) {
+                let oldCachedApp = previousDirectoryURL.appendingPathComponent("App.app")
+                let newCachedApp = newDirectoryURL.appendingPathComponent("App.app")
+                if FileManager.default.fileExists(atPath: oldCachedApp.path),
+                   !FileManager.default.fileExists(atPath: newCachedApp.path) {
+                    try? FileManager.default.createDirectory(at: newDirectoryURL, withIntermediateDirectories: true, attributes: nil)
+                    try? FileManager.default.moveItem(at: oldCachedApp, to: newCachedApp)
+                }
+                try? FileManager.default.removeItem(at: previousDirectoryURL)
+            }
             installedApp.certificateStatus = self.context.targetCertStatus ?? installedApp.certificateStatus
             installedApp.customBundleIdentifier = context.customBundleIdentifier
             installedApp.useMainProfile = context.useMainProfile
@@ -304,7 +331,10 @@ final class InstallAppOperation: BasePipelineOperation<InstallAppOperationContex
             if let overrideProfile = self.context.overrideProvisioningProfile {
                 ProfileManager.shared.assignProfile(uuid: overrideProfile.uuid, for: installedApp.bundleIdentifier)
                 self.debugLog("[InstallAppOperation] Assigned profile '\(overrideProfile.name)' to installed app '\(installedApp.bundleIdentifier)'")
+            } else {
+                ProfileManager.shared.setAssignedProfile(nil, for: installedApp.bundleIdentifier)
             }
+            EnterpriseSigningDetector.invalidate()
         }
 
         return installedApp

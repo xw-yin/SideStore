@@ -68,12 +68,16 @@ final class StageBackupAppOperation: BasePipelineOperation<InstallAppOperationCo
         ]
 
         let targetAppBundle = ALTApplication(fileURL: targetApp.fileURL)
-        var targetAppGroups = (targetAppBundle?.entitlements[.appGroups] as? [String]) ?? []
+        let cachedAppGroups = targetApp.customEntitlements?[ALTEntitlement.appGroups.rawValue] as? [String]
+        var targetAppGroups = cachedAppGroups ?? (targetAppBundle?.entitlements[.appGroups] as? [String]) ?? []
         if !targetAppGroups.contains(Bundle.baseAltStoreAppGroupID) {
             targetAppGroups.append(Bundle.baseAltStoreAppGroupID)
         }
 
-        // replace sidebackup app's entitlements with target app's entilements (for appgroup!)
+        // Reset any previous phase overrides and set SideBackup's app group entitlements
+        context.overrideProvisioningProfile = nil
+        context.overrideSigningCertificate = nil
+        context.provisioningProfiles = nil
         context.additionalEntitlements[.appGroups] = targetAppGroups
 
         let installedAppUTI: [String: any Sendable] = [

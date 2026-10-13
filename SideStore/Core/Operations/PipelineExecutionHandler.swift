@@ -78,6 +78,7 @@ enum ProfileCustomizationChoice: Sendable {
 
 protocol UserCustomizationHandler: AnyObject, Sendable {
     func resolveBundleIDOverride(initialBundleID: String) async throws -> (customID: String, appendTeamID: Bool)?
+    func resolveBundleIDOverride(initialBundleID: String, team: ALTTeam?, isWildcardEnterprise: Bool) async throws -> (customID: String, appendTeamID: Bool)?
     func resolveInfoPlistCustomization(
         targets: [InfoPlistTarget],
         initialBundleID: String,
@@ -104,5 +105,11 @@ protocol UserCustomizationHandler: AnyObject, Sendable {
     func resolveAppGroupMismatch(originalGroup: String, correctedGroup: String) async throws -> AppGroupResolution
     func resolveAppIconCustomization(appName: String) async throws -> URL?
     func resolveProvisioningProfileCustomization(appName: String, bundleID: String) async throws -> ProfileCustomizationChoice?
+}
+
+extension UserCustomizationHandler {
+    func resolveBundleIDOverride(initialBundleID: String, team: ALTTeam?, isWildcardEnterprise: Bool) async throws -> (customID: String, appendTeamID: Bool)? {
+        try await resolveBundleIDOverride(initialBundleID: initialBundleID)
+    }
 }
 

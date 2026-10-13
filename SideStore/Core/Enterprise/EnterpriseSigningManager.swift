@@ -232,8 +232,16 @@ public final class EnterpriseSigningManager: @unchecked Sendable {
         }
     }
 
+    func isEnterpriseIdentityProfile(_ profile: ALTProvisioningProfile) -> Bool {
+        if let uuid = profileUUID, profile.uuid.uuidString.caseInsensitiveCompare(uuid) == .orderedSame {
+            return true
+        }
+        return EnterpriseSigningDetector.isEnterpriseProfile(profile.data)
+    }
+
     private func notifyChange() {
         cacheLock.withLock { cachedIdentitySerial = nil }
+        EnterpriseSigningDetector.invalidate()
         NotificationCenter.default.post(name: Self.didChangeNotification, object: self)
     }
 }
@@ -244,6 +252,20 @@ public extension AuthManager {
     /// The team new apps are signed for: the enterprise identity's team when
     /// Enterprise mode is active, otherwise the signed-in Apple ID team.
     func getSigningTeam() async throws -> ALTTeam {
+        try await getSigningTeam(for: nil)
+    }
+
+    internal func getSigningTeam(for choice: SigningCertificateChoice?) async throws -> ALTTeam {
+        switch choice {
+        case .enterprise?:
+            if let identity = EnterpriseSigningManager.shared.usableIdentity {
+                return identity.team
+            }
+        case .appleID?:
+            return try await getAuthenticatedTeam()
+        default:
+            break
+        }
         if let identity = EnterpriseSigningManager.shared.activeIdentity {
             return identity.team
         }
@@ -271,23 +293,39 @@ extension InstallAppOperationContext {
     /// Team for steps that run before the certificate is resolved (e.g. bundle ID customization),
     /// honouring the Apple ID / Enterprise choice made for this install.
     func preferredSigningTeam() async throws -> ALTTeam {
-        switch sharedContext.signingChoice {
-        case .enterprise?:
-            if let identity = EnterpriseSigningManager.shared.usableIdentity { return identity.team }
-        case .appleID?:
-            return try await AuthManager.shared.getAuthenticatedTeam()
-        default:
-            break
-        }
-        return try await AuthManager.shared.getSigningTeam()
+        return try await AuthManager.shared.getSigningTeam(for: sharedContext.signingChoice)
     }
 
     /// `true` when signing with a profile that isn't managed by the signed-in Apple ID,
     /// meaning the developer portal must not be contacted for it.
     func isSigningWithImportedIdentity() async -> Bool {
-        guard let profile = overrideProvisioningProfile else { return false }
-        guard let authTeam = try? await AuthManager.shared.getAuthenticatedTeam() else { return true }
-        return authTeam.identifier != profile.teamIdentifier
+        if let profile = overrideProvisioningProfile {
+            guard let authTeam = try? await AuthManager.shared.getAuthenticatedTeam() else { return true }
+            return authTeam.identifier != profile.teamIdentifier
+        }
+        switch sharedContext.signingChoice {
+        case .enterprise?:
+            return EnterpriseSigningManager.shared.usableIdentity != nil
+        case .appleID?:
+            return false
+        default:
+            return EnterpriseSigningManager.shared.activeIdentity != nil
+        }
+    }
+
+    /// `true` when this pipeline will sign with a wildcard imported/enterprise profile.
+    var isSigningWithEnterpriseWildcard: Bool {
+        if let profile = overrideProvisioningProfile {
+            return profile.isWildcard
+        }
+        switch sharedContext.signingChoice {
+        case .enterprise?:
+            return EnterpriseSigningManager.shared.usableIdentity?.profile.isWildcard == true
+        case .appleID?:
+            return false
+        default:
+            return EnterpriseSigningManager.shared.activeIdentity?.profile.isWildcard == true
+        }
     }
 
     /// Whether this pipeline re-signs the app bundle (install/update/resign) as opposed to
