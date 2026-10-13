@@ -25,6 +25,7 @@ final class UpdateAppCertificateOperation: BasePipelineOperation<InstallAppOpera
         let targetBundleID = self.context.installedApp?.bundleIdentifier ?? self.context.targetBundleIdentifier
         var profileToUse = self.context.overrideProvisioningProfile ?? ProfileManager.shared.getAssignedProfile(for: targetBundleID)
         var didSwitchFromEnterpriseToAppleID = false
+        var removedEnterpriseProfileUUID: String? = nil
 
         if self.context.resignsAppBundle {
             if self.context.overrideProvisioningProfile == nil {
@@ -34,16 +35,38 @@ final class UpdateAppCertificateOperation: BasePipelineOperation<InstallAppOpera
                         profileToUse = identity.profile
                         self.context.overrideSigningCertificate = identity.certificate
                     }
+                    // When switching an app that had no customBundleIdentifier to a wildcard enterprise profile,
+                    // ensure any previous team-suffixed resignedBundleIdentifier loaded from cache is cleared.
+                    if identity.profile.isWildcard,
+                       let installedApp = self.context.installedApp,
+                       installedApp.customBundleIdentifier == nil,
+                       self.context.customBundleIdentifier == installedApp.resignedBundleIdentifier,
+                       installedApp.resignedBundleIdentifier != installedApp.bundleIdentifier {
+                        self.context.customBundleIdentifier = nil
+                    }
                 } else {
                     if let existingProfile = profileToUse,
                        EnterpriseSigningManager.shared.isEnterpriseIdentityProfile(existingProfile) {
                         debugLog("[UpdateAppCertificateOperation] Switching '\(targetBundleID)' from Enterprise profile '\(existingProfile.name)' back to Apple ID signing.")
+                        removedEnterpriseProfileUUID = existingProfile.uuid.uuidString
                         profileToUse = nil
                         ProfileManager.shared.setAssignedProfile(nil, for: targetBundleID)
                         didSwitchFromEnterpriseToAppleID = true
                     } else if let serial = self.context.installedApp?.certificateSerialNumber,
                               serial == EnterpriseSigningManager.shared.identitySerialNumber {
                         didSwitchFromEnterpriseToAppleID = true
+                    }
+
+                    if didSwitchFromEnterpriseToAppleID {
+                        // Clear cached enterprise entitlements so they don't pollute Apple ID portal registration.
+                        if !UserDefaults.standard.customizeEntitlements {
+                            self.context.customEntitlementsByBundleID.removeAll()
+                            self.context.additionalEntitlements.removeAll()
+                        }
+                        // Remove the old enterprise/wildcard profile from the device if no other app uses it.
+                        if let oldUUID = removedEnterpriseProfileUUID {
+                            await self.removeDeviceProfileIfUnused(uuidString: oldUUID, excludingBundleID: targetBundleID)
+                        }
                     }
                 }
             }
@@ -54,6 +77,14 @@ final class UpdateAppCertificateOperation: BasePipelineOperation<InstallAppOpera
             } else if let identity = EnterpriseSigningManager.shared.usableIdentity {
                 profileToUse = identity.profile
                 self.context.overrideSigningCertificate = identity.certificate
+            } else if let embeddedProfile = self.loadEmbeddedEnterpriseProfile() {
+                profileToUse = embeddedProfile
+            } else {
+                // Never fall back to the 7-day Apple ID portal flow for a profile-only refresh of an
+                // enterprise-signed binary (which would corrupt expirationDate without re-signing the binary).
+                throw OperationError.missingProvisioningProfile(
+                    reason: NSLocalizedString("Could not find the enterprise provisioning profile for this app. Use Resign or Reinstall to switch to Apple ID signing.", comment: "")
+                )
             }
         }
 
@@ -83,6 +114,48 @@ final class UpdateAppCertificateOperation: BasePipelineOperation<InstallAppOpera
         }
         
         self.setProgress(100)
+    }
+
+    private func loadEmbeddedEnterpriseProfile() -> ALTProvisioningProfile? {
+        guard let installedApp = self.context.installedApp else { return nil }
+        let candidates: [URL] = [
+            installedApp.directoryURL.appendingPathComponent("App.app").appendingPathComponent("embedded.mobileprovision"),
+            installedApp.fileURL.appendingPathComponent("embedded.mobileprovision"),
+            Bundle.main.bundleURL.appendingPathComponent("embedded.mobileprovision")
+        ]
+        for url in candidates where FileManager.default.fileExists(atPath: url.path) {
+            if EnterpriseSigningDetector.isEnterpriseProfile(at: url),
+               let profile = try? ALTProvisioningProfile(url: url) {
+                return profile
+            }
+        }
+        return nil
+    }
+
+    private func removeDeviceProfileIfUnused(uuidString: String, excludingBundleID: String) async {
+        // Keep the profile on device if Enterprise mode is still globally active with this profile.
+        if EnterpriseSigningManager.shared.preference != .appleID,
+           EnterpriseSigningManager.shared.profileUUID?.caseInsensitiveCompare(uuidString) == .orderedSame {
+            return
+        }
+        let stillUsedByOtherApp = self.context.dbBackgroundContext.performAndWait { () -> Bool in
+            let apps = InstalledApp.fetchActiveApps(in: self.context.dbBackgroundContext)
+            return apps.contains { app in
+                guard app.bundleIdentifier != excludingBundleID else { return false }
+                if let assigned = ProfileManager.shared.getAssignedProfile(for: app.bundleIdentifier),
+                   assigned.uuid.uuidString.caseInsensitiveCompare(uuidString) == .orderedSame {
+                    return true
+                }
+                if let customProfile = app.customProvisioningProfile,
+                   customProfile.uuid.uuidString.caseInsensitiveCompare(uuidString) == .orderedSame {
+                    return true
+                }
+                return false
+            }
+        }
+        guard !stillUsedByOtherApp else { return }
+        debugLog("[UpdateAppCertificateOperation] Removing unused enterprise profile \(uuidString) from device.")
+        try? await removeProvisioningProfile(uuidString)
     }
 
     /// Enterprise: picks the enterprise identity per the user's signing preference, asking when set to

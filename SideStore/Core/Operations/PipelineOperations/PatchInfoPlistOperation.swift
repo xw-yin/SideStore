@@ -48,7 +48,8 @@ final class PatchInfoPlistOperation: BasePipelineOperation<InstallAppOperationCo
                         let customParser = InfoPlistParser(dictionary: customPlist)
                         if let customID = customParser.bundleIdentifier,
                            !customID.isEmpty,
-                           customID != self.context.bundleIdentifier {
+                           customID != self.context.bundleIdentifier,
+                           (customID != self.context.installedApp?.resignedBundleIdentifier || self.context.installedApp?.customBundleIdentifier != nil) {
                             self.context.customBundleIdentifier = customID
                         }
                     }
