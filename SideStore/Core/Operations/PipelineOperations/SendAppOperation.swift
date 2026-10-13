@@ -32,7 +32,7 @@ final class SendAppOperation: BasePipelineOperation<InstallAppOperationContext, 
         verboseLog("[SendAppOperation] AFC App Bundle `fileURL`: \(appURL.absoluteString)")
 
         do {
-            await CellularRefreshManager.shared.turnOffDataIfNeeded()
+            try await CellularRefreshManager.shared.turnOffDataIfNeeded()
             
             if UserDefaults.standard.preferResignedIPA, let ipaURL = self.context.ipaURL {
                 debugLog("[SendAppOperation] Sending IPA at \(ipaURL.path) via AFC...")

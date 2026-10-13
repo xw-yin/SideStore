@@ -61,7 +61,7 @@ final class DeactivateAppOperation: BasePipelineOperation<PipelineOperationConte
         let range = endProgress - startProgress
         
         do {
-            await CellularRefreshManager.shared.turnOffDataIfNeeded()
+            try await CellularRefreshManager.shared.turnOffDataIfNeeded()
             for (index, identifier) in allIdentifiers.enumerated() {
                 try await removeProvisioningProfile(identifier)
                 if range > 0 {

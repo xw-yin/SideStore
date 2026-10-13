@@ -171,26 +171,43 @@ public final class CellularRefreshManager: @unchecked Sendable {
         return false
     }
 
+    /// How long to wait for the VPN tunnel to re-stabilize after cellular
+    /// data is toggled off. iOS tears down VPN tunnels on cellular toggle;
+    /// the old 2s wait was insufficient and its result was discarded, so
+    /// device operations proceeded on a dead tunnel and failed with
+    /// BrokenPipe/ConnectionReset/endpoint-nil (surfacing as invalidVPN,
+    /// profileInstall, or lockdown errors).
+    private static let tunnelStabilizationTimeout: TimeInterval = 10.0
+
     // public apis
-    @discardableResult
-    public func turnOffDataIfNeeded(addOnDelay: TimeInterval = 0) async -> Bool {
-        guard isSupported && isEnabled else { return false }
-        guard !didTurnOffData else { return false }
+    public func turnOffDataIfNeeded(addOnDelay: TimeInterval = 0) async throws {
+        guard isSupported && isEnabled else { return }
+        guard !didTurnOffData else { return }
 
         // If Wi-Fi is active, skip running cellular toggle shortcuts
         guard !minimuxer.network.isWifiSatisfied else {
             debugLog("[CellularRefreshManager] Wi-Fi is active, skipping turnOff shortcut.")
-            return false
+            return
         }
 
         let success = await turnOffData()
-        if success {
-            didTurnOffData = true
-            let effectiveBaseDelay = turnOffDataBaseDelayOverride ?? AppConstants.Shortcuts.defaultTurnOffDataBaseDelay
-            await sleep(baseDelay: effectiveBaseDelay, addOnDelay: addOnDelay)
-            _ = await waitForMinimuxerReady(timeout: 2.0)
+        guard success else { return }
+        didTurnOffData = true
+        let effectiveBaseDelay = turnOffDataBaseDelayOverride ?? AppConstants.Shortcuts.defaultTurnOffDataBaseDelay
+        await sleep(baseDelay: effectiveBaseDelay, addOnDelay: addOnDelay)
+
+        // Wait for the tunnel to re-stabilize before any device operation.
+        // Failing loudly here (instead of silently proceeding) prevents
+        // cryptic downstream failures. Cellular data is restored before
+        // throwing so the user is not left offline.
+        let ready = await waitForMinimuxerReady(timeout: Self.tunnelStabilizationTimeout)
+        guard ready else {
+            debugLog("[CellularRefreshManager] Tunnel did not stabilize after cellular toggle; restoring cellular data.")
+            _ = await turnOnDataIfNeeded()
+            throw OperationError.invalidVPN(
+                reason: "Device connection did not recover after turning off cellular data. Please confirm LocalDevVPN is connected and try again."
+            )
         }
-        return success
     }
 
     @discardableResult

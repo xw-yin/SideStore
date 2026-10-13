@@ -265,7 +265,12 @@ public func ensureMinimuxerReady() async throws {
             reason: "WireGuard VPN is not supported with Cellular Refresh because iOS pauses the WireGuard tunnel when cellular data is toggled off."
         )
     }
-    if !CellularRefreshManager.shared.isEnabled {
+    // Only skip the readiness check when the cellular-toggle flow will actually
+    // run (cellular mode, no WiFi) — turnOffDataIfNeeded gates on tunnel
+    // readiness itself after the toggle. In all other cases (WiFi active or
+    // cellular refresh disabled), verify up front instead of failing
+    // cryptically mid-pipeline.
+    if !CellularRefreshManager.shared.isCellularMode {
         try await withRemotePairingRetry {
             if case .failure(let error) = await isMinimuxerReady() {
                 throw error.asOperationError

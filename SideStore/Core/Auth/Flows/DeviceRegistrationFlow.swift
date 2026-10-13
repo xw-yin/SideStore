@@ -48,7 +48,7 @@ final class DeviceRegistrationFlow: @unchecked Sendable {
     private func fetchDeviceUDID() async throws -> String {
         let isCellularEnabled = CellularRefreshManager.shared.isEnabled
         if isCellularEnabled {
-            await CellularRefreshManager.shared.turnOffDataIfNeeded()
+            try await CellularRefreshManager.shared.turnOffDataIfNeeded()
         }
         
         do {
