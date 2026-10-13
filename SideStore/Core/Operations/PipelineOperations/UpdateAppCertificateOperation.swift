@@ -120,8 +120,7 @@ final class UpdateAppCertificateOperation: BasePipelineOperation<InstallAppOpera
         guard let installedApp = self.context.installedApp else { return nil }
         let candidates: [URL] = [
             installedApp.directoryURL.appendingPathComponent("App.app").appendingPathComponent("embedded.mobileprovision"),
-            installedApp.fileURL.appendingPathComponent("embedded.mobileprovision"),
-            Bundle.main.bundleURL.appendingPathComponent("embedded.mobileprovision")
+            installedApp.fileURL.appendingPathComponent("embedded.mobileprovision")
         ]
         for url in candidates where FileManager.default.fileExists(atPath: url.path) {
             if EnterpriseSigningDetector.isEnterpriseProfile(at: url),
