@@ -31,13 +31,37 @@ final class PairingFileManager: NSObject {
     }
 
     var persistedActiveProtocol: PairingProtocol? {
-        get { UserDefaults.standard.activePairingProtocol }
-        set { UserDefaults.standard.activePairingProtocol = newValue }
+        get {
+            if #available(iOS 17.0, *) {
+                return .rppairing
+            } else {
+                return .lockdown
+            }
+        }
+        set {
+            if #available(iOS 17.0, *) {
+                UserDefaults.standard.activePairingProtocol = .rppairing
+            } else {
+                UserDefaults.standard.activePairingProtocol = .lockdown
+            }
+        }
     }
 
     var preferredProtocol: PairingProtocol? {
-        get { UserDefaults.standard.preferredPairingProtocol }
-        set { UserDefaults.standard.preferredPairingProtocol = newValue }
+        get {
+            if #available(iOS 17.0, *) {
+                return .rppairing
+            } else {
+                return .lockdown
+            }
+        }
+        set {
+            if #available(iOS 17.0, *) {
+                UserDefaults.standard.preferredPairingProtocol = .rppairing
+            } else {
+                UserDefaults.standard.preferredPairingProtocol = .lockdown
+            }
+        }
     }
 
     nonisolated func pairingFileURL(for mode: PairingProtocol) -> URL {
@@ -51,13 +75,11 @@ final class PairingFileManager: NSObject {
 
     nonisolated func hasPairingFile() -> Bool {
         guard !UserDefaults.standard.isPairingReset else { return false }
-        if let target = preferredProtocol, hasPairingFile(for: target) {
-            return true
+        if #available(iOS 17.0, *) {
+            return hasPairingFile(for: .rppairing)
+        } else {
+            return hasPairingFile(for: .lockdown)
         }
-        if let mode = persistedActiveProtocol, hasPairingFile(for: mode) {
-            return true
-        }
-        return false
     }
 
     nonisolated func metadata(for mode: PairingProtocol) -> PairingFileMetadata {
@@ -87,12 +109,14 @@ final class PairingFileManager: NSObject {
 
     nonisolated func fetchPairingFile(preferred: PairingProtocol? = nil) -> String? {
         guard !UserDefaults.standard.isPairingReset else { return nil }
-        let targetPreferred = preferred ?? preferredProtocol
-        if let targetPreferred, let contents = fetchPairingFile(for: targetPreferred) {
-            return contents
-        }
-        if let persisted = persistedActiveProtocol {
-            return fetchPairingFile(for: persisted)
+        if #available(iOS 17.0, *) {
+            if let contents = fetchPairingFile(for: .rppairing) {
+                return contents
+            }
+        } else {
+            if let contents = fetchPairingFile(for: .lockdown) {
+                return contents
+            }
         }
         // Fork compatibility: fall back to App Group shared container and
         // bundle-embedded pairing files (LiveContainer deployment scenario).
@@ -101,7 +125,13 @@ final class PairingFileManager: NSObject {
     
     @discardableResult
     nonisolated func parse(content: String, preferred: PairingProtocol? = nil) throws -> any PairingFile {
-        try PairingFileParser.parse(content: content, preferred: preferred)
+        let versionPreferred: PairingProtocol
+        if #available(iOS 17.0, *) {
+            versionPreferred = .rppairing
+        } else {
+            versionPreferred = .lockdown
+        }
+        return try PairingFileParser.parse(content: content, preferred: preferred ?? versionPreferred)
     }
 
     @discardableResult

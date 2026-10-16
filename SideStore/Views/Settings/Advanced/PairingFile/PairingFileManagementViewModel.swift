@@ -40,7 +40,13 @@ public final class PairingFileManagementViewModel: ObservableObject {
     @Published public var activeAlert: ActiveAlert? = nil
     @Published public var isActivating: Bool = false
 
-    public let supportedProtocols: [PairingProtocol] = [.lockdown, .rppairing]
+    public var supportedProtocols: [PairingProtocol] {
+        if #available(iOS 17.0, *) {
+            return [.rppairing]
+        } else {
+            return [.lockdown]
+        }
+    }
 
     public var allowedPairingTypes: [UTType] {
         PairingFileManager.supportedContentTypes

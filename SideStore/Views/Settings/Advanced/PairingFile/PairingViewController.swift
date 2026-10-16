@@ -131,16 +131,8 @@ final class PairingViewController: NSObject {
         on vc: UIViewController,
         pairingContent: String
     ) async -> Bool {
-        guard let saved = PairingFileManager.shared.preferredProtocol,
-              let parsed = try? PairingFileManager.shared.parse(content: pairingContent, preferred: nil),
-              parsed.mode != saved else {
-            return false
-        }
-        return await confirmProtocolMismatchSwitch(
-            on: vc,
-            savedPreference: saved,
-            providedProtocol: parsed.mode
-        )
+        // Enforce version isolation: do not allow switching to an incompatible protocol
+        return false
     }
     @MainActor
     private func finalizeImport(from url: URL) {
