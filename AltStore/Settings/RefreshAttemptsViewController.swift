@@ -113,6 +113,34 @@ extension RefreshAttemptsViewController
         configuration.performsFirstActionWithFullSwipe = false
         return configuration
     }
+
+    override func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
+    {
+        let attempt = self.dataSource.item(at: indexPath)
+        let errorDescription = attempt.errorDescription ?? ""
+        guard !errorDescription.isEmpty else { return nil }
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+            let copyAction = UIAction(title: NSLocalizedString("Copy Error Message", comment: ""), image: UIImage(systemName: "doc.on.doc")) { _ in
+                UIPasteboard.general.string = errorDescription
+            }
+            return UIMenu(title: "", children: [copyAction])
+        }
+    }
+
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
+    {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let attempt = self.dataSource.item(at: indexPath)
+        if let errorDescription = attempt.errorDescription, !errorDescription.isEmpty {
+            UIPasteboard.general.string = errorDescription
+            let alert = UIAlertController(title: nil, message: NSLocalizedString("Copied to Clipboard", comment: ""), preferredStyle: .alert)
+            self.present(alert, animated: true)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                alert.dismiss(animated: true)
+            }
+        }
+    }
     #endif
 }
 
