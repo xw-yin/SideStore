@@ -64,6 +64,14 @@ final class PairingFileManager: NSObject {
         }
     }
 
+    nonisolated func defaultProtocol() -> PairingProtocol {
+        if #available(iOS 17, tvOS 17, *) {
+            return .rppairing
+        } else {
+            return .lockdown
+        }
+    }
+
     nonisolated func pairingFileURL(for mode: PairingProtocol) -> URL {
         let fileName = mode == .rppairing ? AppConstants.Pairing.remotePairingFileName : AppConstants.Pairing.lockdownPairingFileName
         return FileManager.default.documentsDirectory.appendingPathComponent(fileName)
@@ -75,11 +83,7 @@ final class PairingFileManager: NSObject {
 
     nonisolated func hasPairingFile() -> Bool {
         guard !UserDefaults.standard.isPairingReset else { return false }
-        if #available(iOS 17.0, *) {
-            return hasPairingFile(for: .rppairing)
-        } else {
-            return hasPairingFile(for: .lockdown)
-        }
+        return fetchPairingFile() != nil
     }
 
     nonisolated func metadata(for mode: PairingProtocol) -> PairingFileMetadata {
@@ -161,7 +165,7 @@ final class PairingFileManager: NSObject {
         return parsed
     }
 
-    func inspectPairingFile(from url: URL) throws -> (content: String, file: any PairingFile) {
+    func inspectPairingFile(from url: URL, preferred: PairingProtocol? = nil) throws -> (content: String, file: any PairingFile) {
         let isSecured = url.startAccessingSecurityScopedResource()
         defer {
             if isSecured {
@@ -172,14 +176,15 @@ final class PairingFileManager: NSObject {
         guard let content = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else {
             throw CocoaError(.fileReadInapplicableStringEncoding)
         }
-        let parsed = try parse(content: content, preferred: nil)
+        let parsed = try parse(content: content, preferred: preferred)
         return (content, parsed)
     }
 
     func importPairingFile(from url: URL, preferred: PairingProtocol? = nil) throws {
-        let (content, _) = try inspectPairingFile(from: url)
-        let parsed = try savePairingFile(contents: content, preferred: preferred)
-        persistedActiveProtocol = parsed.mode
+        let (content, parsed) = try inspectPairingFile(from: url, preferred: preferred)
+        let modeToSave = preferred ?? parsed.mode
+        let saved = try savePairingFile(contents: content, preferred: modeToSave)
+        persistedActiveProtocol = saved.mode
     }
 
     // Composite (dual-protocol) pairing files, e.g. exported by iLoader, carry

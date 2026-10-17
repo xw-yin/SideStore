@@ -38,33 +38,40 @@ public final class AppBootManager: @unchecked Sendable {
     
     // @livecontainer: App Group pairing file scan
     public nonisolated func getSavedPairingFile() -> String? {
+        guard !UserDefaults.standard.isPairingReset else { return nil }
         let fm = FileManager.default
-        let pairingFileName = "ALTPairingFile.mobiledevicepairing"
-        var fileURLs = [fm.documentsDirectory.appendingPathComponent(pairingFileName)]
+        let manager = PairingFileManager.shared
+        let pairingFileName = manager.pairingFileURL(for: manager.defaultProtocol()).lastPathComponent
+        let fileNames = [pairingFileName, AppConstants.Pairing.legacyPairingFileName]
+        var directories = [fm.documentsDirectory]
         if let groupURL = fm.altstoreSharedDirectory {
-            fileURLs.append(groupURL.appendingPathComponent(pairingFileName))
-            fileURLs.append(groupURL.appendingPathComponent("Documents").appendingPathComponent(pairingFileName))
+            directories.append(groupURL)
+            directories.append(groupURL.appendingPathComponent("Documents"))
         }
 
-        for fileURL in fileURLs {
-            if fm.fileExists(atPath: fileURL.path),
-               let contents = try? String(contentsOf: fileURL), !contents.isEmpty {
-                return contents
+        // Resolve only the protocol supported by this OS, including legacy and
+        // LiveContainer shared-container files. Real-device pairing needs proper testing.
+        for directory in directories {
+            for name in fileNames {
+                let fileURL = directory.appendingPathComponent(name)
+                if let contents = try? String(contentsOf: fileURL),
+                   (try? manager.parse(content: contents)) != nil {
+                    return contents
+                }
             }
         }
-
-        guard !UserDefaults.standard.isPairingReset else { return nil }
         for bundle in [Bundle.main, Bundle.realMainBundle] {
             if let url = bundle.url(forResource: "ALTPairingFile", withExtension: "mobiledevicepairing"),
                fm.fileExists(atPath: url.path),
                let data = fm.contents(atPath: url.path),
                let contents = String(data: data, encoding: .utf8),
-               !contents.isEmpty {
+               (try? manager.parse(content: contents)) != nil {
                 return contents
             }
             if let plistString = bundle.object(forInfoDictionaryKey: "ALTPairingFile") as? String,
                !plistString.isEmpty,
-               !plistString.contains("insert pairing file here") {
+               !plistString.contains("insert pairing file here"),
+               (try? manager.parse(content: plistString)) != nil {
                 return plistString
             }
         }
