@@ -474,9 +474,7 @@ class SignInFlowHandler: AnyObject, SignInHandler, AnisetteServerHandler {
                         preferredStyle: .alert
                     )
                     warningAlert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default) { _ in
-                        warningAlert.dismiss(animated: true) {
-                            continuation.resume(returning: .keepExisting)
-                        }
+                        continuation.resume(returning: .keepExisting)
                     })
                     self.present(warningAlert)
                 } else {
@@ -494,21 +492,18 @@ class SignInFlowHandler: AnyObject, SignInHandler, AnisetteServerHandler {
             }
             let actionStyle: UIAlertAction.Style = (isPaid && initialCount == 0) ? .default : .destructive
             let revokeAction = UIAlertAction(title: initialTitle, style: actionStyle) { _ in
-                alertController.dismiss(animated: true) {
-                    let selected = revokeVC.getSelectedCertificates()
-                    continuation.resume(returning: .revokeSelected(selected))
-                }
+                let selected = revokeVC.getSelectedCertificates()
+                continuation.resume(returning: .revokeSelected(selected))
             }
             
             if isPaid {
                 revokeAction.isEnabled = true
-                revokeVC.onSelectionChanged = { selected in
+                revokeVC.onSelectionChanged = { [weak revokeAction] selected in
+                    guard let revokeAction = revokeAction else { return }
                     if selected.isEmpty {
                         revokeAction.setValue(NSLocalizedString("Continue Without Revoking", comment: ""), forKey: "title")
-                        revokeAction.setValue(nil, forKey: "titleTextColor")
                     } else {
                         revokeAction.setValue(String(format: NSLocalizedString("Revoke Selected (%d)", comment: ""), selected.count), forKey: "title")
-                        revokeAction.setValue(UIColor.systemRed, forKey: "titleTextColor")
                     }
                 }
             }

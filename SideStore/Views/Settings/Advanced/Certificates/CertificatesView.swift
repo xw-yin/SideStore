@@ -305,7 +305,9 @@ struct CertificatesView: View {
             preferredStyle: .alert
         )
         
-        alertController.setValue(contentVC, forKey: "contentViewController")
+        if alertController.responds(to: NSSelectorFromString("setContentViewController:")) {
+            alertController.setValue(contentVC, forKey: "contentViewController")
+        }
         
         let cancelAction = UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel, handler: nil)
         let revokeAction = UIAlertAction(title: NSLocalizedString("Revoke", comment: ""), style: .destructive) { _ in
@@ -316,7 +318,8 @@ struct CertificatesView: View {
         alertController.addAction(cancelAction)
         alertController.addAction(revokeAction)
         
-        presentingViewController?.present(alertController, animated: true)
+        let presenter = presentingViewController ?? UIApplication.shared.topViewController()
+        presenter?.present(alertController, animated: true)
     }
     
     private func importPrivateKeyAction(for cert: ALTX509Certificate) {
