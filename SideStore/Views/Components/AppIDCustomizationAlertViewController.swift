@@ -28,6 +28,7 @@ final class AppIDCustomizationAlertViewController: UIViewController {
     private let checkboxView: AppendTeamIDCheckboxView
     private let textField = UITextField()
     private let cardEffectView = UIVisualEffectView()
+    private var cardCenterYConstraint: NSLayoutConstraint?
 
     init(initialText: String, fallbackBaseID: String, teamID: String) {
         self.initialText = initialText
@@ -48,6 +49,11 @@ final class AppIDCustomizationAlertViewController: UIViewController {
         view.backgroundColor = UIColor.black.withAlphaComponent(0.35)
         setupCard()
         setupContent()
+        observeKeyboard()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -84,10 +90,17 @@ final class AppIDCustomizationAlertViewController: UIViewController {
 
         let widthConstraint = cardEffectView.widthAnchor.constraint(equalToConstant: 300)
         widthConstraint.priority = .defaultHigh
+        // Centering is only defaultHigh priority: the keyboard-avoidance
+        // shift moves this constraint's constant, and on short screens the
+        // top guard below must be able to win over exact centering.
+        let centerYConstraint = cardEffectView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        centerYConstraint.priority = .defaultHigh
+        cardCenterYConstraint = centerYConstraint
         NSLayoutConstraint.activate([
             cardEffectView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            cardEffectView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            centerYConstraint,
             widthConstraint,
+            cardEffectView.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
             cardEffectView.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 32),
             cardEffectView.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -32),
         ])
@@ -168,6 +181,32 @@ final class AppIDCustomizationAlertViewController: UIViewController {
         buttonStack.addArrangedSubview(confirmButton)
 
         stack.addArrangedSubview(buttonStack)
+    }
+
+    // MARK: - Keyboard avoidance
+
+    private func observeKeyboard() {
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillChangeFrame(_:)), name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
+    }
+
+    @objc private func keyboardWillChangeFrame(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let endFrameValue = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else { return }
+
+        // Keyboard frames arrive in window coordinates. The overlap is how
+        // much of this view the keyboard covers (0 when it hides). Shifting
+        // the card's center up by half the overlap re-centers the whole card
+        // — buttons included — in the region above the keyboard.
+        let keyboardFrame = view.convert(endFrameValue.cgRectValue, from: nil)
+        let overlap = max(0, view.bounds.maxY - keyboardFrame.minY)
+        cardCenterYConstraint?.constant = -overlap / 2
+
+        // Move with the keyboard's own timing so the card doesn't lag or lead it.
+        let duration = (userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0.25
+        let curve = (userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber)?.uintValue ?? 0
+        UIView.animate(withDuration: duration, delay: 0, options: UIView.AnimationOptions(rawValue: curve << 16)) {
+            self.view.layoutIfNeeded()
+        }
     }
 
     // MARK: - Actions
