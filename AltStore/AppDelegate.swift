@@ -258,7 +258,10 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             }
             AutomaticRefreshManager.handle(task: processingTask)
         }
-        // (Re)schedule on every launch so the cadence survives restarts.
+        // Ensure a request is pending on every launch so the cadence
+        // survives restarts. schedule() leaves an already pending request
+        // for the current slot untouched, so launches don't roll the
+        // eligibility window forward.
         AutomaticRefreshManager.schedule()
     }
     

@@ -125,4 +125,17 @@ public final class SideStoreRefreshService: NSObject {
             }
         }
     }
+
+    /// Entry point for a host process forwarding a BGProcessingTask firing
+    /// (see AutomaticRefreshManager.performForwardedAutomaticRefresh).
+    /// Unlike performRefresh, this runs the automatic-refresh routine:
+    /// auth preflight, only the apps that are due, and the last-run
+    /// bookkeeping the schedule is anchored to.
+    @objc(performAutomaticRefreshWithServer:)
+    public static func performAutomaticRefresh(server: any RefreshServer) {
+        Task {
+            let success = await AutomaticRefreshManager.performForwardedAutomaticRefresh()
+            server.finish(success ? nil : "Automatic refresh did not complete.")
+        }
+    }
 }

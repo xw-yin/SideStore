@@ -46,19 +46,59 @@ enum AutomaticRefreshManager
             BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: taskIdentifier)
             return
         }
-        
-        let request = BGProcessingTaskRequest(identifier: taskIdentifier)
-        request.earliestBeginDate = Date(timeIntervalSinceNow: interval)
-        request.requiresNetworkConnectivity = true
-        
-        do {
-            try BGTaskScheduler.shared.submit(request)
-            debugLog("[AutomaticRefresh] Scheduled next run, earliest eligible: \(request.earliestBeginDate?.description ?? "nil")")
-        } catch {
-            debugLog("[AutomaticRefresh] Failed to schedule: \(error.localizedDescription)")
+
+        // Anchor the earliest begin date to the last actual run, not to
+        // "now". schedule() runs on every app launch, and a now-anchored
+        // date pushes the eligibility window forward on each launch, so an
+        // app opened at least once per interval would never let the task
+        // become eligible.
+        let anchor = (lastRunDate ?? Date()).addingTimeInterval(interval)
+        // If the anchor is already in the past (the system deferred the
+        // previous run beyond the interval), make the task eligible soon
+        // instead of submitting a past date.
+        let earliest = max(anchor, Date().addingTimeInterval(15 * 60))
+
+        BGTaskScheduler.shared.getPendingTaskRequests { requests in
+            // Submitting replaces any pending request for this identifier,
+            // so a launch-time re-schedule must leave an already pending
+            // request for the same slot untouched — replacing it is exactly
+            // what used to roll the window forward. Submit only when
+            // nothing is pending, or when the pending request targets a
+            // different slot (the interval setting changed, or a run just
+            // consumed the previous request and the anchor moved with the
+            // updated last-run date).
+            if let pending = requests.first(where: { $0.identifier == taskIdentifier }),
+               let pendingDate = pending.earliestBeginDate,
+               abs(pendingDate.timeIntervalSince(earliest)) < 60 {
+                debugLog("[AutomaticRefresh] Already scheduled, earliest eligible: \(pendingDate)")
+                return
+            }
+
+            let request = BGProcessingTaskRequest(identifier: taskIdentifier)
+            request.earliestBeginDate = earliest
+            request.requiresNetworkConnectivity = true
+
+            do {
+                try BGTaskScheduler.shared.submit(request)
+                debugLog("[AutomaticRefresh] Scheduled next run, earliest eligible: \(earliest)")
+            } catch {
+                debugLog("[AutomaticRefresh] Failed to schedule: \(error.localizedDescription)")
+            }
         }
     }
     
+    /// Runs one automatic refresh cycle on behalf of a host process that
+    /// received the BGProcessingTask firing for this app and forwarded it
+    /// over XPC (e.g. LiveContainer, where iOS wakes the host app rather
+    /// than this process). Mirrors handle(task:) minus the task
+    /// bookkeeping, which stays with the host: chain the next slot
+    /// up-front so a termination does not break the cadence, then run.
+    static func performForwardedAutomaticRefresh() async -> Bool
+    {
+        schedule()
+        return await runAutomaticRefresh()
+    }
+
     static func handle(task: BGProcessingTask)
     {
         debugLog("[AutomaticRefresh] Task started")
