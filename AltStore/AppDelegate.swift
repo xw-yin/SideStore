@@ -33,6 +33,22 @@ extension AppDelegate
     nonisolated static let addSourceDeepLinkURLKey = "sourceURL"
 
     @MainActor private static var pendingImportIPAURLs = [URL]()
+    @MainActor private static var pendingRefreshAll: Bool = false
+
+    @MainActor static func enqueueRefreshAll() {
+        self.pendingRefreshAll = true
+        NotificationCenter.default.post(name: AppDelegate.refreshAllAppsDeepLinkNotification, object: nil)
+    }
+
+    @MainActor static func dequeueRefreshAll() -> Bool {
+        guard self.pendingRefreshAll else { return false }
+        self.pendingRefreshAll = false
+        return true
+    }
+
+    @MainActor static var hasPendingRefreshAll: Bool {
+        return self.pendingRefreshAll
+    }
 
     @MainActor static func enqueueAppImport(_ url: URL) {
         self.pendingImportIPAURLs.append(url)

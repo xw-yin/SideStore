@@ -81,6 +81,7 @@ class MyAppsViewController: UICollectionViewController
         NotificationCenter.default.addObserver(self, selector: #selector(MyAppsViewController.didFetchSource(_:)), name: AppManager.didFetchSourceNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(MyAppsViewController.importApp(_:)), name: AppDelegate.importAppDeepLinkNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(MyAppsViewController.appIDsViewControllerDidDismiss(_:)), name: AppIDsViewController.didDismissNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(MyAppsViewController.handleRefreshAllDeepLink(_:)), name: AppDelegate.refreshAllAppsDeepLinkNotification, object: nil)
     }
     
     deinit {
@@ -223,6 +224,13 @@ class MyAppsViewController: UICollectionViewController
         
         _viewDidAppear = true
         self.presentNextAppImportIfNeeded()
+
+        if AppDelegate.dequeueRefreshAll() {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self, !self.isRefreshingAllApps else { return }
+                self.refreshAllApps(UIBarButtonItem())
+            }
+        }
 
         if let pendingURL = self.pendingImportURL {
             self.pendingImportURL = nil
@@ -1825,6 +1833,15 @@ private extension MyAppsViewController
         }
         
         self.presentImportDialog(for: url)
+    }
+
+    @objc func handleRefreshAllDeepLink(_ notification: Notification)
+    {
+        DispatchQueue.main.async { [weak self] in
+            _ = AppDelegate.dequeueRefreshAll()
+            guard let self = self, !self.isRefreshingAllApps else { return }
+            self.refreshAllApps(UIBarButtonItem())
+        }
     }
 
     private func presentImportDialog(for url: URL)
