@@ -1830,10 +1830,10 @@ private extension MyAppsViewController
     /// "group.com.SideStore.SideStore.<teamID>" (see LCSharedUtils.appGroupID)
     /// — and keeps shared guests in its "LiveContainer/Applications" folder
     /// there; private guests live in the documents "Applications" folder.
-    func liveContainerGuestURL(forBundleIdentifier bundleIdentifier: String) -> URL? {
+    func liveContainerGuestURL(forBundleIdentifier bundleIdentifier: String, teamIdentifier: String? = nil) -> URL? {
         var containerRoots: [URL] = []
         var groupIdentifiers = ["group.com.SideStore.SideStore"]
-        if let teamIdentifier = DatabaseManager.shared.activeTeam(in: DatabaseManager.shared.viewContext)?.identifier {
+        if let teamIdentifier {
             groupIdentifiers.insert("group.com.SideStore.SideStore.\(teamIdentifier)", at: 0)
         }
         for group in groupIdentifiers {
@@ -1853,9 +1853,11 @@ private extension MyAppsViewController
         roots = roots.filter { seenPaths.insert($0.path).inserted }
 
         for root in roots {
-            guard let entries = try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil) else { continue }
+            let entries = (try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)) ?? []
+            debugLog("[GetMoreRAM] Guest lookup: root \(root.path) — \(entries.count) entries")
             for entry in entries where entry.pathExtension == "app" {
                 if ALTApplication(fileURL: entry)?.bundleIdentifier == bundleIdentifier {
+                    debugLog("[GetMoreRAM] Guest lookup: found \(bundleIdentifier) at \(entry.path)")
                     return entry
                 }
             }
@@ -1891,7 +1893,7 @@ private extension MyAppsViewController
             return false
         }
 
-        guard let guestURL = self.liveContainerGuestURL(forBundleIdentifier: installedApp.bundleIdentifier),
+        guard let guestURL = self.liveContainerGuestURL(forBundleIdentifier: installedApp.bundleIdentifier, teamIdentifier: team.identifier),
               let guestApp = ALTApplication(fileURL: guestURL)
         else {
             debugLog("[GetMoreRAM] No LiveContainer-side copy found for \(installedApp.bundleIdentifier)")
