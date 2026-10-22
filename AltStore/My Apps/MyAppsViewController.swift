@@ -1848,6 +1848,12 @@ private extension MyAppsViewController
         var roots = containerRoots.map { $0.appendingPathComponent("LiveContainer/Applications") }
         if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).last {
             roots.append(documentsDirectory.appendingPathComponent("Applications"))
+            // When bundled with LiveContainer, this process's documents
+            // directory is nested inside the host's documents directory
+            // (<host Documents>/<guest name>/Documents), so the host's own
+            // private-guest folder is two levels up.
+            let hostDocuments = documentsDirectory.deletingLastPathComponent().deletingLastPathComponent()
+            roots.append(hostDocuments.appendingPathComponent("Applications"))
         }
         var seenPaths = Set<String>()
         roots = roots.filter { seenPaths.insert($0.path).inserted }
@@ -1856,7 +1862,9 @@ private extension MyAppsViewController
             let entries = (try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)) ?? []
             debugLog("[GetMoreRAM] Guest lookup: root \(root.path) — \(entries.count) entries")
             for entry in entries where entry.pathExtension == "app" {
-                if ALTApplication(fileURL: entry)?.bundleIdentifier == bundleIdentifier {
+                let parsedID = ALTApplication(fileURL: entry)?.bundleIdentifier
+                debugLog("[GetMoreRAM] Guest lookup: candidate \(entry.lastPathComponent) -> \(parsedID ?? "nil")")
+                if parsedID == bundleIdentifier {
                     debugLog("[GetMoreRAM] Guest lookup: found \(bundleIdentifier) at \(entry.path)")
                     return entry
                 }
