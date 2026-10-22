@@ -1871,10 +1871,19 @@ private extension MyAppsViewController
     /// Note: needs proper testing on device, especially whether LiveContainer
     /// picks up the patched bundle on the guest's next launch as expected.
     func patchMoreRAMInLiveContainer(for installedApp: InstalledApp) async -> Bool {
-        guard let team = DatabaseManager.shared.activeTeam(in: DatabaseManager.shared.viewContext)?.altTeam,
-              let certificate = CertificateManager.shared.activeCertificate?.certificate
-        else {
-            debugLog("[GetMoreRAM] No active team or certificate; skipping in-place patch")
+        // Signing identity for the in-place re-sign: prefer the app's own
+        // team/certificate records. CertificateManager.activeCertificate is
+        // only populated after an identity is explicitly activated, which
+        // never happens in the LiveContainer-bundled flow — the pipeline
+        // resolves certificates per app instead, so mirror that here.
+        guard let team = installedApp.team?.altTeam ?? DatabaseManager.shared.activeTeam(in: DatabaseManager.shared.viewContext)?.altTeam else {
+            debugLog("[GetMoreRAM] No team available for \(installedApp.bundleIdentifier); skipping in-place patch")
+            return false
+        }
+        let certificate = CertificateManager.shared.activeCertificate?.certificate
+            ?? installedApp.certificateSerialNumber.flatMap { CertificateManager.shared.getSignableCertificate(for: $0) }
+        guard let certificate else {
+            debugLog("[GetMoreRAM] No signable certificate available for \(installedApp.bundleIdentifier); skipping in-place patch")
             return false
         }
 
