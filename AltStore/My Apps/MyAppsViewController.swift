@@ -1864,7 +1864,13 @@ private extension MyAppsViewController
             for entry in entries where entry.pathExtension == "app" {
                 let parsedID = ALTApplication(fileURL: entry)?.bundleIdentifier
                 debugLog("[GetMoreRAM] Guest lookup: candidate \(entry.lastPathComponent) -> \(parsedID ?? "nil")")
-                if parsedID == bundleIdentifier {
+                // LiveContainer rewrites the guest bundle's Info.plist
+                // bundle identifier to the host's (classic-mode guests are
+                // registered under the host identity), so the on-disk
+                // folder name — "<bundleID>.app", or "<bundleID>_<timestamp>.app"
+                // for duplicate installs — is the reliable match key.
+                let folderName = entry.deletingPathExtension().lastPathComponent
+                if folderName == bundleIdentifier || folderName.hasPrefix(bundleIdentifier + "_") || parsedID == bundleIdentifier {
                     debugLog("[GetMoreRAM] Guest lookup: found \(bundleIdentifier) at \(entry.path)")
                     return entry
                 }
@@ -1929,10 +1935,15 @@ private extension MyAppsViewController
             }
         }
 
-        guard let mainProfile = profilesByBundleID[guestApp.bundleIdentifier] else {
+        // The LiveContainer copy's Info.plist identifier is the host's, so
+        // its embedded profile is keyed by that; fall back to the profile
+        // SideStore cached under the app's own bundle identifier.
+        let mainProfile = profilesByBundleID[guestApp.bundleIdentifier] ?? profilesByBundleID[installedApp.bundleIdentifier]
+        guard let mainProfile else {
             debugLog("[GetMoreRAM] No provisioning profile available for \(installedApp.bundleIdentifier)")
             return false
         }
+        debugLog("[GetMoreRAM] Using profile \(mainProfile.bundleIdentifier) (team \(mainProfile.teamIdentifier)) for in-place patch of \(installedApp.bundleIdentifier)")
         // Re-signing with the active (personal) certificate is only valid
         // when the guest's profile belongs to that team; enterprise-signed
         // guests keep the pipeline route.
