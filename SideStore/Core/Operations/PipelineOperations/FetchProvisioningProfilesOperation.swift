@@ -293,9 +293,32 @@ private extension FetchProvisioningProfilesOperation{
             let updated = try await DeveloperPortalProxy.shared.updateAppID(appID, team: team)
             self.verboseLog("[FetchProvisioningProfiles] Updated features for App ID \(updated.bundleIdentifier).")
             return updated
-        } catch {
-            self.debugLog("[FetchProvisioningProfiles] Failed to update features for App ID \(appID.bundleIdentifier). \(error.localizedDescription)")
-            throw error
+        } catch let originalError {
+            // Free teams previously could not register the memory features at
+            // all, so they were silently dropped before ever reaching the
+            // portal. Now that they are attempted, a portal rejection must
+            // degrade to that same dropped behavior instead of failing the
+            // whole install (needs proper testing).
+            let optionalMemoryFeatures: Set<ALTFeature> = [.increasedMemoryLimit, .extendedVirtualAddressing, .increasedDebuggingMemoryLimit]
+            let attemptedMemoryFeatures = optionalMemoryFeatures.filter { targetFeatures[$0] != nil }
+            guard team.type == .free, !attemptedMemoryFeatures.isEmpty else {
+                self.debugLog("[FetchProvisioningProfiles] Failed to update features for App ID \(appID.bundleIdentifier). \(originalError.localizedDescription)")
+                throw originalError
+            }
+
+            var fallbackFeatures = targetFeatures
+            attemptedMemoryFeatures.forEach { fallbackFeatures.removeValue(forKey: $0) }
+            var fallbackAppID = appID
+            fallbackAppID.features = fallbackFeatures
+
+            do {
+                let updated = try await DeveloperPortalProxy.shared.updateAppID(fallbackAppID, team: team)
+                self.debugLog("[FetchProvisioningProfiles] Portal rejected optional memory features for App ID \(appID.bundleIdentifier); continuing without them.")
+                return updated
+            } catch {
+                self.debugLog("[FetchProvisioningProfiles] Failed to update features for App ID \(appID.bundleIdentifier). \(originalError.localizedDescription)")
+                throw originalError
+            }
         }
     }
     

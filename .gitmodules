@@ -6,5 +6,5 @@
 	branch = livecontainer/rebase-12be70dc
 [submodule "Dependencies/SideSign"]
 	path = Dependencies/SideSign
-	url = https://github.com/raj-sh-git/SideSign.git
-	branch = fix-auth-80045
+	url = https://github.com/xw-yin/SideSign.git
+	branch = free-memory-features

@@ -1795,6 +1795,14 @@ private extension MyAppsViewController
         }
     }
     
+    func enableMoreRAM(for installedApp: InstalledApp) {
+        // The standard resign pipeline re-registers the App ID's features and
+        // applies the default additional entitlements (including the increased
+        // memory limit), so an immediate resign is what turns this on.
+        debugLog("Enabling increased memory limit for app \(installedApp.bundleIdentifier) via resign")
+        self.resign(installedApp)
+    }
+    
     func enableJIT(for installedApp: InstalledApp) {
         AppManager.shared.enableJIT(for: installedApp) { result in
             DispatchQueue.main.async {
@@ -2202,6 +2210,24 @@ extension MyAppsViewController
             self.enableJIT(for: installedApp)
         }
         
+        // "Supported" means SideStore can actually re-sign this app with an
+        // updated provisioning profile: the app is active, was not sideloaded
+        // by a legacy tool, and has no user-assigned (fixed) profile, since a
+        // fixed profile is used verbatim and cannot gain the entitlement.
+        let isLegacySideloadedApp = (UserDefaults.standard.legacySideloadedApps ?? []).contains(installedApp.bundleIdentifier)
+        let hasAssignedProfile = ProfileManager.shared.getAssignedProfile(for: installedApp.bundleIdentifier) != nil
+        let supportsMoreRAM = installedApp.isActive && !isLegacySideloadedApp && !hasAssignedProfile
+        
+        var moreRAMEnabled = false
+        if let appBundle = ALTApplication(fileURL: installedApp.fileURL)
+        {
+            moreRAMEnabled = (appBundle.entitlements[ALTEntitlement.increasedMemoryLimit.rawValue] as? Bool) == true
+        }
+        
+        let moreRAMAction = UIAction(title: NSLocalizedString("Get More RAM", comment: ""), image: UIImage(systemName: "memorychip"), state: moreRAMEnabled ? .on : .off) { (action) in
+            self.enableMoreRAM(for: installedApp)
+        }
+        
         let backupAction = UIAction(title: NSLocalizedString("Create Backup", comment: ""), image: UIImage(systemName: "doc.on.doc")) { (action) in
             self.backup(installedApp)
         }
@@ -2358,6 +2384,11 @@ extension MyAppsViewController
                 actions.append(jitAction)
             }
             
+            if supportsMoreRAM
+            {
+                actions.append(moreRAMAction)
+            }
+            
             actions.append(changeIconMenu)
             
             if !backupSubmenuActions.isEmpty
@@ -2407,6 +2438,7 @@ extension MyAppsViewController
             profileMenu,
             activateAction,
             jitAction,
+            moreRAMAction,
             changeIconMenu,
             backupMenu,
             infoAction,
