@@ -16,11 +16,13 @@ import CodeSignKit
 struct EnterpriseAppSigner: Sendable {
     let certificate: ALTCertificate
     var additionalEntitlements: [ALTEntitlement: any Sendable] = [:]
+    var injectedEntitlements: [String: any Sendable] = [:]
 
     static func resolvedEntitlements(
         for app: ALTApplication,
         profile: ALTProvisioningProfile,
-        additionalEntitlements: [ALTEntitlement: any Sendable] = [:]
+        additionalEntitlements: [ALTEntitlement: any Sendable] = [:],
+        injectedEntitlements: [String: any Sendable] = [:]
     ) -> [String: any Sendable] {
         var entitlements = profile.resolvedEntitlements(for: app.bundleIdentifier)
         var requestedEntitlements: [String: any Sendable] = app.entitlements
@@ -52,6 +54,14 @@ struct EnterpriseAppSigner: Sendable {
                 entitlements.removeValue(forKey: key)
             }
         }
+
+        // Caller-injected entitlements are unioned in after filtering, even when
+        // the profile does not carry them (same semantics as SideSign's
+        // AppBundleSigner injection; scoped by the pipeline, see
+        // InstallAppOperationContext.injectedEntitlements).
+        for (key, value) in injectedEntitlements {
+            entitlements[key] = value
+        }
         return entitlements
     }
 
@@ -79,7 +89,8 @@ struct EnterpriseAppSigner: Sendable {
             let entitlements = Self.resolvedEntitlements(
                 for: app,
                 profile: matchedProfile,
-                additionalEntitlements: app.isExtension ? [:] : self.additionalEntitlements
+                additionalEntitlements: app.isExtension ? [:] : self.additionalEntitlements,
+                injectedEntitlements: app.isExtension ? [:] : self.injectedEntitlements
             )
 
             let plist = try PropertyListSerialization.data(fromPropertyList: entitlements, format: .xml, options: 0)

@@ -201,12 +201,12 @@ final class ResignAppOperation: BasePipelineOperation<InstallAppOperationContext
         if profiles.contains(where: { $0.isWildcard }) || (isImportedIdentity && self.context.useMainProfile) {
             // Enterprise: wildcard profiles (or imported single-profile with extensions) need per-bundle resolution.
             self.debugLog("[ResignAppOperation] Using EnterpriseAppSigner for wildcard/imported profile(s) (team \(team.identifier))")
-            let signer = EnterpriseAppSigner(certificate: certificate, additionalEntitlements: self.context.additionalEntitlements)
+            let signer = EnterpriseAppSigner(certificate: certificate, additionalEntitlements: self.context.additionalEntitlements, injectedEntitlements: self.context.injectedEntitlements)
             try await signer.signApp(at: fileURL, provisioningProfiles: profiles)
             return fileURL
         }
         let signer = ALTSigner(team: team, certificate: certificate)
-        try await signer.signApp(at: fileURL, provisioningProfiles: profiles, progress: nil)
+        try await signer.signApp(at: fileURL, provisioningProfiles: profiles, injectedEntitlements: self.context.injectedEntitlements, progress: nil)
         return fileURL
     }
     

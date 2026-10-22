@@ -1796,10 +1796,20 @@ private extension MyAppsViewController
     }
     
     func enableMoreRAM(for installedApp: InstalledApp) {
-        // The standard resign pipeline re-registers the App ID's features and
-        // applies the default additional entitlements (including the increased
-        // memory limit), so an immediate resign is what turns this on.
-        debugLog("Enabling increased memory limit for app \(installedApp.bundleIdentifier) via resign")
+        // Inside LiveContainer, guests are not validated against their
+        // provisioning profile, and the portal never puts the memory
+        // entitlements into a personal team's profile — so the resign alone
+        // cannot deliver them. Persist the per-app flag instead: the pipeline
+        // then injects the keys into the guest's own signature at signing
+        // time (and re-applies them on every refresh). Outside LiveContainer
+        // the app is system-installed and profile-validated, so keep the
+        // portal route: a standard resign re-registers the App ID features.
+        if Bundle.isBundledWithLiveContainer {
+            UserDefaults.standard.setMoreRAMEnabled(true, forBundleIdentifier: installedApp.bundleIdentifier)
+            debugLog("Enabling increased memory limit for app \(installedApp.bundleIdentifier) via binary injection + resign")
+        } else {
+            debugLog("Enabling increased memory limit for app \(installedApp.bundleIdentifier) via resign")
+        }
         self.resign(installedApp)
     }
     

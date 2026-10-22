@@ -392,6 +392,27 @@ public extension UserDefaults
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
+
+    private var moreRAMEnabledBundleIdentifiersKey: String { "moreRAMEnabledBundleIdentifiers" }
+
+    /// Bundle identifiers the user enabled "Get More RAM" for. Only consulted
+    /// when bundled with LiveContainer (see PipelineRunner): the memory
+    /// entitlements are then injected into the guest's own signature at
+    /// signing time and re-applied on every refresh.
+    func isMoreRAMEnabled(forBundleIdentifier bundleIdentifier: String) -> Bool {
+        (self.array(forKey: self.moreRAMEnabledBundleIdentifiersKey) as? [String])?.contains(bundleIdentifier) ?? false
+    }
+
+    func setMoreRAMEnabled(_ enabled: Bool, forBundleIdentifier bundleIdentifier: String) {
+        var identifiers = self.array(forKey: self.moreRAMEnabledBundleIdentifiersKey) as? [String] ?? []
+        if enabled {
+            guard !identifiers.contains(bundleIdentifier) else { return }
+            identifiers.append(bundleIdentifier)
+        } else {
+            identifiers.removeAll { $0 == bundleIdentifier }
+        }
+        self.set(identifiers, forKey: self.moreRAMEnabledBundleIdentifiersKey)
+    }
     @objc var keepAnisetteHeadersAfterLogout: Bool {
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }

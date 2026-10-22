@@ -422,7 +422,25 @@ final class PipelineRunner: Sendable
         )
         context.isCellularRefreshGroup = group.isCellularRefreshGroup
         context.groupOperationsCount = operationsCount
-        
+
+        // "Get More RAM" binary injection (LiveContainer guests only): the
+        // portal route cannot deliver the memory entitlements for personal
+        // teams (the generated profile never carries them, so the signer's
+        // profile∩binary intersection strips them), so for guests the user
+        // enabled this on, the keys are injected into the guest's own
+        // signature at signing time and re-applied on every pipeline run.
+        // Never inject for the host app itself: it is system-installed and
+        // validated against its provisioning profile.
+        let isHostAppOperation = operation.bundleIdentifier == StoreApp.altstoreAppID || operation.bundleIdentifier.isAltStoreAppID
+        if Bundle.isBundledWithLiveContainer, !isHostAppOperation,
+           UserDefaults.standard.isMoreRAMEnabled(forBundleIdentifier: operation.bundleIdentifier) {
+            context.injectedEntitlements = [
+                ALTEntitlement.increasedMemoryLimit.rawValue: true,
+                ALTEntitlement.extendedVirtualAddressing.rawValue: true,
+                ALTEntitlement.increasedDebuggingMemoryLimit.rawValue: true
+            ]
+        }
+
         switch operation {
             case .install(_, let customID), .reinstall(_, let customID):
                 context.customBundleIdentifier = customID

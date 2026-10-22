@@ -276,6 +276,14 @@ class InstallAppOperationContext: PipelineOperationContext
     var customBundleIdentifier: String?
     var customInfoPlistByBundleID: [String: [String: any Sendable]] = [:]
     var customEntitlementsByBundleID: [String: [String: any Sendable]] = [:]
+    /// Entitlements unioned into the main bundle's signature at signing time,
+    /// bypassing the profile∩binary intersection ("Get More RAM" binary
+    /// injection for LiveContainer guests, whose portal-registered profiles
+    /// cannot carry these keys for personal teams). Populated by PipelineRunner
+    /// only when bundled with LiveContainer and only for guest apps — never
+    /// for the host app itself, which is system-installed and validated
+    /// against its provisioning profile.
+    var injectedEntitlements: [String: any Sendable] = [:]
     var isStoreUpdate: Bool = false
     var targetAppBundle: ALTApplication?
 
