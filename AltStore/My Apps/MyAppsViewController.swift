@@ -1825,16 +1825,33 @@ private extension MyAppsViewController
     }
 
     /// The guest bundle LiveContainer actually launches, looked up by bundle
-    /// identifier in LiveContainer's two "Applications" roots (the shared app
-    /// group container and the documents directory).
+    /// identifier in LiveContainer's "Applications" roots. LiveContainer
+    /// borrows the store's app group container — the team-suffixed group
+    /// "group.com.SideStore.SideStore.<teamID>" (see LCSharedUtils.appGroupID)
+    /// — and keeps shared guests in its "LiveContainer/Applications" folder
+    /// there; private guests live in the documents "Applications" folder.
     func liveContainerGuestURL(forBundleIdentifier bundleIdentifier: String) -> URL? {
-        var roots: [URL] = []
-        if let sharedDirectory = FileManager.default.altstoreSharedDirectory {
-            roots.append(sharedDirectory.appendingPathComponent("LiveContainer/Applications"))
+        var containerRoots: [URL] = []
+        var groupIdentifiers = ["group.com.SideStore.SideStore"]
+        if let teamIdentifier = DatabaseManager.shared.activeTeam(in: DatabaseManager.shared.viewContext)?.identifier {
+            groupIdentifiers.insert("group.com.SideStore.SideStore.\(teamIdentifier)", at: 0)
         }
+        for group in groupIdentifiers {
+            if let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: group) {
+                containerRoots.append(container)
+            }
+        }
+        if let sharedDirectory = FileManager.default.altstoreSharedDirectory {
+            containerRoots.append(sharedDirectory)
+        }
+
+        var roots = containerRoots.map { $0.appendingPathComponent("LiveContainer/Applications") }
         if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).last {
             roots.append(documentsDirectory.appendingPathComponent("Applications"))
         }
+        var seenPaths = Set<String>()
+        roots = roots.filter { seenPaths.insert($0.path).inserted }
+
         for root in roots {
             guard let entries = try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil) else { continue }
             for entry in entries where entry.pathExtension == "app" {
@@ -1854,31 +1871,58 @@ private extension MyAppsViewController
     /// Note: needs proper testing on device, especially whether LiveContainer
     /// picks up the patched bundle on the guest's next launch as expected.
     func patchMoreRAMInLiveContainer(for installedApp: InstalledApp) async -> Bool {
-        guard let guestURL = self.liveContainerGuestURL(forBundleIdentifier: installedApp.bundleIdentifier),
-              let guestApp = ALTApplication(fileURL: guestURL),
-              let profile = guestApp.provisioningProfile,
-              let team = DatabaseManager.shared.activeTeam(in: DatabaseManager.shared.viewContext)?.altTeam,
-              let certificate = CertificateManager.shared.activeCertificate?.certificate,
-              // Re-signing with the active (personal) certificate is only
-              // valid when the guest's embedded profile belongs to that
-              // team; enterprise-signed guests keep the pipeline route.
-              profile.teamIdentifier == team.identifier
-        else { return false }
+        guard let team = DatabaseManager.shared.activeTeam(in: DatabaseManager.shared.viewContext)?.altTeam,
+              let certificate = CertificateManager.shared.activeCertificate?.certificate
+        else {
+            debugLog("[GetMoreRAM] No active team or certificate; skipping in-place patch")
+            return false
+        }
 
-        // Include each extension's own embedded profile so extensions keep
-        // their per-bundle identity, exactly like the pipeline route.
-        var profiles = [profile]
+        guard let guestURL = self.liveContainerGuestURL(forBundleIdentifier: installedApp.bundleIdentifier),
+              let guestApp = ALTApplication(fileURL: guestURL)
+        else {
+            debugLog("[GetMoreRAM] No LiveContainer-side copy found for \(installedApp.bundleIdentifier)")
+            return false
+        }
+
+        // Profiles: prefer each bundle's embedded profile; LiveContainer's
+        // copies may not embed one, so fall back to the profiles SideStore
+        // cached when it last signed this app.
+        var profilesByBundleID: [String: ALTProvisioningProfile] = [:]
+        if let profile = guestApp.provisioningProfile {
+            profilesByBundleID[guestApp.bundleIdentifier] = profile
+        }
         for appExtension in guestApp.appExtensions {
-            if let extensionProfile = appExtension.provisioningProfile {
-                profiles.append(extensionProfile)
+            if let profile = appExtension.provisioningProfile {
+                profilesByBundleID[appExtension.bundleIdentifier] = profile
             }
+        }
+        let cachedProfilesDirectory = installedApp.directoryURL.appendingPathComponent("ProvisioningProfiles")
+        if let files = try? FileManager.default.contentsOfDirectory(at: cachedProfilesDirectory, includingPropertiesForKeys: nil) {
+            for file in files where file.pathExtension == "mobileprovision" {
+                if let profile = try? ALTProvisioningProfile(url: file), profilesByBundleID[profile.bundleIdentifier] == nil {
+                    profilesByBundleID[profile.bundleIdentifier] = profile
+                }
+            }
+        }
+
+        guard let mainProfile = profilesByBundleID[guestApp.bundleIdentifier] else {
+            debugLog("[GetMoreRAM] No provisioning profile available for \(installedApp.bundleIdentifier)")
+            return false
+        }
+        // Re-signing with the active (personal) certificate is only valid
+        // when the guest's profile belongs to that team; enterprise-signed
+        // guests keep the pipeline route.
+        guard mainProfile.teamIdentifier == team.identifier else {
+            debugLog("[GetMoreRAM] Profile team \(mainProfile.teamIdentifier) does not match active team \(team.identifier); skipping in-place patch")
+            return false
         }
 
         let signer = ALTSigner(team: team, certificate: certificate)
         do {
             try await signer.signApp(
                 at: guestURL,
-                provisioningProfiles: profiles,
+                provisioningProfiles: Array(profilesByBundleID.values),
                 injectedEntitlements: [
                     ALTEntitlement.increasedMemoryLimit.rawValue: true,
                     ALTEntitlement.extendedVirtualAddressing.rawValue: true,
