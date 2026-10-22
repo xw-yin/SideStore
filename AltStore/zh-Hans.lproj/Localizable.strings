@@ -19,6 +19,8 @@
 "Remove" = "删除";
 "Enable JIT" = "启用 JIT";
 "Get More RAM" = "获取更多内存";
+"Get More RAM enabled" = "获取更多内存已开启";
+"Relaunch the app in LiveContainer to apply." = "在 LiveContainer 中重新打开该应用后生效。";
 "Back Up" = "备份";
 "Export Backup" = "导出备份";
 "Import Backup" = "导入备份";

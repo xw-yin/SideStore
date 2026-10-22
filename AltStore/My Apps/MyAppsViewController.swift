@@ -1798,19 +1798,101 @@ private extension MyAppsViewController
     func enableMoreRAM(for installedApp: InstalledApp) {
         // Inside LiveContainer, guests are not validated against their
         // provisioning profile, and the portal never puts the memory
-        // entitlements into a personal team's profile — so the resign alone
-        // cannot deliver them. Persist the per-app flag instead: the pipeline
-        // then injects the keys into the guest's own signature at signing
-        // time (and re-applies them on every refresh). Outside LiveContainer
-        // the app is system-installed and profile-validated, so keep the
-        // portal route: a standard resign re-registers the App ID features.
+        // entitlements into a personal team's profile — so a resign alone
+        // cannot deliver them. LiveContainer also launches its own copy of
+        // each guest (its "Applications" folders), not SideStore's payload
+        // copy, so patch that copy in place instead, GetMoreRAM-style.
+        // Outside LiveContainer the app is system-installed and
+        // profile-validated, so keep the portal route there.
         if Bundle.isBundledWithLiveContainer {
             UserDefaults.standard.setMoreRAMEnabled(true, forBundleIdentifier: installedApp.bundleIdentifier)
-            debugLog("Enabling increased memory limit for app \(installedApp.bundleIdentifier) via binary injection + resign")
+            debugLog("Enabling increased memory limit for app \(installedApp.bundleIdentifier) via in-place LiveContainer patch")
+            Task { @MainActor in
+                if await self.patchMoreRAMInLiveContainer(for: installedApp) {
+                    ToastView(text: NSLocalizedString("Get More RAM enabled", comment: ""),
+                              detailText: NSLocalizedString("Relaunch the app in LiveContainer to apply.", comment: "")).show(in: self)
+                } else {
+                    // No LiveContainer-side copy found (or patching failed):
+                    // fall back to the pipeline injection on SideStore's copy.
+                    debugLog("In-place LiveContainer patch unavailable for \(installedApp.bundleIdentifier); falling back to resign")
+                    self.resign(installedApp)
+                }
+            }
         } else {
             debugLog("Enabling increased memory limit for app \(installedApp.bundleIdentifier) via resign")
+            self.resign(installedApp)
         }
-        self.resign(installedApp)
+    }
+
+    /// The guest bundle LiveContainer actually launches, looked up by bundle
+    /// identifier in LiveContainer's two "Applications" roots (the shared app
+    /// group container and the documents directory).
+    func liveContainerGuestURL(forBundleIdentifier bundleIdentifier: String) -> URL? {
+        var roots: [URL] = []
+        if let sharedDirectory = FileManager.default.altstoreSharedDirectory {
+            roots.append(sharedDirectory.appendingPathComponent("LiveContainer/Applications"))
+        }
+        if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).last {
+            roots.append(documentsDirectory.appendingPathComponent("Applications"))
+        }
+        for root in roots {
+            guard let entries = try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil) else { continue }
+            for entry in entries where entry.pathExtension == "app" {
+                if ALTApplication(fileURL: entry)?.bundleIdentifier == bundleIdentifier {
+                    return entry
+                }
+            }
+        }
+        return nil
+    }
+
+    /// Patches the LiveContainer-side copy of a guest in place: the binary's
+    /// own entitlements are kept as the base and the memory keys are unioned
+    /// in (the GetMoreRAM approach), signed with the active certificate and
+    /// the bundle's embedded provisioning profile. Returns false when there
+    /// is no LiveContainer-side copy or anything needed is missing.
+    /// Note: needs proper testing on device, especially whether LiveContainer
+    /// picks up the patched bundle on the guest's next launch as expected.
+    func patchMoreRAMInLiveContainer(for installedApp: InstalledApp) async -> Bool {
+        guard let guestURL = self.liveContainerGuestURL(forBundleIdentifier: installedApp.bundleIdentifier),
+              let guestApp = ALTApplication(fileURL: guestURL),
+              let profile = guestApp.provisioningProfile,
+              let team = DatabaseManager.shared.activeTeam(in: DatabaseManager.shared.viewContext)?.altTeam,
+              let certificate = CertificateManager.shared.activeCertificate?.certificate,
+              // Re-signing with the active (personal) certificate is only
+              // valid when the guest's embedded profile belongs to that
+              // team; enterprise-signed guests keep the pipeline route.
+              profile.teamIdentifier == team.identifier
+        else { return false }
+
+        // Include each extension's own embedded profile so extensions keep
+        // their per-bundle identity, exactly like the pipeline route.
+        var profiles = [profile]
+        for appExtension in guestApp.appExtensions {
+            if let extensionProfile = appExtension.provisioningProfile {
+                profiles.append(extensionProfile)
+            }
+        }
+
+        let signer = ALTSigner(team: team, certificate: certificate)
+        do {
+            try await signer.signApp(
+                at: guestURL,
+                provisioningProfiles: profiles,
+                injectedEntitlements: [
+                    ALTEntitlement.increasedMemoryLimit.rawValue: true,
+                    ALTEntitlement.extendedVirtualAddressing.rawValue: true,
+                    ALTEntitlement.increasedDebuggingMemoryLimit.rawValue: true
+                ],
+                preserveAppEntitlements: true,
+                progress: nil
+            )
+            debugLog("Patched LiveContainer guest \(installedApp.bundleIdentifier) in place for Get More RAM")
+            return true
+        } catch {
+            debugLog("Failed to patch LiveContainer guest \(installedApp.bundleIdentifier): \(error)")
+            return false
+        }
     }
     
     func enableJIT(for installedApp: InstalledApp) {
@@ -2232,6 +2314,15 @@ extension MyAppsViewController
         if let appBundle = ALTApplication(fileURL: installedApp.fileURL)
         {
             moreRAMEnabled = (appBundle.entitlements[ALTEntitlement.increasedMemoryLimit.rawValue] as? Bool) == true
+        }
+        // Inside LiveContainer the state that matters is the copy
+        // LiveContainer launches, which is patched in place (see
+        // enableMoreRAM), so reflect that copy when it exists.
+        if !moreRAMEnabled, Bundle.isBundledWithLiveContainer,
+           let liveContainerURL = self.liveContainerGuestURL(forBundleIdentifier: installedApp.bundleIdentifier),
+           let liveContainerBundle = ALTApplication(fileURL: liveContainerURL)
+        {
+            moreRAMEnabled = (liveContainerBundle.entitlements[ALTEntitlement.increasedMemoryLimit.rawValue] as? Bool) == true
         }
         
         let moreRAMAction = UIAction(title: NSLocalizedString("Get More RAM", comment: ""), image: UIImage(systemName: "memorychip"), state: moreRAMEnabled ? .on : .off) { (action) in
