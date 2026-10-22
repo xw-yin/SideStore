@@ -30,6 +30,12 @@ public struct LogNameInfo {
 }
 
 class ConsoleLog {
+    /// Shared instance, independent of the app delegate: when bundled with
+    /// LiveContainer, the UIApplication delegate is not SideStore's
+    /// AppDelegate, yet console capture and the in-app log viewer must
+    /// still work.
+    static let shared = ConsoleLog()
+
     private static let CONSOLE_LOGS_DIRECTORY = "ConsoleLogs"
     private static let CONSOLE_LOG_NAME_PREFIX = "console"
     private static let CONSOLE_LOG_EXTN = ".log"
@@ -146,9 +152,32 @@ class ConsoleLog {
         return handle
     }
     
+    private let bootstrapLock = NSLock()
+    private var captureBootstrapped = false
+
+    /// Applies the launch configuration and starts capturing stdout/stderr
+    /// into the log file. Idempotent and safe to call from several
+    /// lifecycle points (app delegate, scene delegate, root view
+    /// controller) — whichever runs first in the current environment wins.
+    func bootstrapCapture() {
+        bootstrapLock.lock()
+        if captureBootstrapped {
+            bootstrapLock.unlock()
+            return
+        }
+        captureBootstrapped = true
+        bootstrapLock.unlock()
+
+        let suffixFormat: SuffixFormat = UserDefaults.standard.isRotateLogsOnStartupEnabled ? .timestamp : .none
+        updateConfiguration(baseName: "console", suffixFormat: suffixFormat, policy: .subsequent)
+        startCapturing()
+    }
+
     private lazy var consoleLogsDir: URL = {
-        // create a directory for console logs
-        let docsDir = FileManager.default.documentsDirectory
+        // Prefer the app-group container so logs written by any process of
+        // the app (UI, background-refresh extension) land in one place the
+        // in-app viewer can read; fall back to Documents when unavailable.
+        let docsDir = FileManager.default.altstoreSharedDirectory ?? FileManager.default.documentsDirectory
         let consoleLogsDir = docsDir.appendingPathComponent(ConsoleLog.CONSOLE_LOGS_DIRECTORY)
         if !FileManager.default.fileExists(atPath: consoleLogsDir.path) {
             try! FileManager.default.createDirectory(at: consoleLogsDir, withIntermediateDirectories: true, attributes: nil)

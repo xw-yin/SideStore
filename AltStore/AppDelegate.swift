@@ -106,7 +106,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     private let viewAppIntentHandler = ViewAppIntentHandler()
     #endif
     
-    public let consoleLog = ConsoleLog()
+    public let consoleLog = ConsoleLog.shared
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool
     {
@@ -125,9 +125,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         }
 
         // register console logging and start capturing
-        let suffixFormat: SuffixFormat = UserDefaults.standard.isRotateLogsOnStartupEnabled ? .timestamp : .none
-        consoleLog.updateConfiguration(baseName: "console", suffixFormat: suffixFormat, policy: .subsequent)
-        consoleLog.startCapturing()
+        consoleLog.bootstrapCapture()
 
         // register crash handler
         setupCrashHandler()

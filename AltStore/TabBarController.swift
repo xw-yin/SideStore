@@ -37,9 +37,13 @@ final class TabBarController: UITabBarController
         NotificationCenter.default.addObserver(self, selector: #selector(TabBarController.openErrorLog(_:)), name: ToastView.openErrorLogNotification, object: nil)
     }
     
-    override func viewDidLoad() 
+    override func viewDidLoad()
     {
         super.viewDidLoad()
+        // The root UI exists in every deployment (standalone and
+        // LiveContainer-bundled), so this guarantees console capture is
+        // running before the user interacts with the app.
+        ConsoleLog.shared.bootstrapCapture()
         debugLog("[TabBarController] viewDidLoad()")
         
         guard let viewControllers = self.viewControllers else {

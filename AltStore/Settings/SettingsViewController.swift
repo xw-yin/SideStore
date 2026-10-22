@@ -699,9 +699,7 @@ private extension SettingsViewController
     @IBAction func toggleRotateLogsOnStartup(_ sender: UISwitch) {
         UserDefaults.standard.isRotateLogsOnStartupEnabled = sender.isOn
         let suffixFormat: SuffixFormat = sender.isOn ? .timestamp : .none
-        if let appDelegate = UIApplication.shared.delegate as? AppDelegate {
-            appDelegate.consoleLog.updateConfiguration(baseName: "console", suffixFormat: suffixFormat, policy: .immediate)
-        }
+        ConsoleLog.shared.updateConfiguration(baseName: "console", suffixFormat: suffixFormat, policy: .immediate)
     }
 
     @IBAction func toggleRecreateDatabaseSwitch(_ sender: UISwitch) {

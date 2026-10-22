@@ -74,9 +74,7 @@ struct DeveloperOptionsView: View {
                                 isRotateLogsOnStartupEnabled = newValue
                                 UserDefaults.standard.isRotateLogsOnStartupEnabled = newValue
                                 let suffixFormat: SuffixFormat = newValue ? .timestamp : .none
-                                if let appDelegate = UIApplication.shared.delegate as? AppDelegate {
-                                    appDelegate.consoleLog.updateConfiguration(baseName: "console", suffixFormat: suffixFormat, policy: .immediate)
-                                }
+                                ConsoleLog.shared.updateConfiguration(baseName: "console", suffixFormat: suffixFormat, policy: .immediate)
                             }
                         ))
                         
