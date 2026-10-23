@@ -985,9 +985,77 @@ private extension MyAppsViewController
     
     @IBAction func sideloadApp(_ sender: UIBarButtonItem)
     {
+        sender.isIndicatingActivity = true
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { sender.isIndicatingActivity = false }
+
+            #if !targetEnvironment(simulator)
+            let mode = await getDeviceConnectionMode()
+            if mode == .localVPN && !minimuxer.network.isUTunAvailable {
+                let alert = UIAlertController(
+                    title: NSLocalizedString("SideStore VPN Not Connected", comment: ""),
+                    message: NSLocalizedString("Please enable the SideStore WireGuard VPN before sideloading apps.", comment: ""),
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default))
+                self.present(alert, animated: true)
+                return
+            }
+
+            var ready = false
+            do {
+                ready = try await self.verifyDeviceReadiness(timeoutSeconds: 3.0)
+            } catch {
+                debugLog("[Preflight] Initial device readiness check failed: \(error). Attempting minimuxer restart...")
+            }
+
+            if !ready {
+                do {
+                    try await minimuxerRestart()
+                    try? await Task.sleep(nanoseconds: 500_000_000)
+                    ready = try await self.verifyDeviceReadiness(timeoutSeconds: 3.0)
+                } catch {
+                    debugLog("[Preflight] Device readiness retry after restart failed: \(error)")
+                }
+            }
+
+            guard ready else {
+                let alert = UIAlertController(
+                    title: NSLocalizedString("Device Communication Error", comment: ""),
+                    message: NSLocalizedString("Cannot establish connection to local device service. Please check that SideStore VPN is connected, or toggle the VPN off and on in Settings.", comment: ""),
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default))
+                self.present(alert, animated: true)
+                return
+            }
+            #endif
+
+            self.presentSideloadSourceSelection(barButtonItem: sender)
+        }
+    }
+
+    private func verifyDeviceReadiness(timeoutSeconds: Double) async throws -> Bool {
+        try await withThrowingTaskGroup(of: Bool.self) { group in
+            group.addTask {
+                try await ensureMinimuxerReady()
+                return true
+            }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(timeoutSeconds * 1_000_000_000))
+                throw MinimuxerError.notReachable("Connection timed out after \(timeoutSeconds)s")
+            }
+            let first = try await group.next() ?? false
+            group.cancelAll()
+            return first
+        }
+    }
+
+    private func presentSideloadSourceSelection(barButtonItem: UIBarButtonItem) {
         InstallAppDialog.presentSourceSelection(
             from: self,
-            barButtonItem: sender,
+            barButtonItem: barButtonItem,
             onChooseFiles: { [weak self] in
                 #if !os(tvOS)
                 self?.presentDocumentPicker()

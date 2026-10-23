@@ -164,7 +164,17 @@ final class PipelineRunner: Sendable
         
         /* Minimuxer Readiness Check */
         do {
-            try await ensureMinimuxerReady()
+            try await withThrowingTaskGroup(of: Void.self) { taskGroup in
+                taskGroup.addTask {
+                    try await ensureMinimuxerReady()
+                }
+                taskGroup.addTask {
+                    try await Task.sleep(nanoseconds: 12_000_000_000)
+                    throw OperationError.notReachable(reason: "Timed out waiting for device connection. Please verify SideStore VPN is active.")
+                }
+                _ = try await taskGroup.next()
+                taskGroup.cancelAll()
+            }
         } catch let opError as OperationError {
             group.error = opError
             group.context.error = opError
