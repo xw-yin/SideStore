@@ -10,6 +10,25 @@ import Foundation
 import UIKit
 import Minimuxer
 
+/// Resumes a continuation with whichever of several racing producers
+/// finishes first; later results are dropped.
+private final class FirstResultRace<T>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<T, Never>?
+
+    init(_ continuation: CheckedContinuation<T, Never>) {
+        self.continuation = continuation
+    }
+
+    func resume(with value: T) {
+        let winner = lock.withLock { () -> CheckedContinuation<T, Never>? in
+            defer { continuation = nil }
+            return continuation
+        }
+        winner?.resume(returning: value)
+    }
+}
+
 public final class AppBootManager: @unchecked Sendable {
     public static let shared = AppBootManager()
 
@@ -120,14 +139,53 @@ public final class AppBootManager: @unchecked Sendable {
         }
     }
 
+    /// Upper bound for waiting on a minimuxer startup. A startup that stalls
+    /// (e.g. the app was backgrounded mid-start and the connection died under
+    /// it) must not wedge every later caller: all operations share the cached
+    /// startup task, so an unbounded wait here silently disables refresh,
+    /// deactivate, install, etc. until the app is relaunched.
+    private static let minimuxerStartupTimeout: TimeInterval = 30
+
     private nonisolated func waitForMinimuxerStartup(_ startup: MinimuxerStartup) async throws {
         defer {
+            // Runs on success, failure, and timeout alike: once a waiter gives
+            // up, the cached startup is dropped so the next call starts fresh
+            // instead of awaiting the same (possibly stalled) task again.
             lock.withLock {
                 guard minimuxerStartup?.generation == startup.generation else { return }
                 minimuxerStartup = nil
             }
         }
-        try await startup.task.value
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask {
+                try await startup.task.value
+            }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(Self.minimuxerStartupTimeout * 1_000_000_000))
+                throw OperationError.notReachable(reason: "Timed out after \(Int(Self.minimuxerStartupTimeout))s waiting for minimuxer to start. The previous startup may have stalled while the app was in the background; please try again.")
+            }
+            _ = try await group.next()
+            group.cancelAll()
+        }
+    }
+
+    /// Status check with a bound: `isReady()` probes the device through the
+    /// same stack a stalled startup can block, so it gets its own timeout and
+    /// reports `.unknown` (i.e. not ready) instead of hanging the caller.
+    /// unstructured tasks are used on purpose: a task group would still wait
+    /// for the probe on scope exit even after cancelling it, while here the
+    /// loser is simply abandoned and finishes (or not) in the background.
+    private nonisolated func minimuxerStatusWithTimeout() async -> MinimuxerStatus {
+        await withCheckedContinuation { (continuation: CheckedContinuation<MinimuxerStatus, Never>) in
+            let race = FirstResultRace(continuation)
+            Task.detached {
+                race.resume(with: await getMinimuxerStatus())
+            }
+            Task.detached {
+                try? await Task.sleep(nanoseconds: 10_000_000_000)
+                race.resume(with: .unknown)
+            }
+        }
     }
 
     public nonisolated func startMinimuxer(pairingFile: String) async throws {
@@ -139,7 +197,7 @@ public final class AppBootManager: @unchecked Sendable {
         #if targetEnvironment(simulator)
         return
         #else
-        let status = await getMinimuxerStatus()
+        let status = await minimuxerStatusWithTimeout()
         if status == .ready {
             return
         }
