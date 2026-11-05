@@ -114,6 +114,35 @@ public extension InstalledAppProtocol {
 
         return standardAppURL
     }
+
+    /// Whether this record is SideStore itself (in LiveContainer mode: the host app),
+    /// judged by the resigned bundle identifier — the identity SideStore actually
+    /// installs, uninstalls and tracks on-device — instead of the original bundle ID.
+    ///
+    /// An app that merely reuses the host's original bundle ID (e.g. a LiveContainer
+    /// derivative first installed under com.kdt.livecontainer and later re-signed as
+    /// com.ww.livecontainer) is a different on-device app and must not be treated as
+    /// self, while the true self record — whose resigned ID is the running host's own
+    /// bundle ID, possibly under a previous team — stays protected.
+    var isSelfAppByResignedID: Bool {
+        let resignedID = self.resignedBundleIdentifier
+
+        if resignedID == Bundle.Info.activeBundleIdentifier {
+            return true
+        }
+
+        let altstoreID = StoreApp.altstoreAppID
+        if resignedID == altstoreID {
+            return true
+        }
+
+        // Resigned under another team: altstoreID + "." + teamID (a single 10-character
+        // component). Deliberately exact — a substring/prefix match would swallow
+        // derivatives that keep the host's bundle ID as a prefix.
+        guard resignedID.hasPrefix(altstoreID + ".") else { return false }
+        let suffix = resignedID.dropFirst(altstoreID.count + 1)
+        return suffix.count == 10 && !suffix.contains(".")
+    }
     
     var refreshedIPAURL: URL {
         return self.directoryURL.appendingPathComponent("Refreshed.ipa")

@@ -2604,7 +2604,7 @@ extension MyAppsViewController
         }
         let profileMenu = UIMenu(title: NSLocalizedString("Provisioning Profile", comment: ""), image: UIImage(systemName: "doc.plaintext"), children: profileSubmenuActions)
         
-        if installedApp.resignedBundleIdentifier.isAltStoreAppID
+        if installedApp.isSelfAppByResignedID
         {
             actions = [refreshAction, resignAction, reinstallMenu, profileMenu, changeIconMenu]
         }
@@ -2645,7 +2645,7 @@ extension MyAppsViewController
             
             if installedApp.isActive
             {
-                if installedApp.bundleIdentifier != StoreApp.altstoreAppID
+                if !installedApp.isSelfAppByResignedID
                 {
                     actions.append(deactivateAction)
                     actions.append(deleteAppAction)
@@ -2653,7 +2653,7 @@ extension MyAppsViewController
             }
             
             #if DEBUG && targetEnvironment(simulator)
-            if installedApp.bundleIdentifier != StoreApp.altstoreAppID
+            if !installedApp.isSelfAppByResignedID
             {
                 actions.append(removeAction)
             }
@@ -3008,7 +3008,7 @@ extension MyAppsViewController: UICollectionViewDropDelegate
                 }
                 
                 let installedApp = self.dataSource.item(at: indexPath)
-                guard installedApp.bundleIdentifier != StoreApp.altstoreAppID else {
+                guard !installedApp.isSelfAppByResignedID else {
                     // Can't deactivate AltStore.
                     return UICollectionViewDropProposal(operation: .forbidden, intent: .insertIntoDestinationIndexPath)
                 }
