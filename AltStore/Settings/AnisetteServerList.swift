@@ -568,7 +568,9 @@ struct AnisetteServersView: View {
                 .listStyle(.grouped)
                 #endif
                 .refreshable {
-                    await viewModel.fetchServers(forceRemote: true)
+                    // Not forced: in Offline File Mode this just reloads the
+                    // imported catalog instead of overwriting it remotely.
+                    await viewModel.fetchServers()
                 }
         .navigationTitle("Anisette Servers")
         .toolbar {

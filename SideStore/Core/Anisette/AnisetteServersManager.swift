@@ -360,8 +360,12 @@ public actor AnisetteServersManager {
 
     @discardableResult
     public func syncWithRemote(sourceURLString: String? = nil, forceRemote: Bool = false) async throws -> [AnisetteServerItem] {
-        if isOfflineMode && !forceRemote {
-            debugLog("[AnisetteServersManager] Background remote sync skipped because user is in Offline File Mode.")
+        // Offline File Mode means the user imported a catalog on purpose:
+        // it stays authoritative until explicitly cleared, so no sync —
+        // not even a forced one (e.g. pull-to-refresh) — may replace it
+        // with the remote catalog and drop imported servers.
+        if isOfflineMode {
+            debugLog("[AnisetteServersManager] Remote sync skipped because user is in Offline File Mode.")
             return loadLocalServers()
         }
 
