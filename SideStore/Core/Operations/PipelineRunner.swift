@@ -108,9 +108,7 @@ final class PipelineRunner: Sendable
         
         let backgroundTaskID = await MainActor.run {
             var taskID = UIBackgroundTaskIdentifier.invalid
-            taskID = UIApplication.shared.beginBackgroundTask(withName: "com.altstore.AppManager.perform") { [weak group] in
-                debugLog("[PipelineRunner] Background task expired, cancelling active group.")
-                group?.cancel()
+            taskID = UIApplication.shared.beginBackgroundTask(withName: "com.altstore.AppManager.perform") {
                 UIApplication.shared.endBackgroundTask(taskID)
             }
             return taskID
@@ -164,38 +162,27 @@ final class PipelineRunner: Sendable
             Task { await minimuxer.core.endTransportBatch() }
         }
         
-        /* Minimuxer Readiness Check with Self-Healing Auto-Recovery */
+        /* Minimuxer Readiness Check */
         do {
-            try await self.verifyMinimuxerReadiness(timeoutSeconds: 8.0)
-        } catch {
-            debugLog("[PipelineRunner] Initial readiness check failed (\(error)). Attempting self-healing reconnect...")
-            await minimuxer.core.endTransportBatch()
-            let healed = await AppBootManager.shared.recoverConnection()
-            await minimuxer.core.beginTransportBatch()
-            if healed {
-                do {
-                    try await self.verifyMinimuxerReadiness(timeoutSeconds: 8.0)
-                    debugLog("[PipelineRunner] Self-healing reconnect succeeded!")
-                } catch let retryError as OperationError {
-                    group.error = retryError
-                    group.context.error = retryError
-                    for operation in operations {
-                        let elapsed = CFAbsoluteTimeGetCurrent() - group.operationStartTime
-                        operation.logSummary(status: "FAILED", elapsed: elapsed, error: retryError)
-                    }
-                    throw retryError
+            try await withThrowingTaskGroup(of: Void.self) { taskGroup in
+                taskGroup.addTask {
+                    try await ensureMinimuxerReady()
                 }
-            } else if let opError = error as? OperationError {
-                group.error = opError
-                group.context.error = opError
-                for operation in operations {
-                    let elapsed = CFAbsoluteTimeGetCurrent() - group.operationStartTime
-                    operation.logSummary(status: "FAILED", elapsed: elapsed, error: opError)
+                taskGroup.addTask {
+                    try await Task.sleep(nanoseconds: 12_000_000_000)
+                    throw OperationError.notReachable(reason: "Timed out waiting for device connection. Please verify SideStore VPN is active.")
                 }
-                throw opError
-            } else {
-                throw error
+                _ = try await taskGroup.next()
+                taskGroup.cancelAll()
             }
+        } catch let opError as OperationError {
+            group.error = opError
+            group.context.error = opError
+            for operation in operations {
+                let elapsed = CFAbsoluteTimeGetCurrent() - group.operationStartTime
+                operation.logSummary(status: "FAILED", elapsed: elapsed, error: opError)
+            }
+            throw opError
         }
         
         group.progress.totalUnitCount = Int64(operations.count * 100)
@@ -290,21 +277,6 @@ final class PipelineRunner: Sendable
         return group
     }
     
-    private func verifyMinimuxerReadiness(timeoutSeconds: Double = 8.0) async throws {
-        try await withThrowingTaskGroup(of: Void.self) { taskGroup in
-            taskGroup.addTask {
-                try await ensureMinimuxerReady()
-            }
-            taskGroup.addTask {
-                let nanos = UInt64(timeoutSeconds * 1_000_000_000)
-                try await Task.sleep(nanoseconds: nanos)
-                throw OperationError.notReachable(reason: "Timed out waiting for device connection. Please verify SideStore VPN is active.")
-            }
-            _ = try await taskGroup.next()
-            taskGroup.cancelAll()
-        }
-    }
-
     /// Enterprise: resolves the signing certificate for operations that re-sign app bundles.
     private func resolveSigningChoice(for operations: [AppOperation], handler: PipelineExecutionHandler, group: RefreshGroup) async throws {
         let resigning = operations.filter { operation in
@@ -448,38 +420,7 @@ final class PipelineRunner: Sendable
     
     private func performPipeline(for operation: AppOperation, handler: PipelineExecutionHandler, group: RefreshGroup, operationsCount: Int = 1) async throws -> InstalledApp
     {
-        var backgroundTaskID = UIBackgroundTaskIdentifier.invalid
-        await MainActor.run {
-            backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "SideStore.Pipeline") {
-                UIApplication.shared.endBackgroundTask(backgroundTaskID)
-                backgroundTaskID = .invalid
-            }
-        }
-        defer {
-            let taskToRelease = backgroundTaskID
-            if taskToRelease != .invalid {
-                Task { @MainActor in
-                    UIApplication.shared.endBackgroundTask(taskToRelease)
-                }
-            }
-        }
-        let isHostAppOperation = operation.bundleIdentifier == StoreApp.altstoreAppID || operation.bundleIdentifier.isAltStoreAppID
-        let signsOrRefreshesApp: Bool
-        switch operation {
-        case .install, .reinstall, .update, .resign, .refresh:
-            signsOrRefreshesApp = true
-        default:
-            signsOrRefreshesApp = false
-        }
-        let requiresHostMemory = Bundle.isBundledWithLiveContainer && isHostAppOperation && signsOrRefreshesApp &&
-            UserDefaults.standard.bool(forKey: "liveContainerHostMemoryRequested")
-        let requiresAppMemory = signsOrRefreshesApp &&
-            !(Bundle.isBundledWithLiveContainer && isHostAppOperation) &&
-            UserDefaults.standard.isMemoryPermissionRequested(for: operation.bundleIdentifier)
-        // LiveProcess must survive the user's ordinary extension-removal setting.
-        let pipelineSteps = PipelineStepDefinition.steps(for: operation).filter {
-            !requiresHostMemory || $0.step != .removeAppExtensions
-        }
+        let pipelineSteps = PipelineStepDefinition.steps(for: operation)
         let context = InstallAppOperationContext(
             pipelineSteps: pipelineSteps,
             bundleIdentifier: operation.bundleIdentifier,
@@ -492,16 +433,22 @@ final class PipelineRunner: Sendable
         context.isCellularRefreshGroup = group.isCellularRefreshGroup
         context.groupOperationsCount = operationsCount
 
-        context.requiresHostMemoryEntitlements = requiresHostMemory
-        context.requiresAppMemoryEntitlements = requiresAppMemory
-        if context.requiresMemoryEntitlements {
-            // Debugging memory is optional and can be rejected independently.
-            context.additionalEntitlements.removeValue(forKey: .increasedDebuggingMemoryLimit)
-            for key in InstallAppOperationContext.memoryEntitlements {
-                context.additionalEntitlements[key] = true
-                // Restores stripped binary keys only after the profile checks.
-                context.injectedEntitlements[key.rawValue] = true
-            }
+        // "Get More RAM" binary injection (LiveContainer guests only): the
+        // portal route cannot deliver the memory entitlements for personal
+        // teams (the generated profile never carries them, so the signer's
+        // profile∩binary intersection strips them), so for guests the user
+        // enabled this on, the keys are injected into the guest's own
+        // signature at signing time and re-applied on every pipeline run.
+        // Never inject for the host app itself: it is system-installed and
+        // validated against its provisioning profile.
+        let isHostAppOperation = operation.bundleIdentifier == StoreApp.altstoreAppID || operation.bundleIdentifier.isAltStoreAppID
+        if Bundle.isBundledWithLiveContainer, !isHostAppOperation,
+           UserDefaults.standard.isMoreRAMEnabled(forBundleIdentifier: operation.bundleIdentifier) {
+            context.injectedEntitlements = [
+                ALTEntitlement.increasedMemoryLimit.rawValue: true,
+                ALTEntitlement.extendedVirtualAddressing.rawValue: true,
+                ALTEntitlement.increasedDebuggingMemoryLimit.rawValue: true
+            ]
         }
 
         switch operation {
@@ -531,29 +478,6 @@ final class PipelineRunner: Sendable
             }
         }
         
-        if requiresHostMemory, case .resign = operation {
-            // Reinstall the actual complete host, not a stale/synthetic cache or
-            // SideStoreApp.framework. Never change the installed host's identity.
-            let hostBundle = Bundle.realMainBundle
-            guard let host = ALTApplication(fileURL: hostBundle.bundleURL),
-                  let hostID = hostBundle.bundleIdentifier,
-                  hostID == context.installedApp?.resignedBundleIdentifier else {
-                throw OperationError.invalidParameters(NSLocalizedString("Cannot identify the installed LiveContainer host. Memory setup was stopped before signing.", comment: ""))
-            }
-            context.targetAppBundle = host
-            context.expectedMemoryBundleIdentifier = hostID
-            context.customBundleIdentifier = hostID
-            context.appendTeamID = false
-        }
-
-        if requiresAppMemory, case .resign = operation, let app = context.installedApp {
-            // Keep this installed app's identity; never substitute the host
-            // or append another team suffix.
-            context.expectedMemoryBundleIdentifier = app.resignedBundleIdentifier
-            context.customBundleIdentifier = app.resignedBundleIdentifier
-            context.appendTeamID = false
-        }
-
         context.beginInstallationHandler = { (installedApp) in
             group.beginInstallationHandler?(installedApp)
         }
