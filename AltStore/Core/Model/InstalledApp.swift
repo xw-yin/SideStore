@@ -590,57 +590,7 @@ public extension InstalledApp
     }
 
     public var isInstalledOnSystem: Bool {
-        if self.bundleIdentifier == StoreApp.altstoreAppID || self.bundleIdentifier.isAltStoreAppID || self.resignedBundleIdentifier.isAltStoreAppID {
-            return true
-        }
-        let candidates = [self.resignedBundleIdentifier, self.customBundleIdentifier ?? "", self.bundleIdentifier].filter { !$0.isEmpty }
-        return InstalledApp.isAppInstalledOnSystem(bundleIdentifiers: candidates)
-    }
-
-    public static func isAppInstalledOnSystem(bundleIdentifiers: [String]) -> Bool {
-        guard let proxyClass = NSClassFromString("LSApplicationProxy") as? NSObject.Type else {
-            return true
-        }
-        
-        let selector = Selector(("applicationProxyForIdentifier:"))
-        guard proxyClass.responds(to: selector) else {
-            return true
-        }
-        
-        for bundleID in bundleIdentifiers where !bundleID.isEmpty {
-            if bundleID == StoreApp.altstoreAppID || bundleID.isAltStoreAppID {
-                return true
-            }
-            
-            guard let unmanaged = proxyClass.perform(selector, with: bundleID) else {
-                continue
-            }
-            
-            let proxy = unmanaged.takeUnretainedValue() as AnyObject
-            
-            if let bundleURL = proxy.value(forKey: "bundleURL") as? URL, !bundleURL.path.isEmpty {
-                return true
-            }
-            
-            if let isInstalled = proxy.value(forKey: "isInstalled") as? Bool, isInstalled {
-                return true
-            }
-            
-            if let isPlaceholder = proxy.value(forKey: "isPlaceholder") as? Bool, isPlaceholder {
-                return true
-            }
-            
-            if let appState = proxy.value(forKey: "appState") as? AnyObject {
-                if let stateInstalled = appState.value(forKey: "isInstalled") as? Bool, stateInstalled {
-                    return true
-                }
-                if let isValid = appState.value(forKey: "isValid") as? Bool, isValid {
-                    return true
-                }
-            }
-        }
-        
-        return false
+        return true
     }
 
 }

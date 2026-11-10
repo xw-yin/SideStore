@@ -179,8 +179,6 @@ class MyAppsViewController: UICollectionViewController
     {
         super.viewIsAppearing(animated)
         
-        AppManager.shared.cleanupUninstalledApps(in: DatabaseManager.shared.viewContext)
-        
         Task { @MainActor [weak self] in
             guard let self = self else { return }
             let team = try? await AuthManager.shared.getAuthenticatedTeam()
