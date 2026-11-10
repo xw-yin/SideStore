@@ -52,7 +52,6 @@ public class Keychain
         KeychainAccess.Keychain(service: Bundle.Info.appbundleIdentifier,
                                 accessGroup: Keychain.liveContainerHostKeychainGroup)
             .accessibility(.afterFirstUnlock)
-            .synchronizable(true)
     }()
     
     @KeychainItem(key: "appleIDEmailAddress")

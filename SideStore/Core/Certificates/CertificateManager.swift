@@ -56,18 +56,47 @@ public final class CertificateManager: @unchecked Sendable {
 
     // MARK: - Active Keychain Certificate Encapsulation
     
+    private var fallbackCertificateURL: URL {
+        let dir = FileManager.default.applicationSupportDirectory.appendingPathComponent("Certificates", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("activeCertificate.p12")
+    }
+
+    private var fallbackPasswordURL: URL {
+        let dir = FileManager.default.applicationSupportDirectory.appendingPathComponent("Certificates", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("activeCertificatePassword.txt")
+    }
+
     /// Loads active signing certificate from Keychain into memory.
     @discardableResult
     public func loadActiveCertificate() throws -> ActiveSigningCertificate? {
-        guard let data = Keychain.shared.signingCertificate else {
-            debugLog("[CertificateManager] loadActiveCertificate: No signingCertificate data found in Keychain.")
+        var data = Keychain.shared.signingCertificate
+        var password = Keychain.shared.signingCertificatePassword
+
+        // Fallback to local sandbox file if Keychain data is missing
+        if data == nil && FileManager.default.fileExists(atPath: fallbackCertificateURL.path) {
+            debugLog("[CertificateManager] loadActiveCertificate: Keychain missing cert; attempting recovery from fallback file.")
+            if let fileData = try? Data(contentsOf: fallbackCertificateURL) {
+                data = fileData
+                if password == nil, let pwdString = try? String(contentsOf: fallbackPasswordURL, encoding: .utf8) {
+                    password = pwdString
+                }
+                // Restore to Keychain as well
+                Keychain.shared.signingCertificate = fileData
+                Keychain.shared.signingCertificatePassword = password
+            }
+        }
+
+        guard let data = data else {
+            debugLog("[CertificateManager] loadActiveCertificate: No signingCertificate data found in Keychain or fallback file.")
             self.activeCertificate = nil
             return nil
         }
-        let password = Keychain.shared.signingCertificatePassword
+        let certPassword = password
         do {
-            let cert = try Self.parse(data, password: password)
-            let active = ActiveSigningCertificate(certificate: cert, p12Data: data, password: password)
+            let cert = try Self.parse(data, password: certPassword)
+            let active = ActiveSigningCertificate(certificate: cert, p12Data: data, password: certPassword)
             self.activeCertificate = active
             debugLog("[CertificateManager] loadActiveCertificate: Successfully loaded certificate (serial: \(cert.serialNumber)).")
             return active
@@ -94,6 +123,12 @@ public final class CertificateManager: @unchecked Sendable {
                 let p12Data = try Self.convert(cert, password: password)
                 Keychain.shared.signingCertificate = p12Data
                 Keychain.shared.signingCertificatePassword = password
+                try? p12Data.write(to: fallbackCertificateURL, options: .atomic)
+                if let password = password {
+                    try? password.write(to: fallbackPasswordURL, atomically: true, encoding: .utf8)
+                } else {
+                    try? FileManager.default.removeItem(at: fallbackPasswordURL)
+                }
                 saveCertificate(cert)
                 let active = ActiveSigningCertificate(certificate: cert, p12Data: p12Data, password: password)
                 self.activeCertificate = active
@@ -105,6 +140,8 @@ public final class CertificateManager: @unchecked Sendable {
         } else {
             self.activeCertificate = nil
             Keychain.shared.clearCertificates()
+            try? FileManager.default.removeItem(at: fallbackCertificateURL)
+            try? FileManager.default.removeItem(at: fallbackPasswordURL)
             debugLog("[CertificateManager] setActiveCertificate: Cleared active certificate in Keychain.")
         }
     }
@@ -114,6 +151,8 @@ public final class CertificateManager: @unchecked Sendable {
         debugLog("[CertificateManager] clearActiveCertificate: Clearing active certificate.")
         self.activeCertificate = nil
         Keychain.shared.clearCertificates()
+        try? FileManager.default.removeItem(at: fallbackCertificateURL)
+        try? FileManager.default.removeItem(at: fallbackPasswordURL)
     }
     
     // MARK: - Certificate Encoding Helpers
