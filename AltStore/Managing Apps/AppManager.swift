@@ -563,6 +563,32 @@ final class AppManager: ObservableObject, @unchecked Sendable
     }
     
     @discardableResult
+    func cleanupUninstalledApps(in context: NSManagedObjectContext) -> [String] {
+        var removedBundleIDs: [String] = []
+        context.performAndWait {
+            let request = InstalledApp.fetchRequest() as NSFetchRequest<InstalledApp>
+            request.predicate = NSPredicate(format: "%K == YES", #keyPath(InstalledApp.isActive))
+            
+            guard let apps = try? context.fetch(request) else { return }
+            for app in apps {
+                guard !app.bundleIdentifier.isAltStoreAppID else { continue }
+                if !app.isInstalledOnSystem {
+                    debugLog("[AppManager] App '\(app.name)' (\(app.bundleIdentifier)) is not installed on system. Removing from database.")
+                    removedBundleIDs.append(app.bundleIdentifier)
+                    CacheResignedMetadataOperation.clearCustomizations(for: app)
+                    try? FileManager.default.removeItem(at: app.directoryURL)
+                    context.delete(app)
+                }
+            }
+            
+            if !removedBundleIDs.isEmpty {
+                try? context.save()
+            }
+        }
+        return removedBundleIDs
+    }
+
+    @discardableResult
     func refresh(_ installedApps: [InstalledApp],
                  presentingViewController: UIViewController?,
                  dbContext: NSManagedObjectContext? = nil,
@@ -579,12 +605,40 @@ final class AppManager: ObservableObject, @unchecked Sendable
             actualGroup = RefreshGroup(dbContext: context)
         }
         
+        let context = actualGroup.context.dbBackgroundContext
+        
         actualGroup.activeTask = Task.detached {
+            var appsToRefresh: [InstalledApp] = []
+            await context.perform {
+                for app in installedApps {
+                    guard let appInContext = (try? context.existingObject(with: app.objectID)) as? InstalledApp else {
+                        continue
+                    }
+                    if !appInContext.bundleIdentifier.isAltStoreAppID && appInContext.isActive && !appInContext.isInstalledOnSystem {
+                        debugLog("[AppManager] Skipping refresh for uninstalled app '\(appInContext.name)' (\(appInContext.bundleIdentifier)), deleting from database.")
+                        CacheResignedMetadataOperation.clearCustomizations(for: appInContext)
+                        try? FileManager.default.removeItem(at: appInContext.directoryURL)
+                        context.delete(appInContext)
+                    } else {
+                        appsToRefresh.append(appInContext)
+                    }
+                }
+                if context.hasChanges {
+                    try? context.save()
+                }
+            }
+            
+            guard !appsToRefresh.isEmpty else {
+                debugLog("[AppManager] No valid installed apps to refresh after uninstalled app check.")
+                actualGroup.completionHandler?([:])
+                return
+            }
+
             do {
-                try await self.pipelineRunner.perform(installedApps.map { .refresh($0) }, handler: pipelineHandler, group: actualGroup)
+                try await self.pipelineRunner.perform(appsToRefresh.map { .refresh($0) }, handler: pipelineHandler, group: actualGroup)
             } catch {
                 actualGroup.error = error
-                let results = Dictionary(uniqueKeysWithValues: installedApps.map { ($0.bundleIdentifier, Result<InstalledApp, Error>.failure(error)) })
+                let results = Dictionary(uniqueKeysWithValues: appsToRefresh.map { ($0.bundleIdentifier, Result<InstalledApp, Error>.failure(error)) })
                 actualGroup.completionHandler?(results)
             }
         }
@@ -787,14 +841,28 @@ extension AppManager: PipelineProgress, PipelineExecutionContext, PipelineErrorL
         }
     }
     
+    func cleanupCancelledOrFinishedProgress()
+    {
+        self.progressLock.withLock {
+            self.installationProgress = self.installationProgress.filter { _, progress in
+                !progress.isCancelled && !progress.isFinished
+            }
+            self.refreshProgress = self.refreshProgress.filter { _, progress in
+                !progress.isCancelled && !progress.isFinished
+            }
+        }
+    }
+
     func isActivelyManagingApp(withBundleID bundleID: String) -> Bool
     {
+        self.cleanupCancelledOrFinishedProgress()
         let isActivelyManaging = self.installationProgress.keys.contains(bundleID) || self.refreshProgress.keys.contains(bundleID)
         return isActivelyManaging
     }
     
     var isActivelyManagingAnyApp: Bool
     {
+        self.cleanupCancelledOrFinishedProgress()
         return self.progressLock.withLock {
             !self.installationProgress.isEmpty || !self.refreshProgress.isEmpty
         }

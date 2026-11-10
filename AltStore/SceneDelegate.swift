@@ -41,6 +41,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate
         // (since all these methods are called separately during app startup).
         guard DatabaseManager.shared.isStarted else { return }
         
+        AppManager.shared.cleanupCancelledOrFinishedProgress()
+        Task.detached(priority: .userInitiated) {
+            await AppBootManager.shared.reconnectOnForegroundIfNeeded()
+        }
+
         Task {
             await AppManager.shared.reconcileInstalledApps()
             await WidgetDataManager.publishCurrentInstalledAppsIfNeeded(in: DatabaseManager.shared.viewContext)

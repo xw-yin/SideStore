@@ -40,6 +40,8 @@ public final class AppBootManager: @unchecked Sendable {
     private let lock = NSLock()
     private var minimuxerStartup: MinimuxerStartup?
     private var minimuxerStartupGeneration: UInt = 0
+    private var lastForegroundReconnectTime: Date = .distantPast
+    private var isReconnectingOnForeground = false
     
     private var cachedNeedsPairingPrompt = false
     public var needsPairingPrompt: Bool {
@@ -169,23 +171,89 @@ public final class AppBootManager: @unchecked Sendable {
         }
     }
 
+    /// Drops any cached startup task so subsequent operations start fresh.
+    public nonisolated func invalidateStalledStartup() {
+        lock.withLock {
+            minimuxerStartup = nil
+        }
+    }
+
     /// Status check with a bound: `isReady()` probes the device through the
     /// same stack a stalled startup can block, so it gets its own timeout and
     /// reports `.unknown` (i.e. not ready) instead of hanging the caller.
     /// unstructured tasks are used on purpose: a task group would still wait
     /// for the probe on scope exit even after cancelling it, while here the
     /// loser is simply abandoned and finishes (or not) in the background.
-    private nonisolated func minimuxerStatusWithTimeout() async -> MinimuxerStatus {
+    private nonisolated func minimuxerStatusWithTimeout(timeoutSeconds: Double = 3.5) async -> MinimuxerStatus {
         await withCheckedContinuation { (continuation: CheckedContinuation<MinimuxerStatus, Never>) in
             let race = FirstResultRace(continuation)
             Task.detached {
                 race.resume(with: await getMinimuxerStatus())
             }
             Task.detached {
-                try? await Task.sleep(nanoseconds: 10_000_000_000)
+                let nanos = UInt64(timeoutSeconds * 1_000_000_000)
+                try? await Task.sleep(nanoseconds: nanos)
                 race.resume(with: .unknown)
             }
         }
+    }
+
+    /// Proactively checks minimuxer readiness on foreground transition and self-heals
+    /// the connection if it was severed while suspended in the background.
+    public nonisolated func reconnectOnForegroundIfNeeded(force: Bool = false) async {
+        #if targetEnvironment(simulator)
+        return
+        #else
+        let now = Date()
+        let shouldRun = lock.withLock { () -> Bool in
+            if isReconnectingOnForeground { return false }
+            if !force && now.timeIntervalSince(lastForegroundReconnectTime) < 5.0 {
+                return false
+            }
+            isReconnectingOnForeground = true
+            lastForegroundReconnectTime = now
+            return true
+        }
+        guard shouldRun else { return }
+        defer {
+            lock.withLock { isReconnectingOnForeground = false }
+        }
+
+        debugLog("[AppBootManager] Checking minimuxer connection on foreground...")
+        let status = await minimuxerStatusWithTimeout(timeoutSeconds: 3.0)
+        if status == .ready {
+            debugLog("[AppBootManager] Minimuxer is healthy on foreground, no reconnect needed.")
+            return
+        }
+
+        debugLog("[AppBootManager] Minimuxer not ready on foreground (\(status)). Triggering recovery...")
+        _ = await recoverConnection()
+        #endif
+    }
+
+    /// Recovers broken minimuxer connection by invalidating stale tasks and restarting services.
+    @discardableResult
+    public nonisolated func recoverConnection() async -> Bool {
+        #if targetEnvironment(simulator)
+        return true
+        #else
+        invalidateStalledStartup()
+        do {
+            debugLog("[AppBootManager] recoverConnection: restarting minimuxer...")
+            try await minimuxerRestart()
+            debugLog("[AppBootManager] recoverConnection: minimuxer restarted successfully.")
+            return true
+        } catch {
+            debugLog("[AppBootManager] recoverConnection: minimuxerRestart failed (\(error)), falling back to ensureMinimuxerStarted()...")
+            do {
+                try await ensureMinimuxerStarted()
+                return true
+            } catch {
+                debugLog("[AppBootManager] recoverConnection: fallback failed: \(error)")
+                return false
+            }
+        }
+        #endif
     }
 
     public nonisolated func startMinimuxer(pairingFile: String) async throws {

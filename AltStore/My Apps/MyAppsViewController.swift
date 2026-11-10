@@ -9,6 +9,7 @@
 @preconcurrency import UIKit
 @preconcurrency import Intents
 import SideSign
+import Minimuxer
 import SwiftUI
 import MobileCoreServices
 import Combine
@@ -178,6 +179,8 @@ class MyAppsViewController: UICollectionViewController
     override func viewIsAppearing(_ animated: Bool)
     {
         super.viewIsAppearing(animated)
+        
+        AppManager.shared.cleanupUninstalledApps(in: DatabaseManager.shared.viewContext)
         
         Task { @MainActor [weak self] in
             guard let self = self else { return }
@@ -1806,183 +1809,97 @@ private extension MyAppsViewController
     }
     
     func enableMoreRAM(for installedApp: InstalledApp) {
-        // Inside LiveContainer, guests are not validated against their
-        // provisioning profile, and the portal never puts the memory
-        // entitlements into a personal team's profile — so a resign alone
-        // cannot deliver them. LiveContainer also launches its own copy of
-        // each guest (its "Applications" folders), not SideStore's payload
-        // copy, so patch that copy in place instead, GetMoreRAM-style.
-        // Outside LiveContainer the app is system-installed and
-        // profile-validated, so keep the portal route there.
-        if Bundle.isBundledWithLiveContainer {
-            UserDefaults.standard.setMoreRAMEnabled(true, forBundleIdentifier: installedApp.bundleIdentifier)
-            debugLog("Enabling increased memory limit for app \(installedApp.bundleIdentifier) via in-place LiveContainer patch")
-            Task { @MainActor in
-                if await self.patchMoreRAMInLiveContainer(for: installedApp) {
-                    ToastView(text: NSLocalizedString("Get More RAM enabled", comment: ""),
-                              detailText: NSLocalizedString("Relaunch the app in LiveContainer to apply.", comment: "")).show(in: self)
-                } else {
-                    // No LiveContainer-side copy found (or patching failed):
-                    // fall back to the pipeline injection on SideStore's copy.
-                    debugLog("In-place LiveContainer patch unavailable for \(installedApp.bundleIdentifier); falling back to resign")
-                    self.resign(installedApp)
+        guard installedApp.isActive,
+              !AppManager.shared.isActivelyManagingApp(withBundleID: installedApp.bundleIdentifier) else { return }
+        let explanation = String(format: NSLocalizedString("Request memory permissions for %@, then re-sign and reinstall this app while preserving its data. This applies to the app installed on the Home Screen. Copies launched inside LiveContainer use the host's permissions instead. Missing permissions will stop installation. Completely quit and reopen the app afterward; runtime memory must be checked in that app's own process.", comment: ""), installedApp.name)
+        let alert = UIAlertController(title: NSLocalizedString("Get More RAM for This Installed App", comment: ""),
+                                      message: explanation, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
+        if UserDefaults.standard.isMemoryPermissionRequested(for: installedApp.bundleIdentifier) {
+            alert.addAction(UIAlertAction(title: NSLocalizedString("Resume Ordinary Signing and Refresh", comment: ""), style: .default) { _ in
+                UserDefaults.standard.setMemoryPermissionRequested(false, for: installedApp.bundleIdentifier)
+                debugLog("[AppMemory] Stopped requiring memory permissions for \(installedApp.bundleIdentifier); installed permissions are unchanged")
+            })
+        }
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Request Permissions and Reinstall", comment: ""), style: .default) { [weak self] _ in
+            guard let self,
+                  !AppManager.shared.isActivelyManagingApp(withBundleID: installedApp.bundleIdentifier) else { return }
+            let previouslyRequested = UserDefaults.standard.isMemoryPermissionRequested(for: installedApp.bundleIdentifier)
+            UserDefaults.standard.setMemoryPermissionRequested(true, for: installedApp.bundleIdentifier)
+            debugLog("[AppMemory] Requesting profile-backed memory permissions for \(installedApp.resignedBundleIdentifier)")
+            AppManager.shared.resign(installedApp, presentingViewController: self) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success:
+                        ToastView(text: NSLocalizedString("App installed; restart required", comment: ""),
+                                  detailText: NSLocalizedString("Completely quit and reopen the installed app. Check runtime memory in that app's own process, not SideStore's diagnostics.", comment: "")).show(in: self)
+                    case .failure(let error):
+                        UserDefaults.standard.setMemoryPermissionRequested(previouslyRequested, for: installedApp.bundleIdentifier)
+                        debugLog("[AppMemory] Memory setup failed for \(installedApp.bundleIdentifier): \(error)")
+                        ToastView(error: error, opensLog: true).show(in: self)
+                    }
+                    self.reconfigureVisibleCells()
                 }
             }
+        })
+        self.present(alert, animated: true)
+    }
+
+    func enableHostMoreRAM() {
+        guard Bundle.isBundledWithLiveContainer else { return }
+        guard let hostApp = InstalledApp.fetchAltStore(in: DatabaseManager.shared.viewContext) else {
+            let error = NSError(domain: "HostMemory", code: 1, userInfo: [NSLocalizedDescriptionKey:
+                NSLocalizedString("The LiveContainer host record is missing. Open LiveContainer again before requesting memory permissions.", comment: "")])
+            ToastView(error: error, opensLog: true).show(in: self)
+            return
+        }
+        guard !AppManager.shared.isActivelyManagingApp(withBundleID: hostApp.bundleIdentifier) else { return }
+
+        // The guest is dlopen'ed into this process. Its on-disk entitlements
+        // cannot grant the host a larger footprint or virtual address space.
+        let selector = NSSelectorFromString("lc_memoryDiagnostics")
+        let diagnostics: String
+        if Bundle.realMainBundle.responds(to: selector),
+           let snapshot = Bundle.realMainBundle.perform(selector)?.takeUnretainedValue() as? [String: Any],
+           let report = snapshot["report"] as? String {
+            diagnostics = report
+            debugLog("[HostMemory] \(report)")
         } else {
-            debugLog("Enabling increased memory limit for app \(installedApp.bundleIdentifier) via resign")
-            self.resign(installedApp)
+            diagnostics = NSLocalizedString("Running process memory diagnostics are unavailable.", comment: "")
         }
-    }
-
-    /// The guest bundle LiveContainer actually launches, looked up by bundle
-    /// identifier in LiveContainer's "Applications" roots. LiveContainer
-    /// borrows the store's app group container — the team-suffixed group
-    /// "group.com.SideStore.SideStore.<teamID>" (see LCSharedUtils.appGroupID)
-    /// — and keeps shared guests in its "LiveContainer/Applications" folder
-    /// there; private guests live in the documents "Applications" folder.
-    func liveContainerGuestURL(forBundleIdentifier bundleIdentifier: String, teamIdentifier: String? = nil) -> URL? {
-        var containerRoots: [URL] = []
-        var groupIdentifiers = ["group.com.SideStore.SideStore"]
-        if let teamIdentifier {
-            groupIdentifiers.insert("group.com.SideStore.SideStore.\(teamIdentifier)", at: 0)
+        let explanation = NSLocalizedString("Memory permissions apply to LiveContainer and LiveProcess, and affect all apps running inside them. This will request new provisioning profiles and reinstall LiveContainer while preserving its data. LiveContainer may quit during installation. Reopen it and fully restart guest apps afterward. Unsupported permissions will be reported as an error.", comment: "")
+        let alert = UIAlertController(title: NSLocalizedString("Get More RAM for LiveContainer", comment: ""),
+                                      message: explanation + "\n\n" + diagnostics, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
+        if UserDefaults.standard.bool(forKey: "liveContainerHostMemoryRequested") {
+            alert.addAction(UIAlertAction(title: NSLocalizedString("Resume Ordinary Signing and Refresh", comment: ""), style: .default) { _ in
+                UserDefaults.standard.set(false, forKey: "liveContainerHostMemoryRequested")
+                debugLog("[HostMemory] Stopped requiring memory permissions for future signing and refresh; installed permissions are unchanged")
+            })
         }
-        for group in groupIdentifiers {
-            if let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: group) {
-                containerRoots.append(container)
-            }
-        }
-        if let sharedDirectory = FileManager.default.altstoreSharedDirectory {
-            containerRoots.append(sharedDirectory)
-        }
-
-        var roots = containerRoots.map { $0.appendingPathComponent("LiveContainer/Applications") }
-        if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).last {
-            roots.append(documentsDirectory.appendingPathComponent("Applications"))
-            // When bundled with LiveContainer, this process's documents
-            // directory is nested inside the host's documents directory
-            // (<host Documents>/<guest name>/Documents), so the host's own
-            // private-guest folder is two levels up.
-            let hostDocuments = documentsDirectory.deletingLastPathComponent().deletingLastPathComponent()
-            roots.append(hostDocuments.appendingPathComponent("Applications"))
-        }
-        var seenPaths = Set<String>()
-        roots = roots.filter { seenPaths.insert($0.path).inserted }
-
-        for root in roots {
-            let entries = (try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)) ?? []
-            debugLog("[GetMoreRAM] Guest lookup: root \(root.path) — \(entries.count) entries")
-            for entry in entries where entry.pathExtension == "app" {
-                let parsedID = ALTApplication(fileURL: entry)?.bundleIdentifier
-                debugLog("[GetMoreRAM] Guest lookup: candidate \(entry.lastPathComponent) -> \(parsedID ?? "nil")")
-                // LiveContainer rewrites the guest bundle's Info.plist
-                // bundle identifier to the host's (classic-mode guests are
-                // registered under the host identity), so the on-disk
-                // folder name — "<bundleID>.app", or "<bundleID>_<timestamp>.app"
-                // for duplicate installs — is the reliable match key.
-                let folderName = entry.deletingPathExtension().lastPathComponent
-                if folderName == bundleIdentifier || folderName.hasPrefix(bundleIdentifier + "_") || parsedID == bundleIdentifier {
-                    debugLog("[GetMoreRAM] Guest lookup: found \(bundleIdentifier) at \(entry.path)")
-                    return entry
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Request Permissions and Reinstall", comment: ""), style: .default) { [weak self] _ in
+            guard let self else { return }
+            let previouslyRequested = UserDefaults.standard.bool(forKey: "liveContainerHostMemoryRequested")
+            UserDefaults.standard.set(true, forKey: "liveContainerHostMemoryRequested")
+            debugLog("[HostMemory] Requesting profile-backed memory permissions for host \(hostApp.resignedBundleIdentifier), including LiveProcess")
+            AppManager.shared.resign(hostApp, presentingViewController: self) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success:
+                        ToastView(text: NSLocalizedString("Host installed; restart required", comment: ""),
+                                  detailText: NSLocalizedString("Reopen LiveContainer and check Memory Diagnostics. Installation success alone does not confirm a higher memory limit.", comment: "")).show(in: self)
+                    case .failure(let error):
+                        UserDefaults.standard.set(previouslyRequested, forKey: "liveContainerHostMemoryRequested")
+                        debugLog("[HostMemory] Host memory setup failed: \(error)")
+                        ToastView(error: error, opensLog: true).show(in: self)
+                    }
+                    self.reconfigureVisibleCells()
                 }
             }
-        }
-        return nil
+        })
+        self.present(alert, animated: true)
     }
 
-    /// Patches the LiveContainer-side copy of a guest in place: the binary's
-    /// own entitlements are kept as the base and the memory keys are unioned
-    /// in (the GetMoreRAM approach), signed with the active certificate and
-    /// the bundle's embedded provisioning profile. Returns false when there
-    /// is no LiveContainer-side copy or anything needed is missing.
-    /// Note: needs proper testing on device, especially whether LiveContainer
-    /// picks up the patched bundle on the guest's next launch as expected.
-    func patchMoreRAMInLiveContainer(for installedApp: InstalledApp) async -> Bool {
-        // Signing identity for the in-place re-sign, sourced the way the
-        // pipeline sources it: the team comes from the authenticated
-        // account session (AuthManager), NOT from CoreData — no Team row
-        // is marked active in the LiveContainer-bundled flow, and the
-        // app record's team is unset. The certificate is resolved per app
-        // below, mirroring the pipeline's per-app resolution.
-        let team = (try? await AuthManager.shared.getAuthenticatedTeam())
-            ?? installedApp.team?.altTeam
-            ?? DatabaseManager.shared.activeTeam(in: DatabaseManager.shared.viewContext)?.altTeam
-        guard let team else {
-            debugLog("[GetMoreRAM] No team available for \(installedApp.bundleIdentifier); skipping in-place patch")
-            return false
-        }
-        let certificate = CertificateManager.shared.activeCertificate?.certificate
-            ?? installedApp.certificateSerialNumber.flatMap { CertificateManager.shared.getSignableCertificate(for: $0) }
-        guard let certificate else {
-            debugLog("[GetMoreRAM] No signable certificate available for \(installedApp.bundleIdentifier); skipping in-place patch")
-            return false
-        }
-
-        guard let guestURL = self.liveContainerGuestURL(forBundleIdentifier: installedApp.bundleIdentifier, teamIdentifier: team.identifier),
-              let guestApp = ALTApplication(fileURL: guestURL)
-        else {
-            debugLog("[GetMoreRAM] No LiveContainer-side copy found for \(installedApp.bundleIdentifier)")
-            return false
-        }
-
-        // Profiles: prefer each bundle's embedded profile; LiveContainer's
-        // copies may not embed one, so fall back to the profiles SideStore
-        // cached when it last signed this app.
-        var profilesByBundleID: [String: ALTProvisioningProfile] = [:]
-        if let profile = guestApp.provisioningProfile {
-            profilesByBundleID[guestApp.bundleIdentifier] = profile
-        }
-        for appExtension in guestApp.appExtensions {
-            if let profile = appExtension.provisioningProfile {
-                profilesByBundleID[appExtension.bundleIdentifier] = profile
-            }
-        }
-        let cachedProfilesDirectory = installedApp.directoryURL.appendingPathComponent("ProvisioningProfiles")
-        if let files = try? FileManager.default.contentsOfDirectory(at: cachedProfilesDirectory, includingPropertiesForKeys: nil) {
-            for file in files where file.pathExtension == "mobileprovision" {
-                if let profile = try? ALTProvisioningProfile(url: file), profilesByBundleID[profile.bundleIdentifier] == nil {
-                    profilesByBundleID[profile.bundleIdentifier] = profile
-                }
-            }
-        }
-
-        // The LiveContainer copy's Info.plist identifier is the host's, so
-        // its embedded profile is keyed by that; fall back to the profile
-        // SideStore cached under the app's own bundle identifier.
-        let mainProfile = profilesByBundleID[guestApp.bundleIdentifier] ?? profilesByBundleID[installedApp.bundleIdentifier]
-        guard let mainProfile else {
-            debugLog("[GetMoreRAM] No provisioning profile available for \(installedApp.bundleIdentifier)")
-            return false
-        }
-        debugLog("[GetMoreRAM] Using profile \(mainProfile.bundleIdentifier) (team \(mainProfile.teamIdentifier)) for in-place patch of \(installedApp.bundleIdentifier)")
-        // Re-signing with the active (personal) certificate is only valid
-        // when the guest's profile belongs to that team; enterprise-signed
-        // guests keep the pipeline route.
-        guard mainProfile.teamIdentifier == team.identifier else {
-            debugLog("[GetMoreRAM] Profile team \(mainProfile.teamIdentifier) does not match active team \(team.identifier); skipping in-place patch")
-            return false
-        }
-
-        let signer = ALTSigner(team: team, certificate: certificate)
-        do {
-            try await signer.signApp(
-                at: guestURL,
-                provisioningProfiles: Array(profilesByBundleID.values),
-                injectedEntitlements: [
-                    ALTEntitlement.increasedMemoryLimit.rawValue: true,
-                    ALTEntitlement.extendedVirtualAddressing.rawValue: true,
-                    ALTEntitlement.increasedDebuggingMemoryLimit.rawValue: true
-                ],
-                preserveAppEntitlements: true,
-                progress: nil
-            )
-            debugLog("Patched LiveContainer guest \(installedApp.bundleIdentifier) in place for Get More RAM")
-            return true
-        } catch {
-            debugLog("Failed to patch LiveContainer guest \(installedApp.bundleIdentifier): \(error)")
-            return false
-        }
-    }
-    
     func enableJIT(for installedApp: InstalledApp) {
         AppManager.shared.enableJIT(for: installedApp) { result in
             DispatchQueue.main.async {
@@ -2390,33 +2307,22 @@ extension MyAppsViewController
             self.enableJIT(for: installedApp)
         }
         
-        // "Supported" means SideStore can actually re-sign this app with an
-        // updated provisioning profile: the app is active, was not sideloaded
-        // by a legacy tool, and has no user-assigned (fixed) profile, since a
-        // fixed profile is used verbatim and cannot gain the entitlement.
         let isLegacySideloadedApp = (UserDefaults.standard.legacySideloadedApps ?? []).contains(installedApp.bundleIdentifier)
-        let hasAssignedProfile = ProfileManager.shared.getAssignedProfile(for: installedApp.bundleIdentifier) != nil
-        let supportsMoreRAM = installedApp.isActive && !isLegacySideloadedApp && !hasAssignedProfile
-        
-        var moreRAMEnabled = false
-        if let appBundle = ALTApplication(fileURL: installedApp.fileURL)
-        {
-            moreRAMEnabled = (appBundle.entitlements[ALTEntitlement.increasedMemoryLimit.rawValue] as? Bool) == true
+        let isLiveContainerHost = Bundle.isBundledWithLiveContainer &&
+            (installedApp.bundleIdentifier == StoreApp.altstoreAppID ||
+             installedApp.resignedBundleIdentifier.isAltStoreAppID ||
+             installedApp.bundleIdentifier == Bundle.realMainBundle.bundleIdentifier ||
+             installedApp.resignedBundleIdentifier == Bundle.realMainBundle.bundleIdentifier)
+        let supportsMoreRAM = isLiveContainerHost || (installedApp.isActive && !isLegacySideloadedApp)
+
+        let moreRAMAction = UIAction(title: NSLocalizedString("Get More RAM", comment: ""), image: UIImage(systemName: "memorychip")) { _ in
+            if isLiveContainerHost {
+                self.enableHostMoreRAM()
+            } else {
+                self.enableMoreRAM(for: installedApp)
+            }
         }
-        // Inside LiveContainer the state that matters is the copy
-        // LiveContainer launches, which is patched in place (see
-        // enableMoreRAM), so reflect that copy when it exists.
-        if !moreRAMEnabled, Bundle.isBundledWithLiveContainer,
-           let liveContainerURL = self.liveContainerGuestURL(forBundleIdentifier: installedApp.bundleIdentifier),
-           let liveContainerBundle = ALTApplication(fileURL: liveContainerURL)
-        {
-            moreRAMEnabled = (liveContainerBundle.entitlements[ALTEntitlement.increasedMemoryLimit.rawValue] as? Bool) == true
-        }
-        
-        let moreRAMAction = UIAction(title: NSLocalizedString("Get More RAM", comment: ""), image: UIImage(systemName: "memorychip"), state: moreRAMEnabled ? .on : .off) { (action) in
-            self.enableMoreRAM(for: installedApp)
-        }
-        
+
         let backupAction = UIAction(title: NSLocalizedString("Create Backup", comment: ""), image: UIImage(systemName: "doc.on.doc")) { (action) in
             self.backup(installedApp)
         }
@@ -2573,11 +2479,6 @@ extension MyAppsViewController
                 actions.append(jitAction)
             }
             
-            if supportsMoreRAM
-            {
-                actions.append(moreRAMAction)
-            }
-            
             actions.append(changeIconMenu)
             
             if !backupSubmenuActions.isEmpty
@@ -2616,6 +2517,7 @@ extension MyAppsViewController
             #endif
         }
         
+        if supportsMoreRAM { actions.append(moreRAMAction) }
         actions.append(infoAction)
         
         // Change the order of entries to make changes to how the context menu is displayed

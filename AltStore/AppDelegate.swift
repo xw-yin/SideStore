@@ -286,6 +286,10 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationWillEnterForeground(_ application: UIApplication)
     {
         BackgroundServiceManager.ensureBackgroundServicesStarted()
+        AppManager.shared.cleanupCancelledOrFinishedProgress()
+        Task.detached(priority: .userInitiated) {
+            await AppBootManager.shared.reconnectOnForegroundIfNeeded()
+        }
         Task.detached {
             await AppManager.shared.reconcileInstalledApps()
         }

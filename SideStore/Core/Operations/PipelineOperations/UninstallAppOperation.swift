@@ -43,7 +43,14 @@ final class UninstallAppOperation: BasePipelineOperation<InstallAppOperationCont
             await CellularRefreshManager.shared.turnOnDataIfNeeded()
         } catch {
             await CellularRefreshManager.shared.turnOnDataIfNeeded()
-            throw error
+            let errorString = "\(error)"
+            if errorString.localizedCaseInsensitiveContains("NotFound") ||
+               errorString.localizedCaseInsensitiveContains("LookupFailed") ||
+               !installedApp.isInstalledOnSystem {
+                debugLog("[UninstallAppOperation] App '\(resignedBundleIdentifier)' is already removed from device, proceeding with cleanup.")
+            } else {
+                throw error
+            }
         }
         
         self.setProgress(100)
